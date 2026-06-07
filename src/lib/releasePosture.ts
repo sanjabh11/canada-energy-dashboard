@@ -286,6 +286,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The production approval request packet classifies prerequisite rows into pre-request, owner-decision, and post-deploy-boundary phases, but it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, request owner approval, or prove hosted/live parity.',
   },
   {
+    label: 'Production approval operator handoff packet',
+    status: 'external_gate',
+    command: 'pnpm run report:production-approval-readiness && pnpm run check:production-approval-report',
+    evidenceBoundary: 'The focused production approval report/check maps production approval request packet rows into non-executable execution gates, including clean_source_provenance_first, attach_manifest_validation_evidence, release_readiness_after_clean_source, branch_review_before_owner_request, supabase_advisor_after_authorization, buyer_evidence_validation_before_approval, owner_approval_after_pre_request_gates, post_deploy_proof_after_approved_deploy, pre_request, owner_decision, post_deploy_boundary, blocks_approval_request, owner_decision_required, post_deploy_boundary flags, and can_execute_from_packet=false. It does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, run release-readiness, prove hosted/live parity, or create commercial launch readiness status. It does not prove production approval or deploy authorization.',
+  },
+  {
     label: 'Post-deploy live proof gate queue',
     status: 'external_gate',
     command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
