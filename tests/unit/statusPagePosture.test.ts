@@ -884,6 +884,17 @@ describe('status page release posture', () => {
     expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
     expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/claim post-deploy live parity/i);
+    expect(productionApprovalQueueEvidence?.sourceManifestPath).toBe('production_approval.prerequisite_queue');
+    expect(productionApprovalQueueEvidence?.sourceProofTypes).toEqual([
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(productionApprovalRequestPacketEvidence?.status).toBe('external_gate');
     expect(productionApprovalRequestPacketEvidence?.command).toContain('report:production-approval-readiness');
     expect(productionApprovalRequestPacketEvidence?.command).toContain('check:production-approval-report');
@@ -892,6 +903,18 @@ describe('status page release posture', () => {
     expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/access Supabase/i);
     expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
+    expect(productionApprovalRequestPacketEvidence?.sourceManifestPath).toBe('production_approval.request_packet');
+    expect(productionApprovalRequestPacketEvidence?.sourceProofTypes).toEqual([
+      'production_approval_request_packet',
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(productionApprovalOperatorHandoffPacketEvidence?.status).toBe('external_gate');
     expect(productionApprovalOperatorHandoffPacketEvidence?.command).toContain('report:production-approval-readiness');
     expect(productionApprovalOperatorHandoffPacketEvidence?.command).toContain('check:production-approval-report');
@@ -918,6 +941,18 @@ describe('status page release posture', () => {
     expect(productionApprovalOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(productionApprovalOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/commercial launch readiness status/i);
     expect(productionApprovalOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/deploy authorization/i);
+    expect(productionApprovalOperatorHandoffPacketEvidence?.sourceManifestPath).toBe('production_approval.operator_handoff_packet');
+    expect(productionApprovalOperatorHandoffPacketEvidence?.sourceProofTypes).toEqual([
+      'production_approval_operator_handoff_packet',
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(postDeployQueueEvidence?.status).toBe('external_gate');
     expect(postDeployQueueEvidence?.command).toContain('report:post-deploy-live-proof-readiness');
     expect(postDeployQueueEvidence?.command).toContain('check:post-deploy-live-proof-report');
@@ -1493,6 +1528,17 @@ describe('status page release posture', () => {
     expect(productionApprovalQueueGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(productionApprovalQueueGate?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
     expect(productionApprovalQueueGate?.nextAction).toMatch(/keep launch evidence validation passing/i);
+    expect(productionApprovalQueueGate?.sourceManifestPath).toBe('production_approval.prerequisite_queue');
+    expect(productionApprovalQueueGate?.sourceProofTypes).toEqual([
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(productionApprovalRequestPacketGate?.status).toBe('external_gate');
     expect(productionApprovalRequestPacketGate?.command).toContain('report:production-approval-readiness');
     expect(productionApprovalRequestPacketGate?.command).toContain('check:production-approval-report');
@@ -1500,6 +1546,18 @@ describe('status page release posture', () => {
     expect(productionApprovalRequestPacketGate?.evidenceBoundary).toMatch(/pre-request, owner-decision, and post-deploy-boundary/i);
     expect(productionApprovalRequestPacketGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(productionApprovalRequestPacketGate?.nextAction).toMatch(/pre-request row is blocked/i);
+    expect(productionApprovalRequestPacketGate?.sourceManifestPath).toBe('production_approval.request_packet');
+    expect(productionApprovalRequestPacketGate?.sourceProofTypes).toEqual([
+      'production_approval_request_packet',
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(productionApprovalOperatorHandoffPacketGate?.status).toBe('external_gate');
     expect(productionApprovalOperatorHandoffPacketGate?.command).toContain('report:production-approval-readiness');
     expect(productionApprovalOperatorHandoffPacketGate?.command).toContain('check:production-approval-report');
@@ -1531,6 +1589,18 @@ describe('status page release posture', () => {
     expect(productionApprovalOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/deploy authorization/i);
     expect(productionApprovalOperatorHandoffPacketGate?.nextAction).toMatch(/approval-operator handoff/i);
     expect(productionApprovalOperatorHandoffPacketGate?.nextAction).toMatch(/proof command separately/i);
+    expect(productionApprovalOperatorHandoffPacketGate?.sourceManifestPath).toBe('production_approval.operator_handoff_packet');
+    expect(productionApprovalOperatorHandoffPacketGate?.sourceProofTypes).toEqual([
+      'production_approval_operator_handoff_packet',
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(postDeployQueueGate?.status).toBe('external_gate');
     expect(postDeployQueueGate?.proofBucket).toBe('hosted/live');
     expect(postDeployQueueGate?.command).toContain('report:post-deploy-live-proof-readiness');

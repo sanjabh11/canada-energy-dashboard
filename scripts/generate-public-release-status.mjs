@@ -710,6 +710,19 @@ function validateManifest(manifest) {
   if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers|does not.*prove launch evidence validation/i.test(productionApprovalQueue.evidenceBoundary ?? '')) {
     failures.push('production_approval_prerequisite_queue must preserve the non-approval, non-execution, and non-validation boundary.');
   }
+  expectSourceLineage('production_approval_prerequisite_queue', {
+    sourceManifestPath: 'production_approval.prerequisite_queue',
+    sourceProofTypes: [
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ],
+  });
   const productionApprovalRequestPacket = itemById.get('production_approval_request_packet') ?? {};
   if (!/pre-request|owner-decision|post-deploy-boundary|request packet/i.test(`${productionApprovalRequestPacket.evidenceBoundary ?? ''}\n${productionApprovalRequestPacket.nextAction ?? ''}`)) {
     failures.push('production_approval_request_packet must describe the approval request packet phases.');
@@ -717,6 +730,20 @@ function validateManifest(manifest) {
   if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers|does not.*access Supabase|does not.*clear source provenance|does not.*prove hosted\/live parity/i.test(productionApprovalRequestPacket.evidenceBoundary ?? '')) {
     failures.push('production_approval_request_packet must preserve the no-approval, no-deploy, no-buyer-contact, no-Supabase-access, and no-live-parity boundary.');
   }
+  expectSourceLineage('production_approval_request_packet', {
+    sourceManifestPath: 'production_approval.request_packet',
+    sourceProofTypes: [
+      'production_approval_request_packet',
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ],
+  });
   const productionApprovalOperatorHandoffPacket = itemById.get('production_approval_operator_handoff_packet') ?? {};
   if (!/production approval request packet rows|execution gates|clean_source_provenance_first|attach_manifest_validation_evidence|release_readiness_after_clean_source|branch_review_before_owner_request|supabase_advisor_after_authorization|buyer_evidence_validation_before_approval|owner_approval_after_pre_request_gates|post_deploy_proof_after_approved_deploy|pre_request|owner_decision|post_deploy_boundary|blocks_approval_request|owner_decision_required|can_execute_from_packet=false/i.test(`${productionApprovalOperatorHandoffPacket.evidenceBoundary ?? ''}\n${productionApprovalOperatorHandoffPacket.nextAction ?? ''}`)) {
     failures.push('production_approval_operator_handoff_packet must describe approval request rows, execution gates, request phases, owner-decision flags, post-deploy flags, blocking rows, and non-executable packet semantics.');
@@ -727,6 +754,20 @@ function validateManifest(manifest) {
   if (!/does not.*request owner approval|does not.*grant approval|does not.*run deploys|does not.*push|does not.*merge|does not.*mutate branches|does not.*contact buyers|does not.*access Supabase|does not.*clear source provenance|does not.*run release-readiness|does not.*hosted\/live parity|does not.*commercial launch readiness status|does not prove production approval|does not.*deploy authorization/i.test(productionApprovalOperatorHandoffPacket.evidenceBoundary ?? '')) {
     failures.push('production_approval_operator_handoff_packet must preserve the no-approval-request, no-approval, no-deploy, no-push, no-merge, no-branch-mutation, no-buyer-contact, no-Supabase-access, no-source-clearance, no-release-readiness, no-live-proof, no-commercial-launch-readiness, and no-deploy-authorization boundary.');
   }
+  expectSourceLineage('production_approval_operator_handoff_packet', {
+    sourceManifestPath: 'production_approval.operator_handoff_packet',
+    sourceProofTypes: [
+      'production_approval_operator_handoff_packet',
+      'source_provenance_decision',
+      'manifest_validation',
+      'gated_release_command',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval',
+      'post_deploy_live_proof_gate',
+    ],
+  });
   const postDeployQueue = itemById.get('post_deploy_live_proof_gate_queue') ?? {};
   if (!/live public metadata|live static dist parity|hosted proof-pack route smoke|check:post-deploy-live/i.test(`${postDeployQueue.evidenceBoundary ?? ''}\n${postDeployQueue.nextAction ?? ''}`)) {
     failures.push('post_deploy_live_proof_gate_queue must describe the post-deploy live proof gates.');

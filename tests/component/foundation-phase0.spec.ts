@@ -68,6 +68,9 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('supabase_advisor.operator_handoff_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('supabase_advisor.clearance_deficits.remediation_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('launch_action_queue.items[phase=launch_evidence_validation]', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('production_approval.prerequisite_queue', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('production_approval.request_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('production_approval.operator_handoff_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('completion_audit', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('adversarial_reviews', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('fix_report', { exact: true })).toBeVisible();
