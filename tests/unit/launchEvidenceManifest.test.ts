@@ -82,6 +82,7 @@ describe('launch evidence manifest report', () => {
       'repo_artifact',
       'roadmap',
     ]);
+    expect(manifest.proof_buckets.repo_artifact).toContain('scripts/check-focused-launch-readiness-reports.mjs');
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
     const gapsByProofType = mapBy(
@@ -168,7 +169,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1219,14 +1220,15 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report',
       'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report',
       'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
+      'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'corepack pnpm run check:commercial-launch-readiness-report',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(59);
+    expect(manifest.implementation_decisions).toHaveLength(60);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(59);
+    expect(manifest.code_optimization_reviews).toHaveLength(60);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2218,6 +2220,37 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:commercial-source',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const focusedLaunchReadinessSuiteHandoffDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES',
+    );
+    expect(focusedLaunchReadinessSuiteHandoffDecision).toBeTruthy();
+    expect(focusedLaunchReadinessSuiteHandoffDecision.chosen_variant).toBe('minimal manifest handoff-surface alignment');
+    expect(focusedLaunchReadinessSuiteHandoffDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+    ]));
+    expect(focusedLaunchReadinessSuiteHandoffDecision.proof_boundary).toMatch(/handoff discoverability only|does not run focused reports as clearance|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|request or grant owner approval|push|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const focusedLaunchReadinessSuiteHandoffReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES',
+    );
+    expect(focusedLaunchReadinessSuiteHandoffReview).toBeTruthy();
+    expect(focusedLaunchReadinessSuiteHandoffReview.policy).toBe('strict');
+    expect(focusedLaunchReadinessSuiteHandoffReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-launch-evidence-manifest.mjs',
+      'node --check scripts/check-launch-evidence-manifest.mjs',
+      'node --check scripts/check-progress-digest-readiness-report.mjs',
+      'node --check scripts/check-commercial-launch-readiness-report.mjs',
+      'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
     ]));
     const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',

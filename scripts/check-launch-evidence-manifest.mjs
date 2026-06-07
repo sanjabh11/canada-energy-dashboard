@@ -204,6 +204,11 @@ try {
       ['hosted_live', 'local', 'repo_artifact', 'candidate_shadow', 'roadmap'].every((bucket) => Object.hasOwn(manifest.proof_buckets ?? {}, bucket)),
       'Manifest must keep the five proof buckets: hosted_live, local, repo_artifact, candidate_shadow, and roadmap.',
     );
+    assert(
+      Array.isArray(manifest.proof_buckets?.repo_artifact)
+        && manifest.proof_buckets.repo_artifact.includes('scripts/check-focused-launch-readiness-reports.mjs'),
+      'Manifest proof_buckets.repo_artifact must include the aggregate focused launch-readiness report checker script.',
+    );
     assert(Array.isArray(manifest.gaps), 'Manifest gaps must be a list.');
     assert(hasOpenGap(manifest, 'P0', 'Phase F evidence'), 'Manifest must keep the open P0 Phase F buyer-evidence gap.');
     const gapProofExpectations = [
@@ -2631,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE', 'Manifest progress_updates must expose the latest focused launch-readiness report suite safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES', 'Manifest progress_updates must expose the latest focused launch-readiness suite handoff-surface ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2646,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest focused launch-readiness report suite ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest focused launch-readiness suite handoff-surface ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -2700,6 +2705,7 @@ try {
       'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report',
       'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report',
       'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
+      'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'corepack pnpm run check:commercial-launch-readiness-report',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
@@ -4390,6 +4396,39 @@ try {
         && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Adversarial review unit-contract code optimization review must record focused adversarial review, progress, manifest, and commercial report checks.',
+    );
+    const focusedSuiteHandoffDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES');
+    assert(focusedSuiteHandoffDecision, 'Manifest must record the focused launch-readiness suite handoff-surface implementation decision.');
+    assert(
+      focusedSuiteHandoffDecision?.chosen_variant === 'minimal manifest handoff-surface alignment',
+      'Focused launch-readiness suite handoff decision must record the minimal manifest handoff-surface alignment variant.',
+    );
+    assert(
+      Array.isArray(focusedSuiteHandoffDecision?.files_changed)
+        && focusedSuiteHandoffDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && focusedSuiteHandoffDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && focusedSuiteHandoffDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && focusedSuiteHandoffDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && focusedSuiteHandoffDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts')
+        && focusedSuiteHandoffDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts'),
+      'Focused launch-readiness suite handoff decision must record manifest, progress, broad checkers, and launch/progress unit test files.',
+    );
+    assert(
+      /handoff discoverability only|does not run focused reports as clearance|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|request or grant owner approval|push|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(focusedSuiteHandoffDecision?.proof_boundary ?? ''),
+      'Focused launch-readiness suite handoff decision must preserve no-clearance, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const focusedSuiteHandoffReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES');
+    assert(focusedSuiteHandoffReview, 'Manifest must record the focused launch-readiness suite handoff-surface code optimization review.');
+    assert(focusedSuiteHandoffReview?.policy === 'strict', 'Focused launch-readiness suite handoff code optimization review must use strict policy.');
+    assert(focusedSuiteHandoffReview?.verdict === 'pass', 'Focused launch-readiness suite handoff code optimization review must pass.');
+    assert(
+      Array.isArray(focusedSuiteHandoffReview?.tests_or_checks)
+        && focusedSuiteHandoffReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && focusedSuiteHandoffReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && focusedSuiteHandoffReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && focusedSuiteHandoffReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && focusedSuiteHandoffReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Focused launch-readiness suite handoff code optimization review must record aggregate, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

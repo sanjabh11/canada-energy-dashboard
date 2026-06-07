@@ -120,7 +120,7 @@ if (failures.length === 0) {
     assert(/does not .*clear blockers|contact buyers|approve branches|authorize Supabase|deploy|hosted\/live parity|commercial launch readiness/i.test(stdout), 'Report must preserve no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness boundaries.');
     assertContains(stdout, '## Progress Summary', 'Report must include the progress summary.');
     assertContains(stdout, '## Progress Updates', 'Report must include progress update rows.');
-    assertContains(stdout, 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE', 'Report must expose the latest focused launch-readiness report suite phase as current evidence.');
+    assertContains(stdout, 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES', 'Report must expose the latest focused launch-readiness suite handoff-surface phase as current evidence.');
     assertContains(stdout, 'Safe Fix Lane', 'Report must include latest safe-fix lane target matrix evidence.');
     assertContains(stdout, 'code optimization review evidence', 'Report must include latest code-optimization target matrix evidence.');
     assertContains(stdout, 'objective completion audit', 'Report must include the objective completion audit phase.');
@@ -154,14 +154,14 @@ if (failures.length === 0) {
     assert(payload.progress_digest?.proof_type === 'progress_update_digest', 'Focused JSON must include the progress update digest proof type.');
     assert(payload.progress_digest?.status === 'blocked', 'Focused progress digest must remain blocked while launch blockers remain open.');
     assert(payload.progress_digest?.update_count >= 2, 'Focused progress digest must include the latest safe-fix row and the objective-completion audit row.');
-    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE', 'Focused progress digest current phase must be the latest focused launch-readiness report suite progress ratchet.');
+    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES', 'Focused progress digest current phase must be the latest focused launch-readiness suite handoff-surface ratchet.');
     assert(payload.progress_digest?.target_matrix_count >= 5, 'Focused progress digest must include the target matrix count.');
     assert(/retained buyer artifacts|guarded deploy\/live proof/i.test(payload.progress_digest?.current_bottleneck ?? ''), 'Focused progress digest must preserve the active evidence bottleneck.');
     assert(
       Array.isArray(payload.progress_updates)
-        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE')
+        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES')
         && payload.progress_updates.some((item) => item?.phase === 'objective completion audit'),
-      'Focused progress digest must include the latest focused launch-readiness report suite phase and objective-completion audit history.',
+      'Focused progress digest must include the latest focused launch-readiness suite handoff-surface phase and objective-completion audit history.',
     );
     assert(
       targetMatrixHasLane(payload.progress_updates?.[0]?.target_matrix, 'Safe Fix Lane', (item) => (
@@ -185,7 +185,7 @@ if (failures.length === 0) {
     );
     assert(payload.activities_remaining?.proof_type === 'activities_remaining_digest', 'Focused JSON must include the activities remaining digest proof type.');
     assert(payload.activities_remaining?.status === 'blocked', 'Focused activities remaining digest must stay blocked while actions remain.');
-    assert(payload.activities_remaining?.current_phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE', 'Focused activities remaining digest must bind to the latest current phase.');
+    assert(payload.activities_remaining?.current_phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES', 'Focused activities remaining digest must bind to the latest current phase.');
     assert(payload.activities_remaining?.current_phase_action_count >= 7, 'Focused activities remaining digest must count unresolved launch action queue rows.');
     assert(payload.activities_remaining?.next_phase_action_count >= 10, 'Focused activities remaining digest must count production approval and post-deploy action rows.');
     assert(payload.activities_remaining?.completion_blocker_count >= 4, 'Focused activities remaining digest must count objective-completion blockers.');
