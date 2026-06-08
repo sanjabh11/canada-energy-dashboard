@@ -5868,6 +5868,16 @@ const releaseReadinessProofRecorderFailureFilesChanged = [
   'tests/unit/progressDigestReadiness.test.ts',
 ];
 
+const commercialReportProofPassthroughFilesChanged = [
+  'scripts/report-commercial-launch-readiness.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
 const supabaseAppLintProofRecordFilesChanged = [
   'package.json',
   'scripts/record-supabase-app-lint-proof.mjs',
@@ -6513,6 +6523,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releaseToolchainProofHandleFilesChanged,
   ...releaseReadinessProofRecordFilesChanged,
   ...releaseReadinessProofRecorderFailureFilesChanged,
+  ...commercialReportProofPassthroughFilesChanged,
   ...supabaseAppLintProofRecordFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -6997,6 +7008,18 @@ const releaseReadinessProofRecorderFailureTestsRun = [
   'pnpm run record:release-readiness-proof -- --output /tmp/ceip-release-readiness-proof-blocked.json',
   'pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof-blocked.json --skip-probes',
   'pnpm run check:progress-digest-report -- --skip-probes',
+];
+
+const commercialReportProofPassthroughTestsRun = [
+  'node --check scripts/report-commercial-launch-readiness.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:commercial-launch-readiness-report -- --release-readiness-proof /tmp/ceip-release-readiness-proof-node22.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-node22.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof-node22.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-node22.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --skip-probes',
 ];
 
 const supabaseAppLintProofRecordTestsRun = [
@@ -8821,6 +8844,19 @@ const safeFixImplementationDecisions = [
     reason: 'A missing Corepack binary currently produces a retained blocked proof file with blank stderr_tail and no error field, making the operator handoff less actionable than the already-hardened Supabase app-lint proof recorder.',
     proof_boundary: 'This record improves failed proof diagnostics only; it does not install Corepack, enable Corepack, run release-readiness successfully, clear source provenance, select branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
     stop_gate: 'Do not treat a blocked proof file, recorded spawn error, manifest validation, focused progress digest, or this code optimization record as release-readiness, production approval, deploy authorization, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
+    decision: 'Let the top-level commercial launch readiness report and checker attach retained release-readiness and Supabase app-lint proof paths to the underlying launch manifest.',
+    acceptance_check: 'check:commercial-launch-readiness-report accepts --release-readiness-proof and --supabase-app-lint-proof, forwards both paths to report:commercial-launch-readiness, and the rendered commercial report exposes the retained proof evidence while keeping launch, approval, advisor, branch, buyer, and live gates blocked.',
+    chosen_variant: 'minimal CLI pass-through and checker assertions',
+    repo_pattern_reused: 'Existing launch manifest proof-path validator, focused release/Supabase/production report pass-through pattern, commercial report manifest generation wrapper, and progress_updates current-safe-fix ledger.',
+    files_changed: commercialReportProofPassthroughFilesChanged,
+    tests_run: commercialReportProofPassthroughTestsRun,
+    proof: 'The patch forwards proof arguments from the commercial report to report-launch-evidence-manifest, forwards the same arguments through the commercial checker, and asserts attached release and app-lint proof evidence appears in the top-level Markdown report without changing launch decision semantics.',
+    reason: 'The focused release, Supabase, production, and launch-manifest reports could already attach retained proof paths, but the primary commercial launch readiness report could only generate an unproven manifest, leaving the top-level handoff stale after proof capture.',
+    proof_boundary: 'This record improves top-level report proof attachment only; it does not create proofs, install Corepack, authorize Supabase connectors, rerun Security Advisor or Performance Advisor, contact buyers, choose branch heads, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
+    stop_gate: 'Do not treat commercial report proof pass-through, attached local proofs, focused report checks, manifest validation, progress digest, or this code optimization record as Supabase advisor clearance, buyer acceptance, branch approval, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10736,6 +10772,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A bare-pnpm fallback would be easier in the current shell, but it would bypass the pinned release toolchain contract.',
     evidence: 'release_preflight.toolchain_probe_ledger and check:corepack-toolchain both state that bare pnpm diagnostics do not satisfy the Corepack resolver gate.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
+    variant: 'Leave proof attachment available only through focused reports and the launch manifest.',
+    reason_rejected: 'The commercial readiness report is the top-level handoff artifact, so leaving it stale after retained proof capture forces operators to reconcile conflicting report layers manually.',
+    tradeoff: 'No-code defer avoids a small CLI change, but it weakens the primary launch-readiness artifact and obscures proven local release/app-lint evidence.',
+    evidence: 'Focused report checks already accept --release-readiness-proof and --supabase-app-lint-proof, while check:commercial-launch-readiness-report previously rejected those options.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
+    variant: 'Auto-discover /tmp proof files from the commercial report when no paths are provided.',
+    reason_rejected: 'Implicit proof discovery would risk attaching stale or wrong-commit evidence and would blur explicit proof selection with convenience behavior.',
+    tradeoff: 'Auto-discovery would reduce command length, but explicit paths preserve proof provenance and match existing focused report contracts.',
+    evidence: 'The manifest proof validators require current commit, packageManager, source_clean, and command status checks for the explicitly supplied file.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
+    variant: 'Treat commercial report proof attachment as production approval or launch readiness.',
+    reason_rejected: 'Attached local proofs can only clear their local rows; branch review, Supabase advisor authorization, buyer evidence, owner approval, and post-deploy live proof remain separate gates.',
+    tradeoff: 'Promoting the report status would look closer to completion, but it would materially overstate readiness and violate proof-boundary discipline.',
+    evidence: 'Production approval remains blocked after both proofs attach because canonical branch review, Supabase advisor clearance, buyer evidence, owner approval, and post-deploy live proof still remain open.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10903,6 +10960,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change only enriches the existing release-readiness proof recorder and manifest proof validator with failure metadata, adds no dependency, no new artifact type, no tool installation, no release command fallback, no deploy path, and no launch-status promotion.',
     tests_or_checks: releaseReadinessProofRecorderFailureTestsRun,
     remaining_risk: 'The recorded failure remains blocker evidence only; Corepack-pinned release-readiness, branch review, Supabase advisor clearance, explicit owner approval, guarded deployment, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds only CLI proof pass-through and checker assertions to the existing commercial report wrapper, with no new dependencies, no new artifact type, no proof auto-discovery, no external-account access, no deployment path, and no launch-status promotion.',
+    tests_or_checks: commercialReportProofPassthroughTestsRun,
+    remaining_risk: 'The top-level report can now reflect attached local proofs, but branch review, Supabase advisor clearance, explicit owner approval, production deploy execution, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',

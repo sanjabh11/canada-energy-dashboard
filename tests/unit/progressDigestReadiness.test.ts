@@ -42,7 +42,7 @@ describe('progress digest readiness report', () => {
     expect(stdout).toMatch(/clear blockers[\s\S]*contact buyers[\s\S]*authorize Supabase[\s\S]*deploy[\s\S]*hosted\/live parity/i);
     expect(stdout).toContain('## Progress Summary');
     expect(stdout).toContain('## Progress Updates');
-    expect(stdout).toContain('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
+    expect(stdout).toContain('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
     expect(stdout).toContain('objective completion audit');
     expect(stdout).toContain('Safe Fix Lane');
     expect(stdout).toContain('code optimization review evidence');
@@ -85,17 +85,17 @@ describe('progress digest readiness report', () => {
     expect(payload.progress_digest.status).toBe('blocked');
     expect(payload.progress_digest.proof_type).toBe('progress_update_digest');
     expect(payload.progress_digest.update_count).toBeGreaterThanOrEqual(2);
-    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
+    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
     expect(payload.progress_digest.target_matrix_count).toBeGreaterThanOrEqual(5);
     expect(payload.progress_digest.current_bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(payload.progress_updates.map((item: { phase: string }) => item.phase)).toEqual(expect.arrayContaining([
-      'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS',
+      'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
       'objective completion audit',
     ]));
 
     expect(payload.activities_remaining.status).toBe('blocked');
     expect(payload.activities_remaining.proof_type).toBe('activities_remaining_digest');
-    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
+    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
     expect(payload.activities_remaining.current_phase_action_count).toBe(payload.activities_remaining.current_phase_actions.length);
     expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(6);
     expect(payload.activities_remaining.next_phase_action_count).toBeGreaterThanOrEqual(10);

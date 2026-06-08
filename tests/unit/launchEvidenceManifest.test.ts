@@ -369,7 +369,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1456,11 +1456,11 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(82);
+    expect(manifest.implementation_decisions).toHaveLength(83);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(82);
-    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
-    expect(manifest.code_optimization_reviews.some((item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS')).toBe(true);
+    expect(manifest.code_optimization_reviews).toHaveLength(83);
+    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
+    expect(manifest.code_optimization_reviews.some((item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH')).toBe(true);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
