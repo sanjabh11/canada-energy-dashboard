@@ -88,6 +88,40 @@ function writeReleaseReadinessProof(root: string) {
   return proofPath;
 }
 
+function writeSupabaseAppLintProof(root: string) {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  const proofPath = path.join(root, 'supabase-app-lint-proof.json');
+  writeFileSync(proofPath, `${JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-supabase-app-lint-proof.mjs',
+    generated_at: '2026-06-09T00:00:00.000Z',
+    started_at: '2026-06-09T00:00:00.000Z',
+    command: 'corepack pnpm run check:supabase-app-lint',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo: {
+      name: pkg.name,
+      path: process.cwd(),
+      branch: gitText(['branch', '--show-current']),
+      commit: gitText(['rev-parse', '--short', 'HEAD']),
+      package_manager: pkg.packageManager,
+    },
+    source_clean: true,
+    total_lint_rows: 14,
+    extension_owned_rows: 14,
+    extension_owned_issues: 37,
+    app_owned_rows: 0,
+    app_owned_issues: 0,
+    extension_owned_functions: ['public.addauth', 'public.postgis_full_version'],
+    stdout_tail: 'Supabase app lint check passed: no app-owned lint findings remain.',
+    stderr_tail: '',
+    proof_boundary: 'This fixture records local Supabase app lint only; it does not authorize Supabase connectors or production approval.',
+    stop_gate: 'Do not treat this fixture as Supabase advisor clearance.',
+  }, null, 2)}\n`);
+  return proofPath;
+}
+
 afterEach(() => {
   while (tempRoots.length > 0) {
     const root = tempRoots.pop();
@@ -125,6 +159,44 @@ describe('launch evidence manifest report', () => {
     expect(manifest.production_approval.explicit_owner_approval).toBe(false);
     expect(manifest.production_approval.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
+  it('accepts a retained Supabase app-lint proof record without clearing advisor or production gates', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeSupabaseAppLintProof(tempRoot);
+    const stdout = runManifest(['--skip-probes', '--supabase-app-lint-proof', proofPath]);
+    const manifest = JSON.parse(stdout);
+    const supabaseRowsByRequirement = mapBy(
+      manifest.supabase_advisor.clearance_deficits.items,
+      (item: { requirement: string; status: string; current?: string }) => item.requirement,
+    );
+    const remediationRequirements = manifest.supabase_advisor.clearance_deficits.remediation_queue.items.map(
+      (item: { requirement: string }) => item.requirement,
+    );
+    const productionRowsByPrerequisite = mapBy(
+      manifest.production_approval.request_packet.items,
+      (item: { prerequisite: string; status: string; blocks_request: boolean }) => item.prerequisite,
+    );
+
+    expect(manifest.supabase_advisor.cli_app_lint_status).toBe('verified');
+    expect(manifest.supabase_advisor.supabase_app_lint_proof.status).toBe('pass');
+    expect(manifest.supabase_advisor.supabase_app_lint_proof.app_owned_rows).toBe(0);
+    expect(supabaseRowsByRequirement.get('CLI app lint freshness')?.status).toBe('pass');
+    expect(manifest.supabase_advisor.clearance_deficits.open_count).toBe(5);
+    expect(manifest.supabase_advisor.clearance_deficits.status).toBe('needs_remediation');
+    expect(remediationRequirements).not.toContain('CLI app lint freshness');
+    expect(remediationRequirements).toEqual([
+      'Connector project authorization',
+      'Security advisor evidence',
+      'Performance advisor evidence',
+      'Public-safe findings record',
+      'Advisor clearance claim',
+    ]);
+    expect(manifest.supabase_advisor.operator_handoff_packet.items.map((item: { requirement: string }) => item.requirement)).not.toContain('CLI app lint freshness');
+    expect(productionRowsByPrerequisite.get('Supabase advisor clearance')?.status).toBe('blocked');
+    expect(productionRowsByPrerequisite.get('Supabase advisor clearance')?.blocks_request).toBe(true);
+    expect(manifest.production_approval.status).toBe('blocked');
+    expect(manifest.launch_decision).toBe('blocked');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('emits a conservative blocked launch-evidence manifest that passes the orchestrator schema validator', () => {
@@ -243,7 +315,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORD');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SUPABASE-APP-LINT-PROOF-RECORD');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1330,9 +1402,9 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(80);
+    expect(manifest.implementation_decisions).toHaveLength(81);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(80);
+    expect(manifest.code_optimization_reviews).toHaveLength(81);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );

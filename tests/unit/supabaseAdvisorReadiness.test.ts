@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,6 +13,49 @@ function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-supabase-advisor-'));
   tempRoots.push(root);
   return root;
+}
+
+function gitText(args: string[]) {
+  return execFileSync('git', args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: process.env,
+    timeout,
+  }).trim();
+}
+
+function writeSupabaseAppLintProof(root: string) {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  const proofPath = path.join(root, 'supabase-app-lint-proof.json');
+  writeFileSync(proofPath, `${JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-supabase-app-lint-proof.mjs',
+    generated_at: '2026-06-09T00:00:00.000Z',
+    started_at: '2026-06-09T00:00:00.000Z',
+    command: 'corepack pnpm run check:supabase-app-lint',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo: {
+      name: pkg.name,
+      path: process.cwd(),
+      branch: gitText(['branch', '--show-current']),
+      commit: gitText(['rev-parse', '--short', 'HEAD']),
+      package_manager: pkg.packageManager,
+    },
+    source_clean: true,
+    total_lint_rows: 14,
+    extension_owned_rows: 14,
+    extension_owned_issues: 37,
+    app_owned_rows: 0,
+    app_owned_issues: 0,
+    extension_owned_functions: ['public.addauth', 'public.postgis_full_version'],
+    stdout_tail: 'Supabase app lint check passed: no app-owned lint findings remain.',
+    stderr_tail: '',
+    proof_boundary: 'This fixture records local Supabase app lint only; it does not authorize Supabase connectors or production approval.',
+    stop_gate: 'Do not treat this fixture as Supabase advisor clearance.',
+  }, null, 2)}\n`);
+  return proofPath;
 }
 
 afterEach(() => {
@@ -178,6 +221,47 @@ describe('Supabase advisor readiness report', () => {
 
     expect(stdout).toContain('Supabase advisor readiness report check passed');
     expect(stdout).toContain('operator handoff packet');
+  });
+
+  it('accepts a retained Supabase app-lint proof without clearing advisor clearance', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeSupabaseAppLintProof(tempRoot);
+    const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--supabase-app-lint-proof', proofPath, '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    const payload = JSON.parse(stdout);
+    const deficitRowsByRequirement = new Map<string, { status: string; current: string }>(
+      payload.supabase_advisor.clearance_deficits.items.map((item: { requirement: string; status: string; current: string }) => [item.requirement, item]),
+    );
+    const remediationRequirements = payload.supabase_advisor.clearance_deficits.remediation_queue.items.map(
+      (item: { requirement: string }) => item.requirement,
+    );
+    const operatorRequirements = payload.supabase_advisor.operator_handoff_packet.items.map(
+      (item: { requirement: string }) => item.requirement,
+    );
+
+    expect(payload.supabase_advisor.cli_app_lint_status).toBe('verified');
+    expect(payload.supabase_advisor.supabase_app_lint_proof.status).toBe('pass');
+    expect(payload.supabase_advisor.supabase_app_lint_proof.app_owned_rows).toBe(0);
+    expect(payload.supabase_advisor.clearance_deficits.status).toBe('needs_remediation');
+    expect(payload.supabase_advisor.clearance_deficits.open_count).toBe(5);
+    expect(deficitRowsByRequirement.get('CLI app lint freshness')?.status).toBe('pass');
+    expect(deficitRowsByRequirement.get('CLI app lint freshness')?.current).toContain('app_owned_rows=0');
+    expect(remediationRequirements).not.toContain('CLI app lint freshness');
+    expect(remediationRequirements).toEqual([
+      'Connector project authorization',
+      'Security advisor evidence',
+      'Performance advisor evidence',
+      'Public-safe findings record',
+      'Advisor clearance claim',
+    ]);
+    expect(operatorRequirements).not.toContain('CLI app lint freshness');
+    expect(payload.supabase_advisor.operator_handoff_packet.status).toBe('blocked');
+    expect(payload.production_approval_advisor_prerequisite.status).toBe('blocked');
+    expect(payload.production_approval_advisor_prerequisite.current).toContain('5 Supabase advisor clearance deficit(s) remain');
   });
 
   it('can fail as a machine advisor gate when clearance blockers remain', () => {

@@ -84,6 +84,40 @@ function writeReleaseReadinessProof(root: string) {
   return proofPath;
 }
 
+function writeSupabaseAppLintProof(root: string) {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  const proofPath = path.join(root, 'supabase-app-lint-proof.json');
+  writeFileSync(proofPath, `${JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-supabase-app-lint-proof.mjs',
+    generated_at: '2026-06-09T00:00:00.000Z',
+    started_at: '2026-06-09T00:00:00.000Z',
+    command: 'corepack pnpm run check:supabase-app-lint',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo: {
+      name: pkg.name,
+      path: process.cwd(),
+      branch: gitText(['branch', '--show-current']),
+      commit: gitText(['rev-parse', '--short', 'HEAD']),
+      package_manager: pkg.packageManager,
+    },
+    source_clean: true,
+    total_lint_rows: 14,
+    extension_owned_rows: 14,
+    extension_owned_issues: 37,
+    app_owned_rows: 0,
+    app_owned_issues: 0,
+    extension_owned_functions: ['public.addauth', 'public.postgis_full_version'],
+    stdout_tail: 'Supabase app lint check passed: no app-owned lint findings remain.',
+    stderr_tail: '',
+    proof_boundary: 'This fixture records local Supabase app lint only; it does not authorize Supabase connectors or production approval.',
+    stop_gate: 'Do not treat this fixture as Supabase advisor clearance.',
+  }, null, 2)}\n`);
+  return proofPath;
+}
+
 afterEach(() => {
   while (tempRoots.length > 0) {
     const root = tempRoots.pop();
@@ -298,6 +332,37 @@ describe('production approval readiness report', () => {
     }
     expect(requestRows.get('Canonical branch review')?.blocks_request).toBe(true);
     expect(requestRows.get('Supabase advisor clearance')?.blocks_request).toBe(true);
+    expect(requestRows.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    expect(requestRows.get('Post-deploy live proof boundary')?.status).toBe('blocked');
+  });
+
+  it('accepts a current Supabase app-lint proof without clearing production approval', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeSupabaseAppLintProof(tempRoot);
+    const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--supabase-app-lint-proof', proofPath, '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    const payload = JSON.parse(stdout);
+    const prerequisiteRows = new Map<string, { current: string; status: string }>(
+      payload.production_approval.prerequisite_queue.items.map((item: { prerequisite: string; current: string; status: string }) => [item.prerequisite, item]),
+    );
+    const requestRows = new Map<string, ProductionApprovalRequestRow>(payload.production_approval.request_packet.items.map((item: ProductionApprovalRequestRow) => [
+      item.prerequisite,
+      item,
+    ]));
+
+    expect(payload.production_approval.status).toBe('blocked');
+    expect(payload.production_approval.explicit_owner_approval).toBe(false);
+    expect(payload.production_approval.request_packet.request_eligible).toBe(false);
+    expect(payload.package_script_handles.record_supabase_app_lint_proof).toContain('record:supabase-app-lint-proof');
+    expect(prerequisiteRows.get('Supabase advisor clearance')?.current).toContain('5 Supabase advisor clearance deficit(s) remain');
+    expect(prerequisiteRows.get('Supabase advisor clearance')?.status).toBe('blocked');
+    expect(requestRows.get('Supabase advisor clearance')?.status).toBe('blocked');
+    expect(requestRows.get('Supabase advisor clearance')?.blocks_request).toBe(true);
+    expect(requestRows.get('Canonical branch review')?.blocks_request).toBe(true);
     expect(requestRows.get('Explicit owner production approval')?.status).toBe('manual_stop');
     expect(requestRows.get('Post-deploy live proof boundary')?.status).toBe('blocked');
   });
