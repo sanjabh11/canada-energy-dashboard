@@ -177,6 +177,63 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).not.toContain('already-merged');
   }, gitBackedTestTimeoutMs);
 
+  it('emits machine-readable JSON with the same read-only branch review contract', () => {
+    const root = createRepo();
+    const result = runReport(root, ['--json']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    const payload = JSON.parse(result.stdout);
+
+    expect(payload.schema_version).toBe(1);
+    expect(payload.base_ref).toBe('main');
+    expect(payload.scope).toBe('local branches plus origin remote branches');
+    expect(payload.counts).toMatchObject({
+      local: 2,
+      remote: 2,
+      high: 3,
+      medium: 0,
+      low: 1,
+    });
+    expect(payload.decision_boundary.join(' ')).toMatch(/read-only.*does not merge/i);
+    expect(payload.branches.map((branch: { name: string }) => branch.name)).toEqual(expect.arrayContaining([
+      'export-risk',
+      'docs-only',
+      'origin/export-risk',
+      'origin/stripe-remote',
+    ]));
+    expect(payload.branches.find((branch: { name: string }) => branch.name === 'export-risk')).toMatchObject({
+      scope: 'local',
+      risk: 'high',
+      ahead: 2,
+      behind: 0,
+    });
+    expect(payload.branches.find((branch: { name: string; categories: string[] }) => branch.name === 'export-risk').categories).toEqual(expect.arrayContaining([
+      'edge-function-copy',
+      'payment/entitlement',
+      'production/deploy',
+      'supabase/database',
+    ]));
+    expect(payload.branch_families.find((family: { family: string }) => family.family === 'export-risk')).toMatchObject({
+      highest_risk: 'high',
+      local_origin_state: 'local ahead of origin by 1 commit(s)',
+    });
+    expect(payload.branch_freshness.find((row: { branch: string }) => row.branch === 'export-risk')).toMatchObject({
+      risk: 'high',
+      freshness: 'stale',
+    });
+    expect(payload.review_queue[0]).toMatchObject({
+      family: 'export-risk',
+      review_ref: 'export-risk',
+      priority: 'review_first_high_stale',
+      read_only: true,
+    });
+    expect(payload.review_queue[0].review_command).toContain('corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk');
+    expect(payload.focused_review_packets).toEqual([]);
+    expect(payload.proof_boundary).toMatch(/does not checkout, merge, push, discard/i);
+    expect(payload.stop_gate).toMatch(/Do not treat this JSON payload/i);
+  }, gitBackedTestTimeoutMs);
+
   it('can scope the report to local branches and fail on high-risk review queues', () => {
     const root = createRepo();
     const localOnly = runReport(root, ['--local-only']);

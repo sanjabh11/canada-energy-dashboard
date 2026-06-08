@@ -8,6 +8,7 @@ const values = new Map();
 const failures = [];
 let localOnly = false;
 let failOnHighRisk = false;
+let jsonOutput = false;
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -18,6 +19,10 @@ for (let index = 0; index < args.length; index += 1) {
   }
   if (arg === '--fail-on-high-risk') {
     failOnHighRisk = true;
+    continue;
+  }
+  if (arg === '--json') {
+    jsonOutput = true;
     continue;
   }
   if (arg.startsWith('--')) {
@@ -63,6 +68,7 @@ Options:
   --focus-risk <risk>    Print focused review packets for branches with risk high, medium, low, or all.
   --max-files <count>    Max changed paths shown per branch. Defaults to 8.
   --local-only           Inspect local branches only.
+  --json                 Emit a machine-readable read-only review payload.
   --fail-on-high-risk    Exit nonzero when any unmerged branch touches high-risk surfaces.
 `);
 }
@@ -684,6 +690,86 @@ function freshnessRows(branchList) {
     });
 }
 
+function branchJson(branch) {
+  return {
+    name: branch.name,
+    scope: branch.scope,
+    sha: branch.sha,
+    date: branch.date,
+    subject: branch.subject,
+    risk: branch.risk,
+    ahead: branch.ahead,
+    behind: branch.behind,
+    categories: branch.categories,
+    stats: branch.stats,
+    changed_paths: branch.files,
+    action: branch.action,
+  };
+}
+
+function familyJson(family) {
+  return {
+    family: family.canonicalName,
+    refs: refNamesFromFamilyRefs(family.refs),
+    refs_summary: family.refs,
+    highest_risk: family.highestRisk,
+    local_origin_state: family.state,
+    review_action: family.action,
+  };
+}
+
+function freshnessJson(row) {
+  return {
+    branch: row.branch.name,
+    scope: row.branch.scope,
+    risk: row.branch.risk,
+    latest_commit_date: row.branch.date || 'unknown',
+    age: row.freshness.ageLabel,
+    freshness: row.freshness.status,
+    stale_merge_action: row.freshness.action,
+  };
+}
+
+function reviewQueueJson(row, index) {
+  return {
+    rank: index + 1,
+    family: row.family,
+    review_ref: row.reviewRef,
+    priority: row.priority,
+    highest_risk: row.highestRisk,
+    family_state: row.familyState,
+    freshness: row.freshness,
+    reason: row.reason,
+    review_command: row.command,
+    stop_gate: row.stopGate,
+    read_only: true,
+  };
+}
+
+function focusedPlanJson(branch) {
+  return {
+    branch: branch.name,
+    risk: branch.risk,
+    categories: branch.categories,
+    review_command: focusedReviewCommand(branch),
+    merge_stance: branch.action,
+    confidence_boundary: 'This focused plan can make the branch reviewable, but it does not create buyer evidence or production approval.',
+    review_plans: focusedReviewPlans(branch).map((plan) => ({
+      area: plan.category,
+      review_focus: plan.reviewFocus,
+      suggested_checks: plan.checks,
+      stop_gate: plan.gate,
+    })),
+    changed_supabase_functions: focusedFunctionReviewRows(branch).map((row) => ({
+      function: row.functionName,
+      changed_paths: row.changedPaths,
+      review_focus: row.reviewFocus,
+      suggested_checks: row.checks,
+      stop_gate: row.gate,
+    })),
+  };
+}
+
 if (selectedBranchName && !shellSafeRef(selectedBranchName)) {
   failures.push('--branch must be a safe Git ref containing only letters, numbers, "_", ".", "/", "@", ":", or "-".');
 }
@@ -765,9 +851,47 @@ const counts = {
   medium: branches.filter((branch) => branch.risk === 'medium').length,
   low: branches.filter((branch) => branch.risk === 'low').length,
 };
+const familySourceBranches = selectedBranch ? allBranches.filter((branch) => canonicalBranchName(branch.name) === canonicalBranchName(selectedBranch.name)) : branches;
+const familyRows = branchFamilyRows(familySourceBranches);
+const branchFreshnessRows = freshnessRows(branches);
+const queueFreshnessRows = selectedBranch ? freshnessRows(familySourceBranches) : branchFreshnessRows;
+const reviewQueueRows = branchReviewQueueRows(familyRows, queueFreshnessRows);
+const generatedAt = new Date().toISOString();
+
+if (jsonOutput) {
+  const focusedBranches = selectedBranch
+    ? [selectedBranch]
+    : branchesForFocusedRisk(branches);
+  const payload = {
+    schema_version: 1,
+    generated_at: generatedAt,
+    base_ref: baseRef,
+    scope: localOnly ? 'local branches only' : 'local branches plus origin remote branches',
+    selected_branch: selectedBranchName || null,
+    focus_risk: focusRisk || null,
+    decision_boundary: [
+      'This report is read-only: it does not merge, checkout, deploy, run migrations, contact buyers, or mutate branch state.',
+      'High-risk unmerged branches are review queues, not launch evidence and not production approval.',
+      'Buyer-proven market confidence still requires the filled buyer register and retained redacted artifacts to pass the Phase F gate.',
+    ],
+    counts,
+    branches: branches.map(branchJson),
+    branch_families: familyRows.map(familyJson),
+    branch_freshness: branchFreshnessRows.map(freshnessJson),
+    review_queue: reviewQueueRows.map(reviewQueueJson),
+    focused_review_packets: focusedBranches.map(focusedPlanJson),
+    package_script_handles: packageScriptHandles,
+    proof_boundary: 'Machine-readable unmerged branch review evidence only; this JSON does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, create launch evidence, create buyer proof, grant production approval, or prove hosted/live parity.',
+    stop_gate: 'Do not treat this JSON payload, branch inventory, review queue, focused packet, or check pass as branch approval, canonical-head owner selection, merge approval, release readiness, production approval, commercial-ready status, or hosted/live parity.',
+  };
+
+  console.log(JSON.stringify(payload, null, 2));
+  if (failOnHighRisk && counts.high > 0) process.exit(1);
+  process.exit(0);
+}
 
 console.log('# CEIP Unmerged Branch Readiness Report');
-console.log(`Generated: ${new Date().toISOString()}`);
+console.log(`Generated: ${generatedAt}`);
 console.log(`Base ref: ${baseRef}`);
 console.log(`Scope: ${localOnly ? 'local branches only' : 'local branches plus origin remote branches'}`);
 if (selectedBranchName) console.log(`Focused branch: ${selectedBranchName}`);
@@ -801,12 +925,6 @@ if (branches.length === 0) {
     );
   }
 }
-
-const familySourceBranches = selectedBranch ? allBranches.filter((branch) => canonicalBranchName(branch.name) === canonicalBranchName(selectedBranch.name)) : branches;
-const familyRows = branchFamilyRows(familySourceBranches);
-const branchFreshnessRows = freshnessRows(branches);
-const queueFreshnessRows = selectedBranch ? freshnessRows(familySourceBranches) : branchFreshnessRows;
-const reviewQueueRows = branchReviewQueueRows(familyRows, queueFreshnessRows);
 
 console.log('');
 console.log('## Next Review Order');

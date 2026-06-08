@@ -143,6 +143,33 @@ const lowCount = summaryCount(report, 'Low-risk branches');
 const totalCount = highCount + mediumCount + lowCount;
 assert(totalCount === localCount + remoteCount, `Risk counts (${totalCount}) do not match scope counts (${localCount + remoteCount}).`);
 
+const jsonResult = runReport(['--max-files', String(maxFiles), '--json']);
+assert(jsonResult.status === 0, `JSON report exited ${jsonResult.status}; stderr=${jsonResult.stderr}; error=${jsonResult.error}`);
+let jsonPayload = null;
+try {
+  jsonPayload = JSON.parse(jsonResult.stdout);
+} catch (error) {
+  failures.push(`JSON report did not emit parseable JSON: ${error.message}`);
+}
+
+if (jsonPayload) {
+  assert(jsonPayload.schema_version === 1, 'JSON report schema_version must be 1.');
+  assert(jsonPayload.base_ref === 'main', 'JSON report must default base_ref to main.');
+  assert(jsonPayload.counts?.local === localCount, 'JSON local branch count must match Markdown summary.');
+  assert(jsonPayload.counts?.remote === remoteCount, 'JSON origin branch count must match Markdown summary.');
+  assert(jsonPayload.counts?.high === highCount, 'JSON high-risk count must match Markdown summary.');
+  assert(jsonPayload.counts?.medium === mediumCount, 'JSON medium-risk count must match Markdown summary.');
+  assert(jsonPayload.counts?.low === lowCount, 'JSON low-risk count must match Markdown summary.');
+  assert(Array.isArray(jsonPayload.decision_boundary) && jsonPayload.decision_boundary.some((item) => /read-only/i.test(item)), 'JSON decision boundary must preserve read-only semantics.');
+  assert(Array.isArray(jsonPayload.branches) && jsonPayload.branches.length === totalCount, 'JSON branches must match total risk count.');
+  assert(Array.isArray(jsonPayload.branch_families), 'JSON report must expose branch family rows.');
+  assert(Array.isArray(jsonPayload.branch_freshness), 'JSON report must expose branch freshness rows.');
+  assert(Array.isArray(jsonPayload.review_queue), 'JSON report must expose branch review queue rows.');
+  assert(Array.isArray(jsonPayload.focused_review_packets), 'JSON report must expose focused_review_packets.');
+  assert(/does not checkout, merge, push, discard/i.test(jsonPayload.proof_boundary ?? ''), 'JSON proof boundary must preserve no-branch-mutation semantics.');
+  assert(/not treat this JSON payload/i.test(jsonPayload.stop_gate ?? ''), 'JSON stop gate must reject approval claims from JSON output.');
+}
+
 const branchRows = parseBranchRows(report);
 if (totalCount === 0) {
   assertContains('Default report', report, 'No unmerged branches were found for the selected scope.');
