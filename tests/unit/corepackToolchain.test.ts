@@ -57,7 +57,9 @@ describe('Corepack toolchain check', () => {
     );
 
     try {
-      const result = await runToolchainCheck(tempDir);
+      const result = await runToolchainCheck(tempDir, {
+        CEIP_NODE_VERSION_FOR_COREPACK_DIAGNOSTIC: 'v25.6.1',
+      });
 
       expect(result.status).toBe(1);
       expect(result.stdout).toBe('');
@@ -69,6 +71,8 @@ describe('Corepack toolchain check', () => {
       expect(result.stderr).toContain('- Current PATH corepack: missing.');
       expect(result.stderr).toContain(`- Current PATH pnpm: ${fakePnpmPath}; bare pnpm 10.23.0 matches packageManager pin; bare pnpm does not satisfy Corepack.`);
       expect(result.stderr).toContain('- Current PATH git-lfs: missing;');
+      expect(result.stderr).toContain('- Current Node.js: v25.6.1; Node.js 25+ no longer distributes bundled Corepack');
+      expect(result.stderr).toContain('use an approved standalone Corepack install or a Corepack-enabled Node 22/24 release shell');
       expect(result.stderr).toContain('local pnpm and git-lfs diagnostics are shell context only');
       expect(result.stderr).toContain('Raw error: spawnSync corepack ENOENT');
     } finally {

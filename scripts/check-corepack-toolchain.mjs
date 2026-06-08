@@ -118,6 +118,30 @@ function currentPathDirectories() {
   return new Set(splitPathList(process.env.PATH));
 }
 
+function nodeVersionForDiagnostic() {
+  return String(process.env.CEIP_NODE_VERSION_FOR_COREPACK_DIAGNOSTIC || process.version || 'unknown');
+}
+
+function nodeMajorVersion(version) {
+  const match = String(version).match(/^v?(\d+)/);
+  return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function nodeCorepackDiagnostic() {
+  const version = nodeVersionForDiagnostic();
+  const major = nodeMajorVersion(version);
+  if (major !== null && major >= 25) {
+    return [
+      `- Current Node.js: ${version}; Node.js 25+ no longer distributes bundled Corepack, so this shell needs standalone Corepack or a Corepack-enabled Node LTS release.`,
+      '- Corepack remediation: use an approved standalone Corepack install or a Corepack-enabled Node 22/24 release shell, then rerun corepack pnpm --version; do not use repo-local shims or bare pnpm as release evidence.',
+    ];
+  }
+  return [
+    `- Current Node.js: ${version}; Corepack may still need to be enabled or exposed on PATH before this release shell can prove the pinned pnpm resolver.`,
+    '- Corepack remediation: expose a real Corepack executable on PATH and rerun corepack pnpm --version; do not use repo-local shims or bare pnpm as release evidence.',
+  ];
+}
+
 function corepackCandidatePaths() {
   const candidates = new Set();
   const explicitDirs = splitPathList(process.env.CEIP_COREPACK_CANDIDATE_DIRS);
@@ -207,6 +231,7 @@ function currentPathToolchainDiagnostic() {
     `- Current PATH corepack: ${commandPath('corepack')}.`,
     `- Current PATH pnpm: ${commandPath('pnpm')}; ${barePnpmCurrent}.`,
     `- Current PATH git-lfs: ${commandPath('git-lfs')}; ${gitLfsCurrent}.`,
+    ...nodeCorepackDiagnostic(),
     ...corepackCandidateDiagnostics(expectedPnpmVersion),
     '- Boundary: local pnpm and git-lfs diagnostics are shell context only; they do not satisfy the Corepack resolver gate, run release-readiness, clear source provenance, push, deploy, or grant production approval.',
   ];
