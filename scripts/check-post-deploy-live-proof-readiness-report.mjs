@@ -84,6 +84,9 @@ if (failures.length === 0) {
     assertContains(stdout, 'Current source live-proven:', 'Report must include current-source live proof status.');
     assertContains(stdout, '## Decision Boundary', 'Report must include a decision-boundary section.');
     assertContains(stdout, 'does not grant owner approval, deploy, push, rebuild, mutate Netlify', 'Report must preserve no-approval and no-live-mutation boundaries.');
+    assertContains(stdout, '## Current Live Probe Snapshot', 'Report must include the optional current live probe snapshot section.');
+    assertContains(stdout, 'use --include-live-probes', 'Report must explain how to attach current hosted probe evidence.');
+    assertContains(stdout, '| Live static dist parity | not_run | pnpm run check:live-static-parity |', 'Default report must keep live static parity as not_run until probes are explicitly requested.');
     assertContains(stdout, '## Post-Deploy Live Proof Gate Queue', 'Report must include the post-deploy live proof gate queue.');
     assertContains(stdout, '| Production approval clearance |', 'Report must include the production approval clearance row.');
     assertContains(stdout, '| Guarded production deploy completion |', 'Report must include the guarded deploy completion row.');
@@ -125,6 +128,19 @@ if (failures.length === 0) {
     assert(payload.schema_version === 1, 'Focused post-deploy live proof JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused post-deploy live proof JSON must preserve the blocked launch decision.');
     assert(postDeploy.current_source_live_proven === false, 'Focused report must not imply current source is live-proven.');
+    const currentLiveProbeSnapshot = payload.current_live_probe_snapshot ?? {};
+    const currentLiveProbeItems = currentLiveProbeSnapshot.items ?? [];
+    assert(currentLiveProbeSnapshot.status === 'not_run', 'Default current live probe snapshot must be not_run.');
+    assert(currentLiveProbeSnapshot.requested === false, 'Default current live probe snapshot must not run live probes.');
+    assert(currentLiveProbeSnapshot.proof_type === 'current_live_probe_snapshot', 'Current live probe snapshot proof_type must be set.');
+    assert(currentLiveProbeSnapshot.probe_count === 3, 'Current live probe snapshot must track three live probes.');
+    assert(currentLiveProbeItems.length === 3, 'Current live probe snapshot items must include three rows.');
+    assert(currentLiveProbeItems.map((item) => item.gate).join(',') === 'Live public metadata,Live static dist parity,Hosted proof-pack route smoke', 'Current live probe snapshot gate order must be stable.');
+    assert(currentLiveProbeItems.every((item) => item.status === 'not_run'), 'Default current live probe rows must stay not_run.');
+    assert(currentLiveProbeItems.find((item) => item.gate === 'Live static dist parity')?.command === 'pnpm run check:live-static-parity', 'Current live probe snapshot must expose the live static parity command.');
+    assert(currentLiveProbeItems.find((item) => item.gate === 'Hosted proof-pack route smoke')?.command === 'pnpm run test:browser:hosted:proof-packs', 'Current live probe snapshot must expose the hosted proof-pack smoke command.');
+    assert(/does not grant owner approval|deploy|mutate Netlify|prove hosted\/live parity/i.test(currentLiveProbeSnapshot.proof_boundary ?? ''), 'Current live probe snapshot proof_boundary must reject approval, deploy, mutation, and hosted/live parity claims.');
+    assert(/Do not claim current-source hosted parity|underlying post-deploy live gate passes/i.test(currentLiveProbeSnapshot.stop_gate ?? ''), 'Current live probe snapshot stop_gate must reject current-source hosted parity claims from skipped probes.');
     assert(typeof postDeploy.status === 'string' && postDeploy.status.length > 0, 'post_deploy_live_proof.status must be set.');
     assert(gateQueue.status === 'blocked', 'Post-deploy live proof gate queue must remain blocked before approved deploy evidence.');
     assert(gateQueue.item_count === 6, 'Post-deploy live proof gate queue must include six rows.');
@@ -234,4 +250,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Post-deploy live proof readiness report check passed: focused post-deploy gate queue, operator handoff packet, production approval rows, package-script handles, and no-live-parity boundaries are consistent.');
+console.log('Post-deploy live proof readiness report check passed: focused post-deploy gate queue, current live probe snapshot, operator handoff packet, production approval rows, package-script handles, and no-live-parity boundaries are consistent.');

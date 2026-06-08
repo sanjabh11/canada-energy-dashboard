@@ -38,6 +38,11 @@ describe('post-deploy live proof readiness report', () => {
     expect(stdout).toContain('Current source live-proven:');
     expect(stdout).toContain('Decision Boundary');
     expect(stdout).toContain('does not grant owner approval, deploy, push, rebuild, mutate Netlify');
+    expect(stdout).toContain('Current Live Probe Snapshot');
+    expect(stdout).toContain('use --include-live-probes');
+    expect(stdout).toContain('| Live public metadata | not_run | pnpm run check:live-public-metadata |');
+    expect(stdout).toContain('| Live static dist parity | not_run | pnpm run check:live-static-parity |');
+    expect(stdout).toContain('| Hosted proof-pack route smoke | not_run | pnpm run test:browser:hosted:proof-packs |');
     expect(stdout).toContain('Post-Deploy Live Proof Gate Queue');
     expect(stdout).toContain('| Production approval clearance |');
     expect(stdout).toContain('| Guarded production deploy completion |');
@@ -80,6 +85,20 @@ describe('post-deploy live proof readiness report', () => {
     expect(payload.schema_version).toBe(1);
     expect(payload.launch_decision).toBe('blocked');
     expect(payload.post_deploy_live_proof.current_source_live_proven).toBe(false);
+    expect(payload.current_live_probe_snapshot.status).toBe('not_run');
+    expect(payload.current_live_probe_snapshot.requested).toBe(false);
+    expect(payload.current_live_probe_snapshot.proof_type).toBe('current_live_probe_snapshot');
+    expect(payload.current_live_probe_snapshot.probe_count).toBe(3);
+    expect(payload.current_live_probe_snapshot.items.map((item: { gate: string }) => item.gate)).toEqual([
+      'Live public metadata',
+      'Live static dist parity',
+      'Hosted proof-pack route smoke',
+    ]);
+    expect(payload.current_live_probe_snapshot.items.every((item: { status: string }) => item.status === 'not_run')).toBe(true);
+    expect(payload.current_live_probe_snapshot.items.find((item: { gate: string }) => item.gate === 'Live static dist parity').command).toBe('pnpm run check:live-static-parity');
+    expect(payload.current_live_probe_snapshot.items.find((item: { gate: string }) => item.gate === 'Hosted proof-pack route smoke').command).toBe('pnpm run test:browser:hosted:proof-packs');
+    expect(payload.current_live_probe_snapshot.proof_boundary).toMatch(/does not run live probes|does not.*deploy|prove hosted\/live parity/i);
+    expect(payload.current_live_probe_snapshot.stop_gate).toMatch(/Do not claim current-source hosted parity|post-deploy live gate passes/i);
     expect(payload.post_deploy_live_proof.gate_queue.status).toBe('blocked');
     expect(payload.post_deploy_live_proof.gate_queue.item_count).toBe(6);
     expect(payload.post_deploy_live_proof.gate_queue.blocked_count).toBe(6);
@@ -194,6 +213,7 @@ describe('post-deploy live proof readiness report', () => {
     });
 
     expect(stdout).toContain('Post-deploy live proof readiness report check passed');
+    expect(stdout).toContain('current live probe snapshot');
     expect(stdout).toContain('operator handoff packet');
   });
 
