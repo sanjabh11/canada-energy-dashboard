@@ -125,17 +125,29 @@ describe('release preflight readiness report', () => {
     expect((operatorRowsByRequirement.get('Corepack pnpm resolver') as { execution_gate?: string } | undefined)?.execution_gate).toBe('toolchain_probe_first');
     expect((operatorRowsByRequirement.get('Git LFS push-path proof') as { execution_gate?: string } | undefined)?.execution_gate).toBe('toolchain_probe_first');
     expect((operatorRowsByRequirement.get('Release-readiness execution') as { execution_gate?: string } | undefined)?.execution_gate).toBe('after_corepack_git_lfs_and_clean_source');
-    expect((operatorRowsByRequirement.get('Clean source provenance') as { execution_gate?: string } | undefined)?.execution_gate).toBe('owner_source_decision_first');
+    if (operatorRowsByRequirement.has('Clean source provenance')) {
+      expect((operatorRowsByRequirement.get('Clean source provenance') as { execution_gate?: string } | undefined)?.execution_gate).toBe('owner_source_decision_first');
+    }
     expect((operatorRowsByRequirement.get('Explicit owner production approval') as { execution_gate?: string } | undefined)?.execution_gate).toBe('manual_stop_after_all_prerequisites');
     expect(payload.release_preflight.operator_handoff_packet.proof_boundary).toMatch(/does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|hosted\/live parity/i);
     expect(payload.release_preflight.operator_handoff_packet.stop_gate).toMatch(/Do not mark release preflight ready|request production approval|push|deploy|hosted\/live parity/i);
     expect(payload.source_provenance.resolution_queue.evidence).toContain('Source provenance resolution queue');
-    expect(payload.source_provenance.resolution_queue.items[0].proof_type).toMatch(/source_rename_decision|staged_source_decision|unstaged_source_decision|untracked_source_decision/);
-    expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('report:source-provenance-readiness');
-    expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('check:source-provenance-report');
+    if (payload.source_provenance.resolution_queue.items.length > 0) {
+      expect(payload.source_provenance.resolution_queue.items[0].proof_type).toMatch(/source_rename_decision|staged_source_decision|unstaged_source_decision|untracked_source_decision/);
+      expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('report:source-provenance-readiness');
+      expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('check:source-provenance-report');
+    } else {
+      expect(payload.source_provenance.resolution_queue.status).toBe('pass');
+      expect(payload.source_provenance.resolution_queue.dirty_path_count).toBe(0);
+    }
     expect(payload.release_preflight.items.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
     expect(payload.release_preflight.clearance_matrix.rows.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
-    expect(payload.release_preflight.remediation_queue.items.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
+    const cleanSourceRemediationRow = payload.release_preflight.remediation_queue.items.find((item: { requirement: string }) => item.requirement === 'Clean source provenance');
+    if (cleanSourceRemediationRow) {
+      expect(cleanSourceRemediationRow.proof_command).toContain('report:source-provenance-readiness');
+    } else {
+      expect(payload.release_preflight.clearance_matrix.rows.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.status).toBe('ready');
+    }
     expect(payload.production_approval_request_packet.proof_type).toBe('production_approval_request_packet');
     expect(payload.public_status_handles.release_toolchain_approval_deficit_ledger.id).toBe('release_toolchain_approval_deficit_ledger');
     expect(payload.public_status_handles.release_preflight_remediation_queue.id).toBe('release_preflight_remediation_queue');

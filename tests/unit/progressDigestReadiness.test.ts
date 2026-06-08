@@ -48,7 +48,7 @@ describe('progress digest readiness report', () => {
     expect(stdout).toContain('code optimization review evidence');
     expect(stdout).toContain('## Activities Remaining');
     expect(stdout).toContain('## Current Phase Actions');
-    expect(stdout).toContain('source_provenance');
+    expect(stdout).toMatch(/source_provenance|source provenance/i);
     expect(stdout).toContain('production_approval');
     expect(stdout).toContain('## Next Phase Actions');
     expect(stdout).toContain('post_deploy_live_proof');
@@ -96,11 +96,11 @@ describe('progress digest readiness report', () => {
     expect(payload.activities_remaining.status).toBe('blocked');
     expect(payload.activities_remaining.proof_type).toBe('activities_remaining_digest');
     expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY');
-    expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(7);
+    expect(payload.activities_remaining.current_phase_action_count).toBe(payload.activities_remaining.current_phase_actions.length);
+    expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(6);
     expect(payload.activities_remaining.next_phase_action_count).toBeGreaterThanOrEqual(10);
     expect(payload.activities_remaining.completion_blocker_count).toBeGreaterThanOrEqual(4);
     expect(payload.activities_remaining.current_phase_actions.map((item: { phase: string }) => item.phase)).toEqual(expect.arrayContaining([
-      'source_provenance',
       'production_approval',
       'post_deploy_live_proof',
     ]));

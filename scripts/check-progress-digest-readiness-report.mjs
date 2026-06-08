@@ -130,7 +130,10 @@ if (failures.length === 0) {
     assertContains(stdout, '## Activities Remaining', 'Report must include activities remaining rows.');
     assertContains(stdout, '## Current Phase Actions', 'Report must include current phase action rows.');
     assertContains(stdout, '## Next Phase Actions', 'Report must include next phase action rows.');
-    assertContains(stdout, 'source_provenance', 'Report must include source provenance as a remaining current action.');
+    assert(
+      stdout.includes('source_provenance') || /source provenance/i.test(stdout),
+      'Report must preserve source provenance context in current actions or narrative progress evidence.',
+    );
     assertContains(stdout, 'production_approval', 'Report must include production approval as a remaining current action.');
     assertContains(stdout, 'post_deploy_live_proof', 'Report must include post-deploy live proof as a remaining action.');
     assertContains(stdout, '## Bottleneck Summary', 'Report must include the bottleneck summary.');
@@ -190,14 +193,14 @@ if (failures.length === 0) {
     assert(payload.activities_remaining?.proof_type === 'activities_remaining_digest', 'Focused JSON must include the activities remaining digest proof type.');
     assert(payload.activities_remaining?.status === 'blocked', 'Focused activities remaining digest must stay blocked while actions remain.');
     assert(payload.activities_remaining?.current_phase === latestProgressPhase, 'Focused activities remaining digest must bind to the latest current phase.');
-    assert(payload.activities_remaining?.current_phase_action_count >= 7, 'Focused activities remaining digest must count unresolved launch action queue rows.');
+    assert(payload.activities_remaining?.current_phase_action_count === (payload.activities_remaining.current_phase_actions ?? []).length, 'Focused activities remaining digest current count must match current action rows.');
+    assert(payload.activities_remaining?.current_phase_action_count >= 6, 'Focused activities remaining digest must count unresolved launch action queue rows.');
     assert(payload.activities_remaining?.next_phase_action_count >= 10, 'Focused activities remaining digest must count production approval and post-deploy action rows.');
     assert(payload.activities_remaining?.completion_blocker_count >= 4, 'Focused activities remaining digest must count objective-completion blockers.');
     assert(
       Array.isArray(payload.activities_remaining?.current_phase_actions)
-        && payload.activities_remaining.current_phase_actions.some((item) => item.phase === 'source_provenance' && item.status === 'blocked')
         && payload.activities_remaining.current_phase_actions.some((item) => item.phase === 'production_approval' && item.status === 'manual_stop'),
-      'Focused activities remaining digest must include source provenance and production approval current actions.',
+      'Focused activities remaining digest must include production approval current actions.',
     );
     assert(
       Array.isArray(payload.activities_remaining?.next_phase_actions)

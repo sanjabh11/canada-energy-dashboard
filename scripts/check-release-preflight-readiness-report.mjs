@@ -202,7 +202,15 @@ if (failures.length === 0) {
     assert(payload.source_provenance?.resolution_queue, 'Focused report JSON must include source provenance resolution queue.');
     assert(/report:source-provenance-readiness/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance release preflight row must point to the focused source provenance report/check.');
     assert(/report:source-provenance-readiness/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance clearance row must point to the focused source provenance report/check.');
-    assert(/report:source-provenance-readiness/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance remediation row must point to the focused source provenance report/check.');
+    if (remediationRowsByRequirement.has('Clean source provenance')) {
+      assert(/report:source-provenance-readiness/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance remediation row must point to the focused source provenance report/check.');
+    } else {
+      assert(
+        clearanceRowsByRequirement.get('Clean source provenance')?.status === 'ready'
+          && payload.source_provenance.resolution_queue.status === 'pass',
+        'Clean source provenance remediation row may be absent only after source provenance is clean.',
+      );
+    }
     assert(payload.production_approval_request_packet?.proof_type === 'production_approval_request_packet', 'Focused report JSON must include production approval request packet.');
     assert(payload.public_status_handles?.release_toolchain_approval_deficit_ledger?.id === 'release_toolchain_approval_deficit_ledger', 'Focused JSON must include the release deficit ledger public handle.');
     assert(payload.public_status_handles?.release_preflight_remediation_queue?.id === 'release_preflight_remediation_queue', 'Focused JSON must include the release remediation queue public handle.');
