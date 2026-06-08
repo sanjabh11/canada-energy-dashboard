@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -39,6 +39,49 @@ function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-production-approval-'));
   tempRoots.push(root);
   return root;
+}
+
+function gitText(args: string[]) {
+  return execFileSync('git', args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: process.env,
+    timeout,
+  }).trim();
+}
+
+function isWorktreeClean() {
+  return gitText(['status', '--porcelain=v1']).length === 0;
+}
+
+function writeReleaseReadinessProof(root: string) {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  const proofPath = path.join(root, 'release-readiness-proof.json');
+  writeFileSync(proofPath, `${JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-release-readiness-proof.mjs',
+    generated_at: '2026-06-08T00:00:00.000Z',
+    started_at: '2026-06-08T00:00:00.000Z',
+    command: 'corepack pnpm run check:release-readiness',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo: {
+      name: pkg.name,
+      path: process.cwd(),
+      branch: gitText(['branch', '--show-current']),
+      commit: gitText(['rev-parse', '--short', 'HEAD']),
+      package_manager: pkg.packageManager,
+    },
+    source_clean: true,
+    corepack_pnpm_version: '10.23.0',
+    git_lfs_version: 'git-lfs/3.6.1',
+    stdout_tail: 'Release-readiness proof fixture.',
+    stderr_tail: '',
+    proof_boundary: 'This fixture records local release-readiness only; it does not grant owner approval or hosted/live parity.',
+    stop_gate: 'Do not treat this fixture as production approval.',
+  }, null, 2)}\n`);
+  return proofPath;
 }
 
 afterEach(() => {
@@ -222,6 +265,41 @@ describe('production approval readiness report', () => {
     expect(payload.package_script_handles.check_production_deploy_request).toBe('corepack pnpm run check:production-deploy-request');
     expect(payload.proof_boundary).toMatch(/does not grant owner approval|run deploys|clear source provenance|hosted\/live parity/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|deploy authorization|commercial-ready status/i);
+  });
+
+  it('accepts a current release-readiness proof without bypassing other production gates', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeReleaseReadinessProof(tempRoot);
+    const stdout = execFileSync(process.execPath, [reportScriptPath, '--release-readiness-proof', proofPath, '--json'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    const payload = JSON.parse(stdout);
+    const requestRows = new Map<string, ProductionApprovalRequestRow>(payload.production_approval.request_packet.items.map((item: ProductionApprovalRequestRow) => [
+      item.prerequisite,
+      item,
+    ]));
+    const corepackRow = requestRows.get('Corepack release-readiness');
+
+    expect(payload.production_approval.explicit_owner_approval).toBe(false);
+    expect(payload.production_approval.status).toBe('blocked');
+    expect(payload.production_approval.request_packet.request_eligible).toBe(false);
+    expect(payload.package_script_handles.record_release_readiness_proof).toContain('record:release-readiness-proof');
+    expect(corepackRow?.proof_command).toContain('check:release-readiness');
+    if (isWorktreeClean()) {
+      expect(corepackRow?.source_status).toBe('ready');
+      expect(corepackRow?.status).toBe('ready');
+      expect(corepackRow?.blocks_request).toBe(false);
+    } else {
+      expect(corepackRow?.status).toBe('blocked');
+      expect(corepackRow?.blocks_request).toBe(true);
+    }
+    expect(requestRows.get('Canonical branch review')?.blocks_request).toBe(true);
+    expect(requestRows.get('Supabase advisor clearance')?.blocks_request).toBe(true);
+    expect(requestRows.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    expect(requestRows.get('Post-deploy live proof boundary')?.status).toBe('blocked');
   });
 
   it('validates the focused report contract without requiring production approval to pass', () => {

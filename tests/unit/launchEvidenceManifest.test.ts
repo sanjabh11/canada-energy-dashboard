@@ -49,6 +49,45 @@ function runManifest(args: string[] = []) {
   });
 }
 
+function gitText(args: string[]) {
+  return execFileSync('git', args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: process.env,
+    timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
+  }).trim();
+}
+
+function writeReleaseReadinessProof(root: string) {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  const proofPath = path.join(root, 'release-readiness-proof.json');
+  writeFileSync(proofPath, `${JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-release-readiness-proof.mjs',
+    generated_at: '2026-06-08T00:00:00.000Z',
+    started_at: '2026-06-08T00:00:00.000Z',
+    command: 'corepack pnpm run check:release-readiness',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo: {
+      name: pkg.name,
+      path: process.cwd(),
+      branch: gitText(['branch', '--show-current']),
+      commit: gitText(['rev-parse', '--short', 'HEAD']),
+      package_manager: pkg.packageManager,
+    },
+    source_clean: true,
+    corepack_pnpm_version: '10.23.0',
+    git_lfs_version: 'git-lfs/3.6.1',
+    stdout_tail: 'Release-readiness proof fixture.',
+    stderr_tail: '',
+    proof_boundary: 'This fixture records local release-readiness only; it does not grant owner approval or hosted/live parity.',
+    stop_gate: 'Do not treat this fixture as production approval.',
+  }, null, 2)}\n`);
+  return proofPath;
+}
+
 afterEach(() => {
   while (tempRoots.length > 0) {
     const root = tempRoots.pop();
@@ -65,6 +104,27 @@ describe('launch evidence manifest report', () => {
     expect(manifest.launch_decision).toBe('blocked');
     expect(manifest.repo.name).toBe('canada-energy-dashboard');
     expect(manifest.fix_report.safe_fix_boundary).toContain('read-only unless --output is used');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
+  it('accepts a retained release-readiness proof record without granting production approval', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeReleaseReadinessProof(tempRoot);
+    const stdout = runManifest(['--release-readiness-proof', proofPath]);
+    const manifest = JSON.parse(stdout);
+    const releaseRowsByRequirement = mapBy(
+      manifest.release_preflight.items,
+      (item: { requirement: string; status?: string }) => item.requirement,
+    );
+
+    expect(manifest.release_preflight.release_readiness_proof.status).toBe('pass');
+    expect(manifest.release_preflight.release_readiness_proof.command).toBe('corepack pnpm run check:release-readiness');
+    expect(manifest.release_preflight.release_readiness_proof.exit_code).toBe(0);
+    expect(manifest.release_preflight.release_readiness_proof.proof_boundary).toMatch(/does not grant owner approval|hosted\/live parity/i);
+    expect(releaseRowsByRequirement.get('Release-readiness execution')?.status).toBe('pass');
+    expect(releaseRowsByRequirement.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    expect(manifest.production_approval.explicit_owner_approval).toBe(false);
+    expect(manifest.production_approval.status).toBe('blocked');
+    expect(manifest.post_deploy_live_proof.status).toBe('blocked');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('emits a conservative blocked launch-evidence manifest that passes the orchestrator schema validator', () => {
@@ -183,7 +243,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORD');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1270,9 +1330,9 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(79);
+    expect(manifest.implementation_decisions).toHaveLength(80);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(79);
+    expect(manifest.code_optimization_reviews).toHaveLength(80);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
