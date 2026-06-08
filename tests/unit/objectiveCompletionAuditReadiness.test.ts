@@ -73,15 +73,34 @@ describe('objective completion audit readiness report', () => {
     expect(payload.launch_decision).toBe('blocked');
     expect(payload.objective_completion_audit.status).toBe('blocked');
     expect(payload.objective_completion_audit.proof_type).toBe('completion_audit_current_state');
+    const completionItems = [
+      ...payload.deliverable_items,
+      ...payload.external_gate_items,
+      ...payload.blocker_items,
+    ];
+    const completionStatusCounts = completionItems.reduce(
+      (counts: Record<string, number>, item: { status: string }) => ({
+        ...counts,
+        [item.status]: (counts[item.status] ?? 0) + 1,
+      }),
+      {},
+    );
+    expect(payload.objective_completion_audit.total_count).toBe(completionItems.length);
     expect(payload.objective_completion_audit.total_count).toBeGreaterThanOrEqual(15);
+    expect(payload.objective_completion_audit.completed_count).toBe(completionStatusCounts.present ?? 0);
     expect(payload.objective_completion_audit.completed_count).toBeGreaterThanOrEqual(8);
-    expect(payload.objective_completion_audit.blocked_count).toBeGreaterThanOrEqual(4);
+    expect(payload.objective_completion_audit.blocked_count).toBe(completionStatusCounts.blocked ?? 0);
+    expect(payload.objective_completion_audit.blocked_count).toBeGreaterThanOrEqual(3);
+    expect(payload.objective_completion_audit.manual_stop_count).toBe(completionStatusCounts.manual_stop ?? 0);
     expect(payload.objective_completion_audit.manual_stop_count).toBeGreaterThanOrEqual(1);
+    expect(payload.objective_completion_audit.external_gate_count).toBe(completionStatusCounts.external_gate ?? 0);
     expect(payload.objective_completion_audit.goal_completion_blocked_count).toBe(
       payload.objective_completion_audit.blocked_count + payload.objective_completion_audit.manual_stop_count,
     );
 
-    expect(payload.deliverable_items.map((item: { requirement: string }) => item.requirement)).toEqual(
+    const deliverableRequirements = payload.deliverable_items.map((item: { requirement: string }) => item.requirement);
+    const blockerRequirements = payload.blocker_items.map((item: { requirement: string }) => item.requirement);
+    expect(deliverableRequirements).toEqual(
       expect.arrayContaining([
         'Launch score table',
         'Gap analysis',
@@ -101,15 +120,17 @@ describe('objective completion audit readiness report', () => {
     );
     expect(payload.external_gate_items.find((item: { requirement: string }) => item.requirement === 'Buyer evidence hard gate')?.blocks_goal_completion).toBe(false);
     expect(payload.external_gate_items.find((item: { requirement: string }) => item.requirement === 'Buyer evidence hard gate')?.next_proof_command).toContain('report:buyer-evidence-gate-readiness');
-    expect(payload.blocker_items.map((item: { requirement: string }) => item.requirement)).toEqual(
+    expect(blockerRequirements).toEqual(
       expect.arrayContaining([
-        'Source provenance release gate',
         'Branch canonical review gate',
         'Supabase advisor clearance gate',
         'Release toolchain approval gate',
         'Production approval and live proof gate',
       ]),
     );
+    expect([...deliverableRequirements, ...blockerRequirements]).toEqual(expect.arrayContaining([
+      'Source provenance release gate',
+    ]));
     expect(payload.blocker_items.every((item: { blocks_goal_completion?: boolean }) => item.blocks_goal_completion === true)).toBe(true);
     expect(payload.blocker_items.find((item: { requirement: string }) => item.requirement === 'Production approval and live proof gate')?.next_proof_command).toContain('report:post-deploy-live-proof-readiness');
     expect(payload.public_status_handle.id).toBe('objective_completion_audit');

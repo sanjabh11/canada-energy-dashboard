@@ -4898,7 +4898,10 @@ function probeUnmergedBranches() {
 }
 
 function gitStatusSummary() {
-  const short = gitText(['status', '--porcelain=v1']);
+  const statusResult = run('git', ['status', '--porcelain=v1']);
+  const short = statusResult.status === 0
+    ? String(statusResult.stdout ?? '').replace(/\r?\n$/, '')
+    : '';
   const dirtyLines = short.split(/\r?\n/).filter(Boolean);
   const dirtyDetails = dirtyLines.slice(0, 40).map(classifyDirtyPath);
   return {

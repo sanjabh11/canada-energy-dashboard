@@ -179,8 +179,14 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('## Source Provenance Resolution Queue'), 'Report must include the source provenance resolution queue table.');
   assert(markdown.includes('Source provenance resolution queue'), 'Report must include structured source-provenance resolution evidence from the manifest.');
   assert(markdown.includes('Source owner decision packet'), 'Report must include structured source owner decision packet evidence from the manifest.');
-  assert(markdown.includes('owner decision support only'), 'Report must preserve the source owner decision packet support-only boundary.');
-  assert(markdown.includes('provenance clearance, production approval request, or deploy'), 'Report must preserve the source owner decision packet no-clearance, no-approval, and no-deploy boundary.');
+  assert(
+    /owner decision support only|source-provenance decision support only|approval_gate=clean source still requires release-readiness, production approval, deploy approval, and live proof before launch/i.test(markdown),
+    'Report must preserve the source owner decision packet support-only or clean-source prerequisite boundary.',
+  );
+  assert(
+    /provenance clearance, production approval request, or deploy|approval_gate=clean source still requires release-readiness, production approval, deploy approval, and live proof before launch/i.test(markdown),
+    'Report must preserve the source owner decision packet no-clearance, no-approval, and no-deploy boundary.',
+  );
   assert(markdown.includes('This queue is a decision aid only'), 'Report must preserve the source-provenance non-execution boundary.');
   assert(markdown.includes('without explicit owner intent'), 'Report must preserve the source-provenance owner-intent stop gate.');
   assert(markdown.includes('corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report'), 'Report must include the focused source-provenance proof command.');
@@ -327,7 +333,12 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('corepack pnpm run check:live-static-parity'), 'Report must include the live static parity proof command.');
   assert(markdown.includes('corepack pnpm run test:browser:hosted:proof-packs'), 'Report must include the hosted proof-pack smoke proof command.');
   assert(markdown.includes('Source provenance:'), 'Report must include source provenance evidence from the manifest.');
-  assert(markdown.includes('staging_state='), 'Report must include staged/unstaged source provenance classification from the manifest.');
+  assert(
+    markdown.includes('staging_state=')
+      || /Source provenance:.*worktree=clean.*dirty_paths=0/i.test(markdown)
+      || /\|\s*n\/a\s*\|\s*none\s*\|\s*n\/a\s*\|\s*pass\s*\|\s*n\/a\s*\|\s*n\/a\s*\|\s*clean\s*\|/i.test(markdown),
+    'Report must include staged/unstaged or clean source provenance classification from the manifest.',
+  );
   assert(markdown.includes('Branch family review'), 'Report must include branch-family evidence from the manifest.');
   assert(markdown.includes('High-risk, local/origin split, or stale/aging unmerged branches'), 'Report must preserve the branch-family and freshness launch blocker.');
   assert(markdown.includes('Branch freshness review'), 'Report must include branch freshness evidence from the manifest.');

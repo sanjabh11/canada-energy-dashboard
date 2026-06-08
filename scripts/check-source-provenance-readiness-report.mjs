@@ -158,6 +158,16 @@ if (failures.length === 0) {
       assert(/decision support only|does not mutate source|request production approval|deploy/i.test(firstOwnerDecision.proof_boundary ?? ''), 'Source owner decision packet item proof boundary must preserve no-mutation semantics.');
       assert(/Do not treat this packet item as approval|clear source provenance/i.test(firstOwnerDecision.stop_gate ?? ''), 'Source owner decision packet item stop gate must reject approval and clearance claims.');
     }
+    for (const [index, ownerDecision] of (ownerDecisionPacket.items ?? []).entries()) {
+      if (ownerDecision.old_path || ownerDecision.staging_state === 'staged_only') {
+        const optionNames = (ownerDecision.recommended_owner_options ?? []).map((option) => option?.option);
+        assert(
+          optionNames.includes('commit_as_intentional_change')
+            && (optionNames.includes('unstage_for_later_review') || optionNames.includes('stash_or_revert_with_owner_approval')),
+          `Source owner decision packet item ${index} must include intentional commit plus non-commit owner options for staged or renamed rows.`,
+        );
+      }
+    }
     if ((isolationLedger.rows ?? []).length > 0) {
       assert(/git status --porcelain=v1/.test(isolationLedger.rows[0]?.proof_command ?? '') && /report:source-provenance-readiness/.test(isolationLedger.rows[0]?.proof_command ?? '') && /check:source-provenance-report/.test(isolationLedger.rows[0]?.proof_command ?? ''), 'Isolation ledger proof command must include git status plus the focused source provenance report/check.');
     }

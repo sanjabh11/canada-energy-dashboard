@@ -2550,10 +2550,22 @@ try {
     assert(Number.isInteger(manifest.completion_audit.external_gate_count), 'Manifest completion_audit.external_gate_count must be an integer.');
     assert(Number.isInteger(manifest.completion_audit.total_count), 'Manifest completion_audit.total_count must be an integer.');
     assert(Number.isInteger(manifest.completion_audit.goal_completion_blocked_count), 'Manifest completion_audit.goal_completion_blocked_count must be an integer.');
+    assert(Array.isArray(manifest.completion_audit.items), 'Manifest completion_audit.items must be a list.');
+    const completionAuditItems = manifest.completion_audit.items;
+    const completionStatusCounts = completionAuditItems.reduce((counts, item) => {
+      counts[item.status] = (counts[item.status] ?? 0) + 1;
+      return counts;
+    }, {});
+    assert(manifest.completion_audit.total_count === completionAuditItems.length, 'Manifest completion_audit.total_count must match audit row count.');
     assert(manifest.completion_audit.total_count >= 15, 'Manifest completion_audit must include every required deliverable and launch gate.');
+    assert(manifest.completion_audit.completed_count === (completionStatusCounts.present ?? 0), 'Manifest completion_audit.completed_count must match present rows.');
     assert(manifest.completion_audit.completed_count >= 8, 'Manifest completion_audit must count present orchestrator deliverables.');
-    assert(manifest.completion_audit.blocked_count >= 4, 'Manifest completion_audit must count unresolved blocker rows.');
+    assert(manifest.completion_audit.blocked_count === (completionStatusCounts.blocked ?? 0), 'Manifest completion_audit.blocked_count must match blocked rows.');
+    assert(manifest.completion_audit.blocked_count >= 3, 'Manifest completion_audit must count unresolved blocker rows.');
+    assert(manifest.completion_audit.manual_stop_count === (completionStatusCounts.manual_stop ?? 0), 'Manifest completion_audit.manual_stop_count must match manual-stop rows.');
     assert(manifest.completion_audit.manual_stop_count >= 1, 'Manifest completion_audit must count production/live proof manual-stop rows.');
+    assert(manifest.completion_audit.external_gate_count === (completionStatusCounts.external_gate ?? 0), 'Manifest completion_audit.external_gate_count must match external-gate rows.');
+    assert(manifest.completion_audit.external_gate_count >= 1, 'Manifest completion_audit must count external-gate rows.');
     assert(
       manifest.completion_audit.goal_completion_blocked_count === manifest.completion_audit.blocked_count + manifest.completion_audit.manual_stop_count,
       'Manifest completion_audit goal-completion blockers must equal blocked plus manual-stop rows and exclude external gates.',
@@ -2572,8 +2584,7 @@ try {
         && /Do not mark the launch goal complete|P0\/P1 blockers|production approval|post-deploy live proof/i.test(manifest.completion_audit.stop_gate),
       'Manifest completion_audit.stop_gate must preserve the no-completion rule.',
     );
-    assert(Array.isArray(manifest.completion_audit.items), 'Manifest completion_audit.items must be a list.');
-    const completionItemsByRequirement = new Map(manifest.completion_audit.items.map((item) => [item.requirement, item]));
+    const completionItemsByRequirement = new Map(completionAuditItems.map((item) => [item.requirement, item]));
     for (const requirement of [
       'Launch score table',
       'Gap analysis',
@@ -2610,7 +2621,7 @@ try {
       'Release toolchain approval gate': 'release_toolchain_approval',
       'Production approval and live proof gate': 'production_approval_and_live_proof_gate',
     };
-    for (const [index, item] of manifest.completion_audit.items.entries()) {
+    for (const [index, item] of completionAuditItems.entries()) {
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `completion_audit.items[${index}].requirement must be set.`);
       assert(['present', 'blocked', 'external_gate', 'manual_stop'].includes(item.status), `completion_audit.items[${index}].status must be present, blocked, external_gate, or manual_stop.`);
       assert(typeof item.evidence === 'string' && item.evidence.length > 0, `completion_audit.items[${index}].evidence must be set.`);

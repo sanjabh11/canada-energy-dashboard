@@ -113,14 +113,26 @@ describe('launch evidence manifest report', () => {
     expect(gapsByProofType.get('release_toolchain_approval_gap')?.stop_gate).toMatch(/Do not treat local pnpm checks|release-readiness|owner approval/i);
     expect(manifest.completion_audit.status).toBe('blocked');
     expect(manifest.completion_audit.proof_type).toBe('completion_audit_current_state');
+    const completionStatusCounts = manifest.completion_audit.items.reduce(
+      (counts: Record<string, number>, item: { status: string }) => ({
+        ...counts,
+        [item.status]: (counts[item.status] ?? 0) + 1,
+      }),
+      {},
+    );
+    expect(manifest.completion_audit.total_count).toBe(manifest.completion_audit.items.length);
     expect(manifest.completion_audit.total_count).toBeGreaterThanOrEqual(15);
+    expect(manifest.completion_audit.completed_count).toBe(completionStatusCounts.present ?? 0);
     expect(manifest.completion_audit.completed_count).toBeGreaterThanOrEqual(8);
-    expect(manifest.completion_audit.blocked_count).toBeGreaterThanOrEqual(4);
+    expect(manifest.completion_audit.blocked_count).toBe(completionStatusCounts.blocked ?? 0);
+    expect(manifest.completion_audit.blocked_count).toBeGreaterThanOrEqual(3);
+    expect(manifest.completion_audit.manual_stop_count).toBe(completionStatusCounts.manual_stop ?? 0);
     expect(manifest.completion_audit.manual_stop_count).toBeGreaterThanOrEqual(1);
     expect(manifest.completion_audit.goal_completion_blocked_count).toBe(
       manifest.completion_audit.blocked_count + manifest.completion_audit.manual_stop_count,
     );
     expect(manifest.completion_audit.proof_boundary).toMatch(/maps current manifest\/report evidence only|does not prove commercial-ready status|buyer acceptance|production approval|hosted\/live parity/i);
+    expect(manifest.completion_audit.external_gate_count).toBe(completionStatusCounts.external_gate ?? 0);
     expect(manifest.completion_audit.external_gate_count).toBeGreaterThanOrEqual(1);
     expect(manifest.completion_audit.stop_gate).toMatch(/Do not mark the launch goal complete|P0\/P1 operational blockers|post-deploy live proof/i);
     const completionItemsByRequirement = mapBy(
