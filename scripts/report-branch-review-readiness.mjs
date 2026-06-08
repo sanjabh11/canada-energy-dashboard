@@ -138,18 +138,59 @@ function findByName(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
 
-function branchMergeRecommendation(row) {
+function branchMergeRecommendation(row, packetByFamily = new Map()) {
   const state = row.local_origin_state ?? '';
   const highRisk = row.highest_risk === 'high';
   const staleOrAging = ['stale', 'aging'].includes(row.freshness);
   const reviewFirst = row.blocker_class === 'review_first';
   const canonicalDecision = row.blocker_class === 'canonical_head_decision';
+  const packet = packetByFamily.get(row.family) ?? packetByFamily.get(row.review_ref) ?? {};
+  const categories = new Set(packet.categories ?? []);
+  const changedSupabaseFunctionCount = Number.isInteger(packet.changed_supabase_function_count)
+    ? packet.changed_supabase_function_count
+    : 0;
+  const canonicalState = packet.canonical_head_comparison?.state ?? 'unknown';
+
+  const metadata = (basis) => ({
+    basis,
+    categories: [...categories],
+    canonical_state: canonicalState,
+    changed_supabase_function_count: changedSupabaseFunctionCount,
+  });
+
+  if (highRisk && categories.has('edge-function-copy')) {
+    return {
+      stance: 'do_not_wholesale_merge_retire_detached_function_copy',
+      next_decision: 'Treat this as a retirement candidate unless the configured Supabase entrypoint diff still has current value; never merge detached DEPLOY_ or -FINAL function copies.',
+      owner: 'owner',
+      ...metadata('edge-function-copy'),
+    };
+  }
+
+  if (highRisk && (categories.has('payment/entitlement') || changedSupabaseFunctionCount >= 8)) {
+    return {
+      stance: 'do_not_wholesale_merge_extract_security_slice_only',
+      next_decision: 'Keep the branch review-only; extract only a narrow entitlement, payment, or Supabase helper slice after security review, current tests, and owner approval.',
+      owner: canonicalDecision || /local-only|origin-only|ahead/i.test(state) ? 'owner' : 'operator',
+      ...metadata(categories.has('payment/entitlement') ? 'payment-entitlement' : 'large-supabase-function-surface'),
+    };
+  }
+
+  if (highRisk && categories.has('ml/training')) {
+    return {
+      stance: 'do_not_wholesale_merge_research_backlog_extract_only',
+      next_decision: 'Treat broad ML/training changes as backlog research; extract only current-source-compatible tests or model artifacts after retained metrics and release gates prove value.',
+      owner: canonicalDecision || /local-only|origin-only|ahead/i.test(state) ? 'owner' : 'operator',
+      ...metadata('ml-training-drift'),
+    };
+  }
 
   if (highRisk || reviewFirst) {
     return {
       stance: 'do_not_wholesale_merge',
       next_decision: 'Run the focused read-only branch packet, choose any canonical head first, then cherry-pick only narrow, tested changes that still matter.',
       owner: canonicalDecision || /local-only|origin-only|ahead/i.test(state) ? 'owner' : 'operator',
+      ...metadata(highRisk ? 'high-risk' : 'review-first'),
     };
   }
   if (/local-only/i.test(state)) {
@@ -157,6 +198,7 @@ function branchMergeRecommendation(row) {
       stance: 'review_or_retire_local_only',
       next_decision: 'Decide whether this local-only branch remains a candidate; retire it if the focused packet finds no current launch value.',
       owner: 'owner',
+      ...metadata('local-only'),
     };
   }
   if (/origin-only/i.test(state)) {
@@ -164,6 +206,7 @@ function branchMergeRecommendation(row) {
       stance: 'review_or_retire_origin_only',
       next_decision: 'Review the origin-only branch without checkout first; create a local branch only if the owner keeps it as a candidate.',
       owner: 'owner',
+      ...metadata('origin-only'),
     };
   }
   if (staleOrAging || canonicalDecision) {
@@ -171,19 +214,26 @@ function branchMergeRecommendation(row) {
       stance: 'drift_review_before_merge',
       next_decision: 'Refresh read-only drift review against current main before any merge discussion.',
       owner: canonicalDecision ? 'owner' : 'operator',
+      ...metadata(staleOrAging ? 'stale-or-aging' : 'canonical-decision'),
     };
   }
   return {
     stance: 'normal_review_gate',
     next_decision: 'Use normal focused review, tests, and release gates before any merge.',
     owner: 'operator',
+    ...metadata('normal-review'),
   };
 }
 
 function buildBranchMergeRecommendationPacket(branchReview) {
   const clearanceRows = branchReview.clearance_matrix?.rows ?? [];
+  const packetByFamily = new Map();
+  for (const packet of branchReview.review_first_packets?.packets ?? []) {
+    if (packet.family) packetByFamily.set(packet.family, packet);
+    if (packet.branch) packetByFamily.set(packet.branch, packet);
+  }
   const items = clearanceRows.map((row, index) => {
-    const recommendation = branchMergeRecommendation(row);
+    const recommendation = branchMergeRecommendation(row, packetByFamily);
     return {
       rank: index + 1,
       family: row.family,
@@ -193,6 +243,10 @@ function buildBranchMergeRecommendationPacket(branchReview) {
       freshness: row.freshness,
       blocker_class: row.blocker_class,
       recommendation: recommendation.stance,
+      recommendation_basis: recommendation.basis,
+      categories: recommendation.categories,
+      canonical_state: recommendation.canonical_state,
+      changed_supabase_function_count: recommendation.changed_supabase_function_count,
       next_decision: recommendation.next_decision,
       owner: recommendation.owner,
       proof_command: row.required_proof_command,
@@ -205,8 +259,9 @@ function buildBranchMergeRecommendationPacket(branchReview) {
     };
   });
   const blockedItems = items.filter((item) => item.status !== 'ready');
-  const doNotWholesaleCount = items.filter((item) => item.recommendation === 'do_not_wholesale_merge').length;
+  const doNotWholesaleCount = items.filter((item) => item.recommendation.startsWith('do_not_wholesale_merge')).length;
   const retireOrKeepCount = items.filter((item) => /review_or_retire/.test(item.recommendation)).length;
+  const extractOnlyCount = items.filter((item) => /extract/.test(item.recommendation)).length;
   return {
     status: blockedItems.length > 0 ? 'blocked' : 'ready',
     proof_type: 'branch_merge_recommendation_packet',
@@ -215,10 +270,11 @@ function buildBranchMergeRecommendationPacket(branchReview) {
     blocked_count: blockedItems.length,
     do_not_wholesale_merge_count: doNotWholesaleCount,
     retire_or_keep_decision_count: retireOrKeepCount,
+    extract_only_decision_count: extractOnlyCount,
     proof_boundary: 'The branch merge recommendation packet translates read-only branch review evidence into best-course recommendations only; it does not checkout, merge, push, discard, select canonical heads, cherry-pick, run migrations, mutate Supabase, deploy, request production approval, or grant owner approval.',
     stop_gate: 'Do not treat this packet as merge approval, canonical-head selection, branch retirement approval, cherry-pick approval, release readiness, production approval, deploy authorization, or hosted/live proof.',
     items,
-    evidence: `Branch merge recommendation packet: status=${blockedItems.length > 0 ? 'blocked' : 'ready'} items=${items.length} blocked=${blockedItems.length} do_not_wholesale_merge=${doNotWholesaleCount} retire_or_keep=${retireOrKeepCount} approval_gate=read-only recommendations only; no checkout/merge/cherry-pick/push/discard/canonical-head selection without owner approval and release gates`,
+    evidence: `Branch merge recommendation packet: status=${blockedItems.length > 0 ? 'blocked' : 'ready'} items=${items.length} blocked=${blockedItems.length} do_not_wholesale_merge=${doNotWholesaleCount} extract_only=${extractOnlyCount} retire_or_keep=${retireOrKeepCount} approval_gate=read-only recommendations only; no checkout/merge/cherry-pick/push/discard/canonical-head selection without owner approval and release gates`,
   };
 }
 
@@ -417,6 +473,10 @@ function renderMarkdown(payload) {
     item.freshness,
     item.blocker_class,
     item.recommendation,
+    item.recommendation_basis,
+    (item.categories ?? []).join(', '),
+    item.canonical_state,
+    item.changed_supabase_function_count,
     item.next_decision,
     item.owner,
     item.proof_command,
@@ -579,7 +639,7 @@ function renderMarkdown(payload) {
     `Boundary: ${mergeRecommendationPacket.proof_boundary ?? 'unknown'}`,
     `Stop gate: ${mergeRecommendationPacket.stop_gate ?? 'unknown'}`,
     '',
-    renderTable(['Rank', 'Family', 'Review Ref', 'Local/Origin State', 'Highest Risk', 'Freshness', 'Blocker Class', 'Recommendation', 'Next Decision', 'Owner', 'Proof Command', 'Can Merge Now', 'Can Execute From Packet', 'Status', 'Proof Type', 'Proof Boundary', 'Stop Gate'], mergeRecommendationRows),
+    renderTable(['Rank', 'Family', 'Review Ref', 'Local/Origin State', 'Highest Risk', 'Freshness', 'Blocker Class', 'Recommendation', 'Basis', 'Categories', 'Canonical State', 'Changed Supabase Functions', 'Next Decision', 'Owner', 'Proof Command', 'Can Merge Now', 'Can Execute From Packet', 'Status', 'Proof Type', 'Proof Boundary', 'Stop Gate'], mergeRecommendationRows),
     '',
     '## Review-First Branch Packets',
     '',

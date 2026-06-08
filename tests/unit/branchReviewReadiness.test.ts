@@ -150,7 +150,10 @@ describe('branch review readiness report', () => {
         payload.branch_review.branch_merge_recommendation_packet.items.filter((item: { status?: string }) => item.status !== 'ready').length,
       );
       expect(payload.branch_review.branch_merge_recommendation_packet.do_not_wholesale_merge_count).toBe(
-        payload.branch_review.branch_merge_recommendation_packet.items.filter((item: { recommendation?: string }) => item.recommendation === 'do_not_wholesale_merge').length,
+        payload.branch_review.branch_merge_recommendation_packet.items.filter((item: { recommendation?: string }) => item.recommendation?.startsWith('do_not_wholesale_merge')).length,
+      );
+      expect(payload.branch_review.branch_merge_recommendation_packet.extract_only_decision_count).toBe(
+        payload.branch_review.branch_merge_recommendation_packet.items.filter((item: { recommendation?: string }) => /extract/.test(item.recommendation ?? '')).length,
       );
       expect(payload.branch_review.branch_merge_recommendation_packet.items.map((item: { family?: string }) => item.family)).toEqual(
         payload.branch_review.clearance_matrix.rows.map((item: { family?: string }) => item.family),
@@ -178,9 +181,25 @@ describe('branch review readiness report', () => {
         expect(item.can_merge_now).toBe(false);
         expect(item.can_execute_from_packet).toBe(false);
         expect(item.proof_type).toBe('read_only_branch_merge_recommendation');
+        expect(item.recommendation_basis).toBeTruthy();
+        expect(Array.isArray(item.categories)).toBe(true);
+        expect(item.canonical_state).toBeTruthy();
+        expect(Number.isInteger(item.changed_supabase_function_count)).toBe(true);
         expect(item.proof_boundary).toMatch(/Read-only branch merge recommendation only|does not checkout|merge|push|discard|select canonical heads|cherry-pick|run migrations|mutate Supabase|deploy|production approval/i);
         expect(item.stop_gate).toMatch(/Do not merge|cherry-pick|push|discard|checkout|select canonical heads|deploy|request production approval/i);
-        if (item.highest_risk === 'high' || item.blocker_class === 'review_first') {
+        if (item.categories.includes('edge-function-copy')) {
+          expect(item.recommendation).toBe('do_not_wholesale_merge_retire_detached_function_copy');
+          expect(item.next_decision).toMatch(/retirement candidate|configured Supabase entrypoint|DEPLOY_|-FINAL/i);
+        } else if (
+          item.highest_risk === 'high'
+          && (item.categories.includes('payment/entitlement') || item.changed_supabase_function_count >= 8)
+        ) {
+          expect(item.recommendation).toBe('do_not_wholesale_merge_extract_security_slice_only');
+          expect(item.next_decision).toMatch(/narrow entitlement|payment|Supabase helper slice|security review/i);
+        } else if (item.highest_risk === 'high' && item.categories.includes('ml/training')) {
+          expect(item.recommendation).toBe('do_not_wholesale_merge_research_backlog_extract_only');
+          expect(item.next_decision).toMatch(/backlog research|retained metrics|release gates/i);
+        } else if (item.highest_risk === 'high' || item.blocker_class === 'review_first') {
           expect(item.recommendation).toBe('do_not_wholesale_merge');
         }
       }

@@ -219,7 +219,8 @@ if (failures.length === 0) {
       assert(operatorHandoffPacket.stale_or_aging_count === (operatorHandoffPacket.items ?? []).filter((item) => ['stale', 'aging'].includes(item.freshness)).length, 'Branch operator handoff packet stale_or_aging_count must match stale or aging rows.');
       assert(mergeRecommendationPacket.item_count === clearanceMatrix.rows.length, 'Branch merge recommendation packet item_count must match clearance matrix rows.');
       assert(mergeRecommendationPacket.blocked_count === (mergeRecommendationPacket.items ?? []).filter((item) => item.status !== 'ready').length, 'Branch merge recommendation packet blocked_count must match blocked rows.');
-      assert(mergeRecommendationPacket.do_not_wholesale_merge_count === (mergeRecommendationPacket.items ?? []).filter((item) => item.recommendation === 'do_not_wholesale_merge').length, 'Branch merge recommendation packet do_not_wholesale_merge_count must match recommendation rows.');
+      assert(mergeRecommendationPacket.do_not_wholesale_merge_count === (mergeRecommendationPacket.items ?? []).filter((item) => item.recommendation?.startsWith('do_not_wholesale_merge')).length, 'Branch merge recommendation packet do_not_wholesale_merge_count must match recommendation rows.');
+      assert(mergeRecommendationPacket.extract_only_decision_count === (mergeRecommendationPacket.items ?? []).filter((item) => /extract/.test(item.recommendation ?? '')).length, 'Branch merge recommendation packet extract_only_decision_count must match recommendation rows.');
       assert(
         JSON.stringify((mergeRecommendationPacket.items ?? []).map((item) => item.family)) === JSON.stringify((clearanceMatrix.rows ?? []).map((item) => item.family)),
         'Branch merge recommendation packet rows must preserve clearance matrix row order.',
@@ -274,6 +275,10 @@ if (failures.length === 0) {
       assert(item.review_ref === clearanceRow.review_ref, `branch_merge_recommendation_packet.items[${index}].review_ref must match the clearance matrix row.`);
       assert(['owner', 'operator'].includes(item.owner), `branch_merge_recommendation_packet.items[${index}].owner must be owner or operator.`);
       assert(typeof item.recommendation === 'string' && item.recommendation.length > 0, `branch_merge_recommendation_packet.items[${index}].recommendation must be set.`);
+      assert(typeof item.recommendation_basis === 'string' && item.recommendation_basis.length > 0, `branch_merge_recommendation_packet.items[${index}].recommendation_basis must be set.`);
+      assert(Array.isArray(item.categories), `branch_merge_recommendation_packet.items[${index}].categories must be a list.`);
+      assert(typeof item.canonical_state === 'string' && item.canonical_state.length > 0, `branch_merge_recommendation_packet.items[${index}].canonical_state must be set.`);
+      assert(Number.isInteger(item.changed_supabase_function_count), `branch_merge_recommendation_packet.items[${index}].changed_supabase_function_count must be an integer.`);
       assert(typeof item.next_decision === 'string' && /review|retire|cherry-pick|merge/i.test(item.next_decision), `branch_merge_recommendation_packet.items[${index}].next_decision must describe the next review decision.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `branch_merge_recommendation_packet.items[${index}].proof_command must point at the read-only branch report.`);
       assert(item.can_merge_now === false, `branch_merge_recommendation_packet.items[${index}].can_merge_now must be false.`);
@@ -282,7 +287,17 @@ if (failures.length === 0) {
       assert(typeof item.proof_boundary === 'string' && /Read-only branch merge recommendation only|does not checkout|merge|push|discard|select canonical heads|cherry-pick|run migrations|mutate Supabase|deploy|production approval/i.test(item.proof_boundary), `branch_merge_recommendation_packet.items[${index}].proof_boundary must preserve no-mutation semantics.`);
       assert(typeof item.stop_gate === 'string' && /Do not merge|cherry-pick|push|discard|checkout|select canonical heads|deploy|request production approval/i.test(item.stop_gate), `branch_merge_recommendation_packet.items[${index}].stop_gate must block branch mutations and approvals.`);
       if (item.highest_risk === 'high' || item.blocker_class === 'review_first') {
-        assert(item.recommendation === 'do_not_wholesale_merge', `branch_merge_recommendation_packet.items[${index}] high-risk or review-first rows must reject wholesale merge.`);
+        assert(item.recommendation.startsWith('do_not_wholesale_merge'), `branch_merge_recommendation_packet.items[${index}] high-risk or review-first rows must reject wholesale merge.`);
+      }
+      if ((item.categories ?? []).includes('edge-function-copy')) {
+        assert(item.recommendation === 'do_not_wholesale_merge_retire_detached_function_copy', `branch_merge_recommendation_packet.items[${index}] detached function-copy rows must recommend retirement or configured-entrypoint extraction.`);
+        assert(/retirement candidate|configured Supabase entrypoint|DEPLOY_|-FINAL/i.test(item.next_decision), `branch_merge_recommendation_packet.items[${index}] detached function-copy next decision must preserve copy-file boundaries.`);
+      }
+      if (item.highest_risk === 'high' && ((item.categories ?? []).includes('payment/entitlement') || item.changed_supabase_function_count >= 8)) {
+        assert(item.recommendation === 'do_not_wholesale_merge_extract_security_slice_only', `branch_merge_recommendation_packet.items[${index}] broad security/payment rows must recommend extract-only security review.`);
+      }
+      if (item.highest_risk === 'high' && (item.categories ?? []).includes('ml/training') && !((item.categories ?? []).includes('payment/entitlement') || item.changed_supabase_function_count >= 8)) {
+        assert(item.recommendation === 'do_not_wholesale_merge_research_backlog_extract_only', `branch_merge_recommendation_packet.items[${index}] broad ML/training rows must recommend research-backlog extract-only review.`);
       }
     }
 
