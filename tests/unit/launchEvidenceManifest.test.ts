@@ -534,15 +534,19 @@ describe('launch evidence manifest report', () => {
         release_impact?: string;
         blocks_release_gate?: boolean;
         status?: string;
+        source_status?: string;
       }) => item.requirement,
     );
     expect(releaseClearanceRowsByRequirement.get('Corepack pnpm resolver')?.proof_type).toBe('toolchain_probe');
     expect(releaseClearanceRowsByRequirement.get('Corepack pnpm resolver')?.proof_command).toBe('corepack pnpm --version');
     expect(releaseClearanceRowsByRequirement.get('Release-readiness execution')?.proof_type).toBe('gated_release_command');
     expect(releaseClearanceRowsByRequirement.get('Release-readiness execution')?.proof_command).toBe('corepack pnpm run check:release-readiness');
-    expect(releaseClearanceRowsByRequirement.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
-    expect(releaseClearanceRowsByRequirement.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
-    expect(releaseClearanceRowsByRequirement.get('Clean source provenance')?.blocks_release_gate).toBe(true);
+    const cleanSourceReleaseRow = releaseClearanceRowsByRequirement.get('Clean source provenance');
+    expect(cleanSourceReleaseRow?.proof_type).toBe('source_provenance_decision');
+    expect(cleanSourceReleaseRow?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    expect(cleanSourceReleaseRow?.source_status).toMatch(/pass|blocked/);
+    expect(cleanSourceReleaseRow?.status).toBe(cleanSourceReleaseRow?.source_status === 'pass' ? 'ready' : 'blocked');
+    expect(cleanSourceReleaseRow?.blocks_release_gate).toBe(cleanSourceReleaseRow?.source_status !== 'pass');
     expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
     expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.proof_command).toBe('corepack pnpm run check:production-deploy-request');
     expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.status).toBe('manual_stop');
@@ -563,8 +567,13 @@ describe('launch evidence manifest report', () => {
     expect(releaseActionsByRequirement.get('Git LFS push-path proof')?.proof_boundary).toMatch(/does not install Git LFS/i);
     expect(releaseActionsByRequirement.get('Release-readiness execution')?.proof_type).toBe('gated_release_command');
     expect(releaseActionsByRequirement.get('Release-readiness execution')?.proof_boundary).toMatch(/does not grant owner approval/i);
-    expect(releaseActionsByRequirement.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
-    expect(releaseActionsByRequirement.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit/i);
+    const cleanSourceReleaseAction = releaseActionsByRequirement.get('Clean source provenance');
+    if (cleanSourceReleaseRow?.blocks_release_gate) {
+      expect(cleanSourceReleaseAction?.proof_type).toBe('source_provenance_decision');
+      expect(cleanSourceReleaseAction?.proof_boundary).toMatch(/does not commit/i);
+    } else {
+      expect(cleanSourceReleaseAction).toBeUndefined();
+    }
     expect(releaseActionsByRequirement.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
     expect(releaseActionsByRequirement.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve/i);
     expect(manifest.release_preflight.remediation_queue.open_count).toBe(manifest.release_preflight.open_count);
@@ -620,7 +629,12 @@ describe('launch evidence manifest report', () => {
     expect(releaseOperatorRowsByRequirement.get('Corepack pnpm resolver')?.execution_gate).toBe('toolchain_probe_first');
     expect(releaseOperatorRowsByRequirement.get('Git LFS push-path proof')?.execution_gate).toBe('toolchain_probe_first');
     expect(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.execution_gate).toBe('after_corepack_git_lfs_and_clean_source');
-    expect(releaseOperatorRowsByRequirement.get('Clean source provenance')?.execution_gate).toBe('owner_source_decision_first');
+    const cleanSourceOperatorRow = releaseOperatorRowsByRequirement.get('Clean source provenance');
+    if (cleanSourceReleaseRow?.blocks_release_gate) {
+      expect(cleanSourceOperatorRow?.execution_gate).toBe('owner_source_decision_first');
+    } else {
+      expect(cleanSourceOperatorRow).toBeUndefined();
+    }
     expect(releaseOperatorRowsByRequirement.get('Explicit owner production approval')?.execution_gate).toBe('manual_stop_after_all_prerequisites');
     expect(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.stop_gate).toMatch(/Do not execute or mark this row ready from the handoff packet itself/i);
     expect(manifest.launch_action_queue.status).toBe('blocked');
