@@ -92,8 +92,10 @@ if (failures.length === 0) {
     }
   }
 
-  if (markdown.status === 0) {
-    const stdout = markdown.stdout;
+    const releaseReadinessProofPass = payload?.release_preflight?.release_readiness_proof?.status === 'pass';
+
+    if (markdown.status === 0) {
+      const stdout = markdown.stdout;
     assertContains(stdout, '# CEIP Release Preflight Readiness Report', 'Report must include the focused release preflight title.');
     assertContains(stdout, 'Release preflight status:', 'Report must include release preflight status.');
     assertContains(stdout, '## Decision Boundary', 'Report must include a decision-boundary section.');
@@ -123,7 +125,11 @@ if (failures.length === 0) {
     if ((payload?.release_preflight?.operator_handoff_packet?.items ?? []).some((item) => item.execution_gate === 'toolchain_probe_first')) {
       assertContains(stdout, 'toolchain_probe_first', 'Report must include the toolchain-first execution gate when toolchain rows are blocked.');
     }
-    assertContains(stdout, 'after_corepack_git_lfs_and_clean_source', 'Report must include the guarded release-readiness execution gate.');
+      if (releaseReadinessProofPass) {
+        assertContains(stdout, 'proof=', 'Report must include the retained release-readiness proof path when proof is attached.');
+      } else {
+        assertContains(stdout, 'after_corepack_git_lfs_and_clean_source', 'Report must include the guarded release-readiness execution gate.');
+      }
     assertContains(stdout, 'manual_stop_after_all_prerequisites', 'Report must include the manual approval execution gate.');
     assertContains(stdout, 'Can Execute From Packet', 'Report must expose the packet non-execution column.');
     assertContains(stdout, 'planning evidence only', 'Report must preserve the operator handoff planning-only boundary.');
@@ -205,7 +211,15 @@ if (failures.length === 0) {
     if (operatorRowsByRequirement.has('Git LFS push-path proof')) {
       assert(operatorRowsByRequirement.get('Git LFS push-path proof')?.execution_gate === 'toolchain_probe_first', 'Git LFS handoff row must require toolchain_probe_first.');
     }
-    assert(operatorRowsByRequirement.get('Release-readiness execution')?.execution_gate === 'after_corepack_git_lfs_and_clean_source', 'Release-readiness handoff row must wait for Corepack, Git LFS, and clean source.');
+      if (releaseReadinessProofPass) {
+        assert(
+          releaseItemsByRequirement.get('Release-readiness execution')?.status === 'pass'
+            && !operatorRowsByRequirement.has('Release-readiness execution'),
+          'Release-readiness handoff row may be absent only when the retained release-readiness proof validates.',
+        );
+      } else {
+        assert(operatorRowsByRequirement.get('Release-readiness execution')?.execution_gate === 'after_corepack_git_lfs_and_clean_source', 'Release-readiness handoff row must wait for Corepack, Git LFS, and clean source.');
+      }
     if (operatorRowsByRequirement.has('Clean source provenance')) {
       assert(operatorRowsByRequirement.get('Clean source provenance')?.execution_gate === 'owner_source_decision_first', 'Clean source provenance handoff row must require owner source decision first.');
     }
@@ -213,7 +227,9 @@ if (failures.length === 0) {
     if (operatorRowsByRequirement.has('Corepack pnpm resolver')) {
       assert(/planning evidence only|does not install tools|request production approval|hosted\/live parity/i.test(operatorRowsByRequirement.get('Corepack pnpm resolver')?.proof_boundary ?? ''), 'Corepack operator handoff row must preserve planning-only boundaries.');
     }
-    assert(/Do not execute or mark this row ready from the handoff packet itself/i.test(operatorRowsByRequirement.get('Release-readiness execution')?.stop_gate ?? ''), 'Release-readiness operator handoff row must reject execution from the packet.');
+      if (!releaseReadinessProofPass) {
+        assert(/Do not execute or mark this row ready from the handoff packet itself/i.test(operatorRowsByRequirement.get('Release-readiness execution')?.stop_gate ?? ''), 'Release-readiness operator handoff row must reject execution from the packet.');
+      }
     assert(payload.source_provenance?.resolution_queue, 'Focused report JSON must include source provenance resolution queue.');
     assert(/report:source-provenance-readiness/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance release preflight row must point to the focused source provenance report/check.');
     assert(/report:source-provenance-readiness/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance clearance row must point to the focused source provenance report/check.');

@@ -793,7 +793,21 @@ try {
       assert(item.status !== 'pass', `source_provenance.owner_decision_packet.items[${index}].status must remain blocked until source provenance is resolved.`);
       assert(item.blocks_release_source_gate === true, `source_provenance.owner_decision_packet.items[${index}].blocks_release_source_gate must block release source gate for dirty paths.`);
     }
-    assert(hasOpenGap(manifest, 'P1', 'Release toolchain'), 'Manifest must keep the open P1 release toolchain and approval proof gap.');
+    const releaseReadinessProofPass = manifest.release_preflight?.release_readiness_proof?.status === 'pass';
+    const releaseItemsByRequirement = new Map((manifest.release_preflight.items ?? []).map((item) => [item.requirement, item]));
+    const releaseEvidenceReady = [
+      'Pinned package manager',
+      'Corepack pnpm resolver',
+      'Release-readiness execution',
+      'Git LFS push-path proof',
+      'Clean source provenance',
+    ].every((requirement) => releaseItemsByRequirement.get(requirement)?.status === 'pass');
+    if (releaseEvidenceReady) {
+      const releaseGap = (manifest.gaps ?? []).find((gap) => gap?.severity === 'P1' && typeof gap.gap === 'string' && gap.gap.includes('Release toolchain'));
+      assert(releaseGap?.status === 'mitigated', 'Manifest must mark the release toolchain gap mitigated when a retained release-readiness proof validates.');
+    } else {
+      assert(hasOpenGap(manifest, 'P1', 'Release toolchain'), 'Manifest must keep the open P1 release toolchain and approval proof gap.');
+    }
     assert(typeof manifest.release_preflight?.evidence === 'string', 'Manifest must include release_preflight.evidence.');
     assert(manifest.release_preflight.evidence.includes('Release toolchain and approval deficit ledger'), 'Manifest release preflight evidence must include a ledger marker.');
     assert(typeof manifest.release_preflight?.package_manager === 'string' && manifest.release_preflight.package_manager.length > 0, 'Manifest release_preflight.package_manager must be set.');
@@ -1152,7 +1166,15 @@ try {
     if (releaseOperatorRowsByRequirement.has('Git LFS push-path proof')) {
       assert(releaseOperatorRowsByRequirement.get('Git LFS push-path proof')?.execution_gate === 'toolchain_probe_first', 'Release operator Git LFS row must require toolchain_probe_first.');
     }
-    assert(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.execution_gate === 'after_corepack_git_lfs_and_clean_source', 'Release operator release-readiness row must wait for Corepack, Git LFS, and clean source.');
+    if (releaseReadinessProofPass) {
+      assert(
+        releaseItemsByRequirement.get('Release-readiness execution')?.status === 'pass'
+          && !releaseOperatorRowsByRequirement.has('Release-readiness execution'),
+        'Release operator release-readiness row may be absent only when a retained release-readiness proof validates.',
+      );
+    } else {
+      assert(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.execution_gate === 'after_corepack_git_lfs_and_clean_source', 'Release operator release-readiness row must wait for Corepack, Git LFS, and clean source.');
+    }
     if (releaseOperatorRowsByRequirement.has('Clean source provenance')) {
       assert(releaseOperatorRowsByRequirement.get('Clean source provenance')?.execution_gate === 'owner_source_decision_first', 'Release operator clean-source row must require owner source decision first.');
     }
@@ -1252,7 +1274,11 @@ try {
     }
     const releaseActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'release_toolchain');
     assert(releaseActionItem, 'Launch action queue must include a release_toolchain phase.');
-    assert(/release-toolchain probe/i.test(releaseActionItem.blocker), 'Release toolchain launch action must summarize toolchain probe ledger state.');
+    if (releaseEvidenceReady) {
+      assert(/release-readiness proof current|owner approval tracked separately/i.test(releaseActionItem.blocker), 'Release toolchain launch action must summarize retained proof and separate owner approval when proof validates.');
+    } else {
+      assert(/release-toolchain probe/i.test(releaseActionItem.blocker), 'Release toolchain launch action must summarize toolchain probe ledger state.');
+    }
     assert(
       releaseActionItem.proof_command.includes('report:release-preflight')
         && releaseActionItem.proof_command.includes('check:release-preflight-report')
@@ -1514,7 +1540,11 @@ try {
     assert(/underlying check:launch-evidence-manifest/i.test(launchEvidencePrerequisiteItem.needed), 'Launch evidence validation prerequisite must preserve the underlying manifest check requirement.');
     assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidencePrerequisiteItem.stop_gate), 'Launch evidence validation prerequisite must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     assert(releasePrerequisiteItem, 'Production approval prerequisite queue must include Corepack release-readiness.');
-    assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
+    if (releaseEvidenceReady) {
+      assert(/release-readiness proof current|explicit owner approval remains a separate manual stop/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize retained proof and separate owner approval when proof validates.');
+    } else {
+      assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
+    }
     assert(/Corepack\/Git LFS probe ledger/i.test(releasePrerequisiteItem.needed), 'Corepack release-readiness prerequisite must require the current Corepack/Git LFS probe ledger.');
     assert(
       releasePrerequisiteItem.proof_command.includes('report:release-preflight')
@@ -2591,7 +2621,10 @@ try {
     assert(manifest.completion_audit.completed_count === (completionStatusCounts.present ?? 0), 'Manifest completion_audit.completed_count must match present rows.');
     assert(manifest.completion_audit.completed_count >= 8, 'Manifest completion_audit must count present orchestrator deliverables.');
     assert(manifest.completion_audit.blocked_count === (completionStatusCounts.blocked ?? 0), 'Manifest completion_audit.blocked_count must match blocked rows.');
-    assert(manifest.completion_audit.blocked_count >= 3, 'Manifest completion_audit must count unresolved blocker rows.');
+    assert(
+      manifest.completion_audit.blocked_count >= (releaseEvidenceReady ? 2 : 3),
+      'Manifest completion_audit must count unresolved blocker rows.',
+    );
     assert(manifest.completion_audit.manual_stop_count === (completionStatusCounts.manual_stop ?? 0), 'Manifest completion_audit.manual_stop_count must match manual-stop rows.');
     assert(manifest.completion_audit.manual_stop_count >= 1, 'Manifest completion_audit must count production/live proof manual-stop rows.');
     assert(manifest.completion_audit.external_gate_count === (completionStatusCounts.external_gate ?? 0), 'Manifest completion_audit.external_gate_count must match external-gate rows.');
