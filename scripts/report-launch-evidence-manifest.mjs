@@ -653,6 +653,11 @@ function readReleaseReadinessProof(filePath, { packageManager, gitStatus }) {
   if (proof.repo?.package_manager !== packageManager) validationErrors.push(`repo.package_manager must match ${packageManager}`);
   if (proof.source_clean !== true) validationErrors.push('source_clean must be true at proof generation time');
   if (typeof proof.generated_at !== 'string' || proof.generated_at.length === 0) validationErrors.push('generated_at must be set');
+  const expectedVersion = expectedPnpmVersion(packageManager);
+  const corepackPnpmVersion = String(proof.corepack_pnpm_version ?? '').trim();
+  const gitLfsVersion = String(proof.git_lfs_version ?? '').trim();
+  if (expectedVersion && corepackPnpmVersion !== expectedVersion) validationErrors.push(`corepack_pnpm_version must match ${expectedVersion}`);
+  if (!gitLfsVersion) validationErrors.push('git_lfs_version must be set');
 
   const proofReady = validationErrors.length === 0;
   const failureSnippet = proofFailureSnippet(proof);
@@ -673,6 +678,8 @@ function readReleaseReadinessProof(filePath, { packageManager, gitStatus }) {
     duration_ms: proof.duration_ms ?? null,
     repo: proof.repo ?? null,
     source_clean: proof.source_clean ?? null,
+    corepack_pnpm_version: corepackPnpmVersion,
+    git_lfs_version: gitLfsVersion,
     stdout_tail: proof.stdout_tail ?? '',
     stderr_tail: proof.stderr_tail ?? '',
     error: proof.error ?? null,
@@ -1416,15 +1423,25 @@ function buildReleaseToolchainProbeLedger({
   gitLfsOutput,
   gitLfsAvailable,
   gitLfsHookDiagnosticCurrent,
+  releaseReadinessProof,
 }) {
+  const proofCorepackMatches = skipProbes
+    && releaseReadinessProof?.status === 'pass'
+    && expectedVersion
+    && releaseReadinessProof.corepack_pnpm_version === expectedVersion;
+  const proofGitLfsAvailable = skipProbes
+    && releaseReadinessProof?.status === 'pass'
+    && Boolean(releaseReadinessProof.git_lfs_version);
   const items = [
     {
       id: 'corepack_pnpm_resolver',
       label: 'Corepack pnpm resolver',
       command: 'corepack pnpm --version',
-      status: skipProbes ? 'skipped' : corepackMatches ? 'pass' : 'blocked',
+      status: skipProbes ? (proofCorepackMatches ? 'pass' : 'skipped') : corepackMatches ? 'pass' : 'blocked',
       current: skipProbes
-        ? 'skipped'
+        ? proofCorepackMatches
+          ? `retained release-readiness proof recorded corepack pnpm ${releaseReadinessProof.corepack_pnpm_version}`
+          : 'skipped'
         : corepackMatches
           ? `pnpm ${resolvedPnpmVersion}`
           : corepackOutput,
@@ -1448,8 +1465,12 @@ function buildReleaseToolchainProbeLedger({
       id: 'git_lfs_push_path',
       label: 'Git LFS push-path proof',
       command: 'git lfs version',
-      status: skipProbes ? 'skipped' : gitLfsAvailable ? 'pass' : 'needs_remediation',
-      current: skipProbes ? 'skipped' : gitLfsOutput,
+      status: skipProbes ? (proofGitLfsAvailable ? 'pass' : 'skipped') : gitLfsAvailable ? 'pass' : 'needs_remediation',
+      current: skipProbes
+        ? proofGitLfsAvailable
+          ? `retained release-readiness proof recorded ${releaseReadinessProof.git_lfs_version}`
+          : 'skipped'
+        : gitLfsOutput,
       diagnostic_command: 'git config --get core.hookspath; git rev-parse --git-path hooks/post-commit; git rev-parse --git-path hooks/pre-push; git-lfs version',
       diagnostic_current: skipProbes ? 'skipped' : gitLfsHookDiagnosticCurrent,
       diagnostic_boundary: 'Git LFS hook-path diagnostics are current-shell context only; they do not rewrite hooks, install Git LFS, guarantee future commit or push hook PATH, push, deploy, clear source provenance, or grant production approval.',
@@ -1464,7 +1485,11 @@ function buildReleaseToolchainProbeLedger({
     },
   ];
   const ledger = {
-    status: skipProbes ? 'skipped' : items.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
+    status: skipProbes && items.every((item) => item.status === 'pass')
+      ? 'pass'
+      : skipProbes
+        ? 'skipped'
+        : items.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
     item_count: items.length,
     open_count: items.filter((item) => item.status !== 'pass').length,
     items,
@@ -1558,6 +1583,13 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     packageManager,
     gitStatus,
   });
+  const proofCorepackMatches = skipProbes
+    && releaseReadinessProof.status === 'pass'
+    && expectedVersion
+    && releaseReadinessProof.corepack_pnpm_version === expectedVersion;
+  const proofGitLfsAvailable = skipProbes
+    && releaseReadinessProof.status === 'pass'
+    && Boolean(releaseReadinessProof.git_lfs_version);
   const corepackResult = skipProbes ? null : run('corepack', ['pnpm', '--version']);
   const corepackOutput = corepackResult ? compactCommandOutput(corepackResult) : 'probe skipped by --skip-probes';
   const resolvedPnpmVersion = corepackResult?.status === 0
@@ -1595,12 +1627,14 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     {
       requirement: 'Corepack pnpm resolver',
       current: skipProbes
-        ? 'skipped'
+        ? proofCorepackMatches
+          ? `retained release-readiness proof recorded corepack pnpm ${releaseReadinessProof.corepack_pnpm_version}`
+          : 'skipped'
         : corepackMatches
           ? `pnpm ${resolvedPnpmVersion}`
           : corepackOutput,
       needed: expectedVersion ? `corepack pnpm --version resolves ${expectedVersion}` : 'valid packageManager pin before Corepack resolution',
-      status: skipProbes ? 'skipped' : corepackMatches ? 'pass' : 'blocked',
+      status: skipProbes ? (proofCorepackMatches ? 'pass' : 'skipped') : corepackMatches ? 'pass' : 'blocked',
       next_action: 'Run from a Corepack-enabled shell; bare pnpm or a local shim does not count as release-readiness evidence.',
       proof_type: releaseRemediationProofType('Corepack pnpm resolver'),
       proof_boundary: releaseRemediationProofBoundary('Corepack pnpm resolver'),
@@ -1619,12 +1653,14 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     {
       requirement: 'Git LFS push-path proof',
       current: skipProbes
-        ? 'skipped'
+        ? proofGitLfsAvailable
+          ? `retained release-readiness proof recorded ${releaseReadinessProof.git_lfs_version}`
+          : 'skipped'
         : gitLfsAvailable
           ? gitLfsOutput
           : gitLfsOutput,
       needed: 'git lfs version succeeds in the shell used for commit/push evidence',
-      status: skipProbes ? 'skipped' : gitLfsAvailable ? 'pass' : 'needs_remediation',
+      status: skipProbes ? (proofGitLfsAvailable ? 'pass' : 'skipped') : gitLfsAvailable ? 'pass' : 'needs_remediation',
       next_action: gitLfsAvailable
         ? 'Keep git-lfs on PATH for commit and push evidence; rerun git lfs version before treating a future push path as current.'
         : 'Install or expose git-lfs on PATH, then rerun git lfs version before treating push-path evidence as current.',
@@ -1665,9 +1701,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     status: itemsWithProofCommands.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
     package_manager: packageManager || null,
     expected_pnpm_version: expectedVersion,
-    corepack_probe: skipProbes ? 'skipped' : (corepackResult?.status === 0 ? 'pass' : 'fail'),
+    corepack_probe: skipProbes ? (proofCorepackMatches ? 'pass' : 'skipped') : (corepackResult?.status === 0 ? 'pass' : 'fail'),
     bare_pnpm_diagnostic: barePnpmDiagnostic,
-    git_lfs_probe: skipProbes ? 'skipped' : (gitLfsAvailable ? 'pass' : 'fail'),
+    git_lfs_probe: skipProbes ? (proofGitLfsAvailable ? 'pass' : 'skipped') : (gitLfsAvailable ? 'pass' : 'fail'),
     git_lfs_hook_diagnostic: skipProbes ? 'skipped' : gitLfsHookDiagnosticCurrent,
     release_readiness_proof: releaseReadinessProof,
     open_count: itemsWithProofCommands.filter((item) => item.status !== 'pass').length,
@@ -1689,6 +1725,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       gitLfsOutput,
       gitLfsAvailable,
       gitLfsHookDiagnosticCurrent,
+      releaseReadinessProof,
     }),
     remediation_queue: remediationQueue,
     operator_handoff_packet: buildReleaseOperatorHandoffPacket(remediationQueue),
@@ -5895,6 +5932,15 @@ const derivativeReportProofPassthroughFilesChanged = [
   'tests/unit/focusedLaunchReadinessReports.test.ts',
 ];
 
+const skipProbeReleaseProofDerivationFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-objective-completion-audit-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+];
+
 const supabaseAppLintProofRecordFilesChanged = [
   'package.json',
   'scripts/record-supabase-app-lint-proof.mjs',
@@ -6542,6 +6588,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releaseReadinessProofRecorderFailureFilesChanged,
   ...commercialReportProofPassthroughFilesChanged,
   ...derivativeReportProofPassthroughFilesChanged,
+  ...skipProbeReleaseProofDerivationFilesChanged,
   ...supabaseAppLintProofRecordFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -7056,6 +7103,19 @@ const derivativeReportProofPassthroughTestsRun = [
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
   'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/objectiveCompletionAuditReadiness.test.ts tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
+  'git diff --check',
+];
+
+const skipProbeReleaseProofDerivationTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-objective-completion-audit-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-7758811.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-7758811.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:objective-completion-audit-report -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-7758811.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-7758811.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-7758811.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-7758811.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/objectiveCompletionAuditReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-7758811.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-7758811.json',
   'git diff --check',
 ];
 
@@ -7744,6 +7804,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...branchOperatorHandoffPacketTestsRun,
   ...branchReviewPublicHandlesDigestTestsRun,
   ...releaseToolchainProofHandleTestsRun,
+  ...skipProbeReleaseProofDerivationTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
@@ -8907,6 +8968,19 @@ const safeFixImplementationDecisions = [
     reason: 'The top-level commercial and focused release/Supabase/production reports could reflect retained proof files, but derivative handoff reports still rejected proof arguments and regenerated stale no-proof manifests.',
     proof_boundary: 'This record improves derivative report proof attachment only; it does not create proofs, install Corepack, authorize Supabase connectors, rerun Security Advisor or Performance Advisor, contact buyers, choose branch heads, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
     stop_gate: 'Do not treat derivative report proof pass-through, attached local proofs, focused report checks, aggregate focused-suite checks, manifest validation, progress digest, objective-completion audit, or this code optimization record as Supabase advisor clearance, buyer acceptance, branch approval, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    decision: 'Derive skipped Corepack and Git LFS release-toolchain probe rows from a current retained release-readiness proof when --skip-probes is used.',
+    acceptance_check: 'With --skip-probes plus a current retained release-readiness proof, the manifest marks only the Corepack pnpm resolver and Git LFS push-path proof rows pass from the proof record while branch, Supabase advisor, buyer, owner approval, deploy, and post-deploy live gates remain blocked or external-gated.',
+    chosen_variant: 'minimal retained-proof toolchain fact derivation',
+    repo_pattern_reused: 'Existing release-readiness proof validator, release_preflight.toolchain_probe_ledger, focused derivative report proof pass-through, progress digest contract, objective completion audit contract, and launch manifest unit helper.',
+    files_changed: skipProbeReleaseProofDerivationFilesChanged,
+    tests_run: skipProbeReleaseProofDerivationTestsRun,
+    proof: 'The patch requires retained release proofs to carry the expected Corepack pnpm version and Git LFS version, reuses those validated fields only when probes are skipped, and updates derivative checks to tolerate release_toolchain clearing only when remaining non-proof release rows are not blockers.',
+    reason: 'Proof-attached derivative reports still showed release_toolchain blocked in --skip-probes mode because the report skipped local probes and ignored the already-validated toolchain facts retained by record:release-readiness-proof.',
+    proof_boundary: 'This record improves skipped-probe report derivation only; it does not run probes despite --skip-probes, install Corepack or Git LFS, create proofs, clear source provenance, choose branches, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
+    stop_gate: 'Do not treat skipped-probe retained-proof derivation, proof-attached derivative report checks, aggregate focused-suite checks, manifest validation, or this code optimization record as source readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10864,6 +10938,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Blanket forwarding is simpler, but selective routing keeps non-proof report checks stable and limits proof attachment to supported surfaces.',
     evidence: 'Only launch-evidence validation, release preflight, Supabase advisor, production approval, progress digest, and objective completion audit checks consume proof-aware manifest output in the aggregate suite.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    variant: 'Run Corepack and Git LFS probes anyway when --skip-probes and a retained release proof are provided.',
+    reason_rejected: 'The flag is an explicit fast-report contract for skipped local probes; ignoring it would make proof-attached derivative reports slower and less deterministic.',
+    tradeoff: 'Running probes would produce fresh shell facts, but it would defeat the retained-proof path and reintroduce local environment variance into report-only checks.',
+    evidence: 'The retained release proof already validates command, exit code, commit, packageManager, source_clean, corepack_pnpm_version, and git_lfs_version before it can satisfy skipped toolchain rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    variant: 'Drop --skip-probes from the aggregate focused launch-readiness suite when proof paths are attached.',
+    reason_rejected: 'The aggregate suite uses --skip-probes to validate focused report contracts quickly without running local release probes or depending on current shell tooling.',
+    tradeoff: 'Removing the flag would mask the stale skip-probe contract rather than fixing it, and would make continuation checks depend on live shell availability instead of the retained proof artifact.',
+    evidence: 'The focused suite forwards proof paths through proof-aware checks while preserving skipped-probe behavior for report-contract validation.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    variant: 'Treat a retained release proof as production approval, deploy authorization, or post-deploy live parity.',
+    reason_rejected: 'The proof records only local release-readiness for the current clean commit and cannot satisfy owner approval, deploy execution, Supabase advisor, branch, buyer, or hosted/live proof gates.',
+    tradeoff: 'Promoting the proof would reduce apparent blockers, but it would materially overstate launch readiness and violate the proof-bucket boundary.',
+    evidence: 'Release proof boundaries explicitly state that retained proof does not grant owner approval, deploy, push, merge, access Supabase, contact buyers, or prove hosted/live parity.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -11049,6 +11144,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds explicit CLI proof pass-through and proof-aware checker assertions to existing derivative wrappers, with no new dependency, no proof auto-discovery, no new artifact type, no external-account call, no deploy path, and no launch-status promotion.',
     tests_or_checks: derivativeReportProofPassthroughTestsRun,
     remaining_risk: 'Derivative reports can now reflect attached local proofs, but canonical branch review, Supabase advisor clearance, explicit owner approval, production deploy execution, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses validated retained release proof fields in the existing release_preflight and toolchain_probe_ledger rows only when --skip-probes is active, updates proof-aware derivative checker thresholds, adds focused unit coverage, and avoids new dependencies, probe execution, aggregate-suite rewrites, approval shortcuts, or launch-status promotion.',
+    tests_or_checks: skipProbeReleaseProofDerivationTestsRun,
+    remaining_risk: 'Skipped-probe proof derivation can clear only local release toolchain rows backed by the current retained proof; source provenance, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof remain unresolved gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',

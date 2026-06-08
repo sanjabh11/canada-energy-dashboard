@@ -164,7 +164,7 @@ if (failures.length === 0) {
     assert(audit.completed_count === (completionStatusCounts.present ?? 0), 'Focused objective completion audit completed_count must match present rows.');
     assert(audit.completed_count >= 8, 'Focused objective completion audit must count present deliverables.');
     assert(audit.blocked_count === (completionStatusCounts.blocked ?? 0), 'Focused objective completion audit blocked_count must match blocked rows.');
-    assert(audit.blocked_count >= 3, 'Focused objective completion audit must count unresolved blocker rows.');
+    assert(audit.blocked_count >= (hasReleaseReadinessProof ? 2 : 3), 'Focused objective completion audit must count unresolved blocker rows.');
     assert(audit.external_gate_count === (completionStatusCounts.external_gate ?? 0), 'Focused objective completion audit external_gate_count must match external gate rows.');
     assert(audit.external_gate_count >= 1, 'Focused objective completion audit must count external gate rows.');
     assert(audit.manual_stop_count === (completionStatusCounts.manual_stop ?? 0), 'Focused objective completion audit manual_stop_count must match manual-stop rows.');
@@ -173,20 +173,27 @@ if (failures.length === 0) {
     assert(Array.isArray(payload.deliverable_items) && payload.deliverable_items.length >= 8, 'Focused JSON must include deliverable rows.');
     assert(Array.isArray(payload.external_gate_items) && payload.external_gate_items.length >= 1, 'Focused JSON must include external gate rows.');
     assert(payload.external_gate_items.some((item) => item.requirement === 'Buyer evidence hard gate' && item.status === 'external_gate' && item.blocks_goal_completion === false), 'Focused JSON must include buyer evidence as a non-blocking external gate.');
-    assert(Array.isArray(payload.blocker_items) && payload.blocker_items.length >= 4, 'Focused JSON must include goal-blocking rows.');
+    assert(Array.isArray(payload.blocker_items) && payload.blocker_items.length >= (hasReleaseReadinessProof ? 3 : 4), 'Focused JSON must include goal-blocking rows.');
     const blockerNames = new Set(payload.blocker_items.map((item) => item.requirement));
     const expectedBlockers = [
       'Branch canonical review gate',
       'Supabase advisor clearance gate',
-      'Release toolchain approval gate',
       'Production approval and live proof gate',
     ];
+    if (!hasReleaseReadinessProof) expectedBlockers.splice(2, 0, 'Release toolchain approval gate');
     for (const requirement of expectedBlockers) {
       assert(blockerNames.has(requirement), `Focused JSON must include blocker row: ${requirement}.`);
     }
     if (hasReleaseReadinessProof) {
       assert(payload.retained_proof_summary?.release_readiness?.status === 'pass', 'Focused JSON with release proof must expose release_readiness retained proof status=pass.');
       assert(payload.retained_proof_summary?.release_readiness?.validation_error_count === 0, 'Focused JSON with release proof must expose zero release_readiness validation errors.');
+      const releaseToolchainItem = completionItems.find((item) => item.requirement === 'Release toolchain approval gate');
+      assert(releaseToolchainItem, 'Focused JSON with release proof must keep a release toolchain audit row.');
+      assert(
+        (releaseToolchainItem.status === 'present' && releaseToolchainItem.blocks_goal_completion === false)
+          || (releaseToolchainItem.status === 'blocked' && releaseToolchainItem.blocks_goal_completion === true),
+        'Focused JSON with release proof must either mark release toolchain present or keep it blocked only for non-proof gates.',
+      );
     }
     if (hasSupabaseAppLintProof) {
       assert(payload.retained_proof_summary?.supabase_app_lint?.status === 'pass', 'Focused JSON with Supabase app-lint proof must expose supabase_app_lint retained proof status=pass.');

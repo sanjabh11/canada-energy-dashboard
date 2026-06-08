@@ -7,7 +7,7 @@ const args = process.argv.slice(2);
 const failures = [];
 let skipProbes = false;
 const reportArgs = [];
-const latestProgressPhase = 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH';
+const latestProgressPhase = 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION';
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -154,7 +154,7 @@ if (failures.length === 0) {
     assertContains(stdout, 'supabase_app_lint', 'Report must include Supabase app-lint retained proof status.');
     assertContains(stdout, '## Progress Summary', 'Report must include the progress summary.');
     assertContains(stdout, '## Progress Updates', 'Report must include progress update rows.');
-    assertContains(stdout, latestProgressPhase, 'Report must expose the latest derivative report proof pass-through phase as current evidence.');
+    assertContains(stdout, latestProgressPhase, 'Report must expose the latest skip-probe release-proof derivation phase as current evidence.');
     assertContains(stdout, 'Safe Fix Lane', 'Report must include latest safe-fix lane target matrix evidence.');
     assertContains(stdout, 'code optimization review evidence', 'Report must include latest code-optimization target matrix evidence.');
     assertContains(stdout, 'objective completion audit', 'Report must include the objective completion audit phase.');
@@ -194,14 +194,14 @@ if (failures.length === 0) {
     assert(payload.progress_digest?.proof_type === 'progress_update_digest', 'Focused JSON must include the progress update digest proof type.');
     assert(payload.progress_digest?.status === 'blocked', 'Focused progress digest must remain blocked while launch blockers remain open.');
     assert(payload.progress_digest?.update_count >= 2, 'Focused progress digest must include the latest safe-fix row and the objective-completion audit row.');
-    assert(payload.progress_digest?.current_phase === latestProgressPhase, 'Focused progress digest current phase must be the latest derivative report proof pass-through ratchet.');
+    assert(payload.progress_digest?.current_phase === latestProgressPhase, 'Focused progress digest current phase must be the latest skip-probe release-proof derivation ratchet.');
     assert(payload.progress_digest?.target_matrix_count >= 5, 'Focused progress digest must include the target matrix count.');
     assert(/retained buyer artifacts|guarded deploy\/live proof/i.test(payload.progress_digest?.current_bottleneck ?? ''), 'Focused progress digest must preserve the active evidence bottleneck.');
     assert(
       Array.isArray(payload.progress_updates)
         && payload.progress_updates.some((item) => item?.phase === latestProgressPhase)
         && payload.progress_updates.some((item) => item?.phase === 'objective completion audit'),
-      'Focused progress digest must include the latest derivative report proof pass-through phase and objective-completion audit history.',
+      'Focused progress digest must include the latest skip-probe release-proof derivation phase and objective-completion audit history.',
     );
     assert(
       targetMatrixHasLane(payload.progress_updates?.[0]?.target_matrix, 'Safe Fix Lane', (item) => (
@@ -227,16 +227,18 @@ if (failures.length === 0) {
     assert(payload.activities_remaining?.status === 'blocked', 'Focused activities remaining digest must stay blocked while actions remain.');
     assert(payload.activities_remaining?.current_phase === latestProgressPhase, 'Focused activities remaining digest must bind to the latest current phase.');
     assert(payload.activities_remaining?.current_phase_action_count === (payload.activities_remaining.current_phase_actions ?? []).length, 'Focused activities remaining digest current count must match current action rows.');
-    assert(payload.activities_remaining?.current_phase_action_count >= 6, 'Focused activities remaining digest must count unresolved launch action queue rows.');
+    assert(payload.activities_remaining?.current_phase_action_count >= (hasReleaseReadinessProof ? 5 : 6), 'Focused activities remaining digest must count unresolved launch action queue rows.');
     assert(payload.activities_remaining?.next_phase_action_count >= 10, 'Focused activities remaining digest must count production approval and post-deploy action rows.');
-    assert(payload.activities_remaining?.completion_blocker_count >= 4, 'Focused activities remaining digest must count objective-completion blockers.');
+    assert(payload.activities_remaining?.completion_blocker_count >= (hasReleaseReadinessProof ? 3 : 4), 'Focused activities remaining digest must count objective-completion blockers.');
     if (hasReleaseReadinessProof) {
       assert(payload.retained_proof_summary?.release_readiness?.status === 'pass', 'Focused JSON with release proof must expose release_readiness retained proof status=pass.');
       assert(payload.retained_proof_summary?.release_readiness?.validation_error_count === 0, 'Focused JSON with release proof must expose zero release_readiness validation errors.');
+      const releaseToolchainAction = Array.isArray(payload.activities_remaining?.current_phase_actions)
+        ? payload.activities_remaining.current_phase_actions.find((item) => item.phase === 'release_toolchain')
+        : null;
       assert(
-        Array.isArray(payload.activities_remaining?.current_phase_actions)
-          && payload.activities_remaining.current_phase_actions.some((item) => item.phase === 'release_toolchain' && item.status === 'blocked'),
-        'Focused activities remaining digest with release proof must keep release_toolchain blocked until non-proof gates clear.',
+        !releaseToolchainAction || releaseToolchainAction.status === 'blocked',
+        'Focused activities remaining digest with release proof must either clear release_toolchain or keep it blocked only for non-proof gates.',
       );
     }
     if (hasSupabaseAppLintProof) {

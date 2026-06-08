@@ -192,6 +192,50 @@ describe('launch evidence manifest report', () => {
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('uses retained release proof toolchain facts when probes are skipped', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeReleaseReadinessProof(tempRoot);
+    const stdout = runManifest(['--skip-probes', '--release-readiness-proof', proofPath]);
+    const manifest = JSON.parse(stdout);
+    const releaseRowsByRequirement = mapBy(
+      manifest.release_preflight.items,
+      (item: { requirement: string; status?: string; current?: string }) => item.requirement,
+    );
+    const probeRowsById = mapBy(
+      manifest.release_preflight.toolchain_probe_ledger.items,
+      (item: { id: string }) => item.id,
+    );
+
+    expect(manifest.release_preflight.release_readiness_proof.status).toBe('pass');
+    expect(manifest.release_preflight.release_readiness_proof.corepack_pnpm_version).toBe('10.23.0');
+    expect(manifest.release_preflight.release_readiness_proof.git_lfs_version).toMatch(/^git-lfs\//);
+    expect(manifest.release_preflight.corepack_probe).toBe('pass');
+    expect(manifest.release_preflight.git_lfs_probe).toBe('pass');
+    expect(manifest.release_preflight.bare_pnpm_diagnostic).toBe('skipped');
+    expect(manifest.release_preflight.git_lfs_hook_diagnostic).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.status).toBe('pass');
+    expect(manifest.release_preflight.toolchain_probe_ledger.open_count).toBe(0);
+    expect(releaseRowsByRequirement.get('Corepack pnpm resolver')).toMatchObject({
+      status: 'pass',
+      current: expect.stringContaining('retained release-readiness proof recorded corepack pnpm 10.23.0'),
+    });
+    expect(releaseRowsByRequirement.get('Git LFS push-path proof')).toMatchObject({
+      status: 'pass',
+      current: expect.stringContaining('retained release-readiness proof recorded git-lfs/'),
+    });
+    expect(probeRowsById.get('corepack_pnpm_resolver')).toMatchObject({
+      status: 'pass',
+      current: expect.stringContaining('retained release-readiness proof recorded corepack pnpm 10.23.0'),
+    });
+    expect(probeRowsById.get('git_lfs_push_path')).toMatchObject({
+      status: 'pass',
+      current: expect.stringContaining('retained release-readiness proof recorded git-lfs/'),
+    });
+    expect(releaseRowsByRequirement.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    expect(manifest.production_approval.explicit_owner_approval).toBe(false);
+    expect(manifest.post_deploy_live_proof.status).toBe('blocked');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('rejects a blocked release-readiness proof record while preserving the recorder failure detail', () => {
     const tempRoot = makeTempRoot();
     const proofPath = writeBlockedReleaseReadinessProof(tempRoot);
@@ -369,7 +413,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1456,11 +1500,37 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(84);
+    expect(manifest.implementation_decisions).toHaveLength(85);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(84);
-    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH');
-    expect(manifest.code_optimization_reviews.some((item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH')).toBe(true);
+    expect(manifest.code_optimization_reviews).toHaveLength(85);
+    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION');
+    expect(manifest.code_optimization_reviews.some((item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION')).toBe(true);
+    const skipProbeReleaseProofDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    );
+    expect(skipProbeReleaseProofDecision).toBeTruthy();
+    expect(skipProbeReleaseProofDecision.chosen_variant).toBe('minimal retained-proof toolchain fact derivation');
+    expect(skipProbeReleaseProofDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-objective-completion-audit-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+    ]));
+    expect(skipProbeReleaseProofDecision.proof_boundary).toMatch(/does not run probes despite --skip-probes|install Corepack or Git LFS|production approval|hosted\/live parity|raise launch status/i);
+    const skipProbeReleaseProofReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+    );
+    expect(skipProbeReleaseProofReview).toBeTruthy();
+    expect(skipProbeReleaseProofReview.policy).toBe('strict');
+    expect(skipProbeReleaseProofReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-launch-evidence-manifest.mjs',
+      'node --check scripts/check-progress-digest-readiness-report.mjs',
+      'node --check scripts/check-objective-completion-audit-readiness-report.mjs',
+      'node --check scripts/check-launch-evidence-manifest.mjs',
+      'git diff --check',
+    ]));
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
