@@ -7,7 +7,7 @@ const args = process.argv.slice(2);
 const failures = [];
 let skipProbes = false;
 const reportArgs = [];
-const latestProgressPhase = 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER';
+const latestProgressPhase = 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS';
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];

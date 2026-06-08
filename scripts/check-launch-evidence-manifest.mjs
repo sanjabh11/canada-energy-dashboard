@@ -2759,7 +2759,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER', 'Manifest progress_updates must expose the latest safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS', 'Manifest progress_updates must expose the latest safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2848,6 +2848,29 @@ try {
         `Manifest fix_report.current_required_checks must include ${requiredCheck}.`,
       );
     }
+    assert(Array.isArray(manifest.fix_report.unresolved_blockers), 'Manifest fix_report.unresolved_blockers must be a list.');
+    const fixReportUnresolvedBlockers = manifest.fix_report.unresolved_blockers;
+    if (releaseEvidenceReady) {
+      assert(
+        !fixReportUnresolvedBlockers.some((blocker) => /Release toolchain and push-path proof remain blocked/i.test(blocker)),
+        'Manifest fix_report.unresolved_blockers must not list release toolchain proof as blocked when retained release evidence is current.',
+      );
+    } else {
+      assert(
+        fixReportUnresolvedBlockers.some((blocker) => /Release toolchain and push-path proof remain blocked/i.test(blocker)),
+        'Manifest fix_report.unresolved_blockers must keep release toolchain proof blocked when retained release evidence is missing or invalid.',
+      );
+    }
+    if (manifest.source_provenance?.is_dirty === false) {
+      assert(
+        !fixReportUnresolvedBlockers.some((blocker) => /^Production deploy still requires clean source provenance/i.test(blocker)),
+        'Manifest fix_report.unresolved_blockers must not list clean source provenance as unresolved when source_provenance is clean.',
+      );
+    }
+    assert(
+      fixReportUnresolvedBlockers.some((blocker) => /Production approval remains manual-stop/i.test(blocker)),
+      'Manifest fix_report.unresolved_blockers must keep explicit production approval as a manual-stop blocker.',
+    );
     assert(Array.isArray(manifest.implementation_decisions), 'Manifest implementation_decisions must be a list.');
     assert(Array.isArray(manifest.rejected_variants), 'Manifest rejected_variants must be a list.');
     assert(Array.isArray(manifest.code_optimization_reviews), 'Manifest code_optimization_reviews must be a list.');
@@ -2861,8 +2884,8 @@ try {
       'Manifest latest code optimization review must match the latest implementation decision.',
     );
     assert(
-      latestImplementationDecision?.task_id === 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
-      'Manifest latest implementation decision must record the code optimization ledger-order ratchet.',
+      latestImplementationDecision?.task_id === 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+      'Manifest latest implementation decision must record the Fix Report proof-aware blocker ratchet.',
     );
     const safeFixDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
     assert(safeFixDecision, 'Manifest must record the preview manifest TypeScript safe-fix implementation decision.');

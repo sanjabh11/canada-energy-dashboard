@@ -5443,6 +5443,7 @@ const releasePreflight = probeReleasePreflight({
   packageManager: pkg.packageManager,
   gitStatus,
 });
+const releaseReadinessEvidenceReady = isReleaseReadinessEvidenceReady(releasePreflight);
 const launchActionQueue = buildLaunchActionQueue({
   buyerProbe,
   branchReviewQueue,
@@ -5551,7 +5552,7 @@ const launchGaps = [
     framework_mapping: ['NIST SSDF: release integrity', 'Supply-chain and deployment provenance review'],
     buyer_impact: 'A buyer-facing remediation or production release request cannot be treated as approval-ready from local pnpm checks or stale push-path evidence.',
     fix: 'Resolve source provenance, run Corepack-pinned release-readiness, verify git-lfs availability before push evidence, and request explicit owner approval before any deploy.',
-    status: isReleaseReadinessEvidenceReady(releasePreflight) ? 'mitigated' : 'open',
+    status: releaseReadinessEvidenceReady ? 'mitigated' : 'open',
   }),
 ];
 
@@ -5942,6 +5943,14 @@ const skipProbeReleaseProofDerivationFilesChanged = [
 ];
 
 const codeOptimizationLedgerOrderFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
+const fixReportProofAwareBlockersFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
   'scripts/check-progress-digest-readiness-report.mjs',
@@ -6598,6 +6607,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...derivativeReportProofPassthroughFilesChanged,
   ...skipProbeReleaseProofDerivationFilesChanged,
   ...codeOptimizationLedgerOrderFilesChanged,
+  ...fixReportProofAwareBlockersFilesChanged,
   ...supabaseAppLintProofRecordFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -7135,6 +7145,17 @@ const codeOptimizationLedgerOrderTestsRun = [
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-8c1a5ab.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-8c1a5ab.json',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-8c1a5ab.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-8c1a5ab.json',
+  'git diff --check',
+];
+
+const fixReportProofAwareBlockersTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-fdd9225.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-fdd9225.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-fdd9225.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-fdd9225.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:commercial-launch-readiness-report -- --release-readiness-proof /tmp/ceip-release-readiness-proof-fdd9225.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-fdd9225.json',
   'git diff --check',
 ];
 
@@ -7825,6 +7846,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...releaseToolchainProofHandleTestsRun,
   ...skipProbeReleaseProofDerivationTestsRun,
   ...codeOptimizationLedgerOrderTestsRun,
+  ...fixReportProofAwareBlockersTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
@@ -9014,6 +9036,19 @@ const safeFixImplementationDecisions = [
     reason: 'The current safe-fix progress digest derives the current phase from implementation_decisions.at(-1), but code_optimization_reviews previously ended on an older buyer-evidence task even though the skipped-probe review existed earlier in the array, making current-review handoff ambiguous.',
     proof_boundary: 'This record improves code-optimization ledger ordering only; it does not change launch scoring, clear source provenance, run release-readiness as approval, choose branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, complete the launch goal, or raise launch status.',
     stop_gate: 'Do not treat latest-ledger alignment, code optimization review ordering, manifest validation, focused progress digest checks, or this code optimization record as source readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    decision: 'Derive Fix Report unresolved blocker text from current release-readiness and source-provenance evidence.',
+    acceptance_check: 'With a current retained release-readiness proof and clean source, fix_report.unresolved_blockers no longer says release toolchain, Git LFS push-path, or clean source provenance remain blocked, while branch review, Supabase advisor, buyer evidence, owner approval, production deploy, and post-deploy live proof remain blocked or external-gated.',
+    chosen_variant: 'minimal proof-aware blocker list derivation',
+    repo_pattern_reused: 'Existing isReleaseReadinessEvidenceReady helper, release_preflight rows, source_provenance status, Fix Report unresolved_blockers list, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: fixReportProofAwareBlockersFilesChanged,
+    tests_run: fixReportProofAwareBlockersTestsRun,
+    proof: 'The patch makes Fix Report unresolved blockers conditional on current release evidence and source cleanliness, refreshes progress pending-work text, and adds checker/unit assertions so proof-attached manifests do not carry stale release/source blockers.',
+    reason: 'After current release-readiness, Corepack, Git LFS, and clean-source proof is attached, the manifest completion audit treats the release-toolchain gate as present, but the Fix Report still listed release toolchain and push-path proof as blocked.',
+    proof_boundary: 'This record improves proof-aware blocker text only; it does not grant owner approval, clear branch review, authorize Supabase, contact buyers, request production approval, push, deploy, mutate live services, prove hosted/live parity, complete the launch goal, or raise launch status.',
+    stop_gate: 'Do not treat proof-aware Fix Report blocker text, current local release proof, clean source provenance, manifest validation, progress digest checks, or this code optimization record as branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -11013,6 +11048,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A new field would make latest review lookup explicit but would add validation and report maintenance without clearing any external gate.',
     evidence: 'Focused progress and broad manifest checks already consume progress_updates, implementation_decisions, and code_optimization_reviews as the current evidence surfaces.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    variant: 'Leave Fix Report unresolved_blockers as a static list after proof attachment.',
+    reason_rejected: 'Would keep release and source blockers visible after the manifest has current retained proof and clean source evidence.',
+    tradeoff: 'No-code defer avoids touching the ledger again, but it forces operators to reconcile contradictory Fix Report and completion audit rows.',
+    evidence: 'With /tmp/ceip-release-readiness-proof-fdd9225.json attached, the release-toolchain completion row is present while fix_report.unresolved_blockers still says release toolchain and push-path proof remain blocked.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    variant: 'Remove every release and source-provenance mention from the launch evidence manifest.',
+    reason_rejected: 'Release and source evidence remain required gates when proofs are absent or source is dirty, and owner approval remains separate even when local release proof passes.',
+    tradeoff: 'Global removal would simplify wording but would hide real release/source blockers in no-proof or dirty-source runs.',
+    evidence: 'The existing isReleaseReadinessEvidenceReady helper already distinguishes local proof readiness from production approval and live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    variant: 'Treat current release proof and clean source as production approval readiness.',
+    reason_rejected: 'Release-readiness and source provenance do not clear branch review, Supabase advisor evidence, buyer evidence, explicit owner approval, deploy execution, or hosted/live proof.',
+    tradeoff: 'Promoting production readiness would reduce apparent blockers but would overstate launch status and violate the manual-stop approval boundary.',
+    evidence: 'Production approval and post-deploy live proof remain manual-stop/blocked in the proof-attached manifest after release-readiness passes.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -11802,9 +11858,33 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: codeOptimizationLedgerOrderTestsRun,
     remaining_risk: 'Ledger alignment improves operator handoff only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change updates only existing manifest blocker text derivation, progress pending text, broad checker assertions, and focused launch/progress unit contracts, with no new dependency, no new artifact, no branch/source mutation, no external-account call, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: fixReportProofAwareBlockersTestsRun,
+    remaining_risk: 'Proof-aware Fix Report blockers improve operator handoff only; launch readiness still depends on retained buyer evidence, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
-const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
+function formatHumanList(items) {
+  if (items.length <= 1) return items[0] ?? '';
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')}, and ${items.at(-1)}`;
+}
+
+const launchReadinessPendingWorkItems = [
+  'buyer evidence',
+  ...(gitStatus.isDirty ? ['source provenance'] : []),
+  'branch review',
+  'Supabase advisor clearance',
+  ...(releaseReadinessEvidenceReady ? [] : ['release toolchain proof']),
+  'production approval',
+  'post-deploy live proof',
+];
+const launchReadinessPendingWork = `${formatHumanList(launchReadinessPendingWorkItems)} remain unresolved.${releaseReadinessEvidenceReady ? ' Local release-readiness and Git LFS push-path proof are current, but they do not grant owner approval, deploy authorization, or hosted/live parity.' : ''}`;
 const launchReadinessActiveBottleneck = 'Current operational blockers require owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof; buyer-proven confidence remains external-gated on retained buyer artifacts outside this read-only manifest run.';
 const latestSafeFixDecision = safeFixImplementationDecisions[safeFixImplementationDecisions.length - 1] ?? null;
 
@@ -11841,7 +11921,11 @@ const latestSafeFixTargetMatrix = [
     targetPercent: 15,
     currentPercent: 45,
     status: 'running',
-    evidence: ['Focused local checks pass, but source provenance, Corepack-pinned release-readiness, production approval, and post-deploy live proof remain open.'],
+    evidence: [
+      releaseReadinessEvidenceReady && !gitStatus.isDirty
+        ? 'Local release-readiness, Git LFS push-path, and clean source provenance evidence are current; production approval and post-deploy live proof remain open.'
+        : 'Focused local checks pass, but source provenance, Corepack-pinned release-readiness, production approval, and post-deploy live proof remain open.',
+    ],
     confidence: 3,
   }),
   progressMatrixRow({
@@ -11908,7 +11992,7 @@ const objectiveCompletionTargetMatrix = [
     targetPercent: 15,
     currentPercent: 45,
     status: 'running',
-    evidence: ['release toolchain proof', 'production/live proof gate'],
+    evidence: [releaseReadinessEvidenceReady ? 'release toolchain proof current' : 'release toolchain proof', 'production/live proof gate'],
     confidence: 3,
   }),
   progressMatrixRow({
@@ -12222,10 +12306,14 @@ const manifest = {
     ],
     unresolved_blockers: [
       'Real buyer evidence and retained redacted artifacts are absent.',
-      'Production deploy still requires clean source provenance and explicit owner approval.',
+      ...(gitStatus.isDirty
+        ? ['Production deploy still requires clean source provenance and explicit owner approval.']
+        : []),
       'High-risk, local/origin split, or stale/aging unmerged branches remain review queues.',
       'Supabase advisor clearance remains blocked until connector or dashboard advisor evidence is authorized, rerun, and recorded.',
-      'Release toolchain and push-path proof remain blocked until Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current.',
+      ...(releaseReadinessEvidenceReady
+        ? []
+        : ['Release toolchain and push-path proof remain blocked until Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current.']),
       'Production approval remains manual-stop until every prerequisite row is ready and the owner explicitly approves deployment.',
       'Post-deploy live proof remains blocked until an explicitly approved deploy runs and live metadata, static parity, and hosted proof-pack smoke all pass.',
     ],

@@ -187,6 +187,17 @@ describe('launch evidence manifest report', () => {
     expect(manifest.release_preflight.release_readiness_proof.proof_boundary).toMatch(/does not grant owner approval|hosted\/live parity/i);
     expect(releaseRowsByRequirement.get('Release-readiness execution')?.status).toBe('pass');
     expect(releaseRowsByRequirement.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    if (manifest.source_provenance.is_dirty) {
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /Release toolchain and push-path proof remain blocked/i.test(blocker))).toBe(true);
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /^Production deploy still requires clean source provenance/i.test(blocker))).toBe(true);
+    } else {
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /Release toolchain and push-path proof remain blocked/i.test(blocker))).toBe(false);
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /^Production deploy still requires clean source provenance/i.test(blocker))).toBe(false);
+    }
+    expect(manifest.fix_report.unresolved_blockers).toEqual(expect.arrayContaining([
+      expect.stringMatching(/Production approval remains manual-stop/i),
+      expect.stringMatching(/Post-deploy live proof remains blocked/i),
+    ]));
     expect(manifest.production_approval.explicit_owner_approval).toBe(false);
     expect(manifest.production_approval.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
@@ -232,6 +243,13 @@ describe('launch evidence manifest report', () => {
       current: expect.stringContaining('retained release-readiness proof recorded git-lfs/'),
     });
     expect(releaseRowsByRequirement.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    if (manifest.source_provenance.is_dirty) {
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /Release toolchain and push-path proof remain blocked/i.test(blocker))).toBe(true);
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /^Production deploy still requires clean source provenance/i.test(blocker))).toBe(true);
+    } else {
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /Release toolchain and push-path proof remain blocked/i.test(blocker))).toBe(false);
+      expect(manifest.fix_report.unresolved_blockers.some((blocker: string) => /^Production deploy still requires clean source provenance/i.test(blocker))).toBe(false);
+    }
     expect(manifest.production_approval.explicit_owner_approval).toBe(false);
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
@@ -413,7 +431,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1500,11 +1518,35 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(86);
+    expect(manifest.implementation_decisions).toHaveLength(87);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(86);
-    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER');
+    expect(manifest.code_optimization_reviews).toHaveLength(87);
+    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS');
     expect(manifest.code_optimization_reviews.at(-1)?.target_task).toBe(manifest.implementation_decisions.at(-1)?.task_id);
+    const fixReportProofAwareBlockersDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    );
+    expect(fixReportProofAwareBlockersDecision).toBeTruthy();
+    expect(fixReportProofAwareBlockersDecision.chosen_variant).toBe('minimal proof-aware blocker list derivation');
+    expect(fixReportProofAwareBlockersDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+    ]));
+    expect(fixReportProofAwareBlockersDecision.proof_boundary).toMatch(/does not grant owner approval|authorize Supabase|contact buyers|hosted\/live parity|raise launch status/i);
+    const fixReportProofAwareBlockersReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-FIX-REPORT-PROOF-AWARE-BLOCKERS',
+    );
+    expect(fixReportProofAwareBlockersReview).toBeTruthy();
+    expect(fixReportProofAwareBlockersReview.policy).toBe('strict');
+    expect(fixReportProofAwareBlockersReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-launch-evidence-manifest.mjs',
+      'node --check scripts/check-launch-evidence-manifest.mjs',
+      'node --check scripts/check-progress-digest-readiness-report.mjs',
+      'git diff --check',
+    ]));
     expect(manifest.code_optimization_reviews.some((item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION')).toBe(true);
     const codeOptimizationLedgerOrderDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
