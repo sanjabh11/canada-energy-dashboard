@@ -106,7 +106,7 @@ describe('launch action readiness report', () => {
     expect(stdout).toContain('launch_blocker_action_queue');
     expect(stdout).toContain('launch_action_operator_handoff_packet');
     expect(stdout).toContain('launch_action_queue.operator_handoff_packet');
-    expect(stdout).toContain('| buyer_evidence | blocked |');
+    expect(stdout).toContain('| buyer_evidence | external_gate |');
     expect(stdout).toContain('hard_gate_status=skipped');
     expect(stdout).toContain('acquisition_status=blocked');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
@@ -190,6 +190,9 @@ describe('launch action readiness report', () => {
     expect(payload.launch_action_queue.operator_handoff_packet.manual_stop_count).toBe(
       operatorItems.filter((item) => item.status === 'manual_stop').length,
     );
+    expect(payload.launch_action_queue.operator_handoff_packet.external_gate_count).toBe(
+      operatorItems.filter((item) => item.status === 'external_gate').length,
+    );
     expect(payload.launch_action_queue.operator_handoff_packet.owner_approval_count).toBe(1);
     expect(payload.launch_action_queue.operator_handoff_packet.external_account_count).toBe(1);
     expect(payload.launch_action_queue.operator_handoff_packet.buyer_evidence_count).toBe(1);
@@ -209,8 +212,10 @@ describe('launch action readiness report', () => {
     expect(operatorRowsByPhase.get('branch_review')?.read_only_required).toBe(true);
     expect(operatorRowsByPhase.get('supabase_advisor')?.execution_gate).toBe('supabase_advisor_after_authorization');
     expect(operatorRowsByPhase.get('supabase_advisor')?.external_account_required).toBe(true);
-    expect(operatorRowsByPhase.get('buyer_evidence')?.execution_gate).toBe('buyer_evidence_before_approval');
+    expect(operatorRowsByPhase.get('buyer_evidence')?.execution_gate).toBe('buyer_evidence_before_commercial_ready_claims');
     expect(operatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required).toBe(true);
+    expect(operatorRowsByPhase.get('buyer_evidence')?.status).toBe('external_gate');
+    expect(operatorRowsByPhase.get('buyer_evidence')?.blocks_launch_clearance).toBe(false);
     expect(operatorRowsByPhase.get('production_approval')?.execution_gate).toBe('owner_approval_after_all_prelaunch_gates');
     expect(operatorRowsByPhase.get('production_approval')?.owner_approval_required).toBe(true);
     expect(operatorRowsByPhase.get('post_deploy_live_proof')?.execution_gate).toBe('post_deploy_proof_after_approved_deploy');
@@ -220,7 +225,7 @@ describe('launch action readiness report', () => {
       expect(row.proof_command).toBe(queueRow?.proof_command);
       expect(row.proof_type).toBe(queueRow?.proof_type);
       expect(row.status).toBe(queueRow?.status);
-      expect(row.blocks_launch_clearance).toBe(queueRow?.status !== 'ready');
+      expect(row.blocks_launch_clearance).toBe(queueRow?.status !== 'ready' && queueRow?.status !== 'external_gate');
       expect(row.can_execute_from_packet).toBe(false);
       expect(row.proof_boundary).toMatch(/planning evidence only|does not execute the row|clear blockers|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i);
       expect(row.stop_gate).toMatch(/Do not execute this launch action|mark it ready|clear blockers|claim launch readiness/i);
@@ -235,7 +240,7 @@ describe('launch action readiness report', () => {
       'production_approval',
       'post_deploy_live_proof',
     ]));
-    expect(buyerLane?.status).toBe('blocked');
+    expect(buyerLane?.status).toBe('external_gate');
     expect(buyerLane?.current).toContain('open_hard_gate_rows=');
     expect(buyerLane?.current).toContain('hard_gate_status=skipped');
     expect(buyerLane?.current).toContain('acquisition_status=blocked');

@@ -136,7 +136,7 @@ if (failures.length === 0) {
       'Corepack release-readiness': 'release_readiness_after_clean_source',
       'Canonical branch review': 'branch_review_before_owner_request',
       'Supabase advisor clearance': 'supabase_advisor_after_authorization',
-      'Buyer evidence hard gate': 'buyer_evidence_validation_before_approval',
+      'Buyer evidence hard gate': 'buyer_evidence_before_commercial_ready_claims',
       'Explicit owner production approval': 'owner_approval_after_pre_request_gates',
       'Post-deploy live proof boundary': 'post_deploy_proof_after_approved_deploy',
     };
@@ -202,7 +202,9 @@ if (failures.length === 0) {
         && /check:supabase-advisor-report/.test(requestRowsByPrerequisite.get('Supabase advisor clearance')?.proof_command ?? ''),
       'Supabase advisor clearance request row must point to the focused Supabase advisor report/check.',
     );
-    assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.request_phase === 'pre_request', 'Buyer evidence hard gate must be a pre-request row.');
+    assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.request_phase === 'market_confidence_boundary', 'Buyer evidence hard gate must be a market-confidence boundary row.');
+    assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.status === 'external_gate', 'Buyer evidence hard gate request row must remain external_gate while buyer evidence is absent before launch.');
+    assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.blocks_request === false, 'Buyer evidence hard gate must not block production-maintenance approval packets while external-gated.');
     assert(
       /report:buyer-evidence-gate-readiness/.test(prerequisiteRowsByName.get('Buyer evidence hard gate')?.proof_command ?? '')
         && /check:buyer-evidence-gate-report/.test(prerequisiteRowsByName.get('Buyer evidence hard gate')?.proof_command ?? ''),
@@ -241,7 +243,8 @@ if (failures.length === 0) {
     assert(operatorHandoffPacket.pre_request_count === operatorItems.filter((item) => item.request_phase === 'pre_request').length, 'Operator handoff pre_request_count must match pre-request rows.');
     assert(operatorHandoffPacket.ready_count === operatorItems.filter((item) => item.status === 'ready').length, 'Operator handoff ready_count must match ready rows.');
     assert(operatorHandoffPacket.manual_stop_count === operatorItems.filter((item) => item.status === 'manual_stop').length, 'Operator handoff manual_stop_count must match manual-stop rows.');
-    assert(operatorHandoffPacket.blocked_count === operatorItems.filter((item) => item.status !== 'ready').length, 'Operator handoff blocked_count must match non-ready rows.');
+    assert(operatorHandoffPacket.external_gate_count === operatorItems.filter((item) => item.status === 'external_gate').length, 'Operator handoff external_gate_count must match external-gate rows.');
+    assert(operatorHandoffPacket.blocked_count === operatorItems.filter((item) => item.status === 'blocked').length, 'Operator handoff blocked_count must match blocked rows.');
     assert(operatorHandoffPacket.evidence.includes('Production approval operator handoff packet'), 'Operator handoff evidence must include a packet marker.');
     assert(/planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|clear source provenance|hosted\/live parity/i.test(operatorHandoffPacket.proof_boundary ?? ''), 'Operator handoff proof_boundary must preserve planning-only approval boundaries.');
     assert(/Do not request or claim production approval|deploy-production|netlify deploy|contact buyers|access Supabase|hosted\/live parity/i.test(operatorHandoffPacket.stop_gate ?? ''), 'Operator handoff stop_gate must reject approval, deploy, external-account, and live claims.');

@@ -85,15 +85,16 @@ if (failures.length === 0) {
     assertContains(stdout, 'Goal-completion blocker rows:', 'Report must include goal-completion blocker counts.');
     assertContains(stdout, '## Decision Boundary', 'Report must include a decision-boundary section.');
     assertContains(stdout, 'does not mark the launch goal complete', 'Report must reject completion from focused audit evidence.');
-    assert(/does not .*clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|commercial launch readiness/i.test(stdout), 'Report must preserve no-clearance, no-external-action, no-approval, no-deploy, no-live-parity, and no-readiness boundaries.');
+    assert(/does not .*clear P0\/P1 operational blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|commercial launch readiness/i.test(stdout), 'Report must preserve no-clearance, no-external-action, no-approval, no-deploy, no-live-parity, and no-readiness boundaries.');
     assertContains(stdout, '## Completion Audit Summary', 'Report must include the completion audit summary.');
     assertContains(stdout, 'completion_audit_current_state', 'Report must classify the audit as current-state completion evidence.');
     assertContains(stdout, 'Objective completion audit:', 'Report must include manifest completion audit evidence counts.');
     assertContains(stdout, '## Deliverable Evidence Rows', 'Report must include deliverable evidence rows.');
     assertContains(stdout, 'Launch score table', 'Report must include the launch score deliverable row.');
     assertContains(stdout, 'Structured evidence manifest', 'Report must include the structured evidence manifest deliverable row.');
+    assertContains(stdout, '## External Gate Rows', 'Report must include external gate rows.');
+    assertContains(stdout, '| 1 | Buyer evidence hard gate | external_gate | no | buyer_evidence_hard_gate |', 'Report must keep buyer evidence in non-blocking external gate rows.');
     assertContains(stdout, '## Goal-Blocking Rows', 'Report must include goal-blocking rows.');
-    assertContains(stdout, 'Buyer evidence hard gate', 'Report must include buyer evidence hard-gate blockers.');
     assertContains(stdout, 'Source provenance release gate', 'Report must include source provenance blockers.');
     assertContains(stdout, 'Branch canonical review gate', 'Report must include branch review blockers.');
     assertContains(stdout, 'Supabase advisor clearance gate', 'Report must include Supabase advisor blockers.');
@@ -119,13 +120,15 @@ if (failures.length === 0) {
     assert(audit.total_count >= 15, 'Focused objective completion audit must include every required deliverable and launch gate.');
     assert(audit.completed_count >= 8, 'Focused objective completion audit must count present deliverables.');
     assert(audit.blocked_count >= 4, 'Focused objective completion audit must count unresolved blocker rows.');
+    assert(audit.external_gate_count >= 1, 'Focused objective completion audit must count external gate rows.');
     assert(audit.manual_stop_count >= 1, 'Focused objective completion audit must count production/live proof manual-stop rows.');
     assert(audit.goal_completion_blocked_count === audit.blocked_count + audit.manual_stop_count, 'Focused objective completion audit goal blockers must equal blocked plus manual-stop rows.');
     assert(Array.isArray(payload.deliverable_items) && payload.deliverable_items.length >= 8, 'Focused JSON must include deliverable rows.');
-    assert(Array.isArray(payload.blocker_items) && payload.blocker_items.length >= 6, 'Focused JSON must include goal-blocking rows.');
+    assert(Array.isArray(payload.external_gate_items) && payload.external_gate_items.length >= 1, 'Focused JSON must include external gate rows.');
+    assert(payload.external_gate_items.some((item) => item.requirement === 'Buyer evidence hard gate' && item.status === 'external_gate' && item.blocks_goal_completion === false), 'Focused JSON must include buyer evidence as a non-blocking external gate.');
+    assert(Array.isArray(payload.blocker_items) && payload.blocker_items.length >= 5, 'Focused JSON must include goal-blocking rows.');
     const blockerNames = new Set(payload.blocker_items.map((item) => item.requirement));
     for (const requirement of [
-      'Buyer evidence hard gate',
       'Source provenance release gate',
       'Branch canonical review gate',
       'Supabase advisor clearance gate',
@@ -139,8 +142,8 @@ if (failures.length === 0) {
     assert(payload.public_status_handle?.sourceProofType === 'completion_audit_current_state', 'Focused JSON public objective completion audit handle must expose sourceProofType=completion_audit_current_state.');
     assert(/report:objective-completion-audit-readiness/.test(payload.package_script_handles?.report_objective_completion_audit_readiness ?? ''), 'Focused JSON must expose the objective completion audit report script handle.');
     assert(/check:objective-completion-audit-report/.test(payload.package_script_handles?.check_objective_completion_audit_report ?? ''), 'Focused JSON must expose the objective completion audit checker script handle.');
-    assert(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness semantics.');
-    assert(/Do not treat this focused objective completion audit report|production approval|buyer acceptance|release readiness|source readiness|branch approval|Supabase advisor clearance|deployment approval|hosted\/live parity|commercial-ready status|launch-goal completion/i.test(payload.stop_gate ?? ''), 'Focused stop gate must reject approval, buyer, release, source, branch, Supabase, deploy, live-parity, ready, and completion claims.');
+    assert(/does not mark the launch goal complete|clear P0\/P1 operational blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness semantics.');
+    assert(/Do not treat this focused objective completion audit report|external-gate row|production approval|buyer acceptance|release readiness|source readiness|branch approval|Supabase advisor clearance|deployment approval|hosted\/live parity|commercial-ready status|launch-goal completion/i.test(payload.stop_gate ?? ''), 'Focused stop gate must reject approval, buyer, release, source, branch, Supabase, deploy, live-parity, ready, and completion claims.');
   }
 }
 

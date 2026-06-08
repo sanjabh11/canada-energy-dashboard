@@ -709,7 +709,7 @@ function launchGapProofType(gap) {
 
 function launchGapProofBoundary(gap) {
   if (gap.includes('Phase F evidence')) {
-    return 'Aggregates buyer-evidence readiness and hard-gate deficit evidence; it does not prove buyer acceptance, 95% confidence, retained artifacts, outreach permission, or commercial-ready status.';
+    return 'Aggregates buyer-evidence readiness and hard-gate deficit evidence; it does not prove buyer acceptance, 95% confidence, retained artifacts, outreach permission, or commercial-ready status. Missing buyer evidence is a market-confidence external gate only; it must not block repo-side application development, local proof, or production-maintenance fixes when claims remain bounded.';
   }
   if (gap.includes('source deploy approval')) {
     return 'Summarizes current source provenance and owner-approval state; it does not commit, unstage, stash, revert, delete, clear source provenance, run release-readiness, deploy, or grant approval.';
@@ -728,7 +728,7 @@ function launchGapProofBoundary(gap) {
 
 function launchGapStopGate(gap) {
   if (gap.includes('Phase F evidence')) {
-    return 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, or outreach permission from this gap summary.';
+    return 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, feature-rating increases, or outreach permission from this gap summary; do not use missing buyer evidence alone to block application development or bounded production-maintenance work.';
   }
   if (gap.includes('source deploy approval')) {
     return 'Do not commit, unstage, stash, revert, delete, move, deploy, or request production approval until dirty source provenance is intentionally resolved by the owner.';
@@ -819,6 +819,26 @@ function objectiveCompletionItem(row) {
     blocks_goal_completion: row.status !== 'present',
     ...row,
   };
+}
+
+function isCompletionBlockedStatus(status) {
+  return status === 'blocked';
+}
+
+function isCompletionManualStopStatus(status) {
+  return status === 'manual_stop';
+}
+
+function isLaunchActionBlockingStatus(status) {
+  return status !== 'ready' && status !== 'external_gate';
+}
+
+function isProductionPrerequisiteBlockingStatus(status) {
+  return status !== 'ready' && status !== 'external_gate';
+}
+
+function externalBuyerEvidenceStatus(isReady) {
+  return isReady ? 'ready' : 'external_gate';
 }
 
 function buildObjectiveCompletionAudit({
@@ -925,11 +945,12 @@ function buildObjectiveCompletionAudit({
     }),
     objectiveCompletionItem({
       requirement: 'Buyer evidence hard gate',
-      status: buyerProbe.phaseFGate === 'pass' ? 'present' : 'blocked',
+      status: buyerProbe.phaseFGate === 'pass' ? 'present' : 'external_gate',
+      blocks_goal_completion: false,
       evidence: buyerProbe.hardGateDeficits?.evidence ?? buyerProbe.reviewEvidence,
       proof_type: 'buyer_evidence_hard_gate',
-      proof_boundary: 'Buyer evidence gate requires real retained redacted artifacts and accepted register rows; generated scaffolding, outreach headers, demos, and this audit do not prove buyer acceptance.',
-      stop_gate: 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, or permission to contact buyers until validate:pilot-evidence --require-95 passes against retained artifacts.',
+      proof_boundary: 'Buyer evidence gate requires real retained redacted artifacts and accepted register rows before buyer-proven confidence or commercial-ready claims; generated scaffolding, outreach headers, demos, and this audit do not prove buyer acceptance. Until the app has launched and real buyers exist, this is an external market-confidence gate rather than an application-development blocker.',
+      stop_gate: 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, feature-rating increases, or permission to contact buyers until validate:pilot-evidence --require-95 passes against retained artifacts; do not block repo-side development or bounded production-maintenance fixes solely because buyer evidence is not yet available.',
       next_proof_command: BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
     }),
     objectiveCompletionItem({
@@ -979,8 +1000,9 @@ function buildObjectiveCompletionAudit({
     }),
   ];
   const completedCount = items.filter((item) => item.status === 'present').length;
-  const blockedCount = items.filter((item) => item.status === 'blocked').length;
-  const manualStopCount = items.filter((item) => item.status === 'manual_stop').length;
+  const blockedCount = items.filter((item) => isCompletionBlockedStatus(item.status)).length;
+  const manualStopCount = items.filter((item) => isCompletionManualStopStatus(item.status)).length;
+  const externalGateCount = items.filter((item) => item.status === 'external_gate').length;
   const goalCompletionBlockedCount = items.filter((item) => item.blocks_goal_completion).length;
   return {
     status: goalCompletionBlockedCount > 0 ? 'blocked' : 'present',
@@ -988,11 +1010,12 @@ function buildObjectiveCompletionAudit({
     completed_count: completedCount,
     blocked_count: blockedCount,
     manual_stop_count: manualStopCount,
+    external_gate_count: externalGateCount,
     total_count: items.length,
     goal_completion_blocked_count: goalCompletionBlockedCount,
-    evidence: `Objective completion audit: deliverables_present=${completedCount}; blockers=${blockedCount}; manual_stop=${manualStopCount}; open_p0=${openP0}; open_p1=${openP1}; launch_decision=${launchDecision}.`,
-    proof_boundary: 'This audit maps current manifest/report evidence only; it does not prove commercial-ready status, buyer acceptance, production approval, deployment, hosted/live parity, Supabase clearance, branch approval, or permission to contact buyers.',
-    stop_gate: 'Do not mark the launch goal complete or claim readiness while P0/P1 blockers, buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, or post-deploy live proof gates remain open.',
+    evidence: `Objective completion audit: deliverables_present=${completedCount}; blockers=${blockedCount}; manual_stop=${manualStopCount}; external_gates=${externalGateCount}; open_p0=${openP0}; open_p1=${openP1}; launch_decision=${launchDecision}.`,
+    proof_boundary: 'This audit maps current manifest/report evidence only; it does not prove commercial-ready status, buyer acceptance, production approval, deployment, hosted/live parity, Supabase clearance, branch approval, or permission to contact buyers. Buyer evidence absence is tracked as an external market-confidence gate, not as a repo-side development blocker.',
+    stop_gate: 'Do not mark the launch goal complete or claim readiness while P0/P1 operational blockers, source provenance, branch review, Supabase advisor, release toolchain, production approval, or post-deploy live proof gates remain open. Do not raise buyer-proven confidence while buyer evidence is external-gated.',
     items,
   };
 }
@@ -1448,7 +1471,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
 
 function launchActionQueueEvidence(queue) {
   const topBlocked = queue.items
-    .filter((item) => item.status !== 'ready')
+    .filter((item) => isLaunchActionBlockingStatus(item.status))
     .slice(0, 5)
     .map((item) => `${item.rank}:${item.phase}:${item.status}`)
     .join(', ') || 'none';
@@ -1457,8 +1480,9 @@ function launchActionQueueEvidence(queue) {
     'Launch blocker action queue:',
     `items=${queue.item_count}`,
     `blocked=${queue.blocked_count}`,
+    `external_gates=${queue.external_gate_count}`,
     `top_blocked=${topBlocked}`,
-    'approval_gate=queue is an execution plan only; it does not deploy, merge, contact buyers, clear source provenance, or claim launch readiness',
+    'approval_gate=queue is an execution plan only; it does not deploy, merge, contact buyers, create buyer evidence, clear source provenance, or claim launch readiness',
   ].join(' ');
 }
 
@@ -1475,7 +1499,7 @@ function launchActionOperatorExecutionGate(item) {
     case 'supabase_advisor':
       return 'supabase_advisor_after_authorization';
     case 'buyer_evidence':
-      return 'buyer_evidence_before_approval';
+      return 'buyer_evidence_before_commercial_ready_claims';
     case 'production_approval':
       return 'owner_approval_after_all_prelaunch_gates';
     case 'post_deploy_live_proof':
@@ -1499,6 +1523,7 @@ function launchActionOperatorHandoffEvidence(packet) {
     `items=${packet.item_count}`,
     `blocked=${packet.blocked_count}`,
     `manual_stop=${packet.manual_stop_count}`,
+    `external_gates=${packet.external_gate_count}`,
     `top_execution_gates=${topBlocked}`,
     'approval_gate=packet is planning evidence only; it does not execute queue rows, clear blockers, mutate source, contact buyers, access Supabase, request owner approval, deploy, run live proof, or claim launch readiness',
   ].join(' ');
@@ -1517,7 +1542,7 @@ function buildLaunchActionOperatorHandoffPacket(queue) {
     proof_type: item.proof_type,
     proof_boundary: `${item.proof_boundary} This launch action operator handoff row is planning evidence only; it does not execute the row, clear blockers, mutate source, contact buyers, access Supabase, request owner approval, deploy, run live proof, or claim launch readiness.`,
     stop_gate: `${item.stop_gate} Do not execute this launch action, mark it ready, clear blockers, or claim launch readiness from the handoff packet itself.`,
-    blocks_launch_clearance: item.status !== 'ready',
+    blocks_launch_clearance: isLaunchActionBlockingStatus(item.status),
     owner_approval_required: item.phase === 'production_approval',
     external_account_required: item.phase === 'supabase_advisor',
     buyer_evidence_required: item.phase === 'buyer_evidence',
@@ -1536,6 +1561,7 @@ function buildLaunchActionOperatorHandoffPacket(queue) {
     blocked_count: items.filter((item) => item.blocks_launch_clearance).length,
     ready_count: items.filter((item) => item.status === 'ready').length,
     manual_stop_count: items.filter((item) => item.status === 'manual_stop').length,
+    external_gate_count: items.filter((item) => item.status === 'external_gate').length,
     owner_approval_count: items.filter((item) => item.owner_approval_required).length,
     external_account_count: items.filter((item) => item.external_account_required).length,
     buyer_evidence_count: items.filter((item) => item.buyer_evidence_required).length,
@@ -1586,7 +1612,7 @@ function launchActionProofBoundary(phase) {
     case 'supabase_advisor':
       return 'Requires authorized Supabase dashboard or connector advisor evidence plus retained public-safe findings; CLI lint, repo artifacts, public status cards, and permission-denied output do not satisfy clearance.';
     case 'buyer_evidence':
-      return 'Requires real anonymized accepted buyer rows and retained redacted artifacts passing validate:pilot-evidence --require-95; templates, generated workspaces, rehearsals, outreach headers, and constructed demos do not satisfy buyer acceptance.';
+      return 'Requires real anonymized accepted buyer rows and retained redacted artifacts passing validate:pilot-evidence --require-95 before buyer-proven confidence, commercial-ready, outreach-permission, or feature-rating claims; templates, generated workspaces, rehearsals, outreach headers, constructed demos, and the absence of launched buyers do not satisfy buyer acceptance. This is a market-confidence external gate, not an application-development blocker.';
     case 'production_approval':
       return 'Requires explicit owner approval after prerequisite gates are ready; this action, manifest, report, or deploy-request check does not approve, push, deploy, or prove live parity.';
     case 'post_deploy_live_proof':
@@ -1685,8 +1711,8 @@ function buildLaunchActionQueue({
       proof_command: BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('buyer_evidence'),
       proof_boundary: launchActionProofBoundary('buyer_evidence'),
-      stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, or constructed demos as buyer acceptance.',
-      status: buyerDeficitsOpen ? 'blocked' : 'ready',
+      stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, constructed demos, or missing buyer artifacts as buyer acceptance; do not block repo-side application development or bounded production-maintenance fixes solely because the unlaunched app has no buyer evidence yet.',
+      status: externalBuyerEvidenceStatus(!buyerDeficitsOpen),
     },
     {
       rank: 7,
@@ -1715,9 +1741,10 @@ function buildLaunchActionQueue({
   ];
 
   const queue = {
-    status: items.every((item) => item.status === 'ready') ? 'ready' : 'blocked',
+    status: items.every((item) => !isLaunchActionBlockingStatus(item.status)) ? 'ready' : 'blocked',
     item_count: items.length,
-    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    blocked_count: items.filter((item) => isLaunchActionBlockingStatus(item.status)).length,
+    external_gate_count: items.filter((item) => item.status === 'external_gate').length,
     items,
   };
 
@@ -1730,7 +1757,7 @@ function buildLaunchActionQueue({
 
 function productionApprovalPrerequisiteEvidence(queue) {
   const topOpen = queue.items
-    .filter((item) => item.status !== 'ready')
+    .filter((item) => isProductionPrerequisiteBlockingStatus(item.status))
     .slice(0, 6)
     .map((item) => `${item.rank}:${item.prerequisite}:${item.status}`)
     .join(', ') || 'none';
@@ -1740,6 +1767,7 @@ function productionApprovalPrerequisiteEvidence(queue) {
     `status=${queue.status}`,
     `open=${queue.blocked_count}/${queue.item_count}`,
     `manual_stop=${queue.manual_stop_count}`,
+    `external_gates=${queue.external_gate_count}`,
     `top_open=${topOpen}`,
     'approval_gate=queue does not grant owner approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or claim post-deploy live parity',
   ].join(' ');
@@ -1785,7 +1813,7 @@ function productionApprovalPrerequisiteProofBoundary(prerequisite) {
     case 'Supabase advisor clearance':
       return 'Requires authorized Supabase dashboard or connector advisor evidence and public-safe retained findings; CLI lint, repo artifacts, public status cards, and permission-denied connector output do not satisfy this prerequisite.';
     case 'Buyer evidence hard gate':
-      return 'Requires real anonymized accepted buyer rows and retained redacted artifacts passing validate:pilot-evidence --require-95; templates, rehearsal rows, outreach headers, constructed demos, and missing artifacts do not satisfy this prerequisite.';
+      return 'Requires real anonymized accepted buyer rows and retained redacted artifacts passing validate:pilot-evidence --require-95 before buyer-proven confidence, commercial-ready, outreach-permission, or feature-rating claims; templates, rehearsal rows, outreach headers, constructed demos, and missing artifacts do not satisfy buyer acceptance. For an unlaunched app, this is a market-confidence external gate rather than a production-maintenance request blocker.';
     case 'Explicit owner production approval':
       return 'Requires explicit owner approval after every prerequisite is ready; this queue, manifest, report, schema validation, or deploy-request check does not approve, push, deploy, or prove live parity.';
     case 'Post-deploy live proof boundary':
@@ -1896,8 +1924,8 @@ function buildProductionApprovalPrerequisiteQueue({
       proof_command: BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Buyer evidence hard gate'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Buyer evidence hard gate'),
-      stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, constructed demos, or missing artifacts as buyer acceptance.',
-      status: statusForProductionPrerequisite(buyerReady),
+      stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, constructed demos, or missing artifacts as buyer acceptance. Do not block repo-side application development or bounded production-maintenance approval packets solely because the unlaunched app has no buyer evidence yet.',
+      status: externalBuyerEvidenceStatus(buyerReady),
     },
     {
       rank: 7,
@@ -1926,10 +1954,11 @@ function buildProductionApprovalPrerequisiteQueue({
   ];
 
   const queue = {
-    status: items.every((item) => item.status === 'ready') ? 'ready' : 'blocked',
+    status: items.every((item) => !isProductionPrerequisiteBlockingStatus(item.status)) ? 'ready' : 'blocked',
     item_count: items.length,
-    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    blocked_count: items.filter((item) => isProductionPrerequisiteBlockingStatus(item.status)).length,
     manual_stop_count: items.filter((item) => item.status === 'manual_stop').length,
+    external_gate_count: items.filter((item) => item.status === 'external_gate').length,
     items,
   };
 
@@ -1952,12 +1981,14 @@ function productionApprovalRequestPacketEvidence(packet) {
     `request_eligible=${packet.request_eligible ? 'yes' : 'no'}`,
     `request_blocking=${packet.request_blocking_count}/${packet.item_count}`,
     `manual_stop=${packet.manual_stop_count}`,
+    `external_gates=${packet.external_gate_count}`,
     `top_blocked=${topBlocked}`,
     'approval_gate=packet organizes request evidence only; it does not grant owner approval, run deploys, push, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity',
   ].join(' ');
 }
 
 function productionApprovalRequestPhase(prerequisite) {
+  if (prerequisite === 'Buyer evidence hard gate') return 'market_confidence_boundary';
   if (prerequisite === 'Explicit owner production approval') return 'owner_decision';
   if (prerequisite === 'Post-deploy live proof boundary') return 'post_deploy_boundary';
   return 'pre_request';
@@ -1976,7 +2007,7 @@ function productionApprovalRequestAttachment(prerequisite) {
     case 'Supabase advisor clearance':
       return 'Attach focused Supabase advisor report/check output plus authorized Supabase Security and Performance Advisor results and a public-safe findings summary.';
     case 'Buyer evidence hard gate':
-      return 'Attach focused buyer-evidence hard-gate report/check output plus the validated buyer evidence register, accepted anonymized buyer rows, and retained redacted artifacts that pass validate:pilot-evidence --require-95.';
+      return 'Attach focused buyer-evidence hard-gate report/check output as a market-confidence boundary; attach the validated buyer evidence register, accepted anonymized buyer rows, and retained redacted artifacts only before buyer-proven confidence, commercial-ready, outreach-permission, or feature-rating claims.';
     case 'Explicit owner production approval':
       return 'Attach the explicit owner approval record only after every pre-request blocker is ready; this packet does not create that approval.';
     case 'Post-deploy live proof boundary':
@@ -1999,7 +2030,7 @@ function productionApprovalRequestImpact(prerequisite) {
     case 'Supabase advisor clearance':
       return 'Approval request is blocked until authorized database advisor evidence is reviewed and safely recorded.';
     case 'Buyer evidence hard gate':
-      return 'Approval request is blocked while commercial evidence lacks accepted buyer rows and retained artifacts.';
+      return 'Production-maintenance approval packets can proceed with this row external-gated; buyer-proven confidence, commercial-ready, outreach-permission, and feature-rating claims remain blocked until accepted buyer rows and retained artifacts exist.';
     case 'Explicit owner production approval':
       return 'Owner approval is the manual decision target, not evidence this packet can self-satisfy.';
     case 'Post-deploy live proof boundary':
@@ -2011,6 +2042,7 @@ function productionApprovalRequestImpact(prerequisite) {
 
 function productionApprovalRequestStatus(item) {
   if (item.status === 'ready') return 'ready';
+  if (item.status === 'external_gate') return 'external_gate';
   if (item.status === 'manual_stop') return 'manual_stop';
   return 'blocked';
 }
@@ -2039,6 +2071,7 @@ function buildProductionApprovalRequestPacket(prerequisiteQueue) {
   });
   const requestBlockingCount = items.filter((item) => item.blocks_request).length;
   const manualStopCount = items.filter((item) => item.status === 'manual_stop').length;
+  const externalGateCount = items.filter((item) => item.status === 'external_gate').length;
   const packet = {
     status: requestBlockingCount === 0 ? 'ready_to_request' : 'blocked',
     proof_type: 'production_approval_request_packet',
@@ -2047,6 +2080,7 @@ function buildProductionApprovalRequestPacket(prerequisiteQueue) {
     item_count: items.length,
     request_blocking_count: requestBlockingCount,
     manual_stop_count: manualStopCount,
+    external_gate_count: externalGateCount,
     items,
     proof_boundary: 'Production approval request packet organizes evidence for owner review only; it does not grant owner approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.',
     stop_gate: 'Do not request or claim production approval until every pre-request row is ready; do not run deploy-production.sh, netlify deploy, push, or hosted/live claims from this packet.',
@@ -2067,7 +2101,7 @@ function productionApprovalOperatorExecutionGate(item) {
     case 'Supabase advisor clearance':
       return 'supabase_advisor_after_authorization';
     case 'Buyer evidence hard gate':
-      return 'buyer_evidence_validation_before_approval';
+      return 'buyer_evidence_before_commercial_ready_claims';
     case 'Explicit owner production approval':
       return 'owner_approval_after_pre_request_gates';
     case 'Post-deploy live proof boundary':
@@ -2096,6 +2130,7 @@ function productionApprovalOperatorEvidence(packet) {
     `request_blocking=${packet.request_blocking_count}`,
     `owner_decision=${packet.owner_decision_count}`,
     `post_deploy_boundary=${packet.post_deploy_boundary_count}`,
+    `external_gates=${packet.external_gate_count}`,
     `top_execution_gates=${topBlocked}`,
     'approval_gate=packet is planning evidence only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity',
   ].join(' ');
@@ -2136,7 +2171,8 @@ function buildProductionApprovalOperatorHandoffPacket(requestPacket) {
     pre_request_count: items.filter((item) => item.request_phase === 'pre_request').length,
     ready_count: items.filter((item) => item.status === 'ready').length,
     manual_stop_count: items.filter((item) => item.status === 'manual_stop').length,
-    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    external_gate_count: items.filter((item) => item.status === 'external_gate').length,
+    blocked_count: items.filter((item) => item.status === 'blocked').length,
     proof_boundary: 'This production approval operator handoff packet is planning evidence only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, run release-readiness, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not request or claim production approval, run deploy-production.sh, netlify deploy, push, mutate production, contact buyers, access Supabase, clear source provenance, or present hosted/live parity from this handoff packet.',
     items,
@@ -2187,7 +2223,7 @@ function postDeployLiveProofGateProofType(gate) {
 function postDeployLiveProofGateProofBoundary(gate) {
   switch (gate) {
     case 'Production approval clearance':
-      return 'Runs the deploy-request eligibility check only; it does not grant owner approval, deploy, or bypass source, release, branch, Supabase, or buyer gates.';
+      return 'Runs the deploy-request eligibility check only; it does not grant owner approval, deploy, create buyer evidence, or bypass source, release, branch, or Supabase operational gates.';
     case 'Guarded production deploy completion':
       return 'Requires explicit owner approval plus the typed deploy phrase before running the deploy script; this queue row and manifest do not run deploys, push, mutate Netlify, or prove hosted/live parity.';
     case 'Live public metadata':
@@ -5194,11 +5230,11 @@ const launchScores = {
 const launchGaps = [
   launchGap({
     gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
-    severity: 'P0',
+    severity: 'P1',
     evidence: buyerGapEvidence,
     framework_mapping: ['Commercial Launch Evidence Schema: hard buyer evidence gate'],
-    buyer_impact: 'Cannot claim buyer-proven 95% market confidence, accepted proof packs, or commercial-ready status.',
-    fix: 'Collect real anonymized buyer rows, prepare retained redacted artifacts, update the pilot register, and run validate:pilot-evidence --require-95.',
+    buyer_impact: 'Cannot claim buyer-proven 95% market confidence, accepted proof packs, commercial-ready status, outreach permission, or feature-rating increases; this absence is expected before launch and must not block repo-side application development or bounded production-maintenance fixes.',
+    fix: 'After launch and real buyer contact, collect anonymized buyer rows, prepare retained redacted artifacts, update the pilot register, and run validate:pilot-evidence --require-95 before raising buyer-proven confidence or commercial-ready claims.',
     status: 'open',
   }),
   launchGap({
@@ -5290,6 +5326,20 @@ const buyerEvidenceGateReportFilesChanged = [
   'tests/unit/buyerEvidenceGateReadiness.test.ts',
   'tests/unit/statusPagePosture.test.ts',
   'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const buyerEvidenceExternalGateBoundaryFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/check-objective-completion-audit-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/buyerEvidenceGateReadiness.test.ts',
 ];
 
 const buyerEvidenceMinimumPacketHandoffFilesChanged = [
@@ -6266,6 +6316,18 @@ const buyerEvidenceGateReportTestsRun = [
   'pnpm run check:public-release-status',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const buyerEvidenceExternalGateBoundaryTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/objectiveCompletionAuditReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/buyerEvidenceGateReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:objective-completion-audit-report -- --skip-probes',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
 ];
 
 const buyerEvidenceMinimumPacketHandoffTestsRun = [
@@ -8198,13 +8260,13 @@ const safeFixImplementationDecisions = [
   {
     task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST',
     decision: 'Expose existing buyer evidence public status handles and package script handles inside the focused buyer evidence hard-gate report.',
-    acceptance_check: 'report:buyer-evidence-gate-readiness renders Public Release Status Handles and Package Script Handles for buyer_evidence_gate, buyer_evidence_hard_gate_deficit_ledger, buyer_evidence_acquisition_matrix, buyer_evidence_minimum_packet_handoff, and buyer_evidence_remediation_queue; check:buyer-evidence-gate-report validates those handles while buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifacts, commercial signal evidence, and validate:pilot-evidence --require-95 actually pass.',
+    acceptance_check: 'report:buyer-evidence-gate-readiness renders Public Release Status Handles and Package Script Handles for buyer_evidence_gate, buyer_evidence_hard_gate_deficit_ledger, buyer_evidence_acquisition_matrix, buyer_evidence_minimum_packet_handoff, and buyer_evidence_remediation_queue; check:buyer-evidence-gate-report validates those handles while buyer evidence remains external-gated until real anonymized accepted buyer rows, retained redacted artifacts, commercial signal evidence, and validate:pilot-evidence --require-95 actually pass.',
     chosen_variant: 'minimal focused buyer evidence handle digest',
     repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json buyer evidence handles, focused source/release/branch/Supabase/progress report handle sections, buyer evidence gate report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
     files_changed: buyerEvidencePublicHandlesDigestFilesChanged,
     tests_run: buyerEvidencePublicHandlesDigestTestsRun,
     proof: 'The patch reads existing public buyer evidence handle rows into the focused buyer evidence JSON/Markdown payload and adds package handles for the focused buyer evidence report/check, buyer readiness report, hard 95% validator, 95% report, and outreach intake planning commands without changing public status JSON, contacting buyers, creating buyer rows, attaching artifacts, running retained-artifact validation, production approval, deploy state, or launch status.',
-    reason: 'Buyer evidence is a blocked launch lane with public buyer evidence handles already present, but the focused buyer evidence report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, branch review, Supabase advisor, and progress digest reports.',
+    reason: 'Buyer evidence is an external-gated launch lane with public buyer evidence handles already present, but the focused buyer evidence report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, branch review, Supabase advisor, and progress digest reports.',
     proof_boundary: 'This record improves buyer evidence handle discoverability only; it does not contact buyers, send outreach, create accepted evidence, move confidence, attach retained artifacts, validate 95%, create buyer proof, claim buyer acceptance, request production approval, grant owner approval, deploy, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused buyer evidence handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as buyer-proven evidence, retained-artifact validation, Phase F 95% proof, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
@@ -8315,7 +8377,7 @@ const safeFixImplementationDecisions = [
   {
     task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT',
     decision: 'Expose buyer evidence readiness package-script handles and a dedicated readiness report checker.',
-    acceptance_check: 'report:buyer-evidence-readiness renders Package Script Handles for the readiness report/check, focused buyer hard-gate report/check, Phase F workspace, retained-artifact 95% validator, and outreach/intake commands; check:buyer-evidence-readiness-report validates those handles while buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 actually pass.',
+    acceptance_check: 'report:buyer-evidence-readiness renders Package Script Handles for the readiness report/check, focused buyer hard-gate report/check, Phase F workspace, retained-artifact 95% validator, and outreach/intake commands; check:buyer-evidence-readiness-report validates those handles while buyer evidence remains external-gated until real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 actually pass.',
     chosen_variant: 'minimal buyer evidence readiness report/check contract',
     repo_pattern_reused: 'Existing buyer evidence readiness report, buyer evidence gate report package-handle pattern, focused report checker pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
     files_changed: buyerEvidenceReadinessReportContractFilesChanged,
@@ -8376,6 +8438,19 @@ const safeFixImplementationDecisions = [
     reason: 'A required-check list should be machine-actionable; leaving literal synthesis labels beside package commands makes operator handoff and automation logs less precise even though focused production approval and post-deploy report/check handles already exist.',
     proof_boundary: 'This record improves Fix Report command-list precision only; it does not execute required checks as clearance, clear source provenance, run release-readiness successfully, choose branch heads, authorize Supabase, contact buyers, request or grant owner approval, run production deploy checks as approval, push, deploy, mutate live services, run browser smoke, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat command-only required checks, focused report/check success, guarded raw gate visibility, manifest validation, progress digest, commercial report validation, or this code optimization record as buyer acceptance, clean source provenance, release-readiness, branch approval, Supabase advisor clearance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY',
+    decision: 'Classify absent buyer evidence for the unlaunched app as a market-confidence external gate instead of an application-development or production-maintenance blocker.',
+    acceptance_check: 'The launch gap, launch action queue, production approval prerequisite/request/operator packets, completion audit, focused reports, and checkers preserve the buyer-proof hard gate for commercial-ready, 95% confidence, outreach-permission, and feature-rating claims while no longer counting missing buyer artifacts as a repo-side development blocker.',
+    chosen_variant: 'minimal manifest semantics and checker contract patch',
+    repo_pattern_reused: 'Existing external_gate status pattern, buyer_evidence hard_gate_deficits, launch_action_queue, production_approval prerequisite/request packets, completion_audit, focused report/check conventions, implementation_decisions, rejected_variants, and code_optimization_reviews fields.',
+    files_changed: buyerEvidenceExternalGateBoundaryFilesChanged,
+    tests_run: buyerEvidenceExternalGateBoundaryTestsRun,
+    proof: 'The patch keeps buyer hard-gate proof commands and no-buyer-proof stop gates intact, changes the buyer launch gap from P0 to P1, records buyer absence as external_gate, and excludes that external gate from launch-action, production-approval, and objective-completion blocker counts.',
+    reason: 'The app has not launched and therefore cannot yet have retained buyer artifacts; treating that absence as a P0 blocker would incorrectly stop repo-side application development even though buyer-proven confidence claims must still remain blocked.',
+    proof_boundary: 'This record improves buyer-evidence blocker semantics only; it does not contact buyers, create accepted evidence, move confidence, attach retained artifacts, validate 95%, approve outreach, raise feature ratings, request owner approval, deploy, prove hosted/live parity, or claim commercial-ready status.',
+    stop_gate: 'Do not treat external_gate classification, focused report/check success, skipped probes, manifest validation, or this code optimization record as buyer acceptance, retained-artifact validation, Phase F 95% proof, outreach permission, production approval, deployment, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10200,6 +10275,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Running more gates could produce fresher failures, but would exceed this safe repo-side proof-contract phase and risk approval/live-readiness confusion.',
     evidence: 'The manifest still marks source provenance, release toolchain, branch review, Supabase advisor, buyer evidence, production approval, and post-deploy live proof as blocked or manual-stop gates.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY',
+    variant: 'Remove the buyer evidence hard gate because the app has not launched.',
+    reason_rejected: 'Would erase the real commercial-confidence boundary and could allow unsupported buyer-proven 95%, commercial-ready, outreach-permission, or feature-rating claims.',
+    tradeoff: 'Removing the gate would simplify blocker counts, but it would weaken launch claim discipline and contradict the retained-artifact validation contract.',
+    evidence: 'Buyer hard-gate deficits still require accepted anonymized buyer rows, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 before confidence can move.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY',
+    variant: 'Mark buyer evidence as ready or present until real buyers exist.',
+    reason_rejected: 'Would treat absence of launch as evidence readiness and overstate commercial proof.',
+    tradeoff: 'Ready status would avoid blocker wording, but it would make focused buyer evidence reports and production approval packets materially false.',
+    evidence: 'The buyer evidence hard-gate report still shows open deficits when no accepted buyer rows and retained artifacts are present.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY',
+    variant: 'Keep missing buyer evidence as a P0 pre-request blocker for all app-development and production-maintenance work.',
+    reason_rejected: 'The user clarified that the unlaunched app naturally has no buyer artifacts and that this absence must not stop application development or create a blockage.',
+    tradeoff: 'Keeping a P0 blocker is conservative for commercial claims, but too coarse because operational source, release, branch, Supabase, approval, and live gates already protect production maintenance.',
+    evidence: 'The selected external_gate status keeps the proof command and stop gate visible while excluding buyer absence from repo-side development, production approval request, and objective-completion blocker counts.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY',
+    variant: 'Rewrite broad launch decision scoring, public status manifests, or buyer evidence scanners.',
+    reason_rejected: 'The required correction is a blocker semantics bug in existing manifest/report contracts, not a new data model, scanner, public status surface, or launch-decision policy.',
+    tradeoff: 'A broader rewrite might unify more wording, but would expand touched surface and risk claim-boundary regressions.',
+    evidence: 'Existing report/check/test contracts already expose external_gate as a valid public posture; the patch can reuse that pattern in the current launch and approval queues.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10249,7 +10352,7 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change adds one starter-only count to the existing readiness report and manifest contract, then uses that count in the existing acquisition matrix without new dependencies, new artifacts, buyer contact, or hard-gate relaxation.',
     tests_or_checks: buyerEvidenceStarterBoundaryTestsRun,
-    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current.',
+    remaining_risk: 'Buyer evidence remains external-gated until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
@@ -10258,7 +10361,7 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change adds a thin manifest-backed buyer evidence gate Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated buyer scanning, buyer contact, evidence creation, confidence movement, retained artifact mutation, release execution, deploy paths, or live-service access.',
     tests_or_checks: buyerEvidenceGateReportTestsRun,
-    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, production approval, branch review, Supabase advisor clearance, and post-deploy live proof also remain open gates.',
+    remaining_risk: 'Buyer evidence remains external-gated until real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, production approval, branch review, Supabase advisor clearance, and post-deploy live proof also remain open gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PROOF-HANDLES',
@@ -10267,7 +10370,7 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change reuses the existing focused buyer evidence hard-gate report/check command across existing launch action and production approval buyer proof rows and validators, adds no dependency, no duplicate buyer parser, no buyer contact, no retained artifact mutation, no validation execution, no approval request execution, and no deploy path.',
     tests_or_checks: buyerEvidenceProofHandleTestsRun,
-    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open.',
+    remaining_risk: 'Buyer evidence remains external-gated until real anonymized accepted buyer rows, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-GATE-HANDLE',
@@ -10276,7 +10379,7 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change reuses the existing focused buyer evidence gate report/check across the top public buyer gate and deployment checklist row, adds no dependency, duplicates no buyer parser, runs no final validator without real inputs, creates no evidence, and preserves blocked launch status.',
     tests_or_checks: buyerEvidencePublicGateHandleTestsRun,
-    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open.',
+    remaining_risk: 'Buyer evidence remains external-gated until real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
@@ -10438,7 +10541,7 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change updates only the focused launch action buyer lane status derivation and checker/test expectations, reusing existing buyer_evidence.status, hard_gate_deficits.status, and acquisition_matrix.status without new dependencies, duplicated buyer scanning, buyer contact, retained artifact creation, validation execution, or launch-gate relaxation.',
     tests_or_checks: launchActionBuyerLaneStatusTestsRun,
-    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open gates.',
+    remaining_risk: 'Buyer evidence remains external-gated until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
@@ -10917,10 +11020,19 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: fixReportCommandOnlyChecksTestsRun,
     remaining_risk: 'The command-only Fix Report list improves operator handoff precision only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change updates only existing manifest status derivation, evidence text, blocker counts, checker assertions, and focused unit contracts, with no new dependency, no new scanner, no buyer contact, no evidence fabrication, no release-readiness execution, no external-account call, no source or branch mutation, no owner approval request, no deploy execution, no live-proof execution, and no launch-status promotion.',
+    tests_or_checks: buyerEvidenceExternalGateBoundaryTestsRun,
+    remaining_risk: 'Buyer-proven confidence, commercial-ready claims, outreach permission, feature-rating increases, retained-artifact validation, source provenance, release-readiness, branch review, Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof remain unresolved gates.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
-const launchReadinessActiveBottleneck = 'Current blockers require retained buyer artifacts, owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof outside this read-only manifest run.';
+const launchReadinessActiveBottleneck = 'Current operational blockers require owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof; buyer-proven confidence remains external-gated on retained buyer artifacts outside this read-only manifest run.';
 const latestSafeFixDecision = safeFixImplementationDecisions[safeFixImplementationDecisions.length - 1] ?? null;
 
 function progressMatrixRow({ lane, targetPercent, currentPercent, status, evidence, confidence }) {

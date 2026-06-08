@@ -144,7 +144,7 @@ function buyerEvidenceLaneStatus(buyerEvidence = {}) {
   const acquisitionStatus = buyerEvidence?.acquisition_matrix?.status ?? 'unknown';
   return buyerStatus === 'pass' && hardGateStatus === 'pass' && acquisitionStatus === 'ready'
     ? 'ready'
-    : 'blocked';
+    : 'external_gate';
 }
 
 function focusedPayload(manifest) {

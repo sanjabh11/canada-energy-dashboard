@@ -84,7 +84,7 @@ describe('launch evidence manifest report', () => {
       'roadmap',
     ]);
     expect(manifest.proof_buckets.repo_artifact).toContain('scripts/check-focused-launch-readiness-reports.mjs');
-    expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
+    expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('Phase F evidence'))).toBe(true);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
     const gapsByProofType = mapBy(
       manifest.gaps,
@@ -101,8 +101,8 @@ describe('launch evidence manifest report', () => {
       'release_toolchain_approval_gap',
       'source_provenance_approval_gate',
     ]);
-    expect(gapsByProofType.get('buyer_evidence_hard_gate')?.proof_boundary).toMatch(/does not prove buyer acceptance|95% confidence|commercial-ready status/i);
-    expect(gapsByProofType.get('buyer_evidence_hard_gate')?.stop_gate).toMatch(/Do not claim buyer-proven 95% confidence|accepted proof packs/i);
+    expect(gapsByProofType.get('buyer_evidence_hard_gate')?.proof_boundary).toMatch(/does not prove buyer acceptance|95% confidence|commercial-ready status|market-confidence external gate|application development/i);
+    expect(gapsByProofType.get('buyer_evidence_hard_gate')?.stop_gate).toMatch(/Do not claim buyer-proven 95% confidence|accepted proof packs|do not use missing buyer evidence alone to block application development/i);
     expect(gapsByProofType.get('source_provenance_approval_gate')?.proof_boundary).toMatch(/does not commit|clear source provenance|run release-readiness|deploy/i);
     expect(gapsByProofType.get('source_provenance_approval_gate')?.stop_gate).toMatch(/Do not commit|production approval/i);
     expect(gapsByProofType.get('branch_review_clearance_gap')?.proof_boundary).toMatch(/read-only unmerged-branch|does not checkout|merge|push/i);
@@ -121,7 +121,8 @@ describe('launch evidence manifest report', () => {
       manifest.completion_audit.blocked_count + manifest.completion_audit.manual_stop_count,
     );
     expect(manifest.completion_audit.proof_boundary).toMatch(/maps current manifest\/report evidence only|does not prove commercial-ready status|buyer acceptance|production approval|hosted\/live parity/i);
-    expect(manifest.completion_audit.stop_gate).toMatch(/Do not mark the launch goal complete|P0\/P1 blockers|post-deploy live proof/i);
+    expect(manifest.completion_audit.external_gate_count).toBeGreaterThanOrEqual(1);
+    expect(manifest.completion_audit.stop_gate).toMatch(/Do not mark the launch goal complete|P0\/P1 operational blockers|post-deploy live proof/i);
     const completionItemsByRequirement = mapBy(
       manifest.completion_audit.items,
       (item: {
@@ -140,8 +141,8 @@ describe('launch evidence manifest report', () => {
     expect(completionItemsByRequirement.get('Market pain research table')?.proof_type).toBe('market_pain_source_table');
     expect(completionItemsByRequirement.get('Target customer table')?.proof_type).toBe('target_segment_table');
     expect(completionItemsByRequirement.get('Structured evidence manifest')?.proof_type).toBe('schema_validation');
-    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.status).toBe('blocked');
-    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion).toBe(true);
+    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.status).toBe('external_gate');
+    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion).toBe(false);
     expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.stop_gate).toMatch(/validate:pilot-evidence --require-95|retained artifacts/i);
     expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.next_proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(completionItemsByRequirement.get('Source provenance release gate')?.proof_type).toBe('source_provenance_approval_gate');
@@ -170,7 +171,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -676,7 +677,7 @@ describe('launch evidence manifest report', () => {
     expect(releaseToolchainAction.proof_command).toBe('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(releaseToolchainAction.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
-    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
+    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('external_gate');
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
     const launchActionOperatorHandoffPacket = manifest.launch_action_queue.operator_handoff_packet;
     expect(launchActionOperatorHandoffPacket.status).toBe('blocked');
@@ -694,6 +695,9 @@ describe('launch evidence manifest report', () => {
     );
     expect(launchActionOperatorHandoffPacket.manual_stop_count).toBe(
       launchActionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'manual_stop').length,
+    );
+    expect(launchActionOperatorHandoffPacket.external_gate_count).toBe(
+      launchActionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'external_gate').length,
     );
     expect(launchActionOperatorHandoffPacket.owner_approval_count).toBe(1);
     expect(launchActionOperatorHandoffPacket.external_account_count).toBe(1);
@@ -735,8 +739,10 @@ describe('launch evidence manifest report', () => {
     expect(launchOperatorRowsByPhase.get('branch_review')?.read_only_required).toBe(true);
     expect(launchOperatorRowsByPhase.get('supabase_advisor')?.execution_gate).toBe('supabase_advisor_after_authorization');
     expect(launchOperatorRowsByPhase.get('supabase_advisor')?.external_account_required).toBe(true);
-    expect(launchOperatorRowsByPhase.get('buyer_evidence')?.execution_gate).toBe('buyer_evidence_before_approval');
+    expect(launchOperatorRowsByPhase.get('buyer_evidence')?.execution_gate).toBe('buyer_evidence_before_commercial_ready_claims');
     expect(launchOperatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('buyer_evidence')?.status).toBe('external_gate');
+    expect(launchOperatorRowsByPhase.get('buyer_evidence')?.blocks_launch_clearance).toBe(false);
     expect(launchOperatorRowsByPhase.get('production_approval')?.execution_gate).toBe('owner_approval_after_all_prelaunch_gates');
     expect(launchOperatorRowsByPhase.get('production_approval')?.owner_approval_required).toBe(true);
     expect(launchOperatorRowsByPhase.get('post_deploy_live_proof')?.execution_gate).toBe('post_deploy_proof_after_approved_deploy');
@@ -746,7 +752,7 @@ describe('launch evidence manifest report', () => {
       expect(row.proof_command).toBe(queueRow?.proof_command);
       expect(row.proof_type).toBe(queueRow?.proof_type);
       expect(row.status).toBe(queueRow?.status);
-      expect(row.blocks_launch_clearance).toBe(queueRow?.status !== 'ready');
+      expect(row.blocks_launch_clearance).toBe(queueRow?.status !== 'ready' && queueRow?.status !== 'external_gate');
       expect(row.can_execute_from_packet).toBe(false);
       expect(row.proof_boundary).toMatch(/planning evidence only|does not execute the row|clear blockers|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i);
       expect(row.stop_gate).toMatch(/Do not execute this launch action|mark it ready|clear blockers|claim launch readiness/i);
@@ -867,8 +873,11 @@ describe('launch evidence manifest report', () => {
     }
     expect(productionRequestRowsByName.get('Supabase advisor clearance')?.evidence_to_attach).toMatch(/focused Supabase advisor report\/check/i);
     expect(productionRequestRowsByName.get('Supabase advisor clearance')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.request_phase).toBe('market_confidence_boundary');
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.status).toBe('external_gate');
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.blocks_request).toBe(false);
     expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/focused buyer-evidence hard-gate report\/check/i);
-    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/validate:pilot-evidence/i);
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/validated buyer evidence register|retained redacted artifacts/i);
     expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     const productionOperatorHandoffPacket = manifest.production_approval.operator_handoff_packet;
     expect(productionOperatorHandoffPacket.status).toBe('blocked');
@@ -898,8 +907,11 @@ describe('launch evidence manifest report', () => {
     expect(productionOperatorHandoffPacket.manual_stop_count).toBe(
       productionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'manual_stop').length,
     );
+    expect(productionOperatorHandoffPacket.external_gate_count).toBe(
+      productionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'external_gate').length,
+    );
     expect(productionOperatorHandoffPacket.blocked_count).toBe(
-      productionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status !== 'ready').length,
+      productionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'blocked').length,
     );
     expect(productionOperatorHandoffPacket.items.map((item: { prerequisite: string }) => item.prerequisite)).toEqual(
       productionRequestPacket.items.map((item: { prerequisite: string }) => item.prerequisite),
@@ -925,7 +937,8 @@ describe('launch evidence manifest report', () => {
     expect(productionOperatorRowsByName.get('Corepack release-readiness')?.execution_gate).toBe('release_readiness_after_clean_source');
     expect(productionOperatorRowsByName.get('Canonical branch review')?.execution_gate).toBe('branch_review_before_owner_request');
     expect(productionOperatorRowsByName.get('Supabase advisor clearance')?.execution_gate).toBe('supabase_advisor_after_authorization');
-    expect(productionOperatorRowsByName.get('Buyer evidence hard gate')?.execution_gate).toBe('buyer_evidence_validation_before_approval');
+    expect(productionOperatorRowsByName.get('Buyer evidence hard gate')?.execution_gate).toBe('buyer_evidence_before_commercial_ready_claims');
+    expect(productionOperatorRowsByName.get('Buyer evidence hard gate')?.blocks_approval_request).toBe(false);
     expect(productionOperatorRowsByName.get('Explicit owner production approval')?.execution_gate).toBe('owner_approval_after_pre_request_gates');
     expect(productionOperatorRowsByName.get('Explicit owner production approval')?.owner_decision_required).toBe(true);
     expect(productionOperatorRowsByName.get('Post-deploy live proof boundary')?.execution_gate).toBe('post_deploy_proof_after_approved_deploy');
@@ -1231,9 +1244,9 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(78);
+    expect(manifest.implementation_decisions).toHaveLength(79);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(78);
+    expect(manifest.code_optimization_reviews).toHaveLength(79);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2548,7 +2561,7 @@ describe('launch evidence manifest report', () => {
       'tests/unit/progressDigestReadiness.test.ts',
       'tests/unit/launchEvidenceManifest.test.ts',
     ]));
-    expect(objectiveCompletionAuditLineageDecision.proof_boundary).toMatch(/lineage discoverability only|does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|run release-readiness as clearance|request owner approval|deploy|mutate live services|buyer acceptance|hosted\/live parity|raise launch status/i);
+    expect(objectiveCompletionAuditLineageDecision.proof_boundary).toMatch(/lineage discoverability only|does not mark the launch goal complete|clear P0\/P1 (?:operational )?blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|run release-readiness as clearance|request owner approval|deploy|mutate live services|buyer acceptance|hosted\/live parity|raise launch status/i);
     const objectiveCompletionAuditLineageReview = manifest.code_optimization_reviews.find(
       (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
     );
@@ -2872,7 +2885,7 @@ describe('launch evidence manifest report', () => {
       'tests/unit/statusPagePosture.test.ts',
       'tests/unit/launchEvidenceManifest.test.ts',
     ]));
-    expect(objectiveCompletionAuditFocusedReportDecision.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|approve branches|authorize Supabase|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|raise launch status/i);
+    expect(objectiveCompletionAuditFocusedReportDecision.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 (?:operational )?blockers|collect buyer evidence|contact buyers|approve branches|authorize Supabase|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|raise launch status/i);
     const objectiveCompletionAuditFocusedReportReview = manifest.code_optimization_reviews.find(
       (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
     );
@@ -3380,7 +3393,7 @@ describe('launch evidence manifest report', () => {
       'scripts/check-commercial-launch-readiness-report.mjs',
       'tests/unit/launchEvidenceManifest.test.ts',
     ]));
-    expect(objectiveCompletionAuditUnitContractDecision.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|raise launch status/i);
+    expect(objectiveCompletionAuditUnitContractDecision.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 (?:operational )?blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|raise launch status/i);
     const objectiveCompletionAuditUnitContractReview = manifest.code_optimization_reviews.find(
       (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT',
     );
@@ -3873,7 +3886,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('release-toolchain probe(s) open');
     expect(stdout).toContain('focused launch evidence validation must stay attached before a deploy approval request');
     expect(stdout).toContain('Refresh the release toolchain probe ledger');
-    expect(stdout).toMatch(/\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report \|[^|\n]+\| blocked \|/);
+    expect(stdout).toMatch(/\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report \|[^|\n]+\| external_gate \|/);
     expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Buyer evidence review');
@@ -3963,7 +3976,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('approval_gate=no checkout/merge/deploy/migration/push');
     expect(stdout).toContain('High-risk, local/origin split, or stale/aging unmerged branches');
     expect(stdout).toContain('completion_audit_current_state');
-    expect(stdout).toContain('| Buyer evidence hard gate | blocked | yes |');
+    expect(stdout).toContain('| Buyer evidence hard gate | external_gate | no |');
     expect(stdout).toContain('| Production approval and live proof gate | manual_stop | yes |');
     expect(stdout).toContain('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(stdout).toContain('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');

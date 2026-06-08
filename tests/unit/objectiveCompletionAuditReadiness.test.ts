@@ -39,7 +39,7 @@ describe('objective completion audit readiness report', () => {
     expect(stdout).toContain('Goal-completion blocker rows:');
     expect(stdout).toContain('## Decision Boundary');
     expect(stdout).toContain('does not mark the launch goal complete');
-    expect(stdout).toMatch(/clear P0\/P1 blockers[\s\S]*collect buyer evidence[\s\S]*authorize Supabase[\s\S]*deploy/i);
+    expect(stdout).toMatch(/clear P0\/P1 operational blockers[\s\S]*collect buyer evidence[\s\S]*authorize Supabase[\s\S]*deploy/i);
     expect(stdout).toContain('## Completion Audit Summary');
     expect(stdout).toContain('completion_audit_current_state');
     expect(stdout).toContain('Objective completion audit:');
@@ -94,9 +94,15 @@ describe('objective completion audit readiness report', () => {
         'ECC phase ledger',
       ]),
     );
-    expect(payload.blocker_items.map((item: { requirement: string }) => item.requirement)).toEqual(
+    expect(payload.external_gate_items.map((item: { requirement: string }) => item.requirement)).toEqual(
       expect.arrayContaining([
         'Buyer evidence hard gate',
+      ]),
+    );
+    expect(payload.external_gate_items.find((item: { requirement: string }) => item.requirement === 'Buyer evidence hard gate')?.blocks_goal_completion).toBe(false);
+    expect(payload.external_gate_items.find((item: { requirement: string }) => item.requirement === 'Buyer evidence hard gate')?.next_proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(payload.blocker_items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      expect.arrayContaining([
         'Source provenance release gate',
         'Branch canonical review gate',
         'Supabase advisor clearance gate',
@@ -105,15 +111,14 @@ describe('objective completion audit readiness report', () => {
       ]),
     );
     expect(payload.blocker_items.every((item: { blocks_goal_completion?: boolean }) => item.blocks_goal_completion === true)).toBe(true);
-    expect(payload.blocker_items.find((item: { requirement: string }) => item.requirement === 'Buyer evidence hard gate')?.next_proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(payload.blocker_items.find((item: { requirement: string }) => item.requirement === 'Production approval and live proof gate')?.next_proof_command).toContain('report:post-deploy-live-proof-readiness');
     expect(payload.public_status_handle.id).toBe('objective_completion_audit');
     expect(payload.public_status_handle.sourceManifestPath).toBe('completion_audit');
     expect(payload.public_status_handle.sourceProofType).toBe('completion_audit_current_state');
     expect(payload.package_script_handles.report_objective_completion_audit_readiness).toBe('corepack pnpm run report:objective-completion-audit-readiness');
     expect(payload.package_script_handles.check_objective_completion_audit_report).toBe('corepack pnpm run check:objective-completion-audit-report');
-    expect(payload.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i);
-    expect(payload.stop_gate).toMatch(/Do not treat this focused objective completion audit report|production approval|buyer acceptance|release readiness|source readiness|branch approval|Supabase advisor clearance|deployment approval|hosted\/live parity|commercial-ready status|launch-goal completion/i);
+    expect(payload.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 operational blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i);
+    expect(payload.stop_gate).toMatch(/Do not treat this focused objective completion audit report|external-gate row|production approval|buyer acceptance|release readiness|source readiness|branch approval|Supabase advisor clearance|deployment approval|hosted\/live parity|commercial-ready status|launch-goal completion/i);
   });
 
   it('validates the focused report contract', () => {

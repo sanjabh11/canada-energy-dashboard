@@ -210,13 +210,13 @@ try {
       'Manifest proof_buckets.repo_artifact must include the aggregate focused launch-readiness report checker script.',
     );
     assert(Array.isArray(manifest.gaps), 'Manifest gaps must be a list.');
-    assert(hasOpenGap(manifest, 'P0', 'Phase F evidence'), 'Manifest must keep the open P0 Phase F buyer-evidence gap.');
+    assert(hasOpenGap(manifest, 'P1', 'Phase F evidence'), 'Manifest must keep the open P1 Phase F buyer-evidence external gate.');
     const gapProofExpectations = [
       {
         needle: 'Phase F evidence',
         proofType: 'buyer_evidence_hard_gate',
-        boundary: /does not prove buyer acceptance|95% confidence|retained artifacts|commercial-ready status/i,
-        stopGate: /Do not claim buyer-proven 95% confidence|accepted proof packs|commercial-ready status|outreach permission/i,
+        boundary: /does not prove buyer acceptance|95% confidence|retained artifacts|commercial-ready status|market-confidence external gate|application development/i,
+        stopGate: /Do not claim buyer-proven 95% confidence|accepted proof packs|commercial-ready status|outreach permission|do not use missing buyer evidence alone to block application development/i,
       },
       {
         needle: 'source deploy approval',
@@ -1131,6 +1131,7 @@ try {
     assert(manifest.launch_action_queue.evidence.includes('Launch blocker action queue'), 'Manifest launch action queue evidence must include a queue marker.');
     assert(hasIntegerOrNull(manifest.launch_action_queue?.item_count), 'Manifest launch_action_queue.item_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.launch_action_queue?.blocked_count), 'Manifest launch_action_queue.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.launch_action_queue?.external_gate_count), 'Manifest launch_action_queue.external_gate_count must be an integer or null.');
     assert(Array.isArray(manifest.launch_action_queue?.items), 'Manifest launch_action_queue.items must be a list.');
     assert((manifest.launch_action_queue.items ?? []).length >= 8, 'Manifest launch action queue must include the launch blocker execution phases, including launch evidence validation.');
     const launchProofTypesByPhase = {
@@ -1176,7 +1177,7 @@ try {
         assert(/authorized Supabase dashboard or connector|permission-denied output do not satisfy/i.test(item.proof_boundary), 'Supabase advisor launch action proof_boundary must require authorized external advisor evidence.');
       }
       if (item.phase === 'buyer_evidence') {
-        assert(/real anonymized accepted buyer rows|retained redacted artifacts|validate:pilot-evidence --require-95/i.test(item.proof_boundary), 'Buyer evidence launch action proof_boundary must require retained accepted buyer evidence.');
+        assert(/real anonymized accepted buyer rows|retained redacted artifacts|validate:pilot-evidence --require-95|market-confidence external gate|not an application-development blocker/i.test(item.proof_boundary), 'Buyer evidence launch action proof_boundary must require retained accepted buyer evidence while preserving external-gate semantics.');
       }
       if (item.phase === 'production_approval') {
         assert(/does not approve|push|deploy|prove live parity/i.test(item.proof_boundary), 'Production approval launch action proof_boundary must not imply approval, deploy, or live parity.');
@@ -1217,7 +1218,7 @@ try {
     );
     if (Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.open_count) && manifest.buyer_evidence.hard_gate_deficits.open_count > 0) {
       assert(manifest.buyer_evidence.hard_gate_deficits.status !== 'pass', 'Buyer hard-gate deficits status must not pass while open deficits remain.');
-      assert(buyerActionItem?.status !== 'ready', 'Buyer evidence launch action must not be ready while hard-gate deficits remain.');
+      assert(buyerActionItem?.status === 'external_gate', 'Buyer evidence launch action must be an external gate while hard-gate deficits remain before launch.');
     }
     const releaseActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'release_toolchain');
     assert(releaseActionItem, 'Launch action queue must include a release_toolchain phase.');
@@ -1266,7 +1267,7 @@ try {
       release_toolchain: 'release_toolchain_after_clean_source',
       branch_review: 'read_only_branch_review_before_approval',
       supabase_advisor: 'supabase_advisor_after_authorization',
-      buyer_evidence: 'buyer_evidence_before_approval',
+      buyer_evidence: 'buyer_evidence_before_commercial_ready_claims',
       production_approval: 'owner_approval_after_all_prelaunch_gates',
       post_deploy_live_proof: 'post_deploy_proof_after_approved_deploy',
     };
@@ -1279,6 +1280,7 @@ try {
     assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.blocked_count), 'Manifest launch_action_queue.operator_handoff_packet.blocked_count must be an integer or null.');
     assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.ready_count), 'Manifest launch_action_queue.operator_handoff_packet.ready_count must be an integer or null.');
     assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.manual_stop_count), 'Manifest launch_action_queue.operator_handoff_packet.manual_stop_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.external_gate_count), 'Manifest launch_action_queue.operator_handoff_packet.external_gate_count must be an integer or null.');
     assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.owner_approval_count), 'Manifest launch_action_queue.operator_handoff_packet.owner_approval_count must be an integer or null.');
     assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.external_account_count), 'Manifest launch_action_queue.operator_handoff_packet.external_account_count must be an integer or null.');
     assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.buyer_evidence_count), 'Manifest launch_action_queue.operator_handoff_packet.buyer_evidence_count must be an integer or null.');
@@ -1348,7 +1350,7 @@ try {
       assert(item.action === queueRow.action, `launch_action_queue.operator_handoff_packet.items[${index}].action must match the launch action row.`);
       assert(item.proof_command === queueRow.proof_command, `launch_action_queue.operator_handoff_packet.items[${index}].proof_command must match the launch action row.`);
       assert(item.proof_type === queueRow.proof_type, `launch_action_queue.operator_handoff_packet.items[${index}].proof_type must match the launch action row.`);
-      assert(item.blocks_launch_clearance === (queueRow.status !== 'ready'), `launch_action_queue.operator_handoff_packet.items[${index}].blocks_launch_clearance must derive from launch action row status.`);
+      assert(item.blocks_launch_clearance === (queueRow.status !== 'ready' && queueRow.status !== 'external_gate'), `launch_action_queue.operator_handoff_packet.items[${index}].blocks_launch_clearance must derive from operational launch action row status.`);
       assert(item.can_execute_from_packet === false, `launch_action_queue.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
       assert(item.execution_gate === launchActionOperatorExecutionGatesByPhase[item.phase], `launch_action_queue.operator_handoff_packet.items[${index}] must expose the expected execution gate.`);
       assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not execute the row|clear blockers|mutate source|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i.test(item.proof_boundary), `launch_action_queue.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only launch semantics.`);
@@ -1363,7 +1365,8 @@ try {
     assert(launchOperatorRowsByPhase.get('branch_review')?.read_only_required === true, 'Launch action operator branch row must mark read_only_required.');
     assert(launchOperatorRowsByPhase.get('supabase_advisor')?.execution_gate === 'supabase_advisor_after_authorization', 'Launch action operator Supabase row must require supabase_advisor_after_authorization.');
     assert(launchOperatorRowsByPhase.get('supabase_advisor')?.external_account_required === true, 'Launch action operator Supabase row must mark external_account_required.');
-    assert(launchOperatorRowsByPhase.get('buyer_evidence')?.execution_gate === 'buyer_evidence_before_approval', 'Launch action operator buyer row must require buyer_evidence_before_approval.');
+    assert(launchOperatorRowsByPhase.get('buyer_evidence')?.execution_gate === 'buyer_evidence_before_commercial_ready_claims', 'Launch action operator buyer row must require buyer_evidence_before_commercial_ready_claims.');
+    assert(launchOperatorRowsByPhase.get('buyer_evidence')?.blocks_launch_clearance === false, 'Launch action operator buyer row must not block launch-action clearance while it is a market-confidence external gate.');
     assert(launchOperatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required === true, 'Launch action operator buyer row must mark buyer_evidence_required.');
     assert(launchOperatorRowsByPhase.get('production_approval')?.execution_gate === 'owner_approval_after_all_prelaunch_gates', 'Launch action operator production approval row must require owner_approval_after_all_prelaunch_gates.');
     assert(launchOperatorRowsByPhase.get('production_approval')?.owner_approval_required === true, 'Launch action operator production approval row must mark owner_approval_required.');
@@ -1378,6 +1381,7 @@ try {
     assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.item_count), 'Manifest production approval prerequisite item_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.blocked_count), 'Manifest production approval prerequisite blocked_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.manual_stop_count), 'Manifest production approval prerequisite manual_stop_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.external_gate_count), 'Manifest production approval prerequisite external_gate_count must be an integer or null.');
     assert(Array.isArray(manifest.production_approval.prerequisite_queue?.items), 'Manifest production approval prerequisite items must be a list.');
     assert((manifest.production_approval.prerequisite_queue.items ?? []).length >= 8, 'Manifest production approval prerequisite queue must include launch evidence validation plus all prerequisite, manual-stop, and post-deploy rows.');
     assert(
@@ -1400,7 +1404,7 @@ try {
       'Corepack release-readiness': 'release_readiness_after_clean_source',
       'Canonical branch review': 'branch_review_before_owner_request',
       'Supabase advisor clearance': 'supabase_advisor_after_authorization',
-      'Buyer evidence hard gate': 'buyer_evidence_validation_before_approval',
+      'Buyer evidence hard gate': 'buyer_evidence_before_commercial_ready_claims',
       'Explicit owner production approval': 'owner_approval_after_pre_request_gates',
       'Post-deploy live proof boundary': 'post_deploy_proof_after_approved_deploy',
     };
@@ -1437,7 +1441,7 @@ try {
         assert(/authorized Supabase dashboard or connector|permission-denied connector output do not satisfy/i.test(item.proof_boundary), 'Supabase advisor clearance proof_boundary must require authorized external advisor evidence.');
       }
       if (item.prerequisite === 'Buyer evidence hard gate') {
-        assert(/real anonymized accepted buyer rows|retained redacted artifacts|validate:pilot-evidence --require-95/i.test(item.proof_boundary), 'Buyer evidence hard gate proof_boundary must require retained accepted buyer evidence.');
+        assert(/real anonymized accepted buyer rows|retained redacted artifacts|validate:pilot-evidence --require-95|market-confidence external gate|production-maintenance request blocker/i.test(item.proof_boundary), 'Buyer evidence hard gate proof_boundary must require retained accepted buyer evidence while preserving external-gate semantics.');
       }
       if (item.prerequisite === 'Explicit owner production approval') {
         assert(/does not approve|push|deploy|prove live parity/i.test(item.proof_boundary), 'Explicit owner production approval proof_boundary must not imply approval, deploy, or live parity.');
@@ -1509,6 +1513,7 @@ try {
       'Supabase advisor clearance prerequisite must run the focused Supabase advisor report and checker.',
     );
     assert(buyerPrerequisiteItem, 'Production approval prerequisite queue must include Buyer evidence hard gate.');
+    assert(buyerPrerequisiteItem?.status === 'external_gate', 'Production approval buyer evidence prerequisite must remain visible as an external gate, not a pre-request blocker.');
     assert(
       buyerPrerequisiteItem.proof_command.includes('report:buyer-evidence-gate-readiness')
         && buyerPrerequisiteItem.proof_command.includes('check:buyer-evidence-gate-report'),
@@ -1541,6 +1546,7 @@ try {
     assert(hasIntegerOrNull(productionApprovalRequestPacket.item_count), 'Manifest production approval request packet item_count must be an integer or null.');
     assert(hasIntegerOrNull(productionApprovalRequestPacket.request_blocking_count), 'Manifest production approval request packet request_blocking_count must be an integer or null.');
     assert(hasIntegerOrNull(productionApprovalRequestPacket.manual_stop_count), 'Manifest production approval request packet manual_stop_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalRequestPacket.external_gate_count), 'Manifest production approval request packet external_gate_count must be an integer or null.');
     assert(Array.isArray(productionApprovalRequestPacket.items), 'Manifest production approval request packet items must be a list.');
     assert(
       productionApprovalRequestPacket.item_count === productionApprovalRequestPacket.items.length,
@@ -1559,7 +1565,7 @@ try {
     for (const [index, item] of (productionApprovalRequestPacket.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `production_approval.request_packet.items[${index}].rank must be an integer.`);
       assert(typeof item.prerequisite === 'string' && item.prerequisite.length > 0, `production_approval.request_packet.items[${index}].prerequisite must be set.`);
-      assert(['pre_request', 'owner_decision', 'post_deploy_boundary'].includes(item.request_phase), `production_approval.request_packet.items[${index}].request_phase must be a known phase.`);
+      assert(['pre_request', 'market_confidence_boundary', 'owner_decision', 'post_deploy_boundary'].includes(item.request_phase), `production_approval.request_packet.items[${index}].request_phase must be a known phase.`);
       assert(typeof item.current === 'string' && item.current.length > 0, `production_approval.request_packet.items[${index}].current must be set.`);
       assert(typeof item.needed === 'string' && item.needed.length > 0, `production_approval.request_packet.items[${index}].needed must be set.`);
       assert(typeof item.owner === 'string' && item.owner.length > 0, `production_approval.request_packet.items[${index}].owner must be set.`);
@@ -1599,12 +1605,16 @@ try {
         assert(item.current.includes(renameDirtyPath.staging_state), 'Clean source provenance request row must expose the rename staging state.');
       }
       if (item.prerequisite === 'Buyer evidence hard gate') {
+        assert(item.request_phase === 'market_confidence_boundary', 'Buyer evidence request row must be a market_confidence_boundary row.');
+        assert(item.status === 'external_gate', 'Buyer evidence request row must stay external_gate while buyer evidence is absent before launch.');
+        assert(item.blocks_request === false, 'Buyer evidence request row must not block production-maintenance approval packets while external-gated.');
         assert(
           item.proof_command.includes('report:buyer-evidence-gate-readiness')
             && item.proof_command.includes('check:buyer-evidence-gate-report'),
           'Buyer evidence request row must run the focused buyer evidence gate report and checker.',
         );
         assert(/focused buyer-evidence hard-gate report\/check/i.test(item.evidence_to_attach), 'Buyer evidence request row must attach focused buyer evidence gate report/check output.');
+        assert(/Production-maintenance approval packets can proceed|commercial-ready|feature-rating claims remain blocked/i.test(item.request_impact), 'Buyer evidence request impact must separate production maintenance from buyer-proven claims.');
       }
       if (item.prerequisite === 'Explicit owner production approval') {
         assert(item.request_phase === 'owner_decision', 'Explicit owner production approval request row must be owner_decision.');
@@ -1642,6 +1652,7 @@ try {
     assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.pre_request_count), 'Manifest production_approval.operator_handoff_packet.pre_request_count must be an integer or null.');
     assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.ready_count), 'Manifest production_approval.operator_handoff_packet.ready_count must be an integer or null.');
     assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.manual_stop_count), 'Manifest production_approval.operator_handoff_packet.manual_stop_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.external_gate_count), 'Manifest production_approval.operator_handoff_packet.external_gate_count must be an integer or null.');
     assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.blocked_count), 'Manifest production_approval.operator_handoff_packet.blocked_count must be an integer or null.');
     assert(Array.isArray(productionApprovalOperatorHandoffPacket.items), 'Manifest production_approval.operator_handoff_packet.items must be a list.');
     assert(
@@ -1673,8 +1684,8 @@ try {
       'Production approval operator handoff packet manual_stop_count must match manual-stop rows.',
     );
     assert(
-      productionApprovalOperatorHandoffPacket.blocked_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.status !== 'ready').length,
-      'Production approval operator handoff packet blocked_count must match non-ready rows.',
+      productionApprovalOperatorHandoffPacket.blocked_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.status === 'blocked').length,
+      'Production approval operator handoff packet blocked_count must match blocked rows.',
     );
     assert(
       JSON.stringify((productionApprovalOperatorHandoffPacket.items ?? []).map((item) => item.prerequisite)) === JSON.stringify((productionApprovalRequestPacket.items ?? []).map((item) => item.prerequisite)),
@@ -1710,7 +1721,8 @@ try {
     assert(productionOperatorRowsByPrerequisite.get('Corepack release-readiness')?.execution_gate === 'release_readiness_after_clean_source', 'Production approval operator release row must require release_readiness_after_clean_source.');
     assert(productionOperatorRowsByPrerequisite.get('Canonical branch review')?.execution_gate === 'branch_review_before_owner_request', 'Production approval operator branch row must require branch_review_before_owner_request.');
     assert(productionOperatorRowsByPrerequisite.get('Supabase advisor clearance')?.execution_gate === 'supabase_advisor_after_authorization', 'Production approval operator Supabase row must require supabase_advisor_after_authorization.');
-    assert(productionOperatorRowsByPrerequisite.get('Buyer evidence hard gate')?.execution_gate === 'buyer_evidence_validation_before_approval', 'Production approval operator buyer row must require buyer_evidence_validation_before_approval.');
+    assert(productionOperatorRowsByPrerequisite.get('Buyer evidence hard gate')?.execution_gate === 'buyer_evidence_before_commercial_ready_claims', 'Production approval operator buyer row must require buyer_evidence_before_commercial_ready_claims.');
+    assert(productionOperatorRowsByPrerequisite.get('Buyer evidence hard gate')?.blocks_approval_request === false, 'Production approval operator buyer row must not block approval requests while market-confidence external-gated.');
     assert(productionOperatorRowsByPrerequisite.get('Explicit owner production approval')?.execution_gate === 'owner_approval_after_pre_request_gates', 'Production approval operator owner row must require owner_approval_after_pre_request_gates.');
     assert(productionOperatorRowsByPrerequisite.get('Explicit owner production approval')?.owner_decision_required === true, 'Production approval operator owner row must mark owner_decision_required.');
     assert(productionOperatorRowsByPrerequisite.get('Post-deploy live proof boundary')?.execution_gate === 'post_deploy_proof_after_approved_deploy', 'Production approval operator live-proof row must require post_deploy_proof_after_approved_deploy.');
@@ -2535,6 +2547,7 @@ try {
     assert(Number.isInteger(manifest.completion_audit.completed_count), 'Manifest completion_audit.completed_count must be an integer.');
     assert(Number.isInteger(manifest.completion_audit.blocked_count), 'Manifest completion_audit.blocked_count must be an integer.');
     assert(Number.isInteger(manifest.completion_audit.manual_stop_count), 'Manifest completion_audit.manual_stop_count must be an integer.');
+    assert(Number.isInteger(manifest.completion_audit.external_gate_count), 'Manifest completion_audit.external_gate_count must be an integer.');
     assert(Number.isInteger(manifest.completion_audit.total_count), 'Manifest completion_audit.total_count must be an integer.');
     assert(Number.isInteger(manifest.completion_audit.goal_completion_blocked_count), 'Manifest completion_audit.goal_completion_blocked_count must be an integer.');
     assert(manifest.completion_audit.total_count >= 15, 'Manifest completion_audit must include every required deliverable and launch gate.');
@@ -2543,7 +2556,7 @@ try {
     assert(manifest.completion_audit.manual_stop_count >= 1, 'Manifest completion_audit must count production/live proof manual-stop rows.');
     assert(
       manifest.completion_audit.goal_completion_blocked_count === manifest.completion_audit.blocked_count + manifest.completion_audit.manual_stop_count,
-      'Manifest completion_audit goal-completion blockers must equal blocked plus manual-stop rows.',
+      'Manifest completion_audit goal-completion blockers must equal blocked plus manual-stop rows and exclude external gates.',
     );
     assert(
       typeof manifest.completion_audit.evidence === 'string' && /Objective completion audit:.*launch_decision=blocked/i.test(manifest.completion_audit.evidence),
@@ -2599,20 +2612,20 @@ try {
     };
     for (const [index, item] of manifest.completion_audit.items.entries()) {
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `completion_audit.items[${index}].requirement must be set.`);
-      assert(['present', 'blocked', 'manual_stop'].includes(item.status), `completion_audit.items[${index}].status must be present, blocked, or manual_stop.`);
+      assert(['present', 'blocked', 'external_gate', 'manual_stop'].includes(item.status), `completion_audit.items[${index}].status must be present, blocked, external_gate, or manual_stop.`);
       assert(typeof item.evidence === 'string' && item.evidence.length > 0, `completion_audit.items[${index}].evidence must be set.`);
       assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `completion_audit.items[${index}].proof_type must be set.`);
       assert(typeof item.proof_boundary === 'string' && /does not|only|read-only|requires/i.test(item.proof_boundary), `completion_audit.items[${index}].proof_boundary must preserve a proof boundary.`);
       assert(typeof item.stop_gate === 'string' && /Do not/i.test(item.stop_gate), `completion_audit.items[${index}].stop_gate must preserve an explicit stop gate.`);
       assert(typeof item.next_proof_command === 'string' && item.next_proof_command.length > 0, `completion_audit.items[${index}].next_proof_command must be set.`);
       assert(isBoolean(item.blocks_goal_completion), `completion_audit.items[${index}].blocks_goal_completion must be boolean.`);
-      assert(item.blocks_goal_completion === (item.status !== 'present'), `completion_audit.items[${index}].blocks_goal_completion must match item status.`);
+      assert(item.blocks_goal_completion === (item.status !== 'present' && item.status !== 'external_gate'), `completion_audit.items[${index}].blocks_goal_completion must match operational blocker status.`);
       if (completionProofTypesByRequirement[item.requirement]) {
         assert(item.proof_type === completionProofTypesByRequirement[item.requirement], `completion_audit.items[${index}] must classify ${item.requirement} as ${completionProofTypesByRequirement[item.requirement]}.`);
       }
     }
-    assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.status === 'blocked', 'Completion audit must keep buyer evidence hard gate blocked.');
-    assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion === true, 'Completion audit buyer evidence row must block goal completion.');
+    assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.status === 'external_gate', 'Completion audit must keep buyer evidence hard gate as an external gate.');
+    assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion === false, 'Completion audit buyer evidence row must not block repo-side goal completion while external-gated.');
     assert(/validate:pilot-evidence --require-95|retained artifacts/i.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.stop_gate ?? ''), 'Completion audit buyer evidence row must require retained 95% buyer evidence.');
     assert(/report:buyer-evidence-gate-readiness/.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.next_proof_command ?? ''), 'Completion audit buyer evidence row must route next proof through the focused buyer evidence gate report.');
     assert(/check:buyer-evidence-gate-report/.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.next_proof_command ?? ''), 'Completion audit buyer evidence row must include the focused buyer evidence gate checker.');
@@ -2636,7 +2649,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS', 'Manifest progress_updates must expose the latest Fix Report command-only check ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY', 'Manifest progress_updates must expose the latest buyer evidence external-gate ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2664,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest Fix Report command-only ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest buyer evidence external-gate ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item

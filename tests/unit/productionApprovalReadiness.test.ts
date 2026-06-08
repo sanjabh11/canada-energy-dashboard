@@ -13,6 +13,7 @@ type ProductionApprovalRequestRow = {
   prerequisite: string;
   request_phase: string;
   blocks_request: boolean;
+  status: string;
   proof_command: string;
   source_status: string;
   proof_type: string;
@@ -23,6 +24,7 @@ type ProductionApprovalOperatorHandoffRow = {
   request_phase: string;
   execution_gate: string;
   source_status: string;
+  status: string;
   blocks_approval_request: boolean;
   owner_decision_required: boolean;
   post_deploy_boundary: boolean;
@@ -158,7 +160,9 @@ describe('production approval readiness report', () => {
     expect(prerequisiteRows.get('Buyer evidence hard gate').proof_command).toContain('check:buyer-evidence-gate-report');
     expect(requestRows.get('Buyer evidence hard gate').proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(requestRows.get('Buyer evidence hard gate').proof_command).toContain('check:buyer-evidence-gate-report');
-    expect(requestRows.get('Buyer evidence hard gate').request_phase).toBe('pre_request');
+    expect(requestRows.get('Buyer evidence hard gate').request_phase).toBe('market_confidence_boundary');
+    expect(requestRows.get('Buyer evidence hard gate').status).toBe('external_gate');
+    expect(requestRows.get('Buyer evidence hard gate').blocks_request).toBe(false);
     expect(requestRows.get('Explicit owner production approval').request_phase).toBe('owner_decision');
     expect(requestRows.get('Post-deploy live proof boundary').request_phase).toBe('post_deploy_boundary');
     expect(prerequisiteRows.get('Post-deploy live proof boundary').proof_command).toContain('report:post-deploy-live-proof-readiness');
@@ -174,6 +178,9 @@ describe('production approval readiness report', () => {
     expect(payload.production_approval.operator_handoff_packet.request_blocking_count).toBe(
       payload.production_approval.operator_handoff_packet.items.filter((item: ProductionApprovalOperatorHandoffRow) => item.blocks_approval_request).length,
     );
+    expect(payload.production_approval.operator_handoff_packet.external_gate_count).toBe(
+      payload.production_approval.operator_handoff_packet.items.filter((item: ProductionApprovalOperatorHandoffRow) => item.status === 'external_gate').length,
+    );
     expect(payload.production_approval.operator_handoff_packet.owner_decision_count).toBe(1);
     expect(payload.production_approval.operator_handoff_packet.post_deploy_boundary_count).toBe(1);
     expect(payload.production_approval.operator_handoff_packet.items.map((item: ProductionApprovalOperatorHandoffRow) => item.prerequisite)).toEqual(
@@ -186,7 +193,8 @@ describe('production approval readiness report', () => {
     expect(operatorRows.get('Corepack release-readiness').execution_gate).toBe('release_readiness_after_clean_source');
     expect(operatorRows.get('Canonical branch review').execution_gate).toBe('branch_review_before_owner_request');
     expect(operatorRows.get('Supabase advisor clearance').execution_gate).toBe('supabase_advisor_after_authorization');
-    expect(operatorRows.get('Buyer evidence hard gate').execution_gate).toBe('buyer_evidence_validation_before_approval');
+    expect(operatorRows.get('Buyer evidence hard gate').execution_gate).toBe('buyer_evidence_before_commercial_ready_claims');
+    expect(operatorRows.get('Buyer evidence hard gate').blocks_approval_request).toBe(false);
     expect(operatorRows.get('Explicit owner production approval').execution_gate).toBe('owner_approval_after_pre_request_gates');
     expect(operatorRows.get('Explicit owner production approval').owner_decision_required).toBe(true);
     expect(operatorRows.get('Post-deploy live proof boundary').execution_gate).toBe('post_deploy_proof_after_approved_deploy');

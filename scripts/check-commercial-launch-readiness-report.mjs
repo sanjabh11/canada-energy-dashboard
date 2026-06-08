@@ -164,8 +164,8 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| production_approval |'), 'Report must include the production approval action phase.');
   assert(markdown.includes('| post_deploy_live_proof |'), 'Report must include the post-deploy live proof action phase.');
   assert(
-    /\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report \|[^|\n]+\| blocked \|/.test(markdown),
-    'Report must keep buyer evidence action blocked while hard-gate deficits remain.',
+    /\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report \|[^|\n]+\| external_gate \|/.test(markdown),
+    'Report must keep buyer evidence action external-gated while hard-gate deficits remain before launch.',
   );
   assert(
     /\| 7 \| production_approval \| explicit owner production approval is not granted by this report \| owner \|[^|\n]+\| corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report \|[^|\n]+\| manual_stop \|/.test(markdown),
@@ -302,7 +302,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Objective completion audit:'), 'Report must include objective completion audit evidence counts.');
   assert(markdown.includes('This audit maps current manifest/report evidence only'), 'Report must preserve the completion-audit proof boundary.');
   assert(markdown.includes('Do not mark the launch goal complete or claim readiness'), 'Report must preserve the completion-audit no-completion stop gate.');
-  assert(markdown.includes('| Buyer evidence hard gate | blocked | yes |'), 'Completion audit must keep buyer evidence blocked.');
+  assert(markdown.includes('| Buyer evidence hard gate | external_gate | no |'), 'Completion audit must keep buyer evidence as a non-blocking external gate.');
   assert(markdown.includes('| Production approval and live proof gate | manual_stop | yes |'), 'Completion audit must keep production/live proof as a manual stop.');
   assert(markdown.includes('| Supabase advisor clearance gate | blocked | yes |'), 'Completion audit must keep Supabase advisor clearance blocked.');
   assert(markdown.includes('| Branch canonical review gate | blocked | yes |'), 'Completion audit must keep branch canonical review blocked.');

@@ -138,7 +138,7 @@ if (failures.length === 0) {
       release_toolchain: 'release_toolchain_after_clean_source',
       branch_review: 'read_only_branch_review_before_approval',
       supabase_advisor: 'supabase_advisor_after_authorization',
-      buyer_evidence: 'buyer_evidence_before_approval',
+      buyer_evidence: 'buyer_evidence_before_commercial_ready_claims',
       production_approval: 'owner_approval_after_all_prelaunch_gates',
       post_deploy_live_proof: 'post_deploy_proof_after_approved_deploy',
     };
@@ -198,6 +198,7 @@ if (failures.length === 0) {
     assert(operatorHandoffPacket.blocked_count === operatorItems.filter((item) => item.blocks_launch_clearance).length, 'Operator handoff blocked_count must match launch-blocking rows.');
     assert(operatorHandoffPacket.ready_count === operatorItems.filter((item) => item.status === 'ready').length, 'Operator handoff ready_count must match ready rows.');
     assert(operatorHandoffPacket.manual_stop_count === operatorItems.filter((item) => item.status === 'manual_stop').length, 'Operator handoff manual_stop_count must match manual-stop rows.');
+    assert(operatorHandoffPacket.external_gate_count === operatorItems.filter((item) => item.status === 'external_gate').length, 'Operator handoff external_gate_count must match external-gate rows.');
     assert(operatorHandoffPacket.owner_approval_count === operatorItems.filter((item) => item.owner_approval_required).length, 'Operator handoff owner_approval_count must match owner approval rows.');
     assert(operatorHandoffPacket.external_account_count === operatorItems.filter((item) => item.external_account_required).length, 'Operator handoff external_account_count must match external-account rows.');
     assert(operatorHandoffPacket.buyer_evidence_count === operatorItems.filter((item) => item.buyer_evidence_required).length, 'Operator handoff buyer_evidence_count must match buyer evidence rows.');
@@ -219,7 +220,7 @@ if (failures.length === 0) {
       assert(item.action === queueRow.action, `Operator handoff row ${index} action must match queue row.`);
       assert(item.proof_command === queueRow.proof_command, `Operator handoff row ${index} proof_command must match queue row.`);
       assert(item.proof_type === queueRow.proof_type, `Operator handoff row ${index} proof_type must match queue row.`);
-      assert(item.blocks_launch_clearance === (queueRow.status !== 'ready'), `Operator handoff row ${index} blocks_launch_clearance must derive from queue row status.`);
+      assert(item.blocks_launch_clearance === (queueRow.status !== 'ready' && queueRow.status !== 'external_gate'), `Operator handoff row ${index} blocks_launch_clearance must derive from operational queue row status.`);
       assert(item.can_execute_from_packet === false, `Operator handoff row ${index} must not be executable from the packet.`);
       assert(item.execution_gate === expectedExecutionGates[item.phase], `Operator handoff row ${index} must expose the expected execution gate.`);
       assert(/planning evidence only|does not execute the row|clear blockers|mutate source|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i.test(item.proof_boundary ?? ''), `Operator handoff row ${index} proof_boundary must preserve planning-only semantics.`);
@@ -230,10 +231,12 @@ if (failures.length === 0) {
     assert(operatorRowsByPhase.get('branch_review')?.read_only_required === true, 'Operator handoff branch row must set read_only_required.');
     assert(operatorRowsByPhase.get('supabase_advisor')?.external_account_required === true, 'Operator handoff Supabase row must set external_account_required.');
     assert(operatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required === true, 'Operator handoff buyer row must set buyer_evidence_required.');
+    assert(operatorRowsByPhase.get('buyer_evidence')?.status === 'external_gate', 'Operator handoff buyer row must stay external_gate while buyer evidence is absent before launch.');
+    assert(operatorRowsByPhase.get('buyer_evidence')?.blocks_launch_clearance === false, 'Operator handoff buyer row must not block launch-action clearance while external-gated.');
     assert(operatorRowsByPhase.get('production_approval')?.owner_approval_required === true, 'Operator handoff approval row must set owner_approval_required.');
     assert(operatorRowsByPhase.get('post_deploy_live_proof')?.post_deploy_boundary === true, 'Operator handoff post-deploy row must set post_deploy_boundary.');
     assert(lanes.includes('source_provenance') && lanes.includes('post_deploy_live_proof'), 'Lane status summary must include source and post-deploy lanes.');
-    assert(buyerLane?.status === 'blocked', 'Buyer evidence lane summary must remain blocked while hard-gate or acquisition evidence is skipped/open/non-ready.');
+    assert(buyerLane?.status === 'external_gate', 'Buyer evidence lane summary must remain external_gate while hard-gate or acquisition evidence is skipped/open/non-ready before launch.');
     assert(/open_hard_gate_rows=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose hard-gate open row count.');
     assert(/hard_gate_status=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose hard-gate status.');
     assert(/acquisition_status=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose acquisition matrix status.');

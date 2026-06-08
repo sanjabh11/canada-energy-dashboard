@@ -142,7 +142,8 @@ function focusedPayload(manifest) {
   const completionAudit = manifest.completion_audit ?? {};
   const items = Array.isArray(completionAudit.items) ? completionAudit.items : [];
   const blockerItems = items.filter((item) => item?.blocks_goal_completion);
-  const deliverableItems = items.filter((item) => !item?.blocks_goal_completion);
+  const externalGateItems = items.filter((item) => item?.status === 'external_gate');
+  const deliverableItems = items.filter((item) => !item?.blocks_goal_completion && item?.status !== 'external_gate');
 
   return {
     schema_version: 1,
@@ -155,6 +156,7 @@ function focusedPayload(manifest) {
       completed_count: completionAudit.completed_count ?? 0,
       blocked_count: completionAudit.blocked_count ?? 0,
       manual_stop_count: completionAudit.manual_stop_count ?? 0,
+      external_gate_count: completionAudit.external_gate_count ?? externalGateItems.length,
       total_count: completionAudit.total_count ?? items.length,
       goal_completion_blocked_count: completionAudit.goal_completion_blocked_count ?? blockerItems.length,
       evidence: completionAudit.evidence ?? 'Objective completion audit is missing from the launch evidence manifest.',
@@ -162,6 +164,7 @@ function focusedPayload(manifest) {
       stop_gate: completionAudit.stop_gate ?? '',
     },
     deliverable_items: deliverableItems,
+    external_gate_items: externalGateItems,
     blocker_items: blockerItems,
     completion_audit: completionAudit,
     public_status_handle: readPublicStatusHandle('objective_completion_audit'),
@@ -173,8 +176,8 @@ function focusedPayload(manifest) {
       report_commercial_launch_readiness: 'corepack pnpm run report:commercial-launch-readiness',
       check_commercial_launch_readiness_report: 'corepack pnpm run check:commercial-launch-readiness-report',
     },
-    proof_boundary: 'Focused objective completion audit evidence only; this report renders current manifest completion-audit rows, deliverable rows, blocker rows, public status handle, and package-script handles, but it does not mark the launch goal complete, clear P0/P1 blockers, collect buyer evidence, contact buyers, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, deploy, mutate live services, prove hosted/live parity, prove production approval, prove buyer acceptance, or create commercial launch readiness.',
-    stop_gate: 'Do not treat this focused objective completion audit report, checker pass, public status handle, manifest output, generated Markdown, deliverable row, blocker row, or package handle as production approval, buyer acceptance, release readiness, source readiness, branch approval, Supabase advisor clearance, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
+    proof_boundary: 'Focused objective completion audit evidence only; this report renders current manifest completion-audit rows, deliverable rows, external-gate rows, blocker rows, public status handle, and package-script handles, but it does not mark the launch goal complete, clear P0/P1 operational blockers, collect buyer evidence, contact buyers, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, deploy, mutate live services, prove hosted/live parity, prove production approval, prove buyer acceptance, or create commercial launch readiness.',
+    stop_gate: 'Do not treat this focused objective completion audit report, checker pass, public status handle, manifest output, generated Markdown, deliverable row, external-gate row, blocker row, or package handle as production approval, buyer acceptance, release readiness, source readiness, branch approval, Supabase advisor clearance, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
   };
 }
 
@@ -223,6 +226,7 @@ function renderMarkdown(payload) {
     `Completion audit proof type: \`${audit.proof_type ?? 'unknown'}\``,
     `Deliverable rows present: \`${audit.completed_count ?? 0}\``,
     `Blocked rows: \`${audit.blocked_count ?? 0}\``,
+    `External-gate rows: \`${audit.external_gate_count ?? 0}\``,
     `Manual-stop rows: \`${audit.manual_stop_count ?? 0}\``,
     `Goal-completion blocker rows: \`${audit.goal_completion_blocked_count ?? 0}\``,
     '',
@@ -235,13 +239,17 @@ function renderMarkdown(payload) {
     '## Completion Audit Summary',
     '',
     renderTable(
-      ['Status', 'Proof Type', 'Completed', 'Blocked', 'Manual Stop', 'Goal Blockers', 'Total', 'Evidence', 'Proof Boundary', 'Stop Gate'],
-      [[audit.status, audit.proof_type, audit.completed_count, audit.blocked_count, audit.manual_stop_count, audit.goal_completion_blocked_count, audit.total_count, audit.evidence, audit.proof_boundary, audit.stop_gate]],
+      ['Status', 'Proof Type', 'Completed', 'Blocked', 'External Gate', 'Manual Stop', 'Goal Blockers', 'Total', 'Evidence', 'Proof Boundary', 'Stop Gate'],
+      [[audit.status, audit.proof_type, audit.completed_count, audit.blocked_count, audit.external_gate_count, audit.manual_stop_count, audit.goal_completion_blocked_count, audit.total_count, audit.evidence, audit.proof_boundary, audit.stop_gate]],
     ),
     '',
     '## Deliverable Evidence Rows',
     '',
     renderTable(['Rank', 'Requirement', 'Status', 'Blocks Goal', 'Proof Type', 'Evidence', 'Proof Boundary', 'Stop Gate', 'Next Proof Command'], itemRows(payload.deliverable_items ?? [])),
+    '',
+    '## External Gate Rows',
+    '',
+    renderTable(['Rank', 'Requirement', 'Status', 'Blocks Goal', 'Proof Type', 'Evidence', 'Proof Boundary', 'Stop Gate', 'Next Proof Command'], itemRows(payload.external_gate_items ?? [])),
     '',
     '## Goal-Blocking Rows',
     '',
