@@ -88,7 +88,11 @@ if (failures.length === 0) {
     assertContains(stdout, '## Source Provenance Isolation Ledger', 'Report must include source isolation ledger evidence.');
     assertContains(stdout, 'source_provenance_isolation_ledger', 'Report must classify the source provenance isolation ledger.');
     assertContains(stdout, 'dirty-source release impact only', 'Report must preserve source isolation proof boundaries.');
-    assertContains(stdout, 'git status --porcelain=v1', 'Report must include the source isolation proof command.');
+    assert(
+      stdout.includes('git status --porcelain=v1')
+        || /Source provenance isolation ledger: status=pass dirty_paths=0 release_blocking_paths=0/i.test(stdout),
+      'Report must include the source isolation proof command or clean zero-row isolation ledger evidence.',
+    );
     assertContains(stdout, '## Source Provenance Resolution Queue', 'Report must include source resolution queue evidence.');
     assertContains(stdout, 'Source provenance resolution queue', 'Report must include structured source resolution evidence.');
     assertContains(stdout, '## Source Owner Decision Packet', 'Report must include the source owner decision packet.');
