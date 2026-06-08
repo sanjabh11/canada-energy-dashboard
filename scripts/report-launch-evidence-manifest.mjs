@@ -5941,6 +5941,14 @@ const skipProbeReleaseProofDerivationFilesChanged = [
   'tests/unit/objectiveCompletionAuditReadiness.test.ts',
 ];
 
+const codeOptimizationLedgerOrderFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
 const supabaseAppLintProofRecordFilesChanged = [
   'package.json',
   'scripts/record-supabase-app-lint-proof.mjs',
@@ -6589,6 +6597,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...commercialReportProofPassthroughFilesChanged,
   ...derivativeReportProofPassthroughFilesChanged,
   ...skipProbeReleaseProofDerivationFilesChanged,
+  ...codeOptimizationLedgerOrderFilesChanged,
   ...supabaseAppLintProofRecordFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -7116,6 +7125,16 @@ const skipProbeReleaseProofDerivationTestsRun = [
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-7758811.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-7758811.json',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/objectiveCompletionAuditReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-7758811.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-7758811.json',
+  'git diff --check',
+];
+
+const codeOptimizationLedgerOrderTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-8c1a5ab.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-8c1a5ab.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-8c1a5ab.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-8c1a5ab.json',
   'git diff --check',
 ];
 
@@ -7805,6 +7824,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...branchReviewPublicHandlesDigestTestsRun,
   ...releaseToolchainProofHandleTestsRun,
   ...skipProbeReleaseProofDerivationTestsRun,
+  ...codeOptimizationLedgerOrderTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
@@ -8981,6 +9001,19 @@ const safeFixImplementationDecisions = [
     reason: 'Proof-attached derivative reports still showed release_toolchain blocked in --skip-probes mode because the report skipped local probes and ignored the already-validated toolchain facts retained by record:release-readiness-proof.',
     proof_boundary: 'This record improves skipped-probe report derivation only; it does not run probes despite --skip-probes, install Corepack or Git LFS, create proofs, clear source provenance, choose branches, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
     stop_gate: 'Do not treat skipped-probe retained-proof derivation, proof-attached derivative report checks, aggregate focused-suite checks, manifest validation, or this code optimization record as source readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
+    decision: 'Keep the latest code optimization review aligned with the latest implementation decision in the launch evidence manifest.',
+    acceptance_check: 'The generated manifest has implementation_decisions.at(-1).task_id equal to code_optimization_reviews.at(-1).target_task, and check:launch-evidence-manifest plus the focused unit contracts enforce the alignment while launch remains blocked.',
+    chosen_variant: 'minimal latest-ledger alignment assertion',
+    repo_pattern_reused: 'Existing safe-fix implementation_decisions, rejected_variants, code_optimization_reviews, latestSafeFixDecision progress derivation, broad manifest checker, focused progress digest checker, and launch manifest unit contract.',
+    files_changed: codeOptimizationLedgerOrderFilesChanged,
+    tests_run: codeOptimizationLedgerOrderTestsRun,
+    proof: 'The patch records the ledger-ordering safe fix as the latest phase, appends a matching strict optimization review at the end of code_optimization_reviews, and adds checker/unit assertions that the latest review target matches the latest implementation decision.',
+    reason: 'The current safe-fix progress digest derives the current phase from implementation_decisions.at(-1), but code_optimization_reviews previously ended on an older buyer-evidence task even though the skipped-probe review existed earlier in the array, making current-review handoff ambiguous.',
+    proof_boundary: 'This record improves code-optimization ledger ordering only; it does not change launch scoring, clear source provenance, run release-readiness as approval, choose branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, complete the launch goal, or raise launch status.',
+    stop_gate: 'Do not treat latest-ledger alignment, code optimization review ordering, manifest validation, focused progress digest checks, or this code optimization record as source readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10959,6 +10992,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Promoting the proof would reduce apparent blockers, but it would materially overstate launch readiness and violate the proof-bucket boundary.',
     evidence: 'Release proof boundaries explicitly state that retained proof does not grant owner approval, deploy, push, merge, access Supabase, contact buyers, or prove hosted/live parity.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
+    variant: 'Leave code_optimization_reviews ordered with the skipped-probe review earlier and an older buyer-evidence review last.',
+    reason_rejected: 'Would keep current progress and current optimization handoff pointing at different tasks, even though both records exist.',
+    tradeoff: 'No-code defer avoids a small ledger patch but leaves operator evidence ambiguous for the current safe-fix phase.',
+    evidence: 'latestSafeFixDecision is derived from implementation_decisions.at(-1), while code_optimization_reviews.at(-1) previously targeted CEIP-SAFE-FIX-BUYER-EVIDENCE-EXTERNAL-GATE-BOUNDARY.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
+    variant: 'Sort the full code_optimization_reviews list dynamically on every manifest generation.',
+    reason_rejected: 'A generated reorder could unexpectedly reshuffle historical manual evidence and make review order harder to audit.',
+    tradeoff: 'Sorting would repair the latest row mechanically, but a minimal explicit latest record preserves the existing chronological ledger style.',
+    evidence: 'The manifest already keeps implementation decisions and reviews as curated arrays rather than computed history from git commits.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
+    variant: 'Add a separate latest_code_optimization_review top-level manifest field.',
+    reason_rejected: 'A new schema surface is unnecessary when the existing ordered arrays can carry the same invariant.',
+    tradeoff: 'A new field would make latest review lookup explicit but would add validation and report maintenance without clearing any external gate.',
+    evidence: 'Focused progress and broad manifest checks already consume progress_updates, implementation_decisions, and code_optimization_reviews as the current evidence surfaces.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -11738,6 +11792,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates only existing manifest status derivation, evidence text, blocker counts, checker assertions, and focused unit contracts, with no new dependency, no new scanner, no buyer contact, no evidence fabrication, no release-readiness execution, no external-account call, no source or branch mutation, no owner approval request, no deploy execution, no live-proof execution, and no launch-status promotion.',
     tests_or_checks: buyerEvidenceExternalGateBoundaryTestsRun,
     remaining_risk: 'Buyer-proven confidence, commercial-ready claims, outreach permission, feature-rating increases, retained-artifact validation, source provenance, release-readiness, branch review, Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof remain unresolved gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change updates only the existing safe-fix ledger, broad manifest checker, focused progress current-phase assertion, and launch/progress unit contracts, with no new dependency, no generated public-status churn, no branch/source mutation, no external-account call, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: codeOptimizationLedgerOrderTestsRun,
+    remaining_risk: 'Ledger alignment improves operator handoff only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

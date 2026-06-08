@@ -2759,7 +2759,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION', 'Manifest progress_updates must expose the latest skip-probe release-proof derivation ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER', 'Manifest progress_updates must expose the latest safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2774,7 +2774,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest skip-probe release-proof derivation ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest safe-fix ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -2854,6 +2854,16 @@ try {
     assert(manifest.implementation_decisions.length >= 1, 'Manifest must record at least one implementation decision when fix_report.files_changed is non-empty.');
     assert(manifest.rejected_variants.length >= 1, 'Manifest must record rejected variants for the safe-fix code optimization gate.');
     assert(manifest.code_optimization_reviews.length >= 1, 'Manifest must record at least one code optimization review when fix_report.files_changed is non-empty.');
+    const latestImplementationDecision = manifest.implementation_decisions.at(-1);
+    const latestCodeOptimizationReview = manifest.code_optimization_reviews.at(-1);
+    assert(
+      latestImplementationDecision?.task_id === latestCodeOptimizationReview?.target_task,
+      'Manifest latest code optimization review must match the latest implementation decision.',
+    );
+    assert(
+      latestImplementationDecision?.task_id === 'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
+      'Manifest latest implementation decision must record the code optimization ledger-order ratchet.',
+    );
     const safeFixDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
     assert(safeFixDecision, 'Manifest must record the preview manifest TypeScript safe-fix implementation decision.');
     assert(

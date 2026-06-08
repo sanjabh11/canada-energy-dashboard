@@ -92,7 +92,7 @@ describe('progress digest readiness report', () => {
     expect(stdout).toContain('supabase_app_lint');
     expect(stdout).toContain('## Progress Summary');
     expect(stdout).toContain('## Progress Updates');
-    expect(stdout).toContain('CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION');
+    expect(stdout).toContain('CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER');
     expect(stdout).toContain('objective completion audit');
     expect(stdout).toContain('Safe Fix Lane');
     expect(stdout).toContain('code optimization review evidence');
@@ -135,17 +135,17 @@ describe('progress digest readiness report', () => {
     expect(payload.progress_digest.status).toBe('blocked');
     expect(payload.progress_digest.proof_type).toBe('progress_update_digest');
     expect(payload.progress_digest.update_count).toBeGreaterThanOrEqual(2);
-    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION');
+    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER');
     expect(payload.progress_digest.target_matrix_count).toBeGreaterThanOrEqual(5);
     expect(payload.progress_digest.current_bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(payload.progress_updates.map((item: { phase: string }) => item.phase)).toEqual(expect.arrayContaining([
-      'CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION',
+      'CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER',
       'objective completion audit',
     ]));
 
     expect(payload.activities_remaining.status).toBe('blocked');
     expect(payload.activities_remaining.proof_type).toBe('activities_remaining_digest');
-    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-SKIP-PROBE-RELEASE-PROOF-DERIVATION');
+    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-CODE-OPTIMIZATION-LEDGER-ORDER');
     expect(payload.activities_remaining.current_phase_action_count).toBe(payload.activities_remaining.current_phase_actions.length);
     expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(6);
     expect(payload.activities_remaining.next_phase_action_count).toBeGreaterThanOrEqual(10);
