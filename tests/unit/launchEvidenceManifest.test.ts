@@ -88,6 +88,37 @@ function writeReleaseReadinessProof(root: string) {
   return proofPath;
 }
 
+function writeBlockedReleaseReadinessProof(root: string) {
+  const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  const proofPath = path.join(root, 'blocked-release-readiness-proof.json');
+  writeFileSync(proofPath, `${JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-release-readiness-proof.mjs',
+    generated_at: '2026-06-08T00:00:00.000Z',
+    started_at: '2026-06-08T00:00:00.000Z',
+    command: 'corepack pnpm run check:release-readiness',
+    status: 'blocked',
+    exit_code: 1,
+    duration_ms: 18,
+    repo: {
+      name: pkg.name,
+      path: process.cwd(),
+      branch: gitText(['branch', '--show-current']),
+      commit: gitText(['rev-parse', '--short', 'HEAD']),
+      package_manager: pkg.packageManager,
+    },
+    source_clean: true,
+    corepack_pnpm_version: '',
+    git_lfs_version: 'git-lfs/3.6.1',
+    stdout_tail: '',
+    stderr_tail: 'spawnSync corepack ENOENT',
+    error: 'spawnSync corepack ENOENT',
+    proof_boundary: 'This fixture records local release-readiness only; it does not grant owner approval or hosted/live parity.',
+    stop_gate: 'Do not treat this fixture as production approval.',
+  }, null, 2)}\n`);
+  return proofPath;
+}
+
 function writeSupabaseAppLintProof(root: string) {
   const pkg = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
   const proofPath = path.join(root, 'supabase-app-lint-proof.json');
@@ -159,6 +190,29 @@ describe('launch evidence manifest report', () => {
     expect(manifest.production_approval.explicit_owner_approval).toBe(false);
     expect(manifest.production_approval.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
+  it('rejects a blocked release-readiness proof record while preserving the recorder failure detail', () => {
+    const tempRoot = makeTempRoot();
+    const proofPath = writeBlockedReleaseReadinessProof(tempRoot);
+    const stdout = runManifest(['--skip-probes', '--release-readiness-proof', proofPath]);
+    const manifest = JSON.parse(stdout);
+    const releaseRowsByRequirement = mapBy(
+      manifest.release_preflight.items,
+      (item: { requirement: string; status?: string; current?: string }) => item.requirement,
+    );
+
+    expect(manifest.release_preflight.release_readiness_proof.status).toBe('invalid');
+    expect(manifest.release_preflight.release_readiness_proof.item_status).toBe('blocked');
+    expect(manifest.release_preflight.release_readiness_proof.exit_code).toBe(1);
+    expect(manifest.release_preflight.release_readiness_proof.error).toBe('spawnSync corepack ENOENT');
+    expect(manifest.release_preflight.release_readiness_proof.stderr_tail).toContain('spawnSync corepack ENOENT');
+    expect(manifest.release_preflight.release_readiness_proof.current).toContain('recorded_failure=spawnSync corepack ENOENT');
+    expect(manifest.release_preflight.release_readiness_proof.evidence).toContain('recorded_failure=spawnSync corepack ENOENT');
+    expect(releaseRowsByRequirement.get('Release-readiness execution')?.status).toBe('blocked');
+    expect(releaseRowsByRequirement.get('Release-readiness execution')?.current).toContain('recorded_failure=spawnSync corepack ENOENT');
+    expect(manifest.production_approval.status).toBe('blocked');
+    expect(manifest.launch_decision).toBe('blocked');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('accepts a retained Supabase app-lint proof record without clearing advisor or production gates', () => {
@@ -315,7 +369,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SUPABASE-APP-LINT-PROOF-RECORD');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1402,9 +1456,11 @@ describe('launch evidence manifest report', () => {
 	    ]));
     expect(manifest.fix_report.current_required_checks.every((check: string) => check.startsWith('corepack pnpm run '))).toBe(true);
     expect(manifest.fix_report.current_required_checks.some((check: string) => /synthesis/i.test(check))).toBe(false);
-    expect(manifest.implementation_decisions).toHaveLength(81);
+    expect(manifest.implementation_decisions).toHaveLength(82);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(81);
+    expect(manifest.code_optimization_reviews).toHaveLength(82);
+    expect(manifest.implementation_decisions.at(-1)?.task_id).toBe('CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS');
+    expect(manifest.code_optimization_reviews.some((item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS')).toBe(true);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );

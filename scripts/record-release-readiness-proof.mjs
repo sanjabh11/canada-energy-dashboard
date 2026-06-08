@@ -128,7 +128,8 @@ const proof = {
   corepack_pnpm_version: run('corepack', ['pnpm', '--version']).stdout.trim(),
   git_lfs_version: run('git', ['lfs', 'version']).stdout.trim(),
   stdout_tail: commandTail(result.stdout),
-  stderr_tail: commandTail(result.stderr),
+  stderr_tail: commandTail([result.stderr, result.error].filter(Boolean).join('\n')),
+  error: result.error || null,
   proof_boundary: 'This proof records a local Corepack-pinned release-readiness command result for the current source commit only; it does not grant owner approval, deploy, push, merge, contact buyers, access Supabase, or prove hosted/live parity.',
   stop_gate: 'Do not treat this proof as current if the source commit, packageManager pin, current worktree cleanliness, or release shell changes; rerun the recorder before production approval review.',
 };

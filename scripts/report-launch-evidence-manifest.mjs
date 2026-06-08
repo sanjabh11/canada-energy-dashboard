@@ -601,6 +601,15 @@ function relativeRepoPath(filePath) {
   return relative && !relative.startsWith('..') && !path.isAbsolute(relative) ? relative : filePath;
 }
 
+function proofFailureSnippet(proof) {
+  const joined = [proof?.error, proof?.stderr_tail, proof?.stdout_tail]
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean)
+    .join(' | ')
+    .replace(/\s+/g, ' ');
+  return joined.length > 320 ? `${joined.slice(0, 320)}...` : joined;
+}
+
 function readReleaseReadinessProof(filePath, { packageManager, gitStatus }) {
   if (!filePath) {
     return {
@@ -646,9 +655,13 @@ function readReleaseReadinessProof(filePath, { packageManager, gitStatus }) {
   if (typeof proof.generated_at !== 'string' || proof.generated_at.length === 0) validationErrors.push('generated_at must be set');
 
   const proofReady = validationErrors.length === 0;
+  const failureSnippet = proofFailureSnippet(proof);
   const current = proofReady
     ? `passed at ${proof.generated_at}; proof=${proofLabel}; commit=${proof.repo?.commit}; duration_ms=${proof.duration_ms ?? 'unknown'}`
-    : `release-readiness proof rejected: ${validationErrors.join('; ')}`;
+    : [
+        `release-readiness proof rejected: ${validationErrors.join('; ')}`,
+        failureSnippet ? `recorded_failure=${failureSnippet}` : '',
+      ].filter(Boolean).join('; ');
 
   return {
     status: proofReady ? 'pass' : 'invalid',
@@ -660,6 +673,9 @@ function readReleaseReadinessProof(filePath, { packageManager, gitStatus }) {
     duration_ms: proof.duration_ms ?? null,
     repo: proof.repo ?? null,
     source_clean: proof.source_clean ?? null,
+    stdout_tail: proof.stdout_tail ?? '',
+    stderr_tail: proof.stderr_tail ?? '',
+    error: proof.error ?? null,
     current,
     needed: `${RELEASE_READINESS_PROOF_RECORD_COMMAND} must show ${RELEASE_READINESS_COMMAND} exit_code=0 for this clean source commit`,
     next_action: proofReady
@@ -672,6 +688,7 @@ function readReleaseReadinessProof(filePath, { packageManager, gitStatus }) {
       `commit=${proof.repo?.commit ?? 'unknown'}`,
       `exit_code=${proof.exit_code ?? 'unknown'}`,
       `validation_errors=${validationErrors.length}`,
+      failureSnippet ? `recorded_failure=${failureSnippet}` : 'recorded_failure=none',
       'approval_gate=proof records local release-readiness only and does not grant owner approval, deploy, push, or prove hosted/live parity',
     ].join(' '),
     proof_boundary: 'Release-readiness proof records a local Corepack-pinned check:release-readiness result for the current clean source commit only; it does not grant owner approval, deploy, push, merge, contact buyers, access Supabase, or prove hosted/live parity.',
@@ -5842,6 +5859,15 @@ const releaseReadinessProofRecordFilesChanged = [
   'tests/unit/progressDigestReadiness.test.ts',
 ];
 
+const releaseReadinessProofRecorderFailureFilesChanged = [
+  'scripts/record-release-readiness-proof.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
 const supabaseAppLintProofRecordFilesChanged = [
   'package.json',
   'scripts/record-supabase-app-lint-proof.mjs',
@@ -6486,6 +6512,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...branchReviewPublicHandlesDigestFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...releaseReadinessProofRecordFilesChanged,
+  ...releaseReadinessProofRecorderFailureFilesChanged,
   ...supabaseAppLintProofRecordFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -6959,6 +6986,17 @@ const releaseReadinessProofRecordTestsRun = [
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof.json',
   'pnpm run check:release-readiness',
+];
+
+const releaseReadinessProofRecorderFailureTestsRun = [
+  'node --check scripts/record-release-readiness-proof.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run record:release-readiness-proof -- --output /tmp/ceip-release-readiness-proof-blocked.json',
+  'pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof-blocked.json --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
 ];
 
 const supabaseAppLintProofRecordTestsRun = [
@@ -8770,6 +8808,19 @@ const safeFixImplementationDecisions = [
     reason: 'The repo-local Supabase app lint check passed with zero app-owned findings, but the Supabase advisor readiness packet still treated CLI lint freshness as an unresolved row because no current retained proof could be attached to reports.',
     proof_boundary: 'This record clears only the repo-local Supabase app-lint freshness evidence row when a current proof file validates; it does not authorize Supabase connectors, access dashboards, rerun Security Advisor or Performance Advisor, clear advisor findings, run migrations, alter secrets, grant production approval, deploy, prove hosted/live parity, or raise the launch decision.',
     stop_gate: 'Do not treat a Supabase app-lint proof file as current when the source commit, packageManager pin, worktree cleanliness, Supabase linked project, or lint output changes; do not use it to bypass connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, advisor clearance claim, branch review, explicit owner approval, or post-deploy live proof.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS',
+    decision: 'Preserve release-readiness proof-recorder spawn failures in the retained proof JSON and manifest validation output without treating the failed proof as clearance.',
+    acceptance_check: 'A blocked record:release-readiness-proof artifact generated when Corepack is absent records error/stderr_tail, the manifest exposes the recorded failure cause, and the Release-readiness execution row remains blocked until the guarded Corepack command exits 0 for the current clean commit.',
+    chosen_variant: 'minimal recorder failure metadata plus manifest validator surfacing',
+    repo_pattern_reused: 'Existing release-readiness proof recorder, manifest proof-path validator, Supabase app-lint proof failure metadata pattern, progress_updates current-safe-fix ledger, and focused progress digest checker.',
+    files_changed: releaseReadinessProofRecorderFailureFilesChanged,
+    tests_run: releaseReadinessProofRecorderFailureTestsRun,
+    proof: 'The patch records result.error in release-readiness proof JSON, folds the error into stderr_tail, surfaces recorded_failure in manifest current/evidence strings for invalid attached proofs, and keeps validation_errors/status checks as the source of release-row blocking.',
+    reason: 'A missing Corepack binary currently produces a retained blocked proof file with blank stderr_tail and no error field, making the operator handoff less actionable than the already-hardened Supabase app-lint proof recorder.',
+    proof_boundary: 'This record improves failed proof diagnostics only; it does not install Corepack, enable Corepack, run release-readiness successfully, clear source provenance, select branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
+    stop_gate: 'Do not treat a blocked proof file, recorded spawn error, manifest validation, focused progress digest, or this code optimization record as release-readiness, production approval, deploy authorization, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -10664,6 +10715,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Clearing the full advisor gate would reduce blocker counts, but would materially overstate database security and performance advisor evidence.',
     evidence: 'Supabase advisor clearance_deficits still require connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings record, and advisor clearance claim rows after CLI lint passes.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS',
+    variant: 'Treat a blocked release-readiness proof artifact as partial release-readiness evidence because it records the current commit and clean source flag.',
+    reason_rejected: 'A blocked proof records a failure path, not a passing Corepack-pinned release-readiness command, so using it as release evidence would weaken the release gate.',
+    tradeoff: 'Partial credit could reduce apparent blocker severity, but it would blur diagnostics with clearance and overstate readiness while Corepack is missing.',
+    evidence: 'The selected validator still requires status=pass, exit_code=0, matching commit/packageManager, and source_clean=true before the Release-readiness execution row can pass.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS',
+    variant: 'Install or enable Corepack from the recorder/checker when the spawn error is ENOENT.',
+    reason_rejected: 'Tool installation and release-shell remediation are operator/environment actions, not side effects of a proof recorder or manifest validator.',
+    tradeoff: 'Auto-remediation might unblock this workstation faster, but it would mutate the environment and could create unapproved toolchain drift.',
+    evidence: 'The release preflight and Corepack toolchain checks already require an approved standalone Corepack install or Corepack-enabled release shell before release-readiness evidence can be claimed.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS',
+    variant: 'Accept matching bare pnpm output as the fallback release-readiness proof when Corepack is absent.',
+    reason_rejected: 'Bare pnpm does not prove packageManager resolution through Corepack and is explicitly rejected by release-preflight stop gates.',
+    tradeoff: 'A bare-pnpm fallback would be easier in the current shell, but it would bypass the pinned release toolchain contract.',
+    evidence: 'release_preflight.toolchain_probe_ledger and check:corepack-toolchain both state that bare pnpm diagnostics do not satisfy the Corepack resolver gate.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10822,6 +10894,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one recorder for the existing check:supabase-app-lint command and one proof-path validator in the existing manifest/report chain, with no new dependency, no dashboard access, no advisor rerun, no database mutation, no migration, no secret handling, no branch mutation, no buyer contact, no owner approval request, no deploy execution, and no launch-status promotion.',
     tests_or_checks: supabaseAppLintProofRecordTestsRun,
     remaining_risk: 'The proof record can clear only the repo-local app-lint freshness row for the current clean commit; connector authorization, Supabase Security Advisor evidence, Performance Advisor evidence, public-safe findings, advisor clearance claim, branch review, explicit owner approval, guarded deployment, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change only enriches the existing release-readiness proof recorder and manifest proof validator with failure metadata, adds no dependency, no new artifact type, no tool installation, no release command fallback, no deploy path, and no launch-status promotion.',
+    tests_or_checks: releaseReadinessProofRecorderFailureTestsRun,
+    remaining_risk: 'The recorded failure remains blocker evidence only; Corepack-pinned release-readiness, branch review, Supabase advisor clearance, explicit owner approval, guarded deployment, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',

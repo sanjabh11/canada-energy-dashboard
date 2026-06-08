@@ -838,6 +838,7 @@ try {
       'Manifest release_preflight.git_lfs_hook_diagnostic must be skipped or include hook/path context.',
     );
     assert(typeof manifest.release_preflight?.release_readiness_proof?.status === 'string', 'Manifest release_preflight.release_readiness_proof.status must be set.');
+    assert(['absent', 'pass', 'invalid'].includes(manifest.release_preflight.release_readiness_proof.status), 'Manifest release_preflight.release_readiness_proof.status must be absent, pass, or invalid.');
     assert(typeof manifest.release_preflight.release_readiness_proof.item_status === 'string', 'Manifest release_preflight.release_readiness_proof.item_status must be set.');
     assert(typeof manifest.release_preflight.release_readiness_proof.evidence === 'string' && /Release-readiness proof/i.test(manifest.release_preflight.release_readiness_proof.evidence), 'Manifest release_readiness_proof evidence must include a proof marker.');
     assert(typeof manifest.release_preflight.release_readiness_proof.next_action === 'string' && manifest.release_preflight.release_readiness_proof.next_action.length > 0, 'Manifest release_readiness_proof.next_action must be set.');
@@ -851,6 +852,11 @@ try {
       assert(manifest.release_preflight.release_readiness_proof.exit_code === 0, 'Passing release_readiness_proof must have exit_code=0.');
       assert(manifest.release_preflight.release_readiness_proof.source_clean === true, 'Passing release_readiness_proof must record source_clean=true.');
       assert(/does not grant owner approval|hosted\/live parity/i.test(manifest.release_preflight.release_readiness_proof.proof_boundary ?? ''), 'Passing release_readiness_proof must preserve no-approval/no-live-parity boundaries.');
+    } else if (manifest.release_preflight.release_readiness_proof.status === 'invalid') {
+      assert(Array.isArray(manifest.release_preflight.release_readiness_proof.validation_errors) && manifest.release_preflight.release_readiness_proof.validation_errors.length > 0, 'Invalid release_readiness_proof must expose validation_errors.');
+      if (manifest.release_preflight.release_readiness_proof.error || manifest.release_preflight.release_readiness_proof.stderr_tail) {
+        assert(/recorded_failure=/i.test(manifest.release_preflight.release_readiness_proof.evidence), 'Invalid release_readiness_proof with recorder output must preserve recorded_failure evidence.');
+      }
     }
     assert(typeof manifest.release_preflight?.toolchain_probe_ledger?.evidence === 'string', 'Manifest release_preflight.toolchain_probe_ledger.evidence must be set.');
     assert(manifest.release_preflight.toolchain_probe_ledger.evidence.includes('Release toolchain probe ledger'), 'Manifest release toolchain probe ledger evidence must include a ledger marker.');
@@ -2753,7 +2759,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SUPABASE-APP-LINT-PROOF-RECORD', 'Manifest progress_updates must expose the latest Supabase app-lint proof-record ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-RELEASE-READINESS-PROOF-RECORDER-FAILURE-DETAILS', 'Manifest progress_updates must expose the latest release-readiness proof-recorder failure-details ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2768,7 +2774,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest Supabase app-lint proof-record ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest release-readiness proof-recorder failure-details ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
