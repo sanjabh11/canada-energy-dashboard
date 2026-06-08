@@ -156,7 +156,8 @@ const proof = {
   extension_owned_functions: classification.extension_owned_functions,
   classification,
   stdout_tail: commandTail(result.stdout),
-  stderr_tail: commandTail(result.stderr),
+  stderr_tail: commandTail([result.stderr, result.error].filter(Boolean).join('\n')),
+  error: result.error || null,
   proof_boundary: 'This proof records a local Supabase app-owned lint classification for the current source commit only; it does not authorize Supabase connectors, access the dashboard, rerun Security Advisor or Performance Advisor, clear advisor findings, run migrations, alter secrets, grant production approval, deploy, or prove hosted/live parity.',
   stop_gate: 'Do not treat this proof as current if the source commit, packageManager pin, current worktree cleanliness, Supabase linked project, or lint command output changes; rerun the recorder before Supabase advisor or production approval review.',
 };
