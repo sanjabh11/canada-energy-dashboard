@@ -100,6 +100,10 @@ if (failures.length === 0) {
     assertContains(stdout, 'Execution Gate', 'Report must render branch operator handoff execution gates.');
     assertContains(stdout, 'Can Execute From Packet', 'Report must render branch operator packet execution boundaries.');
     assertContains(stdout, 'read-only planning evidence only', 'Report must preserve the branch operator handoff planning-only boundary.');
+    assertContains(stdout, '## Branch Merge Recommendation Packet', 'Report must include the branch merge recommendation packet.');
+    assertContains(stdout, 'branch_merge_recommendation_packet', 'Report must include the branch merge recommendation proof type.');
+    assertContains(stdout, 'do_not_wholesale_merge', 'Report must preserve do-not-wholesale-merge recommendations for high-risk branches.');
+    assertContains(stdout, 'Can Merge Now', 'Report must render branch merge non-execution state.');
     assertContains(stdout, '## Review-First Branch Packets', 'Report must include review-first branch packets.');
     assertContains(stdout, '## Top Branch Review Packet', 'Report must include the top branch review packet.');
     assertContains(stdout, '## Top Branch Changed Supabase Function Rows', 'Report must include top branch Supabase function impact rows.');
@@ -137,6 +141,7 @@ if (failures.length === 0) {
     const resolutionQueue = branch.canonical_head_resolution_queue ?? {};
     const clearanceMatrix = branch.clearance_matrix ?? {};
     const operatorHandoffPacket = branch.operator_handoff_packet ?? {};
+    const mergeRecommendationPacket = branch.branch_merge_recommendation_packet ?? {};
     const packetSet = branch.review_first_packets ?? {};
     const topPacket = branch.top_review_packet ?? {};
 
@@ -167,6 +172,13 @@ if (failures.length === 0) {
     assert(typeof operatorHandoffPacket.evidence === 'string' && /Branch operator handoff packet/i.test(operatorHandoffPacket.evidence), 'Branch operator handoff packet evidence must be set.');
     assert(typeof operatorHandoffPacket.proof_boundary === 'string' && /read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity/i.test(operatorHandoffPacket.proof_boundary), 'Branch operator handoff packet proof_boundary must preserve read-only branch planning boundaries.');
     assert(typeof operatorHandoffPacket.stop_gate === 'string' && /Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i.test(operatorHandoffPacket.stop_gate), 'Branch operator handoff packet stop_gate must reject clearance, branch mutation, approval, and deploy claims.');
+    assert(mergeRecommendationPacket.proof_type === 'branch_merge_recommendation_packet', 'Focused JSON must include the branch merge recommendation packet.');
+    assert(mergeRecommendationPacket.source === 'branch_review.clearance_matrix.rows', 'Branch merge recommendation packet must derive from clearance matrix rows.');
+    assert(['ready', 'blocked'].includes(mergeRecommendationPacket.status), 'Branch merge recommendation packet status must be ready or blocked.');
+    assert(Array.isArray(mergeRecommendationPacket.items), 'Branch merge recommendation packet items must be a list.');
+    assert(typeof mergeRecommendationPacket.evidence === 'string' && /Branch merge recommendation packet/i.test(mergeRecommendationPacket.evidence), 'Branch merge recommendation packet evidence must be set.');
+    assert(typeof mergeRecommendationPacket.proof_boundary === 'string' && /best-course recommendations only|does not checkout|merge|push|discard|select canonical heads|cherry-pick|run migrations|mutate Supabase|deploy|production approval/i.test(mergeRecommendationPacket.proof_boundary), 'Branch merge recommendation packet proof_boundary must preserve no-mutation semantics.');
+    assert(typeof mergeRecommendationPacket.stop_gate === 'string' && /merge approval|canonical-head selection|branch retirement approval|cherry-pick approval|production approval|hosted\/live proof/i.test(mergeRecommendationPacket.stop_gate), 'Branch merge recommendation packet stop_gate must reject approval claims.');
     assert(Array.isArray(packetSet.packets), 'review_first_packets.packets must be a list.');
     assert(topPacket && typeof topPacket === 'object', 'top_review_packet must be an object.');
     assert(payload.launch_action_branch_row?.phase === 'branch_review', 'Focused JSON must include the launch action branch row.');
@@ -205,6 +217,13 @@ if (failures.length === 0) {
       assert(operatorHandoffPacket.drift_review_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocker_class === 'drift_review').length, 'Branch operator handoff packet drift_review_count must match drift review rows.');
       assert(operatorHandoffPacket.high_risk_count === (operatorHandoffPacket.items ?? []).filter((item) => item.highest_risk === 'high').length, 'Branch operator handoff packet high_risk_count must match high-risk rows.');
       assert(operatorHandoffPacket.stale_or_aging_count === (operatorHandoffPacket.items ?? []).filter((item) => ['stale', 'aging'].includes(item.freshness)).length, 'Branch operator handoff packet stale_or_aging_count must match stale or aging rows.');
+      assert(mergeRecommendationPacket.item_count === clearanceMatrix.rows.length, 'Branch merge recommendation packet item_count must match clearance matrix rows.');
+      assert(mergeRecommendationPacket.blocked_count === (mergeRecommendationPacket.items ?? []).filter((item) => item.status !== 'ready').length, 'Branch merge recommendation packet blocked_count must match blocked rows.');
+      assert(mergeRecommendationPacket.do_not_wholesale_merge_count === (mergeRecommendationPacket.items ?? []).filter((item) => item.recommendation === 'do_not_wholesale_merge').length, 'Branch merge recommendation packet do_not_wholesale_merge_count must match recommendation rows.');
+      assert(
+        JSON.stringify((mergeRecommendationPacket.items ?? []).map((item) => item.family)) === JSON.stringify((clearanceMatrix.rows ?? []).map((item) => item.family)),
+        'Branch merge recommendation packet rows must preserve clearance matrix row order.',
+      );
       assert(
         JSON.stringify((operatorHandoffPacket.items ?? []).map((item) => item.family)) === JSON.stringify((clearanceMatrix.rows ?? []).map((item) => item.family)),
         'Branch operator handoff packet rows must preserve clearance matrix row order.',
@@ -245,6 +264,25 @@ if (failures.length === 0) {
       if (item.blocker_class === 'canonical_head_decision') {
         assert(item.owner === 'owner', `operator_handoff_packet.items[${index}] canonical-head rows must be owner-gated.`);
         assert(item.execution_gate === 'owner_canonical_head_decision_first', `operator_handoff_packet.items[${index}] canonical-head rows must use the owner_canonical_head_decision_first execution gate.`);
+      }
+    }
+
+    for (const [index, item] of (mergeRecommendationPacket.items ?? []).entries()) {
+      const clearanceRow = (clearanceMatrix.rows ?? [])[index] ?? {};
+      assert(Number.isInteger(item.rank), `branch_merge_recommendation_packet.items[${index}].rank must be an integer.`);
+      assert(item.family === clearanceRow.family, `branch_merge_recommendation_packet.items[${index}].family must match the clearance matrix row.`);
+      assert(item.review_ref === clearanceRow.review_ref, `branch_merge_recommendation_packet.items[${index}].review_ref must match the clearance matrix row.`);
+      assert(['owner', 'operator'].includes(item.owner), `branch_merge_recommendation_packet.items[${index}].owner must be owner or operator.`);
+      assert(typeof item.recommendation === 'string' && item.recommendation.length > 0, `branch_merge_recommendation_packet.items[${index}].recommendation must be set.`);
+      assert(typeof item.next_decision === 'string' && /review|retire|cherry-pick|merge/i.test(item.next_decision), `branch_merge_recommendation_packet.items[${index}].next_decision must describe the next review decision.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `branch_merge_recommendation_packet.items[${index}].proof_command must point at the read-only branch report.`);
+      assert(item.can_merge_now === false, `branch_merge_recommendation_packet.items[${index}].can_merge_now must be false.`);
+      assert(item.can_execute_from_packet === false, `branch_merge_recommendation_packet.items[${index}].can_execute_from_packet must be false.`);
+      assert(item.proof_type === 'read_only_branch_merge_recommendation', `branch_merge_recommendation_packet.items[${index}].proof_type must be read_only_branch_merge_recommendation.`);
+      assert(typeof item.proof_boundary === 'string' && /Read-only branch merge recommendation only|does not checkout|merge|push|discard|select canonical heads|cherry-pick|run migrations|mutate Supabase|deploy|production approval/i.test(item.proof_boundary), `branch_merge_recommendation_packet.items[${index}].proof_boundary must preserve no-mutation semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not merge|cherry-pick|push|discard|checkout|select canonical heads|deploy|request production approval/i.test(item.stop_gate), `branch_merge_recommendation_packet.items[${index}].stop_gate must block branch mutations and approvals.`);
+      if (item.highest_risk === 'high' || item.blocker_class === 'review_first') {
+        assert(item.recommendation === 'do_not_wholesale_merge', `branch_merge_recommendation_packet.items[${index}] high-risk or review-first rows must reject wholesale merge.`);
       }
     }
 

@@ -138,8 +138,96 @@ function findByName(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
 
+function branchMergeRecommendation(row) {
+  const state = row.local_origin_state ?? '';
+  const highRisk = row.highest_risk === 'high';
+  const staleOrAging = ['stale', 'aging'].includes(row.freshness);
+  const reviewFirst = row.blocker_class === 'review_first';
+  const canonicalDecision = row.blocker_class === 'canonical_head_decision';
+
+  if (highRisk || reviewFirst) {
+    return {
+      stance: 'do_not_wholesale_merge',
+      next_decision: 'Run the focused read-only branch packet, choose any canonical head first, then cherry-pick only narrow, tested changes that still matter.',
+      owner: canonicalDecision || /local-only|origin-only|ahead/i.test(state) ? 'owner' : 'operator',
+    };
+  }
+  if (/local-only/i.test(state)) {
+    return {
+      stance: 'review_or_retire_local_only',
+      next_decision: 'Decide whether this local-only branch remains a candidate; retire it if the focused packet finds no current launch value.',
+      owner: 'owner',
+    };
+  }
+  if (/origin-only/i.test(state)) {
+    return {
+      stance: 'review_or_retire_origin_only',
+      next_decision: 'Review the origin-only branch without checkout first; create a local branch only if the owner keeps it as a candidate.',
+      owner: 'owner',
+    };
+  }
+  if (staleOrAging || canonicalDecision) {
+    return {
+      stance: 'drift_review_before_merge',
+      next_decision: 'Refresh read-only drift review against current main before any merge discussion.',
+      owner: canonicalDecision ? 'owner' : 'operator',
+    };
+  }
+  return {
+    stance: 'normal_review_gate',
+    next_decision: 'Use normal focused review, tests, and release gates before any merge.',
+    owner: 'operator',
+  };
+}
+
+function buildBranchMergeRecommendationPacket(branchReview) {
+  const clearanceRows = branchReview.clearance_matrix?.rows ?? [];
+  const items = clearanceRows.map((row, index) => {
+    const recommendation = branchMergeRecommendation(row);
+    return {
+      rank: index + 1,
+      family: row.family,
+      review_ref: row.review_ref,
+      local_origin_state: row.local_origin_state,
+      highest_risk: row.highest_risk,
+      freshness: row.freshness,
+      blocker_class: row.blocker_class,
+      recommendation: recommendation.stance,
+      next_decision: recommendation.next_decision,
+      owner: recommendation.owner,
+      proof_command: row.required_proof_command,
+      proof_type: 'read_only_branch_merge_recommendation',
+      can_merge_now: false,
+      can_execute_from_packet: false,
+      status: row.clearance_status === 'pass' ? 'ready' : 'blocked',
+      proof_boundary: 'Read-only branch merge recommendation only; it does not checkout, merge, push, discard, select canonical heads, cherry-pick, run migrations, mutate Supabase, deploy, or grant production approval.',
+      stop_gate: 'Do not merge, cherry-pick, push, discard, checkout, select canonical heads, run migrations, deploy, or request production approval from this recommendation packet without explicit owner approval and release gates.',
+    };
+  });
+  const blockedItems = items.filter((item) => item.status !== 'ready');
+  const doNotWholesaleCount = items.filter((item) => item.recommendation === 'do_not_wholesale_merge').length;
+  const retireOrKeepCount = items.filter((item) => /review_or_retire/.test(item.recommendation)).length;
+  return {
+    status: blockedItems.length > 0 ? 'blocked' : 'ready',
+    proof_type: 'branch_merge_recommendation_packet',
+    source: 'branch_review.clearance_matrix.rows',
+    item_count: items.length,
+    blocked_count: blockedItems.length,
+    do_not_wholesale_merge_count: doNotWholesaleCount,
+    retire_or_keep_decision_count: retireOrKeepCount,
+    proof_boundary: 'The branch merge recommendation packet translates read-only branch review evidence into best-course recommendations only; it does not checkout, merge, push, discard, select canonical heads, cherry-pick, run migrations, mutate Supabase, deploy, request production approval, or grant owner approval.',
+    stop_gate: 'Do not treat this packet as merge approval, canonical-head selection, branch retirement approval, cherry-pick approval, release readiness, production approval, deploy authorization, or hosted/live proof.',
+    items,
+    evidence: `Branch merge recommendation packet: status=${blockedItems.length > 0 ? 'blocked' : 'ready'} items=${items.length} blocked=${blockedItems.length} do_not_wholesale_merge=${doNotWholesaleCount} retire_or_keep=${retireOrKeepCount} approval_gate=read-only recommendations only; no checkout/merge/cherry-pick/push/discard/canonical-head selection without owner approval and release gates`,
+  };
+}
+
 function focusedPayload(manifest) {
   const branchReview = manifest.branch_review ?? {};
+  const enrichedBranchReview = {
+    ...branchReview,
+    branch_merge_recommendation_packet: buildBranchMergeRecommendationPacket(branchReview),
+  };
   const launchActionRow = findByName(
     manifest.launch_action_queue?.items,
     'phase',
@@ -161,7 +249,7 @@ function focusedPayload(manifest) {
     generated_at: manifest.run?.generated_at ?? null,
     launch_decision: manifest.launch_decision ?? null,
     repo: manifest.repo ?? {},
-    branch_review: branchReview,
+    branch_review: enrichedBranchReview,
     launch_action_branch_row: launchActionRow,
     production_approval_branch_prerequisite: productionPrerequisiteRow,
     production_approval_request_branch_row: productionRequestRow,
@@ -198,6 +286,7 @@ function renderMarkdown(payload) {
   const resolutionQueue = branch.canonical_head_resolution_queue ?? {};
   const clearanceMatrix = branch.clearance_matrix ?? {};
   const operatorHandoffPacket = branch.operator_handoff_packet ?? {};
+  const mergeRecommendationPacket = branch.branch_merge_recommendation_packet ?? {};
   const packetSet = branch.review_first_packets ?? {};
   const topPacket = branch.top_review_packet ?? {};
   const comparison = topPacket.canonical_head_comparison ?? {};
@@ -232,6 +321,7 @@ function renderMarkdown(payload) {
     ['Canonical-head decisions', `${canonical.open_count ?? 'unknown'}/${canonical.total_count ?? 'unknown'} open; status=${canonical.status ?? 'unknown'}`],
     ['Clearance matrix', `${clearanceMatrix.status ?? 'unknown'}; rows=${clearanceMatrix.family_count ?? 'unknown'}`],
     ['Operator handoff packet', `${operatorHandoffPacket.status ?? 'unknown'}; blocked=${operatorHandoffPacket.blocked_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}`],
+    ['Merge recommendation packet', `${mergeRecommendationPacket.status ?? 'unknown'}; do-not-wholesale=${mergeRecommendationPacket.do_not_wholesale_merge_count ?? 'unknown'}`],
     ['Top review ref', topPacket.branch ?? '<review-ref>'],
   ];
 
@@ -314,6 +404,26 @@ function renderMarkdown(payload) {
     item.read_only ? 'yes' : 'no',
     item.blocks_branch_gate ? 'yes' : 'no',
     item.can_execute_from_packet ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const mergeRecommendationRows = (mergeRecommendationPacket.items ?? []).map((item) => [
+    item.rank,
+    item.family,
+    item.review_ref,
+    item.local_origin_state,
+    item.highest_risk,
+    item.freshness,
+    item.blocker_class,
+    item.recommendation,
+    item.next_decision,
+    item.owner,
+    item.proof_command,
+    item.can_merge_now ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
+    item.status,
+    item.proof_type,
     item.proof_boundary,
     item.stop_gate,
   ]);
@@ -459,6 +569,17 @@ function renderMarkdown(payload) {
     `Stop gate: ${operatorHandoffPacket.stop_gate ?? 'unknown'}`,
     '',
     renderTable(['Rank', 'Family', 'Review Ref', 'Owner', 'Status', 'Execution Gate', 'Blocker Class', 'Highest Risk', 'Local/Origin State', 'Freshness', 'Action', 'Proof Command', 'Proof Type', 'Read Only', 'Blocks Branch Gate', 'Can Execute From Packet', 'Proof Boundary', 'Stop Gate'], operatorHandoffRows),
+    '',
+    '## Branch Merge Recommendation Packet',
+    '',
+    mergeRecommendationPacket.evidence ?? 'Branch merge recommendation packet missing.',
+    '',
+    `Proof type: ${mergeRecommendationPacket.proof_type ?? 'unknown'}`,
+    `Source: ${mergeRecommendationPacket.source ?? 'unknown'}`,
+    `Boundary: ${mergeRecommendationPacket.proof_boundary ?? 'unknown'}`,
+    `Stop gate: ${mergeRecommendationPacket.stop_gate ?? 'unknown'}`,
+    '',
+    renderTable(['Rank', 'Family', 'Review Ref', 'Local/Origin State', 'Highest Risk', 'Freshness', 'Blocker Class', 'Recommendation', 'Next Decision', 'Owner', 'Proof Command', 'Can Merge Now', 'Can Execute From Packet', 'Status', 'Proof Type', 'Proof Boundary', 'Stop Gate'], mergeRecommendationRows),
     '',
     '## Review-First Branch Packets',
     '',

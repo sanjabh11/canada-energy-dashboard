@@ -47,6 +47,10 @@ describe('branch review readiness report', () => {
     expect(stdout).toContain('Branch Operator Handoff Packet');
     expect(stdout).toContain('branch_operator_handoff_packet');
     expect(stdout).toContain('Can Execute From Packet');
+    expect(stdout).toContain('Branch Merge Recommendation Packet');
+    expect(stdout).toContain('branch_merge_recommendation_packet');
+    expect(stdout).toContain('do_not_wholesale_merge');
+    expect(stdout).toContain('Can Merge Now');
     expect(stdout).toContain('Review-First Branch Packets');
     expect(stdout).toContain('Top Branch Review Packet');
     expect(stdout).toContain('Top Branch Changed Supabase Function Rows');
@@ -94,6 +98,11 @@ describe('branch review readiness report', () => {
     expect(Array.isArray(payload.branch_review.operator_handoff_packet.items)).toBe(true);
     expect(payload.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(payload.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
+    expect(payload.branch_review.branch_merge_recommendation_packet.proof_type).toBe('branch_merge_recommendation_packet');
+    expect(payload.branch_review.branch_merge_recommendation_packet.source).toBe('branch_review.clearance_matrix.rows');
+    expect(Array.isArray(payload.branch_review.branch_merge_recommendation_packet.items)).toBe(true);
+    expect(payload.branch_review.branch_merge_recommendation_packet.proof_boundary).toMatch(/best-course recommendations only|does not checkout|merge|push|discard|select canonical heads|cherry-pick|run migrations|mutate Supabase|deploy|production approval/i);
+    expect(payload.branch_review.branch_merge_recommendation_packet.stop_gate).toMatch(/merge approval|canonical-head selection|branch retirement approval|cherry-pick approval|production approval|hosted\/live proof/i);
     expect(Array.isArray(payload.branch_review.review_first_packets.packets)).toBe(true);
     expect(payload.launch_action_branch_row.phase).toBe('branch_review');
     expect(payload.launch_action_branch_row.proof_command).toContain('report:branch-review-readiness');
@@ -136,6 +145,16 @@ describe('branch review readiness report', () => {
       expect(payload.branch_review.operator_handoff_packet.items.map((item: { family?: string }) => item.family)).toEqual(
         payload.branch_review.clearance_matrix.rows.map((item: { family?: string }) => item.family),
       );
+      expect(payload.branch_review.branch_merge_recommendation_packet.item_count).toBe(payload.branch_review.clearance_matrix.rows.length);
+      expect(payload.branch_review.branch_merge_recommendation_packet.blocked_count).toBe(
+        payload.branch_review.branch_merge_recommendation_packet.items.filter((item: { status?: string }) => item.status !== 'ready').length,
+      );
+      expect(payload.branch_review.branch_merge_recommendation_packet.do_not_wholesale_merge_count).toBe(
+        payload.branch_review.branch_merge_recommendation_packet.items.filter((item: { recommendation?: string }) => item.recommendation === 'do_not_wholesale_merge').length,
+      );
+      expect(payload.branch_review.branch_merge_recommendation_packet.items.map((item: { family?: string }) => item.family)).toEqual(
+        payload.branch_review.clearance_matrix.rows.map((item: { family?: string }) => item.family),
+      );
       for (const [index, item] of payload.branch_review.operator_handoff_packet.items.entries()) {
         const clearanceRow = payload.branch_review.clearance_matrix.rows[index];
         expect(item.family).toBe(clearanceRow.family);
@@ -152,6 +171,17 @@ describe('branch review readiness report', () => {
         if (item.blocker_class === 'canonical_head_decision') {
           expect(item.owner).toBe('owner');
           expect(item.execution_gate).toBe('owner_canonical_head_decision_first');
+        }
+      }
+      for (const item of payload.branch_review.branch_merge_recommendation_packet.items) {
+        expect(item.proof_command).toContain('report:unmerged-branch-readiness');
+        expect(item.can_merge_now).toBe(false);
+        expect(item.can_execute_from_packet).toBe(false);
+        expect(item.proof_type).toBe('read_only_branch_merge_recommendation');
+        expect(item.proof_boundary).toMatch(/Read-only branch merge recommendation only|does not checkout|merge|push|discard|select canonical heads|cherry-pick|run migrations|mutate Supabase|deploy|production approval/i);
+        expect(item.stop_gate).toMatch(/Do not merge|cherry-pick|push|discard|checkout|select canonical heads|deploy|request production approval/i);
+        if (item.highest_risk === 'high' || item.blocker_class === 'review_first') {
+          expect(item.recommendation).toBe('do_not_wholesale_merge');
         }
       }
       expect(payload.branch_review.top_review_packet.read_only).toBe(true);
