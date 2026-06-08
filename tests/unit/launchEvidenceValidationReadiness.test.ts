@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,6 +13,51 @@ function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-launch-evidence-validation-'));
   tempRoots.push(root);
   return root;
+}
+
+function writeCurrentProofs(root: string) {
+  const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  }).trim();
+  const packageManager = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')).packageManager;
+  const repo = {
+    name: 'canada-energy-dashboard',
+    path: process.cwd(),
+    branch: 'main',
+    commit,
+    package_manager: packageManager,
+  };
+  const releaseProofPath = path.join(root, 'release-readiness-proof.json');
+  const supabaseProofPath = path.join(root, 'supabase-app-lint-proof.json');
+  writeFileSync(releaseProofPath, JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-release-readiness-proof.mjs',
+    generated_at: '2026-06-08T21:04:40.634Z',
+    command: 'corepack pnpm run check:release-readiness',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 1234,
+    repo,
+    source_clean: true,
+  }));
+  writeFileSync(supabaseProofPath, JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-supabase-app-lint-proof.mjs',
+    generated_at: '2026-06-08T21:05:02.007Z',
+    command: 'corepack pnpm run check:supabase-app-lint',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo,
+    source_clean: true,
+    total_lint_rows: 14,
+    extension_owned_rows: 14,
+    extension_owned_issues: 37,
+    app_owned_rows: 0,
+    app_owned_issues: 0,
+  }));
+  return { releaseProofPath, supabaseProofPath };
 }
 
 afterEach(() => {
@@ -100,6 +145,47 @@ describe('launch evidence validation readiness report', () => {
     });
 
     expect(stdout).toContain('Launch evidence validation readiness report check passed');
+  });
+
+  it('passes retained proof paths through to the underlying manifest validation check', () => {
+    const tempRoot = makeTempRoot();
+    const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
+    const stdout = execFileSync(process.execPath, [
+      reportScriptPath,
+      '--skip-probes',
+      '--json',
+      '--release-readiness-proof',
+      releaseProofPath,
+      '--supabase-app-lint-proof',
+      supabaseProofPath,
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    const payload = JSON.parse(stdout);
+
+    expect(payload.validation_readiness.validation_check.status).toBe('pass');
+    expect(payload.validation_readiness.validation_check.command).toContain('--release-readiness-proof');
+    expect(payload.validation_readiness.validation_check.command).toContain('--supabase-app-lint-proof');
+    expect(payload.validation_readiness.validation_check.command).toContain(releaseProofPath);
+    expect(payload.validation_readiness.validation_check.command).toContain(supabaseProofPath);
+
+    const checkOutput = execFileSync(process.execPath, [
+      checkScriptPath,
+      '--skip-probes',
+      '--release-readiness-proof',
+      releaseProofPath,
+      '--supabase-app-lint-proof',
+      supabaseProofPath,
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    expect(checkOutput).toContain('Launch evidence validation readiness report check passed');
   });
 
   it('can act as a machine gate for launch evidence validation only', () => {

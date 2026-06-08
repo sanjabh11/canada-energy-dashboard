@@ -1,9 +1,70 @@
 import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-focused-launch-readiness-reports.mjs');
 const timeout = 300_000;
+const tempRoots: string[] = [];
+
+function makeTempRoot() {
+  const root = mkdtempSync(path.join(tmpdir(), 'ceip-focused-suite-'));
+  tempRoots.push(root);
+  return root;
+}
+
+function writeCurrentProofs(root: string) {
+  const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  }).trim();
+  const packageManager = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')).packageManager;
+  const repo = {
+    name: 'canada-energy-dashboard',
+    path: process.cwd(),
+    branch: 'main',
+    commit,
+    package_manager: packageManager,
+  };
+  const releaseProofPath = path.join(root, 'release-readiness-proof.json');
+  const supabaseProofPath = path.join(root, 'supabase-app-lint-proof.json');
+  writeFileSync(releaseProofPath, JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-release-readiness-proof.mjs',
+    generated_at: '2026-06-08T21:04:40.634Z',
+    command: 'corepack pnpm run check:release-readiness',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 1234,
+    repo,
+    source_clean: true,
+  }));
+  writeFileSync(supabaseProofPath, JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-supabase-app-lint-proof.mjs',
+    generated_at: '2026-06-08T21:05:02.007Z',
+    command: 'corepack pnpm run check:supabase-app-lint',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo,
+    source_clean: true,
+    total_lint_rows: 14,
+    extension_owned_rows: 14,
+    extension_owned_issues: 37,
+    app_owned_rows: 0,
+    app_owned_issues: 0,
+  }));
+  return { releaseProofPath, supabaseProofPath };
+}
+
+afterEach(() => {
+  while (tempRoots.length > 0) {
+    const root = tempRoots.pop();
+    if (root) rmSync(root, { recursive: true, force: true });
+  }
+});
 
 describe('focused launch readiness report suite', () => {
   it('runs the focused report contract checks without claiming launch readiness', () => {
@@ -101,5 +162,43 @@ describe('focused launch readiness report suite', () => {
     expect(payload.blocking_gate_boundary).toMatch(/not executed by this aggregate suite|release-readiness|production deploy approval|post-deploy live proof|buyer evidence|branch approval|source cleanup|launch readiness/i);
     expect(payload.proof_boundary).toMatch(/does not clear source provenance|run release-readiness|authorize Supabase|contact buyers|deploy|hosted\/live parity|launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);
+  });
+
+  it('routes retained proof paths only to proof-aware child checks', () => {
+    const tempRoot = makeTempRoot();
+    const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
+    const stdout = execFileSync(process.execPath, [
+      checkScriptPath,
+      '--skip-probes',
+      '--json',
+      '--release-readiness-proof',
+      releaseProofPath,
+      '--supabase-app-lint-proof',
+      supabaseProofPath,
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    const payload = JSON.parse(stdout);
+    const checksById = new Map(payload.checks.map((item: { id: string }) => [item.id, item]));
+
+    expect(payload.status).toBe('pass');
+    for (const id of [
+      'launch_evidence_validation',
+      'production_approval',
+      'progress_digest',
+      'objective_completion_audit',
+    ]) {
+      expect((checksById.get(id) as { command: string }).command).toContain('--release-readiness-proof');
+      expect((checksById.get(id) as { command: string }).command).toContain('--supabase-app-lint-proof');
+    }
+    expect((checksById.get('release_preflight') as { command: string }).command).toContain('--release-readiness-proof');
+    expect((checksById.get('release_preflight') as { command: string }).command).not.toContain('--supabase-app-lint-proof');
+    expect((checksById.get('supabase_advisor') as { command: string }).command).toContain('--supabase-app-lint-proof');
+    expect((checksById.get('supabase_advisor') as { command: string }).command).not.toContain('--release-readiness-proof');
+    expect((checksById.get('branch_review') as { command: string }).command).not.toContain('--release-readiness-proof');
+    expect((checksById.get('buyer_evidence') as { command: string }).command).not.toContain('--supabase-app-lint-proof');
   });
 });

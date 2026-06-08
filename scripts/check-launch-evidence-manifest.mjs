@@ -2759,7 +2759,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH', 'Manifest progress_updates must expose the latest commercial report proof pass-through ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH', 'Manifest progress_updates must expose the latest derivative report proof pass-through ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2774,7 +2774,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest commercial report proof pass-through ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest derivative report proof pass-through ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item

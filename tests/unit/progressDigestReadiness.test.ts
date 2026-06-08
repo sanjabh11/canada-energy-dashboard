@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,6 +13,51 @@ function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-progress-digest-'));
   tempRoots.push(root);
   return root;
+}
+
+function writeCurrentProofs(root: string) {
+  const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  }).trim();
+  const packageManager = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')).packageManager;
+  const repo = {
+    name: 'canada-energy-dashboard',
+    path: process.cwd(),
+    branch: 'main',
+    commit,
+    package_manager: packageManager,
+  };
+  const releaseProofPath = path.join(root, 'release-readiness-proof.json');
+  const supabaseProofPath = path.join(root, 'supabase-app-lint-proof.json');
+  writeFileSync(releaseProofPath, JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-release-readiness-proof.mjs',
+    generated_at: '2026-06-08T21:04:40.634Z',
+    command: 'corepack pnpm run check:release-readiness',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 1234,
+    repo,
+    source_clean: true,
+  }));
+  writeFileSync(supabaseProofPath, JSON.stringify({
+    schema_version: 1,
+    generated_by: 'scripts/record-supabase-app-lint-proof.mjs',
+    generated_at: '2026-06-08T21:05:02.007Z',
+    command: 'corepack pnpm run check:supabase-app-lint',
+    status: 'pass',
+    exit_code: 0,
+    duration_ms: 123,
+    repo,
+    source_clean: true,
+    total_lint_rows: 14,
+    extension_owned_rows: 14,
+    extension_owned_issues: 37,
+    app_owned_rows: 0,
+    app_owned_issues: 0,
+  }));
+  return { releaseProofPath, supabaseProofPath };
 }
 
 afterEach(() => {
@@ -40,9 +85,12 @@ describe('progress digest readiness report', () => {
     expect(stdout).toContain('## Decision Boundary');
     expect(stdout).toContain('does not complete pending work');
     expect(stdout).toMatch(/clear blockers[\s\S]*contact buyers[\s\S]*authorize Supabase[\s\S]*deploy[\s\S]*hosted\/live parity/i);
+    expect(stdout).toContain('## Retained Proof Summary');
+    expect(stdout).toContain('release_readiness');
+    expect(stdout).toContain('supabase_app_lint');
     expect(stdout).toContain('## Progress Summary');
     expect(stdout).toContain('## Progress Updates');
-    expect(stdout).toContain('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
+    expect(stdout).toContain('CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH');
     expect(stdout).toContain('objective completion audit');
     expect(stdout).toContain('Safe Fix Lane');
     expect(stdout).toContain('code optimization review evidence');
@@ -85,17 +133,17 @@ describe('progress digest readiness report', () => {
     expect(payload.progress_digest.status).toBe('blocked');
     expect(payload.progress_digest.proof_type).toBe('progress_update_digest');
     expect(payload.progress_digest.update_count).toBeGreaterThanOrEqual(2);
-    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
+    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH');
     expect(payload.progress_digest.target_matrix_count).toBeGreaterThanOrEqual(5);
     expect(payload.progress_digest.current_bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(payload.progress_updates.map((item: { phase: string }) => item.phase)).toEqual(expect.arrayContaining([
-      'CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH',
+      'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH',
       'objective completion audit',
     ]));
 
     expect(payload.activities_remaining.status).toBe('blocked');
     expect(payload.activities_remaining.proof_type).toBe('activities_remaining_digest');
-    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-COMMERCIAL-REPORT-PROOF-PASSTHROUGH');
+    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH');
     expect(payload.activities_remaining.current_phase_action_count).toBe(payload.activities_remaining.current_phase_actions.length);
     expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(6);
     expect(payload.activities_remaining.next_phase_action_count).toBeGreaterThanOrEqual(10);
@@ -136,6 +184,57 @@ describe('progress digest readiness report', () => {
     });
 
     expect(stdout).toContain('Progress digest readiness report check passed');
+  });
+
+  it('accepts retained proof paths and keeps release_toolchain blocked until non-proof gates clear', () => {
+    const tempRoot = makeTempRoot();
+    const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
+    const stdout = execFileSync(process.execPath, [
+      reportScriptPath,
+      '--skip-probes',
+      '--json',
+      '--release-readiness-proof',
+      releaseProofPath,
+      '--supabase-app-lint-proof',
+      supabaseProofPath,
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    const payload = JSON.parse(stdout);
+
+    expect(payload.retained_proof_summary.release_readiness).toMatchObject({
+      status: 'pass',
+      validation_error_count: 0,
+    });
+    expect(payload.retained_proof_summary.supabase_app_lint).toMatchObject({
+      status: 'pass',
+      app_owned_rows: 0,
+      validation_error_count: 0,
+    });
+    expect(payload.activities_remaining.current_phase_actions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ phase: 'release_toolchain', status: 'blocked' }),
+    ]));
+    expect(payload.activities_remaining.current_phase_action_count).toBe(payload.activities_remaining.current_phase_actions.length);
+    expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(6);
+    expect(payload.activities_remaining.completion_blocker_count).toBeGreaterThanOrEqual(4);
+
+    const checkOutput = execFileSync(process.execPath, [
+      checkScriptPath,
+      '--skip-probes',
+      '--release-readiness-proof',
+      releaseProofPath,
+      '--supabase-app-lint-proof',
+      supabaseProofPath,
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout,
+    });
+    expect(checkOutput).toContain('Progress digest readiness report check passed');
   });
 
   it('can fail as a machine gate while launch blockers remain open', () => {

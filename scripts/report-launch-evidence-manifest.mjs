@@ -5878,6 +5878,23 @@ const commercialReportProofPassthroughFilesChanged = [
   'tests/unit/progressDigestReadiness.test.ts',
 ];
 
+const derivativeReportProofPassthroughFilesChanged = [
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/report-objective-completion-audit-readiness.mjs',
+  'scripts/check-objective-completion-audit-readiness-report.mjs',
+  'scripts/report-launch-evidence-validation-readiness.mjs',
+  'scripts/check-launch-evidence-validation-readiness-report.mjs',
+  'scripts/check-focused-launch-readiness-reports.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+  'tests/unit/launchEvidenceValidationReadiness.test.ts',
+  'tests/unit/focusedLaunchReadinessReports.test.ts',
+];
+
 const supabaseAppLintProofRecordFilesChanged = [
   'package.json',
   'scripts/record-supabase-app-lint-proof.mjs',
@@ -6524,6 +6541,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releaseReadinessProofRecordFilesChanged,
   ...releaseReadinessProofRecorderFailureFilesChanged,
   ...commercialReportProofPassthroughFilesChanged,
+  ...derivativeReportProofPassthroughFilesChanged,
   ...supabaseAppLintProofRecordFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -7020,6 +7038,25 @@ const commercialReportProofPassthroughTestsRun = [
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:commercial-launch-readiness-report -- --release-readiness-proof /tmp/ceip-release-readiness-proof-node22.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-node22.json',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof-node22.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-node22.json',
   'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --skip-probes',
+];
+
+const derivativeReportProofPassthroughTestsRun = [
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/report-objective-completion-audit-readiness.mjs',
+  'node --check scripts/check-objective-completion-audit-readiness-report.mjs',
+  'node --check scripts/report-launch-evidence-validation-readiness.mjs',
+  'node --check scripts/check-launch-evidence-validation-readiness-report.mjs',
+  'node --check scripts/check-focused-launch-readiness-reports.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:progress-digest-report -- --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:objective-completion-audit-report -- --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-validation-report -- --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
+  'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/objectiveCompletionAuditReadiness.test.ts tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:$PATH" corepack pnpm run check:launch-evidence-manifest -- --release-readiness-proof /tmp/ceip-release-readiness-proof-befd088.json --supabase-app-lint-proof /tmp/ceip-supabase-app-lint-proof-befd088.json',
+  'git diff --check',
 ];
 
 const supabaseAppLintProofRecordTestsRun = [
@@ -8857,6 +8894,19 @@ const safeFixImplementationDecisions = [
     reason: 'The focused release, Supabase, production, and launch-manifest reports could already attach retained proof paths, but the primary commercial launch readiness report could only generate an unproven manifest, leaving the top-level handoff stale after proof capture.',
     proof_boundary: 'This record improves top-level report proof attachment only; it does not create proofs, install Corepack, authorize Supabase connectors, rerun Security Advisor or Performance Advisor, contact buyers, choose branch heads, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
     stop_gate: 'Do not treat commercial report proof pass-through, attached local proofs, focused report checks, manifest validation, progress digest, or this code optimization record as Supabase advisor clearance, buyer acceptance, branch approval, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH',
+    decision: 'Let derivative readiness wrappers attach retained release-readiness and Supabase app-lint proof paths to their underlying launch manifest and validation checks.',
+    acceptance_check: 'Progress digest, objective completion audit, launch evidence validation, and aggregate focused readiness checks accept explicit proof paths, forward them only to proof-aware report/check surfaces, and preserve blocked branch, Supabase advisor, buyer, owner approval, deploy, and live-proof gates.',
+    chosen_variant: 'minimal derivative CLI pass-through and proof-aware assertions',
+    repo_pattern_reused: 'Existing launch manifest proof-path validator, commercial/production/release/Supabase proof pass-through pattern, focused report wrapper pattern, and progress_updates current-safe-fix ledger.',
+    files_changed: derivativeReportProofPassthroughFilesChanged,
+    tests_run: derivativeReportProofPassthroughTestsRun,
+    proof: 'The patch forwards proof arguments from derivative progress, objective-completion, and launch-validation reports to report-launch-evidence-manifest, forwards proof arguments through their checkers, routes proof arguments through the aggregate focused suite only for supported child checks, surfaces retained proof summaries, and keeps release_toolchain blocked until source provenance and owner approval gates clear.',
+    reason: 'The top-level commercial and focused release/Supabase/production reports could reflect retained proof files, but derivative handoff reports still rejected proof arguments and regenerated stale no-proof manifests.',
+    proof_boundary: 'This record improves derivative report proof attachment only; it does not create proofs, install Corepack, authorize Supabase connectors, rerun Security Advisor or Performance Advisor, contact buyers, choose branch heads, request or grant owner approval, push, deploy, prove hosted/live parity, complete the launch goal, or raise launch status.',
+    stop_gate: 'Do not treat derivative report proof pass-through, attached local proofs, focused report checks, aggregate focused-suite checks, manifest validation, progress digest, objective-completion audit, or this code optimization record as Supabase advisor clearance, buyer acceptance, branch approval, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10793,6 +10843,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Promoting the report status would look closer to completion, but it would materially overstate readiness and violate proof-boundary discipline.',
     evidence: 'Production approval remains blocked after both proofs attach because canonical branch review, Supabase advisor clearance, buyer evidence, owner approval, and post-deploy live proof still remain open.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH',
+    variant: 'Leave derivative progress, objective-completion, and validation reports on no-proof manifests.',
+    reason_rejected: 'Operators would see proof-backed commercial/production reports but stale progress and completion summaries that still list release_toolchain as unresolved.',
+    tradeoff: 'No-code defer avoids another CLI plumbing change, but it weakens the derivative handoff reports used to sequence remaining launch work.',
+    evidence: 'Before this patch, report:progress-digest-readiness, report:objective-completion-audit-readiness, and report:launch-evidence-validation-readiness rejected --release-readiness-proof and --supabase-app-lint-proof.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH',
+    variant: 'Auto-discover retained proof files from /tmp inside derivative reports.',
+    reason_rejected: 'Implicit discovery can attach stale, wrong-commit, or wrong-shell proof files and would hide proof provenance from operator commands.',
+    tradeoff: 'Auto-discovery shortens commands, but explicit paths preserve the current validator contract and make proof attachment auditable.',
+    evidence: 'The manifest proof validators already require explicit files whose commit, packageManager, source_clean flag, command, status, and exit code match the current source.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH',
+    variant: 'Forward proof arguments to every focused suite child check indiscriminately.',
+    reason_rejected: 'Several focused checks do not accept proof-path arguments because they do not regenerate the proof-bearing manifest, so blanket forwarding would break unrelated report contracts.',
+    tradeoff: 'Blanket forwarding is simpler, but selective routing keeps non-proof report checks stable and limits proof attachment to supported surfaces.',
+    evidence: 'Only launch-evidence validation, release preflight, Supabase advisor, production approval, progress digest, and objective completion audit checks consume proof-aware manifest output in the aggregate suite.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10969,6 +11040,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds only CLI proof pass-through and checker assertions to the existing commercial report wrapper, with no new dependencies, no new artifact type, no proof auto-discovery, no external-account access, no deployment path, and no launch-status promotion.',
     tests_or_checks: commercialReportProofPassthroughTestsRun,
     remaining_risk: 'The top-level report can now reflect attached local proofs, but branch review, Supabase advisor clearance, explicit owner approval, production deploy execution, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-DERIVATIVE-REPORT-PROOF-PASSTHROUGH',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds explicit CLI proof pass-through and proof-aware checker assertions to existing derivative wrappers, with no new dependency, no proof auto-discovery, no new artifact type, no external-account call, no deploy path, and no launch-status promotion.',
+    tests_or_checks: derivativeReportProofPassthroughTestsRun,
+    remaining_risk: 'Derivative reports can now reflect attached local proofs, but canonical branch review, Supabase advisor clearance, explicit owner approval, production deploy execution, hosted/live parity, and buyer-proven confidence remain unresolved gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
