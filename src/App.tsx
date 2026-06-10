@@ -11,6 +11,7 @@ import { AuthProvider } from './components/auth';
 import { ThemeProvider } from './lib/ThemeContext';
 import './App.css';
 import './styles/layout.css';
+import { Phase4RouteGuard } from './components/Phase4RouteGuard';
 
 // ============================================================================
 // LAZY-LOADED ROUTE COMPONENTS (code-split into separate chunks)
@@ -74,6 +75,8 @@ const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastB
 // P2-P4: Demand Forecasting, Regulatory Filing, Asset Health
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
 const UtilityDemandForecastPage = React.lazy(() => import('./components/UtilityDemandForecastPage'));
+const ScenarioWorkbenchPage = React.lazy(() => import('./components/ScenarioWorkbenchPage'));
+const DataFreshnessDashboardPage = React.lazy(() => import('./components/DataFreshnessDashboardPage'));
 const UtilityApiDemoPage = React.lazy(() => import('./components/UtilityApiDemoPage'));
 const GaIciPeakPredictorPage = React.lazy(() => import('./components/GaIciPeakPredictorPage'));
 const ByoCsvProofPage = React.lazy(() => import('./components/ByoCsvProofPage'));
@@ -240,6 +243,15 @@ const router = createBrowserRouter(
         { path: '/ici-peak', element: <GaIciPeakPredictorPage /> },
         { path: '/byo-csv-proof', element: <ByoCsvProofPage /> },
         { path: '/csv-proof', element: <ByoCsvProofPage /> },
+
+        // B14: Scenario Workbench (Sensitivity · Uncertainty · Comparison · Export)
+        { path: '/scenario-workbench', element: <Phase4RouteGuard featureName="Scenario Workbench"><ScenarioWorkbenchPage /></Phase4RouteGuard> },
+        { path: '/energy-scenarios', element: <Phase4RouteGuard featureName="Scenario Workbench"><ScenarioWorkbenchPage /></Phase4RouteGuard> },
+        { path: '/scenario-analysis', element: <Phase4RouteGuard featureName="Scenario Workbench"><ScenarioWorkbenchPage /></Phase4RouteGuard> },
+
+        // B15: Data Freshness Dashboard
+        { path: '/data-freshness', element: <Phase4RouteGuard featureName="Data Freshness Dashboard"><DataFreshnessDashboardPage /></Phase4RouteGuard> },
+        { path: '/connector-status', element: <Phase4RouteGuard featureName="Data Freshness Dashboard"><DataFreshnessDashboardPage /></Phase4RouteGuard> },
 
         // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
         { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
