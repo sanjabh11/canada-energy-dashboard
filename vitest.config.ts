@@ -14,6 +14,11 @@ export default defineConfig({
     setupFiles: ['tests/setup/vitest.setup.ts'],
     clearMocks: true,
     restoreMocks: true,
+    // Some tests spawn Node.js child processes (scripts/*.mjs) which can
+    // take 10-30s under parallel worker load. 60s covers all spawn-based
+    // tests without affecting the fast unit tests (<100ms each).
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

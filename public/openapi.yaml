@@ -11,6 +11,7 @@ info:
     - Shadow billing comparison
     - OCAP®-aligned Indigenous reporting/export workflows
     - bank-ready export package generation
+    - **Futures Workbench**: scenario modeling, assumption packs, and multi-run comparison (B04+)
     
     *Note: The endpoints below are a representative API contract for proof-pack workflows. Available endpoint families vary by deployment, evidence status, and API key provisioning.*
     
@@ -55,6 +56,11 @@ tags:
     description: OCAP-aligned Indigenous reporting workflow export
   - name: Reports
     description: Bank-ready reports and compliance exports
+  - name: Futures Workbench
+    description: |
+      Scenario modeling for energy futures — create parametric scenarios, override
+      assumption packs, and compare multi-run outcomes. Outcomes are model projections,
+      not official government data.
 
 paths:
   /tier/emissions:
@@ -331,6 +337,252 @@ paths:
                   lender:
                     type: string
 
+  /api/v2/scenarios:
+    get:
+      summary: List scenarios
+      description: |
+        Return a paginated list of Futures Workbench scenarios. Supports filtering by
+        province and status. Requires a valid API key.
+      operationId: listScenariosV2
+      tags:
+        - Futures Workbench
+      parameters:
+        - name: province
+          in: query
+          required: false
+          description: Canadian province code (e.g. AB, ON, BC)
+          schema:
+            type: string
+            example: "AB"
+        - name: status
+          in: query
+          required: false
+          description: Filter by scenario lifecycle status
+          schema:
+            type: string
+            enum: [draft, running, complete, failed, archived]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Scenario list retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScenarioSummary'
+                  total:
+                    type: integer
+                  provenance:
+                    $ref: '#/components/schemas/DataProvenance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+    post:
+      summary: Create scenario
+      description: |
+        Create a new Futures Workbench scenario in `draft` status. The API will
+        compute a deterministic `config_hash` from the supplied `config` object,
+        allowing exact reproducibility checking across runs.
+      operationId: createScenarioV2
+      tags:
+        - Futures Workbench
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioCreateRequest'
+      responses:
+        '201':
+          description: Scenario created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenario:
+                    $ref: '#/components/schemas/Scenario'
+                  provenance:
+                    $ref: '#/components/schemas/DataProvenance'
+        '400':
+          description: Missing required fields
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/v2/scenarios/{id}:
+    get:
+      summary: Get scenario by ID
+      operationId: getScenarioV2
+      tags:
+        - Futures Workbench
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Scenario retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenario:
+                    $ref: '#/components/schemas/Scenario'
+                  provenance:
+                    $ref: '#/components/schemas/DataProvenance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update scenario
+      description: Update name, description, config, or tags on a `draft` scenario.
+      operationId: updateScenarioV2
+      tags:
+        - Futures Workbench
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioUpdateRequest'
+      responses:
+        '200':
+          description: Scenario updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenario:
+                    $ref: '#/components/schemas/Scenario'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v2/scenarios/{id}/runs:
+    post:
+      summary: Trigger scenario run
+      description: |
+        Queue a new compute run for the specified scenario. Returns `202 Accepted`
+        immediately; poll GET /api/v2/scenarios/{id}/runs for status updates.
+      operationId: triggerScenarioRunV2
+      tags:
+        - Futures Workbench
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parameters_override:
+                  type: object
+                  description: Key-value overrides applied on top of the scenario config for this run only
+                  example:
+                    carbon_price_cad: 80
+                    renewable_share_pct: 0.65
+                triggered_by:
+                  type: string
+                  example: "analyst@utility.ca"
+      responses:
+        '202':
+          description: Run queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run:
+                    $ref: '#/components/schemas/ScenarioRun'
+                  scenario:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      summary: List runs for a scenario
+      operationId: listScenarioRunsV2
+      tags:
+        - Futures Workbench
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        '200':
+          description: Runs retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScenarioRun'
+                  scenario_id:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -495,6 +747,179 @@ components:
         unit:
           type: string
           enum: [CAD]
+
+    ScenarioSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "2035 High Renewables — AB"
+        description:
+          type: string
+          nullable: true
+        province_code:
+          type: string
+          example: "AB"
+        status:
+          type: string
+          enum: [draft, running, complete, failed, archived]
+        config_hash:
+          type: string
+          description: SHA-256 of sorted config keys for exact reproducibility checking
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Scenario:
+      allOf:
+        - $ref: '#/components/schemas/ScenarioSummary'
+        - type: object
+          properties:
+            horizon_years:
+              type: integer
+              example: 10
+            config:
+              type: object
+              description: Arbitrary scenario configuration parameters
+              example:
+                carbon_price_cad: 65
+                renewable_share_pct: 0.55
+                demand_growth_pct: 0.02
+            tags:
+              type: array
+              items:
+                type: string
+            is_public:
+              type: boolean
+              default: false
+            created_by:
+              type: string
+              nullable: true
+
+    ScenarioCreateRequest:
+      type: object
+      required:
+        - name
+        - province_code
+        - config
+      properties:
+        name:
+          type: string
+          example: "2035 High Renewables — AB"
+        description:
+          type: string
+          nullable: true
+        province_code:
+          type: string
+          example: "AB"
+        horizon_years:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 30
+        config:
+          type: object
+          description: Scenario configuration — arbitrary key-value pairs for the model engine
+          example:
+            carbon_price_cad: 65
+            renewable_share_pct: 0.55
+        tags:
+          type: array
+          items:
+            type: string
+        is_public:
+          type: boolean
+          default: false
+        created_by:
+          type: string
+          nullable: true
+
+    ScenarioUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        config:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        is_public:
+          type: boolean
+        horizon_years:
+          type: integer
+
+    ScenarioRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        scenario_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, running, complete, failed]
+        triggered_by:
+          type: string
+          nullable: true
+        parameters_override:
+          type: object
+          description: Run-level config overrides applied on top of scenario config
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+        result_summary:
+          type: object
+          nullable: true
+          description: High-level outcome summary populated after completion
+        created_at:
+          type: string
+          format: date-time
+
+    DataProvenance:
+      type: object
+      properties:
+        source:
+          type: string
+        last_updated:
+          type: string
+          format: date-time
+          nullable: true
+        freshness_status:
+          type: string
+          enum: [live, stale, demo, unknown]
+        is_fallback:
+          type: boolean
+        trust_tier:
+          type: string
+          enum: [live, official_historical, official_projection, proxy, simulated, demo, stale]
+          nullable: true
+        license_notes:
+          type: string
+          nullable: true
+        calculation_method:
+          type: string
+          nullable: true
 
   responses:
     Unauthorized:

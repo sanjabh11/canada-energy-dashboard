@@ -16,17 +16,25 @@ describe('foundation helpers', () => {
     ).toBe('stale');
   });
 
-  it('builds provenance payloads with derived freshness status', () => {
+  it('builds provenance payloads with derived freshness status and advanced trust/license fields', () => {
     const meta = buildDataProvenance({
       source: 'AESO',
       lastUpdated: '2026-04-03T00:00:00.000Z',
       staleAfterHours: 24,
       now: new Date('2026-04-03T12:00:00.000Z'),
+      trustTier: 'official_historical',
+      licenseNotes: 'Open Government Licence - Alberta',
+      calculationMethod: 'Hourly average aggregation',
+      evidenceHash: 'a5c8e31b816a22b7c4d51628d9c22',
     });
 
     expect(meta.source).toBe('AESO');
     expect(meta.isFallback).toBe(false);
     expect(meta.freshnessStatus).toBe('live');
+    expect(meta.trustTier).toBe('official_historical');
+    expect(meta.licenseNotes).toBe('Open Government Licence - Alberta');
+    expect(meta.calculationMethod).toBe('Hourly average aggregation');
+    expect(meta.evidenceHash).toBe('a5c8e31b816a22b7c4d51628d9c22');
   });
 
   it('gates phase 4 surfaces by default', () => {

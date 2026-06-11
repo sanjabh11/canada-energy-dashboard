@@ -53,7 +53,7 @@ export const OpenAPIDocsPage: React.FC = () => {
                             <div className="h-6 w-px bg-slate-700" />
                             <h1 className="text-2xl font-bold text-white">CEIP API Documentation</h1>
                             <span className="px-2 py-1 bg-emerald-600/20 text-emerald-400 text-xs font-medium rounded">
-                                v1.0.0
+                                v1.1.0
                             </span>
                         </div>
                         <Link
@@ -246,6 +246,21 @@ export const OpenAPIDocsPage: React.FC = () => {
                                     <ul className="text-sm text-slate-400 space-y-1">
                                         <li>• POST /export/green-loan</li>
                                         <li>• POST /ocap/export</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-slate-700/30 rounded-lg p-4 border border-purple-500/20">
+                                    <h4 className="text-white font-medium mb-2 flex items-center gap-2">
+                                        Futures Workbench
+                                        <span className="px-1.5 py-0.5 bg-purple-600/30 text-purple-300 text-xs rounded">
+                                            New
+                                        </span>
+                                    </h4>
+                                    <ul className="text-sm text-slate-400 space-y-1">
+                                        <li>• GET  /api/v2/scenarios</li>
+                                        <li>• POST /api/v2/scenarios</li>
+                                        <li>• GET  /api/v2/scenarios/&#123;id&#125;</li>
+                                        <li>• POST /api/v2/scenarios/&#123;id&#125;/runs</li>
                                     </ul>
                                 </div>
                             </div>

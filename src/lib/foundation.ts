@@ -1,4 +1,5 @@
 export type FreshnessStatus = 'live' | 'stale' | 'demo' | 'unknown';
+export type TrustTier = 'live' | 'official_historical' | 'official_projection' | 'proxy' | 'simulated' | 'demo' | 'stale';
 
 export interface DataProvenanceMeta {
   source: string;
@@ -7,6 +8,10 @@ export interface DataProvenanceMeta {
   isFallback: boolean;
   note?: string;
   sourceUrl?: string;
+  trustTier?: TrustTier;
+  licenseNotes?: string;
+  calculationMethod?: string;
+  evidenceHash?: string;
 }
 
 interface BuildDataProvenanceOptions {
@@ -17,6 +22,10 @@ interface BuildDataProvenanceOptions {
   now?: Date;
   note?: string;
   sourceUrl?: string;
+  trustTier?: TrustTier;
+  licenseNotes?: string;
+  calculationMethod?: string;
+  evidenceHash?: string;
 }
 
 export function getFreshnessStatus(options: {
@@ -50,6 +59,10 @@ export function buildDataProvenance(options: BuildDataProvenanceOptions): DataPr
     isFallback: options.isFallback ?? false,
     note: options.note,
     sourceUrl: options.sourceUrl,
+    trustTier: options.trustTier,
+    licenseNotes: options.licenseNotes,
+    calculationMethod: options.calculationMethod,
+    evidenceHash: options.evidenceHash,
   };
 }
 
