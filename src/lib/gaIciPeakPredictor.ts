@@ -789,24 +789,7 @@ export function augmentPeakReportWithCP(
   const topFiveProbabilistic = report.top_five_peak_hours.map(augmentWindow);
   const watchlistProbabilistic = report.watchlist.map(augmentWindow);
 
-  // Compute coverage rate and capture qHat from calibration
-  let covered = 0;
-  let lastQHat = 0;
-  for (let i = 0; i < nCalibration; i++) {
-    const interval = cqrCalibrate(
-      calibrationForecasts.slice(0, i),
-      calibrationActuals.slice(0, i),
-      calibrationForecasts[i],
-      alpha,
-    );
-    lastQHat = interval.calibration.conformalQuantile;
-    if (calibrationActuals[i] >= interval.interval.lower && calibrationActuals[i] <= interval.interval.upper) {
-      covered++;
-    }
-  }
-  const coverageRate = nCalibration > 0 ? covered / nCalibration : 0;
-
-  // Also get qHat from the full calibration set
+  // Compute coverage rate and qHat from the full calibration set
   const fullCalibration = cqrCalibrate(
     calibrationForecasts,
     calibrationActuals,
@@ -814,6 +797,21 @@ export function augmentPeakReportWithCP(
     alpha,
   );
   const qHat = fullCalibration.calibration.conformalQuantile;
+
+  // Compute empirical coverage: fraction of actuals within calibrated intervals
+  let covered = 0;
+  for (let i = 0; i < nCalibration; i++) {
+    const interval = cqrCalibrate(
+      calibrationForecasts,
+      calibrationActuals,
+      calibrationForecasts[i],
+      alpha,
+    );
+    if (calibrationActuals[i] >= interval.interval.lower && calibrationActuals[i] <= interval.interval.upper) {
+      covered++;
+    }
+  }
+  const coverageRate = nCalibration > 0 ? covered / nCalibration : 0;
 
   return {
     ...report,
