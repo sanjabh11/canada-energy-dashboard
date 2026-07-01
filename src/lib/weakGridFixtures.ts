@@ -238,6 +238,21 @@ export function computeFleetSCR(
     allResults.push(...nodeResults);
   }
 
+  if (allResults.length === 0) {
+    return {
+      minScr: 0,
+      maxScr: 0,
+      meanScr: 0,
+      weakNodes: [],
+      marginalNodes: [],
+      strongNodes: [],
+      overallAssessment: 'weak',
+      nodeResults: [],
+      advisoryLabel: 'ERROR: No grid nodes found across provided fixtures. Cannot compute fleet SCR.',
+      method: `Fleet SCR — ERROR: ${fixtures.length} fixture(s) provided but 0 total nodes`,
+    };
+  }
+
   const scrValues = allResults.map((r) => r.scr);
   const minScr = Math.min(...scrValues);
   const maxScr = Math.max(...scrValues);

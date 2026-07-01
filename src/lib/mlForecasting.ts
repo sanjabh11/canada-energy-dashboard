@@ -358,7 +358,7 @@ function generateHorizonPointForecast(
   if (n < 24) {
     // Insufficient data — return flat forecast at mean
     const mean = n > 0 ? historicalDemand.reduce((s, v) => s + v, 0) / n : 0;
-    return new Array(hoursAhead).fill(round(mean, 1));
+    return new Array(hoursAhead).fill(round(Math.max(0, mean), 1));
   }
 
   if (horizon === 'day_ahead') {

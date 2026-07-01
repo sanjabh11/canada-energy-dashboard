@@ -702,13 +702,17 @@ export function augmentPeakReportWithCP(
       ...report,
       top_five_peak_hours_probabilistic: report.top_five_peak_hours.map((w) => ({
         ...w,
-        alertTier: 'monitor' as PeakAlertTier,
-        alertRationale: 'Insufficient calibration data (<30 samples). Conformal intervals not computed.',
+        alertTier: (w.status === 'forecast' || w.status === 'candidate' ? 'monitor' : 'history_only') as PeakAlertTier,
+        alertRationale: w.status === 'forecast' || w.status === 'candidate'
+          ? 'Insufficient calibration data (<30 samples). Conformal intervals not computed.'
+          : 'Historical data only — no probabilistic assessment.',
       })),
       watchlist_probabilistic: report.watchlist.map((w) => ({
         ...w,
-        alertTier: 'monitor' as PeakAlertTier,
-        alertRationale: 'Insufficient calibration data (<30 samples). Conformal intervals not computed.',
+        alertTier: (w.status === 'forecast' || w.status === 'candidate' ? 'monitor' : 'history_only') as PeakAlertTier,
+        alertRationale: w.status === 'forecast' || w.status === 'candidate'
+          ? 'Insufficient calibration data (<30 samples). Conformal intervals not computed.'
+          : 'Historical data only — no probabilistic assessment.',
       })),
       conformalCalibration: {
         alpha,
@@ -785,8 +789,9 @@ export function augmentPeakReportWithCP(
   const topFiveProbabilistic = report.top_five_peak_hours.map(augmentWindow);
   const watchlistProbabilistic = report.watchlist.map(augmentWindow);
 
-  // Compute coverage rate from calibration
+  // Compute coverage rate and capture qHat from calibration
   let covered = 0;
+  let lastQHat = 0;
   for (let i = 0; i < nCalibration; i++) {
     const interval = cqrCalibrate(
       calibrationForecasts.slice(0, i),
@@ -794,11 +799,21 @@ export function augmentPeakReportWithCP(
       calibrationForecasts[i],
       alpha,
     );
+    lastQHat = interval.calibration.conformalQuantile;
     if (calibrationActuals[i] >= interval.interval.lower && calibrationActuals[i] <= interval.interval.upper) {
       covered++;
     }
   }
   const coverageRate = nCalibration > 0 ? covered / nCalibration : 0;
+
+  // Also get qHat from the full calibration set
+  const fullCalibration = cqrCalibrate(
+    calibrationForecasts,
+    calibrationActuals,
+    calibrationForecasts[0],
+    alpha,
+  );
+  const qHat = fullCalibration.calibration.conformalQuantile;
 
   return {
     ...report,
@@ -807,7 +822,7 @@ export function augmentPeakReportWithCP(
     conformalCalibration: {
       alpha,
       nCalibrationSamples: nCalibration,
-      conformalQuantile: nCalibration > 0 ? round(coverageRate, 4) : 0,
+      conformalQuantile: round(qHat, 4),
       coverageRate: round(coverageRate, 4),
       method: `CQR conformal calibration (alpha=${alpha}, n=${nCalibration}). Multi-tier alerts: curtail (P90≥threshold), watch (P50 near threshold), monitor (P10 near threshold).`,
     },
