@@ -13,6 +13,11 @@ import {
   type UtilityJurisdiction,
   type UtilityPlanningScenario,
 } from './utilityForecasting';
+import {
+  DEFAULT_EVALUATION_CONTRACT,
+  evaluateAgainstContract,
+  type EvaluationResult,
+} from './forecastEvaluationContract';
 
 export const UTILITY_MULTI_DATASET_BENCHMARK_VERSION = 'utility-multi-dataset-benchmark-v3';
 const NOMINAL_INTERVAL_COVERAGE_PCT = 90;
@@ -111,6 +116,7 @@ export interface UtilityMultiDatasetBenchmarkPack {
   confidence_boundary: string;
   methodology_references: UtilityBenchmarkMethodologyReference[];
   datasets: UtilityBenchmarkDatasetResult[];
+  evaluation_results: EvaluationResult[];
   aggregate: {
     mean_model_mae: number;
     mean_persistence_mae: number;
@@ -438,7 +444,28 @@ export function buildUtilityMultiDatasetBenchmarkPack(
         ? round(Math.max(...datasets.map((dataset) => dataset.scientific_diagnostics.interval_score_to_mae_ratio)), 3)
         : 0,
     },
+    evaluation_results: buildPackEvaluationResults(datasets),
   };
+}
+
+function buildPackEvaluationResults(datasets: UtilityBenchmarkDatasetResult[]): EvaluationResult[] {
+  if (datasets.length === 0) return [];
+  const horizonMetrics = datasets.map((dataset) => ({
+    horizon: '24h' as const,
+    metrics: {
+      mae: dataset.metrics.mae,
+      mape: dataset.metrics.mape,
+      rmse: dataset.metrics.rmse,
+      coverage_rate: dataset.conformal_interval_coverage_pct / 100,
+      skill_score: dataset.metrics.skill_score_vs_persistence / 100,
+    },
+  }));
+  return evaluateAgainstContract(
+    DEFAULT_EVALUATION_CONTRACT,
+    horizonMetrics,
+    'transparent_trend_seasonal',
+    'seasonal_decomposition',
+  );
 }
 
 function csvCell(value: string | number | boolean | undefined): string {

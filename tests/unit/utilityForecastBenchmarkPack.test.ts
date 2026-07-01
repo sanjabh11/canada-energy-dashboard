@@ -53,6 +53,14 @@ describe('utilityForecastBenchmarkPack', () => {
     expect(pack.aggregate.mean_interval_score_mw).toBeGreaterThan(0);
     expect(pack.aggregate.mean_interval_score_to_mae_ratio).toBeGreaterThan(0);
     expect(pack.aggregate.maximum_interval_calibration_gap_pct).toBeGreaterThanOrEqual(0);
+    expect(pack.evaluation_results).toBeDefined();
+    expect(pack.evaluation_results.length).toBeGreaterThan(0);
+    expect(pack.evaluation_results[0].modelName).toBe('transparent_trend_seasonal');
+    expect(pack.evaluation_results[0].modelClass).toBe('seasonal_decomposition');
+    expect(pack.evaluation_results[0].horizon).toBe('24h');
+    expect(pack.evaluation_results[0].metrics.mae).toBeGreaterThan(0);
+    expect(pack.evaluation_results[0].metrics.mape).toBeGreaterThan(0);
+    expect(pack.evaluation_results[0].rollingOriginFolds).toBe(10);
     expect(pack.methodology_references.map((reference) => reference.label).join(' ')).toContain('Hyndman');
     expect(pack.methodology_references.map((reference) => reference.use).join(' ')).toContain('central 90% interval score');
     expect(pack.datasets[0].benchmark_failure_notes[0]).toContain('Baseline win:');
