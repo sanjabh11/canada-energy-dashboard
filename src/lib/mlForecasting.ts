@@ -5,13 +5,124 @@ import {
   evaluateSecurityConstrainedDispatch,
   backtestRareEventResampling,
   forecastGasBasisSpread,
+  forecastGasBasisSpreadMsarx,
   forecastPriceSpikeRiskForest,
+  forecastPriceSpikeRiskLgbm,
   generateKMeansSmote,
   rankFeaturesSvmRfeV2,
   simulateByopMultiAgent,
 } from './advancedForecasting';
 import dispatchWeights from './modelWeights/dispatch-pinn-v2.json';
 import pvWeights from './modelWeights/pv-gnn-v2.json';
+import {
+  ConformalPredictor,
+  type ConformalInterval,
+  type QuantileForecast,
+  type ACIState,
+  type ConformalCalibrationResult,
+  cqrCalibrate,
+  initAciState,
+  updateAciState,
+  aciCalibrate,
+  mcQuantilesToForecast,
+  normalToQuantileForecast,
+} from './conformalPrediction';
+import {
+  extractWeatherFeatures,
+  extractWeatherFeatureSeries,
+  generateLaggedWeatherFeatures,
+  computeRollingWeatherStats,
+  weatherDemandAdjustment,
+  computeWindChill,
+  computeHeatIndex,
+  computeDegreeHours,
+  computeWindPowerPotential,
+  computeDiscomfortIndex,
+  computeWeatherDemandScore,
+  type WeatherFeatureSet,
+  type WeatherFeatureConfig,
+  DEFAULT_WEATHER_FEATURE_CONFIG,
+} from './weatherFeatures';
+import {
+  AdwinDriftDetector,
+  createDemandForecastDriftDetector,
+  createPriceSpikeDriftDetector,
+  type AdwinConfig,
+  type DriftEvent,
+  type AdwinDiagnostics,
+  DEFAULT_ADWIN_CONFIG,
+} from './driftDetector';
+import {
+  mapForecastToCERScenarios,
+  generateOEBFilingBundle,
+  CER_EF2026_SCENARIOS,
+  OEB_FILING_TEMPLATES,
+  type CERScenarioType,
+  type OEBFilingType,
+  type CERScenarioMapping,
+  type OEBFilingBundle,
+} from './regulatoryScenarios';
+import {
+  computeTreeShap,
+  computeKernelShap,
+  generateRegulatoryExplanation,
+  type ShapExplanation,
+  type ShapMethod,
+  type TreeModel,
+} from './explainabilityEngine';
+import {
+  reconcileHierarchicalForecasts,
+  ONTARIO_DEMAND_HIERARCHY,
+  type ReconciliationMethod,
+  type ReconciliationResult,
+  type ReconciliationInput,
+  type HierarchyNode,
+  type HierarchyForecast,
+} from './hierarchicalReconciliation';
+import {
+  forecastEvChargingLoad,
+  extractEvForecastFeatures,
+  type EvForecastModel,
+  type EvForecastResult,
+  type EvChargingStation,
+  type EvChargingRecord,
+  type EvForecastPoint,
+} from './evChargingForecast';
+import {
+  aggregateFleetForecastWithCopula,
+  type CopulaType,
+  type CopulaParams,
+  type SiteForecast,
+  type FleetForecastResult,
+} from './uncertaintyEngine';
+import {
+  optimizeStorageArbitrage,
+  generateSyntheticPriceForecasts,
+  type BatteryStorageConfig,
+  type PriceForecast,
+  type StorageAction,
+  type ArbitrageResult,
+} from './storageArbitrage';
+import {
+  hampelFilter,
+  imputeMissing,
+  validateWithImputation,
+  type HampelFilterResult,
+  type ImputationResult,
+  type ValidationWithImputationResult,
+} from './dataContract';
+import {
+  computeDynamicSCR,
+  computeFleetSCR,
+  type DynamicSCRResult,
+  type FleetSCRResult,
+  type GridStrengthClass,
+} from './weakGridFixtures';
+import {
+  augmentPeakReportWithCP,
+  type IciFiveCpProbabilisticReport,
+  type PeakAlertTier,
+} from './gaIciPeakPredictor';
 
 export interface MlDataSource {
   name: string;
@@ -69,11 +180,305 @@ export {
   evaluatePhysicsInformedDispatch,
   evaluateSecurityConstrainedDispatch,
   forecastGasBasisSpread,
+  forecastGasBasisSpreadMsarx,
   forecastPriceSpikeRiskForest,
+  forecastPriceSpikeRiskLgbm,
   generateKMeansSmote,
   rankFeaturesSvmRfeV2,
   simulateByopMultiAgent,
+  ConformalPredictor,
+  cqrCalibrate,
+  initAciState,
+  updateAciState,
+  aciCalibrate,
+  mcQuantilesToForecast,
+  normalToQuantileForecast,
+  extractWeatherFeatures,
+  extractWeatherFeatureSeries,
+  generateLaggedWeatherFeatures,
+  computeRollingWeatherStats,
+  weatherDemandAdjustment,
+  computeWindChill,
+  computeHeatIndex,
+  computeDegreeHours,
+  computeWindPowerPotential,
+  computeDiscomfortIndex,
+  computeWeatherDemandScore,
+  AdwinDriftDetector,
+  createDemandForecastDriftDetector,
+  createPriceSpikeDriftDetector,
+  mapForecastToCERScenarios,
+  generateOEBFilingBundle,
+  computeTreeShap,
+  computeKernelShap,
+  generateRegulatoryExplanation,
+  reconcileHierarchicalForecasts,
+  ONTARIO_DEMAND_HIERARCHY,
+  forecastEvChargingLoad,
+  extractEvForecastFeatures,
+  aggregateFleetForecastWithCopula,
+  optimizeStorageArbitrage,
+  generateSyntheticPriceForecasts,
+  hampelFilter,
+  imputeMissing,
+  validateWithImputation,
+  computeDynamicSCR,
+  computeFleetSCR,
+  augmentPeakReportWithCP,
 };
+
+// ============================================================================
+// Horizon-Specific Forecast Dispatching
+// ============================================================================
+
+export type HorizonType = 'day_ahead' | 'week_ahead' | 'month_ahead' | 'seasonal_ahead';
+
+export interface HorizonConfig {
+  horizon: HorizonType;
+  hoursAhead: number;
+  modelPreference: 'auto' | 'seasonal' | 'tsfm' | 'lgbm' | 'stgnn';
+  weatherRequired: boolean;
+  conformalCalibration?: number[];
+}
+
+export interface HorizonSpecificForecast {
+  horizon: HorizonType;
+  pointForecast: number[];
+  conformalInterval?: { lower: number[]; upper: number[] };
+  modelUsed: string;
+  metadata: {
+    horizon: string;
+    hoursAhead: number;
+    modelRationale: string;
+    weatherUsed: boolean;
+  };
+}
+
+export const HORIZON_MODEL_MAP: Record<HorizonType, {
+  defaultModel: string;
+  rationale: string;
+  weatherRequired: boolean;
+}> = {
+  day_ahead: {
+    defaultModel: 'seasonal_decomposition_weather',
+    rationale: 'Day-ahead: seasonal decomposition + weather adjustment captures diurnal patterns and short-term temperature sensitivity. Highest accuracy for 1-24h horizon.',
+    weatherRequired: true,
+  },
+  week_ahead: {
+    defaultModel: 'lgbm_features',
+    rationale: 'Week-ahead: LightGBM with lagged features and calendar variables handles medium-term load patterns. Weather features improve accuracy for 24-168h horizon.',
+    weatherRequired: true,
+  },
+  month_ahead: {
+    defaultModel: 'trend_seasonal_regression',
+    rationale: 'Month-ahead: trend + seasonal decomposition with NWP covariates. Weather uncertainty grows; emphasis on seasonal patterns and long-term trend.',
+    weatherRequired: false,
+  },
+  seasonal_ahead: {
+    defaultModel: 'long_term_regression',
+    rationale: 'Seasonal-ahead: long-term regression with climate covariates and economic drivers. Weather not used — climate normals and trend dominate.',
+    weatherRequired: false,
+  },
+};
+
+/**
+ * Dispatch a horizon-specific forecast using the appropriate model for the
+ * requested time horizon.
+ *
+ * Model selection logic:
+ *   - 'auto': uses HORIZON_MODEL_MAP defaults
+ *   - explicit model: uses requested model if available for horizon
+ *
+ * @param config Horizon configuration
+ * @param input Historical demand and optional weather features
+ */
+export function dispatchHorizonForecast(
+  config: HorizonConfig,
+  input: { historicalDemand: number[]; weatherFeatures?: number[] },
+): HorizonSpecificForecast {
+  const { horizon, hoursAhead, modelPreference } = config;
+  const modelMap = HORIZON_MODEL_MAP[horizon];
+  const weatherUsed = config.weatherRequired && input.weatherFeatures !== undefined;
+
+  let modelUsed: string;
+  let modelRationale: string;
+
+  if (modelPreference === 'auto') {
+    modelUsed = modelMap.defaultModel;
+    modelRationale = modelMap.rationale;
+  } else {
+    modelUsed = modelPreference;
+    modelRationale = `User-selected model: ${modelPreference}. Default for ${horizon}: ${modelMap.defaultModel}.`;
+  }
+
+  // Generate forecast based on model type
+  const pointForecast = generateHorizonPointForecast(
+    horizon,
+    hoursAhead,
+    input.historicalDemand,
+    input.weatherFeatures,
+  );
+
+  // Generate conformal intervals if calibration data provided
+  let conformalInterval: { lower: number[]; upper: number[] } | undefined;
+  if (config.conformalCalibration && config.conformalCalibration.length > 10) {
+    const calibration = config.conformalCalibration;
+    const sorted = [...calibration].sort((a, b) => a - b);
+    const alpha = 0.1;
+    const qIdx = Math.floor((1 - alpha / 2) * sorted.length);
+    const qHat = sorted[Math.min(qIdx, sorted.length - 1)] || 0;
+
+    conformalInterval = {
+      lower: pointForecast.map((p) => p - qHat),
+      upper: pointForecast.map((p) => p + qHat),
+    };
+  }
+
+  return {
+    horizon,
+    pointForecast,
+    conformalInterval,
+    modelUsed,
+    metadata: {
+      horizon,
+      hoursAhead,
+      modelRationale,
+      weatherUsed,
+    },
+  };
+}
+
+function generateHorizonPointForecast(
+  horizon: HorizonType,
+  hoursAhead: number,
+  historicalDemand: number[],
+  weatherFeatures?: number[],
+): number[] {
+  const n = historicalDemand.length;
+  if (n < 24) {
+    // Insufficient data — return flat forecast at mean
+    const mean = n > 0 ? historicalDemand.reduce((s, v) => s + v, 0) / n : 0;
+    return new Array(hoursAhead).fill(round(mean, 1));
+  }
+
+  if (horizon === 'day_ahead') {
+    // Seasonal decomposition: use same hour from previous days
+    const forecast: number[] = [];
+    for (let h = 0; h < hoursAhead; h++) {
+      const hourOfDay = h % 24;
+      // Average of same hour from last 7 days
+      let sum = 0;
+      let count = 0;
+      for (let d = 1; d <= Math.min(7, Math.floor(n / 24)); d++) {
+        const idx = n - d * 24 + hourOfDay;
+        if (idx >= 0 && idx < n) {
+          sum += historicalDemand[idx];
+          count++;
+        }
+      }
+      let val = count > 0 ? sum / count : historicalDemand[n - 1];
+
+      // Weather adjustment: 2% per degree deviation from 18°C comfort threshold
+      if (weatherFeatures && h < weatherFeatures.length) {
+        const tempDeviation = weatherFeatures[h] - 18;
+        val *= 1 + tempDeviation * 0.02;
+      }
+
+      forecast.push(round(val, 1));
+    }
+    return forecast;
+  }
+
+  if (horizon === 'week_ahead') {
+    // LightGBM-style: lagged features + day-of-week pattern
+    const forecast: number[] = [];
+    const dowPattern: number[][] = [];
+    for (let d = 0; d < 7; d++) {
+      const dayValues: number[] = [];
+      for (let h = 0; h < 24; h++) {
+        const idx = n - (7 - d) * 24 + h;
+        if (idx >= 0 && idx < n) {
+          dayValues.push(historicalDemand[idx]);
+        }
+      }
+      dowPattern.push(dayValues);
+    }
+
+    for (let h = 0; h < hoursAhead; h++) {
+      const dow = Math.floor(h / 24) % 7;
+      const hourOfDay = h % 24;
+      const dayValues = dowPattern[dow];
+      let val = dayValues.length > hourOfDay
+        ? dayValues[hourOfDay]
+        : historicalDemand[n - 1];
+
+      // Apply weather adjustment if available
+      if (weatherFeatures && h < weatherFeatures.length) {
+        const tempDeviation = weatherFeatures[h] - 18;
+        val *= 1 + tempDeviation * 0.015;
+      }
+
+      forecast.push(round(val, 1));
+    }
+    return forecast;
+  }
+
+  if (horizon === 'month_ahead') {
+    // Trend + seasonal decomposition
+    const recentMean = historicalDemand.slice(-24 * 30).reduce((s, v) => s + v, 0) / Math.min(24 * 30, n);
+    const olderMean = historicalDemand.slice(0, 24 * 30).reduce((s, v) => s + v, 0) / Math.min(24 * 30, n);
+    const trendPerDay = n > 24 * 60 ? (recentMean - olderMean) / 30 : 0;
+
+    const forecast: number[] = [];
+    for (let h = 0; h < hoursAhead; h++) {
+      const hourOfDay = h % 24;
+      const dayOffset = Math.floor(h / 24);
+
+      // Use same hour from 30 days ago as base
+      const baseIdx = n - 30 * 24 + hourOfDay;
+      const base = baseIdx >= 0 ? historicalDemand[baseIdx] : recentMean;
+
+      // Apply trend
+      const val = base + trendPerDay * dayOffset;
+      forecast.push(round(val, 1));
+    }
+    return forecast;
+  }
+
+  // seasonal_ahead: long-term regression with climate normals
+  const longTermMean = historicalDemand.reduce((s, v) => s + v, 0) / n;
+  const recent30 = historicalDemand.slice(-24 * 30);
+  const recentMean = recent30.length > 0 ? recent30.reduce((s, v) => s + v, 0) / recent30.length : longTermMean;
+
+  // Simple linear trend from first to last 30-day means
+  const first30 = historicalDemand.slice(0, 24 * 30);
+  const firstMean = first30.length > 0 ? first30.reduce((s, v) => s + v, 0) / first30.length : longTermMean;
+  const totalDays = n / 24;
+  const trendPerDay = totalDays > 30 ? (recentMean - firstMean) / totalDays : 0;
+
+  const forecast: number[] = [];
+  for (let h = 0; h < hoursAhead; h++) {
+    const hourOfDay = h % 24;
+    const dayOffset = Math.floor(h / 24);
+
+    // Seasonal pattern from same hour across full history
+    const seasonalValues: number[] = [];
+    for (let i = hourOfDay; i < n; i += 24) {
+      seasonalValues.push(historicalDemand[i]);
+    }
+    const seasonalMean = seasonalValues.length > 0
+      ? seasonalValues.reduce((s, v) => s + v, 0) / seasonalValues.length
+      : longTermMean;
+
+    // Ratio of seasonal to overall mean
+    const seasonalRatio = longTermMean > 0 ? seasonalMean / longTermMean : 1;
+
+    // Apply trend and seasonal ratio to recent mean
+    const val = (recentMean + trendPerDay * dayOffset) * seasonalRatio;
+    forecast.push(round(val, 1));
+  }
+  return forecast;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

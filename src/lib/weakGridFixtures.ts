@@ -84,3 +84,162 @@ export const DEFAULT_WEAK_GRID_FIXTURE_KEY = 'pincher_creek';
 export function getWeakGridFixture(key = DEFAULT_WEAK_GRID_FIXTURE_KEY): WeakGridFixture {
   return WEAK_GRID_FIXTURES[key] ?? WEAK_GRID_FIXTURES[DEFAULT_WEAK_GRID_FIXTURE_KEY];
 }
+
+// ============================================================================
+// Dynamic Short-Circuit Ratio (SCR) Computation
+// ============================================================================
+
+export type GridStrengthClass = 'weak' | 'marginal' | 'strong';
+
+export interface DynamicSCRResult {
+  nodeId: string;
+  scr: number;
+  shortCircuitMva: number;
+  isWeak: boolean;
+  strengthClass: GridStrengthClass;
+  contributingFactors: string[];
+  advisoryLabel: string;
+  method: string;
+}
+
+export interface FleetSCRResult {
+  minScr: number;
+  maxScr: number;
+  meanScr: number;
+  weakNodes: string[];
+  marginalNodes: string[];
+  strongNodes: string[];
+  overallAssessment: GridStrengthClass;
+  nodeResults: DynamicSCRResult[];
+  advisoryLabel: string;
+  method: string;
+}
+
+/**
+ * Compute dynamic Short-Circuit Ratio (SCR) for each node in a grid topology.
+ *
+ * SCR = Short-Circuit MVA / Base MVA
+ *
+ * A node is considered:
+ *   - 'weak' if SCR < 3.0 (high risk of voltage instability)
+ *   - 'marginal' if 3.0 ≤ SCR < 5.0 (monitor closely)
+ *   - 'strong' if SCR ≥ 5.0 (stable)
+ *
+ * References:
+ *   - IEEE Std 1547-2018: SCR thresholds for inverter-based generation
+ *   - NERC reliability guideline: BPS-connected inverter-based resources
+ *
+ * @param topology Grid topology with nodes (short-circuit kA) and edges
+ * @param systemVoltageKv System voltage in kV (default 138 kV)
+ * @param baseMva Base MVA for SCR calculation (default 100 MVA)
+ */
+export function computeDynamicSCR(
+  topology: { nodes: WeakGridFixtureNode[]; edges: WeakGridFixtureEdge[] },
+  systemVoltageKv: number = 138,
+  baseMva: number = 100,
+): DynamicSCRResult[] {
+  const results: DynamicSCRResult[] = [];
+
+  for (const node of topology.nodes) {
+    // Short-circuit MVA = sqrt(3) * V_kV * I_kA
+    const scmva = Math.sqrt(3) * systemVoltageKv * node.shortCircuitKa;
+    const scr = scmva / baseMva;
+
+    const strengthClass: GridStrengthClass = scr < 3.0
+      ? 'weak'
+      : scr < 5.0
+        ? 'marginal'
+        : 'strong';
+
+    const contributingFactors: string[] = [];
+    if (scr < 3.0) {
+      contributingFactors.push('Low short-circuit level reduces grid strength');
+      contributingFactors.push('Risk of voltage instability under inverter penetration');
+    }
+    if (scr < 5.0) {
+      contributingFactors.push('Monitor during high renewable generation periods');
+    }
+
+    // Check connected edges for loading stress
+    const connectedEdges = topology.edges.filter(
+      (e) => e.fromNodeId === node.id || e.toNodeId === node.id,
+    );
+    for (const edge of connectedEdges) {
+      const loadingPct = (edge.currentMw / edge.limitMw) * 100;
+      if (loadingPct > 85) {
+        contributingFactors.push(`Edge ${edge.fromNodeId}→${edge.toNodeId} at ${loadingPct.toFixed(0)}% capacity`);
+      }
+    }
+
+    results.push({
+      nodeId: node.id,
+      scr: round(scr, 3),
+      shortCircuitMva: round(scmva, 2),
+      isWeak: scr < 3.0,
+      strengthClass,
+      contributingFactors,
+      advisoryLabel: strengthClass === 'weak'
+        ? 'ADVISORY: Weak grid — SCR < 3.0. High voltage instability risk. Use live protection studies before operational decisions.'
+        : strengthClass === 'marginal'
+          ? 'CAUTION: Marginal grid — 3.0 ≤ SCR < 5.0. Monitor during high renewable generation.'
+          : 'OK: Strong grid — SCR ≥ 5.0. Stable for inverter-based generation.',
+      method: `Dynamic SCR (V=${systemVoltageKv}kV, base=${baseMva}MVA, I_sc=${node.shortCircuitKa}kA)`,
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Aggregate SCR results across multiple grid corridors/fixtures.
+ */
+export function computeFleetSCR(
+  fixtures: WeakGridFixture[],
+  systemVoltageKv: number = 138,
+  baseMva: number = 100,
+): FleetSCRResult {
+  const allResults: DynamicSCRResult[] = [];
+
+  for (const fixture of fixtures) {
+    const nodeResults = computeDynamicSCR(fixture.scenario.topology, systemVoltageKv, baseMva);
+    allResults.push(...nodeResults);
+  }
+
+  const scrValues = allResults.map((r) => r.scr);
+  const minScr = Math.min(...scrValues);
+  const maxScr = Math.max(...scrValues);
+  const meanScr = scrValues.reduce((s, v) => s + v, 0) / (scrValues.length || 1);
+
+  const weakNodes = allResults.filter((r) => r.strengthClass === 'weak').map((r) => r.nodeId);
+  const marginalNodes = allResults.filter((r) => r.strengthClass === 'marginal').map((r) => r.nodeId);
+  const strongNodes = allResults.filter((r) => r.strengthClass === 'strong').map((r) => r.nodeId);
+
+  const overallAssessment: GridStrengthClass = weakNodes.length > 0
+    ? 'weak'
+    : marginalNodes.length > 0
+      ? 'marginal'
+      : 'strong';
+
+  return {
+    minScr: round(minScr, 3),
+    maxScr: round(maxScr, 3),
+    meanScr: round(meanScr, 3),
+    weakNodes,
+    marginalNodes,
+    strongNodes,
+    overallAssessment,
+    nodeResults: allResults,
+    advisoryLabel: overallAssessment === 'weak'
+      ? `FLEET ADVISORY: ${weakNodes.length} weak node(s) detected. SCR < 3.0. Operational decisions require live protection studies.`
+      : overallAssessment === 'marginal'
+        ? `FLEET CAUTION: ${marginalNodes.length} marginal node(s). Monitor during high renewable generation.`
+        : 'FLEET OK: All nodes have SCR ≥ 5.0. Stable for inverter-based generation.',
+    method: `Fleet SCR aggregation across ${fixtures.length} fixture(s), ${allResults.length} node(s) (V=${systemVoltageKv}kV, base=${baseMva}MVA)`,
+  };
+}
+
+function round(value: number, decimals: number = 3): number {
+  if (!Number.isFinite(value)) return 0;
+  const factor = Math.pow(10, decimals);
+  return Math.round(value * factor) / factor;
+}

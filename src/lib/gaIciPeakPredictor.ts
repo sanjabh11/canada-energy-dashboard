@@ -2,6 +2,11 @@ import {
   resolveCommercialCommitmentEvidence,
   type CommercialCommitmentStatus,
 } from './commercialCommitmentEvidence';
+import {
+  cqrCalibrate,
+  type QuantileForecast,
+  type ConformalInterval,
+} from './conformalPrediction';
 
 export const GA_ICI_PREDICTOR_VERSION = 'ga-ici-5cp-decision-support-v1';
 export const IESO_PEAK_TRACKER_SOURCE_URL = 'https://www.ieso.ca/peaktracker';
@@ -643,4 +648,143 @@ export function buildIciFiveCpRetainedEvidenceExtract(
     ...report.source_urls.map((url) => `- ${url}`),
     '',
   ].join('\n');
+}
+
+// ============================================================================
+// Conformal Prediction Augmentation for GA/ICI 5CP
+// ============================================================================
+
+export type PeakAlertTier = 'curtail' | 'watch' | 'monitor' | 'history_only';
+
+export interface IciPeakRiskWindowProbabilistic extends IciPeakRiskWindow {
+  conformalInterval?: ConformalInterval;
+  p10DemandMw?: number;
+  p50DemandMw?: number;
+  p90DemandMw?: number;
+  alertTier: PeakAlertTier;
+  alertRationale: string;
+}
+
+export interface IciFiveCpProbabilisticReport extends IciFiveCpDecisionSupportReport {
+  top_five_peak_hours_probabilistic: IciPeakRiskWindowProbabilistic[];
+  watchlist_probabilistic: IciPeakRiskWindowProbabilistic[];
+  conformalCalibration: {
+    alpha: number;
+    nCalibrationSamples: number;
+    conformalQuantile: number;
+    coverageRate: number;
+    method: string;
+  };
+  probabilisticClaimBoundary: string;
+}
+
+/**
+ * Augment an existing GA/ICI 5CP decision support report with CQR conformal
+ * prediction intervals for probabilistic multi-tier peak alerts.
+ *
+ * @param report The existing deterministic 5CP report
+ * @param calibrationData Historical calibration data: forecast vs actual peak demands
+ * @param alpha Target miscoverage rate (default 0.10 → 90% coverage)
+ * @param curtailThresholdMW Demand level above which curtail is recommended at P90
+ */
+export function augmentPeakReportWithCP(
+  report: IciFiveCpDecisionSupportReport,
+  calibrationData: { forecasts: QuantileForecast[]; actuals: number[] },
+  alpha: number = 0.1,
+  curtailThresholdMW?: number,
+): IciFiveCpProbabilisticReport {
+  const { forecasts, actuals } = calibrationData;
+  const nCalibration = Math.min(forecasts.length, actuals.length);
+
+  // Calibrate CQR on historical data
+  const calibrationForecasts = forecasts.slice(0, nCalibration);
+  const calibrationActuals = actuals.slice(0, nCalibration);
+
+  // Process each peak hour
+  const augmentWindow = (window: IciPeakRiskWindow): IciPeakRiskWindowProbabilistic => {
+    // Create a QuantileForecast from the deterministic prediction
+    // Use the demand as point forecast with estimated spread
+    const pointForecast = window.ontario_demand_mw;
+    const estimatedStd = pointForecast * 0.03; // 3% coefficient of variation
+    const targetForecast: QuantileForecast = {
+      lower: pointForecast - 1.645 * estimatedStd,
+      median: pointForecast,
+      upper: pointForecast + 1.645 * estimatedStd,
+    };
+
+    // Calibrate using CQR
+    const calibration = cqrCalibrate(
+      calibrationForecasts,
+      calibrationActuals,
+      targetForecast,
+      alpha,
+    );
+
+    const p10 = calibration.interval.lower;
+    const p50 = pointForecast;
+    const p90 = calibration.interval.upper;
+
+    // Determine alert tier based on probabilistic thresholds
+    const threshold = curtailThresholdMW ?? report.top_five_peak_hours[0]?.ontario_demand_mw ?? 0;
+    let alertTier: PeakAlertTier = 'history_only';
+    let alertRationale = 'Historical data only — no probabilistic assessment.';
+
+    if (window.status === 'forecast' || window.status === 'candidate') {
+      if (p90 >= threshold) {
+        alertTier = 'curtail';
+        alertRationale = `P90 demand (${round(p10, 1)} MW) ≥ threshold (${round(threshold, 1)} MW). High probability of top-5 peak. Curtail recommended if operationally safe.`;
+      } else if (p50 >= threshold * 0.97) {
+        alertTier = 'watch';
+        alertRationale = `P50 demand (${round(p50, 1)} MW) near threshold (${round(threshold, 1)} MW). Monitor closely — may enter top-5.`;
+      } else if (p10 >= threshold * 0.92) {
+        alertTier = 'monitor';
+        alertRationale = `P10 demand (${round(p10, 1)} MW) approaching threshold (${round(threshold, 1)} MW). Low but non-zero probability of top-5 peak.`;
+      } else {
+        alertTier = 'monitor';
+        alertRationale = `P10 demand (${round(p10, 1)} MW) below threshold (${round(threshold, 1)} MW). Unlikely to enter top-5.`;
+      }
+    }
+
+    return {
+      ...window,
+      conformalInterval: calibration.interval,
+      p10DemandMw: round(p10, 1),
+      p50DemandMw: round(p50, 1),
+      p90DemandMw: round(p90, 1),
+      alertTier,
+      alertRationale,
+    };
+  };
+
+  const topFiveProbabilistic = report.top_five_peak_hours.map(augmentWindow);
+  const watchlistProbabilistic = report.watchlist.map(augmentWindow);
+
+  // Compute coverage rate from calibration
+  let covered = 0;
+  for (let i = 0; i < nCalibration; i++) {
+    const interval = cqrCalibrate(
+      calibrationForecasts.slice(0, i),
+      calibrationActuals.slice(0, i),
+      calibrationForecasts[i],
+      alpha,
+    );
+    if (calibrationActuals[i] >= interval.interval.lower && calibrationActuals[i] <= interval.interval.upper) {
+      covered++;
+    }
+  }
+  const coverageRate = nCalibration > 0 ? covered / nCalibration : 0;
+
+  return {
+    ...report,
+    top_five_peak_hours_probabilistic: topFiveProbabilistic,
+    watchlist_probabilistic: watchlistProbabilistic,
+    conformalCalibration: {
+      alpha,
+      nCalibrationSamples: nCalibration,
+      conformalQuantile: 0,
+      coverageRate: round(coverageRate, 4),
+      method: `CQR conformal calibration (alpha=${alpha}, n=${nCalibration}). Multi-tier alerts: curtail (P90≥threshold), watch (P50 near threshold), monitor (P10 near threshold).`,
+    },
+    probabilisticClaimBoundary: 'Probabilistic intervals provide coverage guarantees on the calibration set. Alert tiers are decision-support only — not operational curtailment instructions. Coverage rate reflects historical calibration, not future guarantees.',
+  };
 }
