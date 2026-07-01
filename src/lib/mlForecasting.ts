@@ -384,7 +384,7 @@ function generateHorizonPointForecast(
         val *= 1 + tempDeviation * 0.02;
       }
 
-      forecast.push(round(val, 1));
+      forecast.push(round(Math.max(0, val), 1));
     }
     return forecast;
   }
@@ -418,7 +418,7 @@ function generateHorizonPointForecast(
         val *= 1 + tempDeviation * 0.015;
       }
 
-      forecast.push(round(val, 1));
+      forecast.push(round(Math.max(0, val), 1));
     }
     return forecast;
   }

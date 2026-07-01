@@ -738,6 +738,20 @@ export function validateWithImputation(
   for (let i = 0; i < imputedRecords.length; i++) {
     const recordViolations = validateRecord(contractId, imputedRecords[i]);
     violations.push(...recordViolations);
+
+    // Flag any NaN values that survived imputation (all-missing fields)
+    for (const field of numericFields) {
+      const val = imputedRecords[i][field];
+      if (val !== null && val !== undefined && !Number.isFinite(val as number)) {
+        violations.push({
+          contractId,
+          checkName: `unimputable_field_${field}`,
+          severity: 'error',
+          timestamp: new Date().toISOString(),
+          message: `Field '${field}' in record ${i} could not be imputed (all values missing). Value is NaN.`,
+        });
+      }
+    }
   }
 
   // Add summary violations for outliers/imputed

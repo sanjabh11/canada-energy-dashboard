@@ -696,6 +696,32 @@ export function augmentPeakReportWithCP(
   const { forecasts, actuals } = calibrationData;
   const nCalibration = Math.min(forecasts.length, actuals.length);
 
+  if (nCalibration < 30) {
+    // Insufficient calibration data — return report with warning, no CP intervals
+    const warningReport: IciFiveCpProbabilisticReport = {
+      ...report,
+      top_five_peak_hours_probabilistic: report.top_five_peak_hours.map((w) => ({
+        ...w,
+        alertTier: 'monitor' as PeakAlertTier,
+        alertRationale: 'Insufficient calibration data (<30 samples). Conformal intervals not computed.',
+      })),
+      watchlist_probabilistic: report.watchlist.map((w) => ({
+        ...w,
+        alertTier: 'monitor' as PeakAlertTier,
+        alertRationale: 'Insufficient calibration data (<30 samples). Conformal intervals not computed.',
+      })),
+      conformalCalibration: {
+        alpha,
+        nCalibrationSamples: nCalibration,
+        conformalQuantile: 0,
+        coverageRate: 0,
+        method: `CQR calibration skipped — insufficient samples (n=${nCalibration}, need >=30).`,
+      },
+      probabilisticClaimBoundary: 'Conformal intervals not computed due to insufficient calibration data. Alert tiers are advisory only.',
+    };
+    return warningReport;
+  }
+
   // Calibrate CQR on historical data
   const calibrationForecasts = forecasts.slice(0, nCalibration);
   const calibrationActuals = actuals.slice(0, nCalibration);
@@ -732,7 +758,7 @@ export function augmentPeakReportWithCP(
     if (window.status === 'forecast' || window.status === 'candidate') {
       if (p90 >= threshold) {
         alertTier = 'curtail';
-        alertRationale = `P90 demand (${round(p10, 1)} MW) ≥ threshold (${round(threshold, 1)} MW). High probability of top-5 peak. Curtail recommended if operationally safe.`;
+        alertRationale = `P90 demand (${round(p90, 1)} MW) ≥ threshold (${round(threshold, 1)} MW). High probability of top-5 peak. Curtail recommended if operationally safe.`;
       } else if (p50 >= threshold * 0.97) {
         alertTier = 'watch';
         alertRationale = `P50 demand (${round(p50, 1)} MW) near threshold (${round(threshold, 1)} MW). Monitor closely — may enter top-5.`;
@@ -781,7 +807,7 @@ export function augmentPeakReportWithCP(
     conformalCalibration: {
       alpha,
       nCalibrationSamples: nCalibration,
-      conformalQuantile: 0,
+      conformalQuantile: nCalibration > 0 ? round(coverageRate, 4) : 0,
       coverageRate: round(coverageRate, 4),
       method: `CQR conformal calibration (alpha=${alpha}, n=${nCalibration}). Multi-tier alerts: curtail (P90≥threshold), watch (P50 near threshold), monitor (P10 near threshold).`,
     },

@@ -138,6 +138,23 @@ export function computeDynamicSCR(
   systemVoltageKv: number = 138,
   baseMva: number = 100,
 ): DynamicSCRResult[] {
+  if (baseMva <= 0) {
+    return topology.nodes.map((node) => ({
+      nodeId: node.id,
+      scr: 0,
+      shortCircuitMva: 0,
+      isWeak: true,
+      strengthClass: 'weak' as GridStrengthClass,
+      contributingFactors: ['Invalid baseMVA: must be positive'],
+      advisoryLabel: 'ERROR: Invalid baseMVA (<=0). SCR cannot be computed. Fix input before using results.',
+      method: 'Dynamic SCR — ERROR: baseMva <= 0',
+    }));
+  }
+
+  if (topology.nodes.length === 0) {
+    return [];
+  }
+
   const results: DynamicSCRResult[] = [];
 
   for (const node of topology.nodes) {
@@ -165,6 +182,7 @@ export function computeDynamicSCR(
       (e) => e.fromNodeId === node.id || e.toNodeId === node.id,
     );
     for (const edge of connectedEdges) {
+      if (edge.limitMw <= 0) continue;
       const loadingPct = (edge.currentMw / edge.limitMw) * 100;
       if (loadingPct > 85) {
         contributingFactors.push(`Edge ${edge.fromNodeId}→${edge.toNodeId} at ${loadingPct.toFixed(0)}% capacity`);
@@ -198,6 +216,21 @@ export function computeFleetSCR(
   systemVoltageKv: number = 138,
   baseMva: number = 100,
 ): FleetSCRResult {
+  if (fixtures.length === 0) {
+    return {
+      minScr: 0,
+      maxScr: 0,
+      meanScr: 0,
+      weakNodes: [],
+      marginalNodes: [],
+      strongNodes: [],
+      overallAssessment: 'weak',
+      nodeResults: [],
+      advisoryLabel: 'ERROR: No fixtures provided. Cannot compute fleet SCR.',
+      method: 'Fleet SCR — ERROR: empty fixtures array',
+    };
+  }
+
   const allResults: DynamicSCRResult[] = [];
 
   for (const fixture of fixtures) {
