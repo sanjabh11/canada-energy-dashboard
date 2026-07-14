@@ -1,0 +1,12 @@
+{
+  "audit_id": "ceip-v2-2026-07-13",
+  "hypotheses": [
+    {"id": "H-TIER-1", "hypothesis": "Alberta large emitters will pay $1,500/mo for TIER compliance CFO memo tool", "status": "Unresolved", "load_bearing_claims": ["LC-1", "LC-2", "LC-3", "LC-4"], "evidence_support": "Market research (MEDIUM) + codebase (HIGH)", "counter_evidence": "No buyer confirmed WTP; spreadsheet may suffice for simple facilities"},
+    {"id": "H-TIER-2", "hypothesis": "Alberta TIER compliance consultants will adopt CEIP as client-serving tool at $149/mo", "status": "Unresolved", "load_bearing_claims": ["LC-5", "LC-6", "LC-7"], "evidence_support": "Market research (MEDIUM)", "counter_evidence": "No consultant contacted; may prefer proprietary models"},
+    {"id": "H-TIER-3", "hypothesis": "DI standard release will create urgent demand for CEIP's DI sensitivity tool", "status": "Unresolved", "load_bearing_claims": ["LC-10", "LC-11"], "evidence_support": "Regulatory research (MEDIUM)", "counter_evidence": "DI standard not yet released; timeline could slip"},
+    {"id": "H-DI-1", "hypothesis": "DI standard release triggers demand spike for facility-level DI analysis", "status": "Unresolved", "load_bearing_claims": ["LC-10", "LC-11"], "evidence_support": "Regulatory research (MEDIUM)", "counter_evidence": "Standard not released; competitors could enter"},
+    {"id": "H-CREDIT-1", "hypothesis": "Alberta emitters with credit holdings will pay for credit banking audit tool", "status": "Unresolved", "load_bearing_claims": ["LC-8"], "evidence_support": "Codebase (HIGH) + market research (MEDIUM)", "counter_evidence": "No buyer confirmed; credit banking may be managed by traders"},
+    {"id": "H-CREDIT-2", "hypothesis": "Credit banking audit is natural cross-sell from TIER CFO memo", "status": "Unresolved", "load_bearing_claims": ["LC-9"], "evidence_support": "Product design (MEDIUM)", "counter_evidence": "No buyer evidence; cross-sell assumption untested"},
+    {"id": "H-CONTRA-1", "hypothesis": "Anti-spreadsheet positioning resonates more than Canadian energy compliance positioning", "status": "Unresolved", "load_bearing_claims": ["LC-12"], "evidence_support": "None", "counter_evidence": "Not tested"}
+  ]
+}

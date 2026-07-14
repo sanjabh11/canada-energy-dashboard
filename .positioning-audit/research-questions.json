@@ -1,0 +1,298 @@
+{
+  "audit_id": "ceip-v2-2026-07-13",
+  "trees": {
+    "phase_0": {
+      "root_question": "Is CEIP's current positioning (broad Canadian energy proof-pack product) the optimal strategic direction, or should it narrow to a specific beachhead?",
+      "level_1": [
+        {
+          "id": "0L1-1",
+          "question": "What product-market decision is this audit informing?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "0L2-1a", "question": "Should CEIP narrow from 5 segments to 1 beachhead?", "coverage_status": "covered"},
+            {"id": "0L2-1b", "question": "What is the cost of being wrong about the beachhead?", "coverage_status": "covered"}
+          ]
+        },
+        {
+          "id": "0L1-2",
+          "question": "What evidence is available vs missing for this decision?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "0L2-2a", "question": "What customer/commercial evidence exists?", "coverage_status": "covered — zero buyer evidence, evidence-limited mode"},
+            {"id": "0L2-2b", "question": "What codebase evidence exists?", "coverage_status": "covered — 207 components, 183 lib files, 139 routes"},
+            {"id": "0L2-2c", "question": "What market research evidence exists?", "coverage_status": "covered — 8 sources in evidence corpus"}
+          ]
+        },
+        {
+          "id": "0L1-3",
+          "question": "What counter-evidence would disconfirm CEIP's current positioning?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered",
+          "counter_evidence_status": "searched — 3 passes, 12 queries, no disconfirmation found",
+          "level_2": [
+            {"id": "0L2-3a", "question": "Is there evidence that TIER compliance software is a bad category?", "coverage_status": "covered — no evidence found"},
+            {"id": "0L2-3b", "question": "Is there evidence that Alberta industrials won't buy SaaS compliance tools?", "coverage_status": "covered — no evidence found"}
+          ]
+        },
+        {
+          "id": "0L1-4",
+          "question": "What stop conditions should trigger aborting the audit?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered",
+          "counter_evidence_status": "not_searched"
+        },
+        {
+          "id": "0L1-5",
+          "question": "What would 95% decision confidence look like for this audit?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "0L2-5a", "question": "What evidence quality is needed?", "coverage_status": "covered — primary buyer evidence required"},
+            {"id": "0L2-5b", "question": "What source coverage is needed?", "coverage_status": "covered — 5+ sources, 3+ queries per sub-question"},
+            {"id": "0L2-5c", "question": "What counter-evidence survival is needed?", "coverage_status": "covered — 3 disconfirmation passes"}
+          ]
+        }
+      ]
+    },
+    "phase_1": {
+      "root_question": "What evidence exists in the codebase, market, and regulatory landscape to inform CEIP's positioning decision?",
+      "level_1": [
+        {
+          "id": "1L1-1",
+          "question": "What codebase evidence supports or contradicts the current positioning?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — inventory of 207 components, 183 lib files, 139 routes, 109 edge functions",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "1L2-1a", "question": "Which components are TIER-specific vs general energy?", "coverage_status": "covered — TIERROICalculator, CreditBankingDashboard, tierProofPack identified"},
+            {"id": "1L2-1b", "question": "Is there a dedicated TIER compliance route?", "coverage_status": "covered — /roi-calculator and /tier-savings exist, /tier-compliance now added"},
+            {"id": "1L2-1c", "question": "What is the claim boundary posture?", "coverage_status": "covered — check-claim-boundaries.mjs passes 422 files"}
+          ]
+        },
+        {
+          "id": "1L1-2",
+          "question": "What market evidence exists for Alberta TIER compliance demand?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered — 8 sources in evidence corpus",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "1L2-2a", "question": "What is the TIER fund price and market credit price?", "coverage_status": "covered — $95/t fund, $25/t credit (Q4 2025 data)"},
+            {"id": "1L2-2b", "question": "How many Alberta large emitters exist?", "coverage_status": "covered — ~130 facilities subject to TIER"},
+            {"id": "1L2-2c", "question": "What competitors exist in TIER compliance software?", "coverage_status": "covered — cCarbon, Targray, Orennia identified"}
+          ]
+        },
+        {
+          "id": "1L1-3",
+          "question": "What regulatory evidence exists for the TIER framework?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — TIER Implementation Agreement, DI standard pending",
+          "counter_evidence_status": "searched"
+        }
+      ]
+    },
+    "phase_2": {
+      "root_question": "What does the market research reveal about CEIP's positioning options and competitive landscape?",
+      "level_1": [
+        {
+          "id": "2L1-1",
+          "question": "What is the TAM/SAM/SOM for Alberta TIER compliance software?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered — TAM $2.1B, SAM $12M, SOM $1.2M (3-year)",
+          "counter_evidence_status": "searched — 3 passes, no contraction found",
+          "level_2": [
+            {"id": "2L2-1a", "question": "What is the total Alberta TIER compliance spend?", "coverage_status": "covered — ~$130M/yr fund payments"},
+            {"id": "2L2-1b", "question": "What fraction is addressable by SaaS tools?", "coverage_status": "covered — ~10% as decision-support"}
+          ]
+        },
+        {
+          "id": "2L1-2",
+          "question": "Who are the direct and adjacent competitors?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered — 10 competitors + spreadsheet mapped",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "2L2-2a", "question": "Does any competitor offer 3-pathway TIER comparison?", "coverage_status": "covered — no direct competitor found"},
+            {"id": "2L2-2b", "question": "Does any competitor offer source-dated CFO memos?", "coverage_status": "covered — no direct competitor found"}
+          ]
+        },
+        {
+          "id": "2L1-3",
+          "question": "What counter-evidence could disconfirm the TIER beachhead?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered — 3 disconfirmation passes, 12 queries",
+          "counter_evidence_status": "searched — no disconfirmation found",
+          "level_2": [
+            {"id": "2L2-3a", "question": "Is TIER compliance software a bad category?", "coverage_status": "covered — no evidence"},
+            {"id": "2L2-3b", "question": "Will Alberta industrials buy SaaS compliance tools?", "coverage_status": "covered — no counter-evidence, but no buyer confirmation either"}
+          ]
+        }
+      ]
+    },
+    "phase_3": {
+      "root_question": "Which buyer segment should be CEIP's beachhead, and how do segments rank against each other?",
+      "level_1": [
+        {
+          "id": "3L1-1",
+          "question": "How do the 5 buyer segments rank by speed-to-revenue x deal size?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered — Industrial TIER ranked #1 beachhead",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "3L2-1a", "question": "What is the Utility segment's revenue potential?", "coverage_status": "covered — $5,900/mo but long sales cycles"},
+            {"id": "3L2-1b", "question": "What is the Industrial TIER segment's revenue potential?", "coverage_status": "covered — $1,500/mo, faster sales cycle"},
+            {"id": "3L2-1c", "question": "What is the Municipal segment's revenue potential?", "coverage_status": "covered — $5,900/mo, NWPTA threshold"}
+          ]
+        },
+        {
+          "id": "3L1-2",
+          "question": "What segment triangulation evidence supports the beachhead choice?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — codebase alignment + market gap + regulatory catalyst",
+          "counter_evidence_status": "searched"
+        },
+        {
+          "id": "3L1-3",
+          "question": "What are the segment-specific risks?",
+          "source_type_needed": "secondary",
+          "coverage_status": "covered — spreadsheet substitution, DI standard delay, competitor entry",
+          "counter_evidence_status": "searched"
+        }
+      ]
+    },
+    "phase_4": {
+      "root_question": "Where do gaps exist between CEIP's current positioning and the evidence-backed beachhead?",
+      "level_1": [
+        {
+          "id": "4L1-1",
+          "question": "What positioning gaps exist between current messaging and TIER-first beachhead?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — 8-type gap taxonomy applied",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "4L2-1a", "question": "Is there a need gap?", "coverage_status": "covered — 3-pathway comparison not prominently positioned"},
+            {"id": "4L2-1b", "question": "Is there a proof gap?", "coverage_status": "covered — no buyer testimonials or pilot evidence"},
+            {"id": "4L2-1c", "question": "Is there a distribution gap?", "coverage_status": "covered — no TIER-specific landing page (now fixed)"}
+          ]
+        },
+        {
+          "id": "4L1-2",
+          "question": "What codebase-to-positioning alignment gaps exist?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — /tier-compliance route was missing (now added), homepage defaults to Utility",
+          "counter_evidence_status": "searched"
+        },
+        {
+          "id": "4L1-3",
+          "question": "What evidence gaps are most blocking?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — buyer WTP evidence is #1 blocker",
+          "counter_evidence_status": "searched"
+        }
+      ]
+    },
+    "phase_5": {
+      "root_question": "What validation experiments will test the beachhead hypotheses, and what are their success/failure thresholds?",
+      "level_1": [
+        {
+          "id": "5L1-1",
+          "question": "What are the load-bearing claims for each hypothesis?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — 12 load-bearing claims across 7 hypotheses",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "5L2-1a", "question": "What claims must be true for H-TIER-1?", "coverage_status": "covered — LC-1 through LC-4"},
+            {"id": "5L2-1b", "question": "What claims must be true for H-TIER-2?", "coverage_status": "covered — LC-5 through LC-7"}
+          ]
+        },
+        {
+          "id": "5L1-2",
+          "question": "What experiments will falsify each hypothesis cheapest-first?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — 8 experiments designed with fidelity ladders",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "5L2-2a", "question": "What is the cheapest falsification test?", "coverage_status": "covered — EXP-001 landing page test ($0, 30 days)"},
+            {"id": "5L2-2b", "question": "What is the highest fidelity test?", "coverage_status": "covered — EXP-004 pilot with 1 emitter"}
+          ]
+        },
+        {
+          "id": "5L1-3",
+          "question": "What are the success and failure thresholds for each experiment?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — all 8 experiments have explicit thresholds",
+          "counter_evidence_status": "searched"
+        }
+      ]
+    },
+    "phase_6": {
+      "root_question": "What codebase remediation is needed to align the product with the TIER-first beachhead?",
+      "level_1": [
+        {
+          "id": "6L1-1",
+          "question": "What positioning-to-code alignment gaps require remediation?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — P0: /tier-compliance route (now fixed), homepage TIER prominence (now fixed)",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "6L2-1a", "question": "Is the TIER route present?", "coverage_status": "covered — /tier-compliance now exists"},
+            {"id": "6L2-1b", "question": "Is TIER prominent on homepage?", "coverage_status": "covered — TIER banner now on homepage"},
+            {"id": "6L2-1c", "question": "Are analytics events instrumented?", "coverage_status": "covered — trackEvent calls added to TIER pages"}
+          ]
+        },
+        {
+          "id": "6L1-2",
+          "question": "What technical debt blocks the beachhead?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — conformalPrediction.ts untracked (now staged), 3 low CVEs, inventory drift",
+          "counter_evidence_status": "searched"
+        },
+        {
+          "id": "6L1-3",
+          "question": "What is the remediation priority order?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — P0 (funnel), P1 (audit infra), P2 (CI/deps)",
+          "counter_evidence_status": "searched"
+        }
+      ]
+    },
+    "phase_7": {
+      "root_question": "Has the audit drifted from its original intent, and what evidence refresh is needed?",
+      "level_1": [
+        {
+          "id": "7L1-1",
+          "question": "Has the audit drifted from the original Phase 0 framing?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — no drift, beachhead maintained throughout",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "7L2-1a", "question": "Has the beachhead changed?", "coverage_status": "covered — Industrial TIER maintained"},
+            {"id": "7L2-1b", "question": "Have new hypotheses emerged?", "coverage_status": "covered — H-CONTRA-1 added in Phase 5"}
+          ]
+        },
+        {
+          "id": "7L1-2",
+          "question": "What evidence refresh is needed before the next audit cycle?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — buyer evidence (EXP-001 through EXP-004) is #1 priority",
+          "counter_evidence_status": "searched"
+        },
+        {
+          "id": "7L1-3",
+          "question": "What is the final audit verdict and what conditions remain?",
+          "source_type_needed": "primary",
+          "coverage_status": "covered — CONDITIONAL_GO, evidence-limited mode, 0 buyer evidence",
+          "counter_evidence_status": "searched",
+          "level_2": [
+            {"id": "7L2-3a", "question": "What would upgrade to GO?", "coverage_status": "covered — at least 1 pilot with CFO memo + WTP confirmation"},
+            {"id": "7L2-3b", "question": "What would downgrade to NO-GO?", "coverage_status": "covered — EXP-001 failure (0 sign-ups) + EXP-002 failure (0 positive WTP responses)"}
+          ]
+        }
+      ]
+    }
+  }
+}

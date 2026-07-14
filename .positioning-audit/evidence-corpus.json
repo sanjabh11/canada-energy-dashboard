@@ -1,0 +1,157 @@
+{
+  "audit_id": "ceip-v2-2026-07-13",
+  "evidence_items": [
+    {
+      "id": "EV-001",
+      "type": "product_promise",
+      "grade": "MEDIUM",
+      "source": "docs/COMMERCIAL_SOURCE_OF_TRUTH.md",
+      "claim": "Lead with Canadian utility and Alberta TIER proof-pack product. Avoid broad claims like 'many dashboards plus AI.'",
+      "date_collected": "2026-07-13",
+      "provenance": "Active commercial source of truth document, maintained by user"
+    },
+    {
+      "id": "EV-002",
+      "type": "product_promise",
+      "grade": "MEDIUM",
+      "source": "docs/Top20.md",
+      "claim": "Top 20 sellable features emphasizing Canadian utility and TIER proof packs with 95% market confidence target",
+      "date_collected": "2026-07-13",
+      "provenance": "Active strategy document"
+    },
+    {
+      "id": "EV-003",
+      "type": "product_promise",
+      "grade": "MEDIUM",
+      "source": "src/lib/commercialPositioning.ts",
+      "claim": "10 active commercial wedges (proof packs) across 5 buyer segments with ratings 3.8-4.6/5",
+      "date_collected": "2026-07-13",
+      "provenance": "Code-level product definition, verified by reading source"
+    },
+    {
+      "id": "EV-004",
+      "type": "product_promise",
+      "grade": "MEDIUM",
+      "source": "src/lib/commercialPositioning.ts boundedAiLanguage",
+      "claim": "AI-assisted language permitted only when tied to specific implemented route with guardrails. AI-powered superiority claims disallowed.",
+      "date_collected": "2026-07-13",
+      "provenance": "Code-level claim boundary definition"
+    },
+    {
+      "id": "EV-005",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/App.tsx",
+      "claim": "73 unique routes (with aliases), 52 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments",
+      "date_collected": "2026-07-13",
+      "provenance": "Direct code reading"
+    },
+    {
+      "id": "EV-006",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "scripts/lib/proof-pack-routes.mjs",
+      "claim": "12 proof-pack route configs with buyerLane, inputDataType, claimBoundary, and doNotClaim fields",
+      "date_collected": "2026-07-13",
+      "provenance": "Direct code reading"
+    },
+    {
+      "id": "EV-007",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/lib/tierPricing.ts",
+      "claim": "TIER pricing single source of truth with fund price, market credit price, provenance metadata, staleness checks, and Canada-Alberta Implementation Agreement citation",
+      "date_collected": "2026-07-13",
+      "provenance": "Direct code reading"
+    },
+    {
+      "id": "EV-008",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/components/TIERROICalculator.tsx",
+      "claim": "637-line TIER ROI calculator with compliance cost calculation, arbitrage spread, direct investment pathway, and lead capture",
+      "date_collected": "2026-07-13",
+      "provenance": "Direct code reading"
+    },
+    {
+      "id": "EV-009",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/App.tsx orphan route analysis",
+      "claim": "12 route groups with no clear B2B buyer or proof-pack alignment (solar-wizard, micro-gen, rate-alerts, employers, hire-me, incubators, training-coordinators, badges, ask-data, copilot, agent, digital-twin)",
+      "date_collected": "2026-07-13",
+      "provenance": "Route-by-segment mapping analysis"
+    },
+    {
+      "id": "EV-010",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "Architecture assessment",
+      "claim": "React 18 + TypeScript + Vite 7 + Tailwind v3 + Supabase + Netlify. 85% bundle reduction, WCAG 2.2 AA, CORS hardened, rate limiting on 68 functions, JWT verification, CSP, DOMPurify.",
+      "date_collected": "2026-07-13",
+      "provenance": "Direct code reading + prior sprint records"
+    },
+    {
+      "id": "EV-011",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "Monetization infrastructure",
+      "claim": "6 pricing tiers ($0-$5,900/mo), 3 payment providers (Whop, Paddle, Stripe), split entitlement logic. B2C $9/mo Watchdog is off-USP for proof-pack B2B product.",
+      "date_collected": "2026-07-13",
+      "provenance": "Code reading + commercialPositioning.ts"
+    },
+    {
+      "id": "EV-012",
+      "type": "competitor_intel",
+      "grade": "MEDIUM",
+      "source": "Previous Phase 2 competitor matrix",
+      "claim": "10 competitors mapped: Orennia, cCarbon, Targray, FCM/MCCAC, Amperon, Itron, EnergyCAP, GridX, Bidgely, UtilityAPI. Plus 3 consulting firms: Dunsky, ICF, GLJ.",
+      "date_collected": "2026-06-04",
+      "provenance": "Desk research, no competitor product trials"
+    },
+    {
+      "id": "EV-013",
+      "type": "stakeholder_input",
+      "grade": "MEDIUM",
+      "source": "docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md",
+      "claim": "95/100 desk-research strategy-direction confidence. Narrow proof-pack strategy for Canadian utility and Alberta TIER. Zero buyer evidence found.",
+      "date_collected": "2026-07-13",
+      "provenance": "Strategy document maintained by user"
+    },
+    {
+      "id": "EV-014",
+      "type": "stakeholder_input",
+      "grade": "MEDIUM",
+      "source": "docs/ADVERSARIAL_USP_ANALYSIS.md",
+      "claim": "Adversarial USP analysis conducted challenging CEIP's unique selling proposition",
+      "date_collected": "2026-07-13",
+      "provenance": "Strategy document"
+    },
+    {
+      "id": "EV-015",
+      "type": "pricing_signal",
+      "grade": "LOW",
+      "source": "commercialPositioning.ts pricing tiers",
+      "claim": "Pricing tiers defined: Free, $9/mo, $149/mo, $1,500/mo, $5,900/mo, $2,500/mo. No buyer WTP data, no conversion rates, no sales pipeline.",
+      "date_collected": "2026-07-13",
+      "provenance": "Code-level pricing definition only"
+    }
+  ],
+  "evidence_type_summary": {
+    "product_promise": { "count": 4, "grades": ["MEDIUM", "MEDIUM", "MEDIUM", "MEDIUM"] },
+    "codebase_evidence": { "count": 7, "grades": ["HIGH", "HIGH", "HIGH", "HIGH", "HIGH", "HIGH", "HIGH"] },
+    "competitor_intel": { "count": 1, "grades": ["MEDIUM"] },
+    "stakeholder_input": { "count": 2, "grades": ["MEDIUM", "MEDIUM"] },
+    "pricing_signal": { "count": 1, "grades": ["LOW"] },
+    "customer_outcome": { "count": 0, "grades": [] },
+    "user_quote": { "count": 0, "grades": [] },
+    "behavioral_observation": { "count": 0, "grades": [] },
+    "support_ticket": { "count": 0, "grades": [] },
+    "analytics_data": { "count": 0, "grades": [] },
+    "sales_data": { "count": 0, "grades": [] }
+  },
+  "total_items": 15,
+  "types_present": 5,
+  "types_missing": 6,
+  "evidence_limited_mode": true
+}

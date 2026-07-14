@@ -1,0 +1,45 @@
+{
+  "audit_id": "ceip-v2-2026-07-13",
+  "product": "Canada Energy Intelligence Platform (CEIP)",
+  "product_context": "/Users/sanjayb/minimax/canada-energy-dashboard",
+  "scope": "deep",
+  "started_at": "2026-07-13T17:49:00Z",
+  "completed_at": "2026-07-13",
+  "current_phase": "COMPLETE",
+  "current_gate": "CONDITIONAL_GO",
+  "evidence_limited_mode": true,
+  "decision_confidence": {
+    "composite": 79,
+    "quality": 24,
+    "coverage": 17,
+    "consistency": 19,
+    "counter": 14,
+    "validation": 5
+  },
+  "beachhead": "Alberta TIER Facility Compliance CFO Memo",
+  "beachhead_score": 51,
+  "hypotheses": {
+    "primary": "H-TIER-1 (Unresolved)",
+    "secondary": "H-TIER-2 (Unresolved)",
+    "catalyst": "H-TIER-3/H-DI-1 (Unresolved)",
+    "cross_sell": "H-CREDIT-1/H-CREDIT-2 (Unresolved)",
+    "contrarian": "H-CONTRA-1 (Unresolved)"
+  },
+  "experiments_designed": 10,
+  "experiments_executed": 0,
+  "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
+  "evidence_types_missing": ["customer_outcome", "user_quote", "behavioral_observation", "support_ticket", "analytics_data", "sales_data"],
+  "evidence_limitations": ["Zero customer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted"],
+  "phases_completed": [0, 1, 2, 3, 4, 5, 6, 7],
+  "gates_passed": ["CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO"],
+  "gaps": {"critical": 3, "major": 5, "minor": 0, "total": 8},
+  "remediation_completed": {
+    "p0": ["tier-compliance route", "tier-compliance landing page", "homepage TIER banner", "analytics events on TIER pages", "conformalPrediction.ts committed"],
+    "p1": ["research-question trees persisted for phases 0-7", "H-DI-1 and H-CREDIT-2 linked to experiments", "check:positioning-audit script", "audit verifier in CI", "inventory snapshot automation"],
+    "p2": ["esbuild upgraded to >=0.28.1", "@babel/core upgraded to >=7.29.6", "CI parallelized into 3 jobs", "soak tests verified passing"]
+  },
+  "next_audit": "2026-10-13 or after EXP-004",
+  "audit_version": "v2",
+  "previous_audit": "2026-06-04-v1",
+  "last_updated": "2026-07-13T16:00:00Z"
+}

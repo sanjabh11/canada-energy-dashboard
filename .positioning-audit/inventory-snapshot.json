@@ -1,0 +1,45 @@
+{
+  "snapshot_at": "2026-07-13T17:57:35.191Z",
+  "audit_id": "ceip-v2-2026-07-13",
+  "inventory": {
+    "routes": 139,
+    "routeDeclarations": 139,
+    "lazyImports": 69,
+    "components": 207,
+    "libFiles": 183,
+    "docs": 232,
+    "edgeFunctions": 109
+  },
+  "mismatches": [
+    {
+      "metric": "routes",
+      "claimed": 73,
+      "actual": 139
+    },
+    {
+      "metric": "lazyImports",
+      "claimed": 52,
+      "actual": 69
+    },
+    {
+      "metric": "components",
+      "claimed": 151,
+      "actual": 207
+    },
+    {
+      "metric": "libFiles",
+      "claimed": 156,
+      "actual": 183
+    },
+    {
+      "metric": "docs",
+      "claimed": 121,
+      "actual": 232
+    },
+    {
+      "metric": "edgeFunctions",
+      "claimed": 86,
+      "actual": 109
+    }
+  ]
+}

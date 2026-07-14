@@ -39,6 +39,7 @@
     "build": "rm -rf node_modules/.vite-temp && tsc -b && vite build",
     "build:prod": "rm -rf node_modules/.vite-temp && tsc -b && BUILD_MODE=prod vite build",
     "check:claim-boundaries": "node scripts/check-claim-boundaries.mjs",
+    "check:positioning-audit": "node scripts/verify-positioning-audit.mjs",
     "check:commercial-source": "node scripts/check-commercial-source-docs.mjs && pnpm run check:strategy-roadmap-doc",
     "check:strategy-roadmap-doc": "node scripts/check-strategy-roadmap-doc.mjs",
     "check:github-repo-metadata": "node scripts/check-github-repo-metadata.mjs",
@@ -125,6 +126,9 @@
     "prepare:pilot-evidence-artifact": "node scripts/prepare-pilot-evidence-artifact.mjs",
     "update:pilot-evidence-register-row": "node scripts/update-pilot-evidence-register-row.mjs",
     "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "prepare": "husky || true",
     "test": "vitest run",
     "test:strategy-audit-slice": "vitest run tests/unit/commercialPositioning.test.ts tests/unit/forecastBaselines.test.ts tests/unit/utilityForecasting.test.ts tests/unit/utilityForecastProofPack.test.ts tests/unit/utilityForecastBenchmarkPack.test.ts tests/unit/proofPackGates.test.ts tests/unit/regulatoryProofPack.test.ts tests/unit/pilotEvidenceRegisterValidator.test.ts tests/unit/pilotEvidenceRegisterPreview.test.ts tests/unit/pilotEvidenceArtifactPrep.test.ts tests/unit/pilotEvidenceIntakePacket.test.ts tests/unit/retainedArtifactHash.test.ts tests/unit/buyerEvidenceReadiness.test.ts tests/unit/outreachResponseLogValidator.test.ts tests/unit/githubRepoMetadata.test.ts tests/unit/productionApprovalPacket.test.ts tests/unit/unmergedBranchReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts tests/unit/strategyCompletionAudit.test.ts tests/unit/corepackToolchain.test.ts tests/unit/strategySourceAnchors.test.ts tests/unit/statusPagePosture.test.ts tests/unit/byoCsvProofGenerator.test.ts tests/unit/gaIciPeakPredictor.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1",
     "test:wedge-prototype-routes": "VITE_ENABLE_EDGE_FETCH=false VITE_ALLOW_LOCAL_EDGE_FETCH=false VITE_SUPABASE_EDGE_BASE= PLAYWRIGHT_HTML_OUTPUT_DIR=/tmp/ceip-wedge-playwright-report PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/ceip-wedge-playwright-results.json playwright test --config=playwright.config.ts tests/component/wedge-prototype-routes.spec.ts --project=chromium",
@@ -169,7 +173,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.0.0",
-    "dompurify": "^3.4.7",
+    "dompurify": "^3.4.11",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.364.0",
@@ -189,6 +193,7 @@
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@playwright/test": "^1.53.2",
+    "@sentry/react": "^8.47.0",
     "@types/dompurify": "^3.2.0",
     "@types/node": "^22.10.7",
     "@types/react": "^18.3.12",
@@ -196,18 +201,22 @@
     "@types/react-router-dom": "^5",
     "@types/ws": "8.18.1",
     "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "10.4.20",
     "eslint": "^9.15.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.2",
+    "lint-staged": "^15.3.0",
     "postcss": "^8.5.15",
+    "prettier": "^3.4.2",
     "tailwindcss": "v3.4.16",
     "tsx": "^4.21.0",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.15.0",
-    "vite": "^7.3.3",
+    "vite": "^7.3.5",
     "vite-plugin-source-identifier": "1.1.2",
     "vitest": "^4.1.8",
     "ws": "8.21.0"
@@ -222,7 +231,8 @@
       "fast-xml-parser": "5.7.0",
       "flatted": "3.4.2",
       "glob@>=10.2.0 <10.5.0": "10.5.0",
-      "js-yaml": "4.1.1",
+      "js-yaml": ">=4.2.0",
+      "undici": ">=7.28.0 <8.0.0",
       "lodash": "4.18.1",
       "mdast-util-to-hast": "13.2.1",
       "minimatch@<3.1.4": "3.1.4",
@@ -233,7 +243,17 @@
       "postcss": "8.5.15",
       "rollup": "4.59.0",
       "yaml@<1.10.3": "1.10.3",
-      "yaml@>=2.0.0 <2.8.3": "2.8.3"
+      "yaml@>=2.0.0 <2.8.3": "2.8.3",
+      "esbuild": ">=0.28.1",
+      "@babel/core": ">=7.29.6"
     }
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix --quiet"
+    ],
+    "src/**/*.{ts,tsx,css}": [
+      "prettier --write"
+    ]
   }
 }
