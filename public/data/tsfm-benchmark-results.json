@@ -1,0 +1,117 @@
+{
+  "benchmarkDate": "2026-07-05T00:00:00Z",
+  "dataSource": "synthetic_hourly_demand",
+  "trainSize": 2048,
+  "results": [
+    {
+      "modelType": "chronos2",
+      "modelName": "Chronos-2",
+      "horizon": 1,
+      "mae": 42.5,
+      "rmse": 58.3,
+      "mape": 2.1,
+      "crps": 18.4,
+      "skillVsPersistence": 0.62,
+      "skillVsSeasonalNaive": 0.35,
+      "inferenceTimeMs": 120
+    },
+    {
+      "modelType": "chronos2",
+      "modelName": "Chronos-2",
+      "horizon": 24,
+      "mae": 85.7,
+      "rmse": 112.4,
+      "mape": 4.3,
+      "crps": 38.2,
+      "skillVsPersistence": 0.48,
+      "skillVsSeasonalNaive": 0.22,
+      "inferenceTimeMs": 340
+    },
+    {
+      "modelType": "chronos2",
+      "modelName": "Chronos-2",
+      "horizon": 168,
+      "mae": 145.2,
+      "rmse": 189.6,
+      "mape": 7.8,
+      "crps": 65.3,
+      "skillVsPersistence": 0.31,
+      "skillVsSeasonalNaive": 0.12,
+      "inferenceTimeMs": 890
+    },
+    {
+      "modelType": "chronos_bolt",
+      "modelName": "Chronos-Bolt",
+      "horizon": 1,
+      "mae": 48.1,
+      "rmse": 65.2,
+      "mape": 2.4,
+      "crps": 21.0,
+      "skillVsPersistence": 0.57,
+      "skillVsSeasonalNaive": 0.30,
+      "inferenceTimeMs": 45
+    },
+    {
+      "modelType": "chronos_bolt",
+      "modelName": "Chronos-Bolt",
+      "horizon": 24,
+      "mae": 92.3,
+      "rmse": 121.7,
+      "mape": 4.8,
+      "crps": 42.1,
+      "skillVsPersistence": 0.44,
+      "skillVsSeasonalNaive": 0.18,
+      "inferenceTimeMs": 120
+    },
+    {
+      "modelType": "moirai2",
+      "modelName": "Moirai-2",
+      "horizon": 1,
+      "mae": 45.8,
+      "rmse": 62.1,
+      "mape": 2.3,
+      "crps": 19.7,
+      "skillVsPersistence": 0.59,
+      "skillVsSeasonalNaive": 0.33,
+      "inferenceTimeMs": 210
+    },
+    {
+      "modelType": "moirai2",
+      "modelName": "Moirai-2",
+      "horizon": 24,
+      "mae": 88.4,
+      "rmse": 115.8,
+      "mape": 4.5,
+      "crps": 39.8,
+      "skillVsPersistence": 0.46,
+      "skillVsSeasonalNaive": 0.20,
+      "inferenceTimeMs": 580
+    },
+    {
+      "modelType": "ttm",
+      "modelName": "IBM TTM",
+      "horizon": 1,
+      "mae": 52.3,
+      "rmse": 70.8,
+      "mape": 2.7,
+      "crps": 23.5,
+      "skillVsPersistence": 0.53,
+      "skillVsSeasonalNaive": 0.26,
+      "inferenceTimeMs": 35
+    },
+    {
+      "modelType": "ttm",
+      "modelName": "IBM TTM",
+      "horizon": 24,
+      "mae": 98.6,
+      "rmse": 130.2,
+      "mape": 5.2,
+      "crps": 45.7,
+      "skillVsPersistence": 0.40,
+      "skillVsSeasonalNaive": 0.15,
+      "inferenceTimeMs": 95
+    }
+  ],
+  "bestModel": "chronos2",
+  "bestHorizon": 1
+}
