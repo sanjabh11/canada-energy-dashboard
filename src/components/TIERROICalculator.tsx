@@ -5,633 +5,752 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, TrendingUp, DollarSign, Percent, ArrowRight, CheckCircle, Info, Mail, ExternalLink, HelpCircle } from 'lucide-react';
+import {
+  Calculator,
+  TrendingUp,
+  DollarSign,
+  Percent,
+  ArrowRight,
+  CheckCircle,
+  Info,
+  Mail,
+  ExternalLink,
+  HelpCircle,
+} from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
 import { persistLeadIntake } from '../lib/leadIntake';
+import { trackEvent } from '../lib/analytics';
 import { useTIERPricing, calculateArbitrageSpread } from '../lib/tierPricing';
 import { evaluateTierScenario } from '../lib/mlForecastingClient';
 import type { TierScenarioResult } from '../lib/mlForecasting';
 import { fetchLatestTierMarketRate } from '../lib/ratesSource';
 import ProofPackPanel from './ProofPackPanel';
 import {
-    buildTierAppendixMarkdown,
-    buildTierMemoDescriptor,
-    buildTierProofBundle,
-    buildTierPricingFreshnessGate,
-    buildTierSourceCurrencyChecklistMarkdown,
+  buildTierAppendixMarkdown,
+  buildTierMemoDescriptor,
+  buildTierProofBundle,
+  buildTierPricingFreshnessGate,
+  buildTierSourceCurrencyChecklistMarkdown,
 } from '../lib/tierProofPack';
 import {
-    downloadPdfArtifact,
-    downloadTextArtifact,
-    renderHtmlProofDocument,
+  downloadPdfArtifact,
+  downloadTextArtifact,
+  renderHtmlProofDocument,
 } from '../lib/proofPack';
 
 interface ROIResults {
-    fundPayment: number;
-    marketCredits: number;
-    directInvestment: number;
-    ceipFee: number;
-    netSavings: number;
-    roiPercent: number;
-    bestOption: 'market_credits' | 'direct_investment';
+  fundPayment: number;
+  marketCredits: number;
+  directInvestment: number;
+  ceipFee: number;
+  netSavings: number;
+  roiPercent: number;
+  bestOption: 'market_credits' | 'direct_investment';
 }
 
 export const TIERROICalculator: React.FC = () => {
-    const sampleFacilityPreset = {
-        annualEmissions: 162000,
-        benchmarkExceedance: 24000,
-        directInvestCapex: 650000,
-    };
+  useEffect(() => {
+    trackEvent('tier_calculator_view', { source_route: '/roi-calculator' });
+  }, []);
 
-    // User inputs
-    const [annualEmissions, setAnnualEmissions] = useState<number>(150000);
-    const [benchmarkExceedance, setBenchmarkExceedance] = useState<number>(20000);
-    const [directInvestCapex, setDirectInvestCapex] = useState<number>(500000);
-    const [emailCapture, setEmailCapture] = useState('');
-    const [emailSubmitted, setEmailSubmitted] = useState(false);
-    const [emailError, setEmailError] = useState('');
-    const [simulatorResult, setSimulatorResult] = useState<TierScenarioResult | null>(null);
-    const [simulatorSource, setSimulatorSource] = useState<'edge' | 'local_fallback'>('local_fallback');
-    const [liveTierMarketRate, setLiveTierMarketRate] = useState<number | null>(null);
-    const [liveTierMarketRateSource, setLiveTierMarketRateSource] = useState<{
-        sourceName?: string;
-        sourceUrl?: string;
-        observedAt?: string;
-        claimLabel?: 'estimated' | 'advisory' | 'validated';
-    } | null>(null);
+  const sampleFacilityPreset = {
+    annualEmissions: 162000,
+    benchmarkExceedance: 24000,
+    directInvestCapex: 650000,
+  };
 
-    // TIER Pricing configuration (single source of truth)
-    const tierPricing = useTIERPricing();
-    const FUND_PRICE = tierPricing.fundPrice;
-    const MARKET_PRICE = liveTierMarketRate ?? tierPricing.marketCreditPrice;
-    const ARBITRAGE_SPREAD = calculateArbitrageSpread({ ...tierPricing, marketCreditPrice: MARKET_PRICE });
+  // User inputs
+  const [annualEmissions, setAnnualEmissions] = useState<number>(150000);
+  const [benchmarkExceedance, setBenchmarkExceedance] = useState<number>(20000);
+  const [directInvestCapex, setDirectInvestCapex] = useState<number>(500000);
+  const [emailCapture, setEmailCapture] = useState('');
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [simulatorResult, setSimulatorResult] = useState<TierScenarioResult | null>(null);
+  const [simulatorSource, setSimulatorSource] = useState<'edge' | 'local_fallback'>(
+    'local_fallback',
+  );
+  const [liveTierMarketRate, setLiveTierMarketRate] = useState<number | null>(null);
+  const [liveTierMarketRateSource, setLiveTierMarketRateSource] = useState<{
+    sourceName?: string;
+    sourceUrl?: string;
+    observedAt?: string;
+    claimLabel?: 'estimated' | 'advisory' | 'validated';
+  } | null>(null);
 
-    useEffect(() => {
-        let cancelled = false;
-        fetchLatestTierMarketRate().then((rate) => {
-            if (cancelled) return;
-            if (rate) {
-                setLiveTierMarketRate(Number(rate.market_credit_price_cad_per_tonne));
-                setLiveTierMarketRateSource({
-                    sourceName: rate.source_name,
-                    sourceUrl: rate.source_url,
-                    observedAt: rate.observed_at,
-                    claimLabel: rate.claim_label,
-                });
-            } else {
-                setLiveTierMarketRate(null);
-                setLiveTierMarketRateSource(null);
-            }
-        }).catch(() => {
-            if (cancelled) return;
-            setLiveTierMarketRate(null);
-            setLiveTierMarketRateSource(null);
-        });
-        return () => { cancelled = true; };
-    }, []);
+  // TIER Pricing configuration (single source of truth)
+  const tierPricing = useTIERPricing();
+  const FUND_PRICE = tierPricing.fundPrice;
+  const MARKET_PRICE = liveTierMarketRate ?? tierPricing.marketCreditPrice;
+  const ARBITRAGE_SPREAD = calculateArbitrageSpread({
+    ...tierPricing,
+    marketCreditPrice: MARKET_PRICE,
+  });
 
-    // CEIP service fees (business model constants)
-    const CEIP_BASE_FEE = 18000; // $1,500/mo × 12
-    const SUCCESS_FEE_RATE = 0.20; // 20% of savings
-    const DI_CREDIT_RATE = 0.80; // $1 invested = ~$0.80 compliance credit (estimated)
-
-    // Calculate ROI across all three compliance pathways
-    const results: ROIResults = useMemo(() => {
-        const fundPayment = benchmarkExceedance * FUND_PRICE;
-        const marketCredits = benchmarkExceedance * MARKET_PRICE;
-        const directInvestment = directInvestCapex + Math.max(0, (benchmarkExceedance - (directInvestCapex * DI_CREDIT_RATE / FUND_PRICE)) * FUND_PRICE);
-        const bestOption = marketCredits <= directInvestment ? 'market_credits' : 'direct_investment';
-        const bestCost = bestOption === 'market_credits' ? marketCredits : directInvestment;
-        const grossSavings = fundPayment - bestCost;
-        const successFee = grossSavings * SUCCESS_FEE_RATE;
-        const ceipFee = CEIP_BASE_FEE + successFee;
-        const netSavings = grossSavings - ceipFee;
-        const roiPercent = ceipFee > 0 ? (netSavings / ceipFee) * 100 : 0;
-
-        return {
-            fundPayment,
-            marketCredits,
-            directInvestment,
-            ceipFee,
-            netSavings,
-            roiPercent,
-            bestOption
-        };
-    }, [benchmarkExceedance, directInvestCapex, FUND_PRICE, MARKET_PRICE]);
-
-    useEffect(() => {
-        let cancelled = false;
-        evaluateTierScenario({
-            annualEmissionsTonnes: annualEmissions,
-            benchmarkExceedanceTonnes: benchmarkExceedance,
-            directInvestmentCapexCad: directInvestCapex,
-            creditAssumptions: {
-                fundPriceCadPerTonne: FUND_PRICE,
-                marketCreditPriceCadPerTonne: MARKET_PRICE,
-                directInvestmentCreditRate: DI_CREDIT_RATE,
-                lastVerifiedAt: tierPricing.lastVerifiedAt,
-            },
-            discountRate: 0.08,
-        }).then(({ data, source }) => {
-            if (cancelled) return;
-            setSimulatorResult(data);
-            setSimulatorSource(source);
-        });
-        return () => { cancelled = true; };
-    }, [annualEmissions, benchmarkExceedance, directInvestCapex, FUND_PRICE, MARKET_PRICE, tierPricing.lastVerifiedAt]);
-
-    const handleEmailSubmit = async () => {
-        if (!emailCapture || !emailCapture.includes('@')) {
-            setEmailError('Enter a valid work email to receive the report.');
-            return;
+  useEffect(() => {
+    let cancelled = false;
+    fetchLatestTierMarketRate()
+      .then((rate) => {
+        if (cancelled) return;
+        if (rate) {
+          setLiveTierMarketRate(Number(rate.market_credit_price_cad_per_tonne));
+          setLiveTierMarketRateSource({
+            sourceName: rate.source_name,
+            sourceUrl: rate.source_url,
+            observedAt: rate.observed_at,
+            claimLabel: rate.claim_label,
+          });
+        } else {
+          setLiveTierMarketRate(null);
+          setLiveTierMarketRateSource(null);
         }
-
-        setEmailError('');
-
-        const persistResult = await persistLeadIntake({
-            company_name: 'Industrial ROI Inquiry',
-            contact_name: 'Industrial Lead',
-            email: emailCapture,
-            source_route: '/roi-calculator',
-            channel: 'direct',
-            segment: 'industrial',
-            campaign_id: 'roi_calculator_2026q1',
-            metadata: {
-                annual_emissions: annualEmissions,
-                benchmark_exceedance: benchmarkExceedance,
-                direct_invest_capex: directInvestCapex,
-            },
-        });
-
-        if (!persistResult.ok) {
-            setEmailError('We could not save your request. Please try again in a moment.');
-            return;
-        }
-
-        setEmailCapture('');
-        setEmailSubmitted(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLiveTierMarketRate(null);
+        setLiveTierMarketRateSource(null);
+      });
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    const formatCurrency = (value: number): string => {
-        return new Intl.NumberFormat('en-CA', {
-            style: 'currency',
-            currency: 'CAD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(value);
+  // CEIP service fees (business model constants)
+  const CEIP_BASE_FEE = 18000; // $1,500/mo × 12
+  const SUCCESS_FEE_RATE = 0.2; // 20% of savings
+  const DI_CREDIT_RATE = 0.8; // $1 invested = ~$0.80 compliance credit (estimated)
+
+  // Calculate ROI across all three compliance pathways
+  const results: ROIResults = useMemo(() => {
+    const fundPayment = benchmarkExceedance * FUND_PRICE;
+    const marketCredits = benchmarkExceedance * MARKET_PRICE;
+    const directInvestment =
+      directInvestCapex +
+      Math.max(
+        0,
+        (benchmarkExceedance - (directInvestCapex * DI_CREDIT_RATE) / FUND_PRICE) * FUND_PRICE,
+      );
+    const bestOption = marketCredits <= directInvestment ? 'market_credits' : 'direct_investment';
+    const bestCost = bestOption === 'market_credits' ? marketCredits : directInvestment;
+    const grossSavings = fundPayment - bestCost;
+    const successFee = grossSavings * SUCCESS_FEE_RATE;
+    const ceipFee = CEIP_BASE_FEE + successFee;
+    const netSavings = grossSavings - ceipFee;
+    const roiPercent = ceipFee > 0 ? (netSavings / ceipFee) * 100 : 0;
+
+    return {
+      fundPayment,
+      marketCredits,
+      directInvestment,
+      ceipFee,
+      netSavings,
+      roiPercent,
+      bestOption,
     };
+  }, [benchmarkExceedance, directInvestCapex, FUND_PRICE, MARKET_PRICE]);
 
-    const proofSnapshot = useMemo(() => ({
-        annualEmissions,
-        benchmarkExceedance,
-        directInvestCapex,
-        pricing: tierPricing,
-        marketPrice: MARKET_PRICE,
-        results,
-        simulatorResult,
-        simulatorSource,
-        liveTierMarketRateSource,
-    }), [
-        MARKET_PRICE,
-        annualEmissions,
-        benchmarkExceedance,
-        directInvestCapex,
-        liveTierMarketRateSource,
-        results,
-        simulatorResult,
-        simulatorSource,
-        tierPricing,
-    ]);
+  useEffect(() => {
+    let cancelled = false;
+    evaluateTierScenario({
+      annualEmissionsTonnes: annualEmissions,
+      benchmarkExceedanceTonnes: benchmarkExceedance,
+      directInvestmentCapexCad: directInvestCapex,
+      creditAssumptions: {
+        fundPriceCadPerTonne: FUND_PRICE,
+        marketCreditPriceCadPerTonne: MARKET_PRICE,
+        directInvestmentCreditRate: DI_CREDIT_RATE,
+        lastVerifiedAt: tierPricing.lastVerifiedAt,
+      },
+      discountRate: 0.08,
+    }).then(({ data, source }) => {
+      if (cancelled) return;
+      setSimulatorResult(data);
+      setSimulatorSource(source);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    annualEmissions,
+    benchmarkExceedance,
+    directInvestCapex,
+    FUND_PRICE,
+    MARKET_PRICE,
+    tierPricing.lastVerifiedAt,
+  ]);
 
-    const proofBundle = useMemo(() => buildTierProofBundle(proofSnapshot), [proofSnapshot]);
-    const memoDescriptor = useMemo(() => buildTierMemoDescriptor(proofSnapshot), [proofSnapshot]);
-    const appendixMarkdown = useMemo(() => buildTierAppendixMarkdown(proofSnapshot), [proofSnapshot]);
-    const sourceCurrencyMarkdown = useMemo(() => buildTierSourceCurrencyChecklistMarkdown(proofSnapshot), [proofSnapshot]);
-    const pricingFreshnessGate = useMemo(() => buildTierPricingFreshnessGate(proofSnapshot), [proofSnapshot]);
+  const handleEmailSubmit = async () => {
+    if (!emailCapture || !emailCapture.includes('@')) {
+      setEmailError('Enter a valid work email to receive the report.');
+      return;
+    }
 
-    const proofActions = useMemo(() => {
-        const [pdfArtifact, htmlArtifact, appendixArtifact, sourceCurrencyArtifact] = proofBundle.artifacts;
-        return [
-            {
-                ...pdfArtifact,
-                onDownload: () => downloadPdfArtifact(memoDescriptor),
-            },
-            {
-                ...htmlArtifact,
-                onDownload: () => downloadTextArtifact(
-                    htmlArtifact,
-                    renderHtmlProofDocument({ ...memoDescriptor, definition: htmlArtifact }),
-                    'text/html;charset=utf-8;',
-                ),
-            },
-            {
-                ...appendixArtifact,
-                onDownload: () => downloadTextArtifact(
-                    appendixArtifact,
-                    appendixMarkdown,
-                    'text/markdown;charset=utf-8;',
-                ),
-            },
-            {
-                ...sourceCurrencyArtifact,
-                onDownload: () => downloadTextArtifact(
-                    sourceCurrencyArtifact,
-                    sourceCurrencyMarkdown,
-                    'text/markdown;charset=utf-8;',
-                ),
-            },
-        ];
-    }, [appendixMarkdown, memoDescriptor, proofBundle.artifacts, sourceCurrencyMarkdown]);
+    setEmailError('');
 
-    return (
-        <div className="min-h-screen bg-slate-900 text-white">
-          <SEOHead
-            title="Alberta TIER Scenario Planning Calculator"
-            description={`Build source-dated Alberta TIER planning estimates with buyer validation required. Compare the 2026 fund payment basis ($${FUND_PRICE}/t), disclosed scenario inputs, and Direct Investment pathway notes.`}
-            path="/roi-calculator"
-            keywords={['TIER calculator', 'Alberta TIER scenario planning', 'TIER credit ledger', 'EPC offset Alberta', 'Direct Investment TIER']}
-          />
+    trackEvent('tier_lead_submit', { segment: 'Industrial', source_route: '/roi-calculator' });
 
-          {/* Navigation */}
-          <header className="border-b border-slate-800">
-            <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-              <Link to="/" className="flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-emerald-400" />
-                <span className="font-bold">CEIP</span>
-                <span className="text-slate-400 text-sm">TIER Calculator</span>
-              </Link>
-              <Link to="/enterprise" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors">
-                Talk to Sales
-              </Link>
+    const persistResult = await persistLeadIntake({
+      company_name: 'Industrial ROI Inquiry',
+      contact_name: 'Industrial Lead',
+      email: emailCapture,
+      source_route: '/roi-calculator',
+      channel: 'direct',
+      segment: 'industrial',
+      campaign_id: 'roi_calculator_2026q1',
+      metadata: {
+        annual_emissions: annualEmissions,
+        benchmark_exceedance: benchmarkExceedance,
+        direct_invest_capex: directInvestCapex,
+      },
+    });
+
+    if (!persistResult.ok) {
+      setEmailError('We could not save your request. Please try again in a moment.');
+      return;
+    }
+
+    setEmailCapture('');
+    setEmailSubmitted(true);
+  };
+
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const proofSnapshot = useMemo(
+    () => ({
+      annualEmissions,
+      benchmarkExceedance,
+      directInvestCapex,
+      pricing: tierPricing,
+      marketPrice: MARKET_PRICE,
+      results,
+      simulatorResult,
+      simulatorSource,
+      liveTierMarketRateSource,
+    }),
+    [
+      MARKET_PRICE,
+      annualEmissions,
+      benchmarkExceedance,
+      directInvestCapex,
+      liveTierMarketRateSource,
+      results,
+      simulatorResult,
+      simulatorSource,
+      tierPricing,
+    ],
+  );
+
+  const proofBundle = useMemo(() => buildTierProofBundle(proofSnapshot), [proofSnapshot]);
+  const memoDescriptor = useMemo(() => buildTierMemoDescriptor(proofSnapshot), [proofSnapshot]);
+  const appendixMarkdown = useMemo(() => buildTierAppendixMarkdown(proofSnapshot), [proofSnapshot]);
+  const sourceCurrencyMarkdown = useMemo(
+    () => buildTierSourceCurrencyChecklistMarkdown(proofSnapshot),
+    [proofSnapshot],
+  );
+  const pricingFreshnessGate = useMemo(
+    () => buildTierPricingFreshnessGate(proofSnapshot),
+    [proofSnapshot],
+  );
+
+  const proofActions = useMemo(() => {
+    const [pdfArtifact, htmlArtifact, appendixArtifact, sourceCurrencyArtifact] =
+      proofBundle.artifacts;
+    return [
+      {
+        ...pdfArtifact,
+        onDownload: () => {
+          trackEvent('tier_memo_export', { format: 'pdf' });
+          downloadPdfArtifact(memoDescriptor);
+        },
+      },
+      {
+        ...htmlArtifact,
+        onDownload: () => {
+          trackEvent('tier_memo_export', { format: 'html' });
+          downloadTextArtifact(
+            htmlArtifact,
+            renderHtmlProofDocument({ ...memoDescriptor, definition: htmlArtifact }),
+            'text/html;charset=utf-8;',
+          );
+        },
+      },
+      {
+        ...appendixArtifact,
+        onDownload: () => {
+          trackEvent('tier_memo_export', { format: 'appendix-md' });
+          downloadTextArtifact(appendixArtifact, appendixMarkdown, 'text/markdown;charset=utf-8;');
+        },
+      },
+      {
+        ...sourceCurrencyArtifact,
+        onDownload: () => {
+          trackEvent('tier_memo_export', { format: 'source-currency-md' });
+          downloadTextArtifact(
+            sourceCurrencyArtifact,
+            sourceCurrencyMarkdown,
+            'text/markdown;charset=utf-8;',
+          );
+        },
+      },
+    ];
+  }, [appendixMarkdown, memoDescriptor, proofBundle.artifacts, sourceCurrencyMarkdown]);
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white">
+      <SEOHead
+        title="Alberta TIER Scenario Planning Calculator"
+        description={`Build source-dated Alberta TIER planning estimates with buyer validation required. Compare the 2026 fund payment basis ($${FUND_PRICE}/t), disclosed scenario inputs, and Direct Investment pathway notes.`}
+        path="/roi-calculator"
+        keywords={[
+          'TIER calculator',
+          'Alberta TIER scenario planning',
+          'TIER credit ledger',
+          'EPC offset Alberta',
+          'Direct Investment TIER',
+        ]}
+      />
+
+      {/* Navigation */}
+      <header className="border-b border-slate-800">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <Calculator className="h-5 w-5 text-emerald-400" />
+            <span className="font-bold">CEIP</span>
+            <span className="text-slate-400 text-sm">TIER Calculator</span>
+          </Link>
+          <Link
+            to="/enterprise"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
+          >
+            Talk to Sales
+          </Link>
+        </div>
+      </header>
+
+      {/* What is TIER? — SEO Explainer */}
+      <section className="max-w-5xl mx-auto px-6 pt-10 pb-6">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+          <h1 className="text-2xl font-bold mb-3 flex items-center gap-2">
+            <HelpCircle className="h-6 w-6 text-emerald-400" />
+            What is TIER? Alberta's Carbon Compliance System
+          </h1>
+          <p className="text-slate-300 text-sm leading-relaxed">
+            The <strong>Technology Innovation and Emissions Reduction (TIER)</strong> regulation
+            requires Alberta facilities emitting 100,000+ tonnes CO₂e/year to reduce emissions below
+            a benchmark. Facilities exceeding their benchmark can model compliance by: paying the{' '}
+            <strong>${FUND_PRICE}/tonne 2026 fund price basis</strong>, purchasing{' '}
+            <strong>
+              market credits (EPCs/Offsets) at the source-dated or fallback rate shown in the route
+            </strong>
+            , or using the
+            <strong> Direct Investment pathway</strong> where eligible under current Alberta
+            guidance. The ${ARBITRAGE_SPREAD}/tonne spread shown here is scenario-based and must be
+            refreshed with buyer-specific pricing before approval.
+          </p>
+          <div className="flex gap-4 mt-3 text-xs text-slate-500">
+            <a
+              href="https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-emerald-400 transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" /> Alberta.ca TIER Regulation
+            </a>
+            <a
+              href="https://icapcarbonaction.com/en/ets/canada-alberta-technology-innovation-and-emissions-reduction-regulation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-emerald-400 transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" /> ICAP Carbon Action
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-6 pb-6">
+        <div
+          className={`mb-4 rounded-xl border p-4 text-sm ${pricingFreshnessGate.blocksStrongSavingsClaim ? 'border-amber-500/40 bg-amber-950/30 text-amber-100' : 'border-emerald-500/40 bg-emerald-950/30 text-emerald-100'}`}
+        >
+          <div className="font-semibold">
+            TIER pricing freshness gate: {pricingFreshnessGate.status}
+          </div>
+          <p className="mt-1">{pricingFreshnessGate.message}</p>
+          <Link
+            to="/credit-banking"
+            className="mt-3 inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200"
+          >
+            Pair this memo with the credit banking audit pack <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <ProofPackPanel
+          title={proofBundle.title}
+          summary={proofBundle.summary}
+          artifacts={proofActions}
+        />
+      </section>
+
+      <section className="max-w-5xl mx-auto px-6 pb-12">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700 p-8">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-emerald-600/20 rounded-xl">
+              <Calculator className="h-8 w-8 text-emerald-400" />
             </div>
-          </header>
-
-          {/* What is TIER? — SEO Explainer */}
-          <section className="max-w-5xl mx-auto px-6 pt-10 pb-6">
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-              <h1 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                <HelpCircle className="h-6 w-6 text-emerald-400" />
-                What is TIER? Alberta's Carbon Compliance System
-              </h1>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                The <strong>Technology Innovation and Emissions Reduction (TIER)</strong> regulation requires
-                Alberta facilities emitting 100,000+ tonnes CO₂e/year to reduce emissions below a benchmark.
-                Facilities exceeding their benchmark can model compliance by: paying the <strong>${FUND_PRICE}/tonne 2026 fund price basis</strong>,
-                purchasing <strong>market credits (EPCs/Offsets) at the source-dated or fallback rate shown in the route</strong>, or using the
-                <strong> Direct Investment pathway</strong> where eligible under current Alberta guidance.
-                The ${ARBITRAGE_SPREAD}/tonne spread shown here is scenario-based and must be refreshed with buyer-specific pricing before approval.
-              </p>
-              <div className="flex gap-4 mt-3 text-xs text-slate-500">
-                <a href="https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-emerald-400 transition-colors">
-                  <ExternalLink className="h-3 w-3" /> Alberta.ca TIER Regulation
-                </a>
-                <a href="https://icapcarbonaction.com/en/ets/canada-alberta-technology-innovation-and-emissions-reduction-regulation" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-emerald-400 transition-colors">
-                  <ExternalLink className="h-3 w-3" /> ICAP Carbon Action
-                </a>
-              </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">TIER Compliance Savings Calculator</h2>
+              <p className="text-slate-400">Compare all 3 compliance pathways in 30 seconds</p>
             </div>
-          </section>
+          </div>
 
-          <section className="max-w-5xl mx-auto px-6 pb-6">
-            <div className={`mb-4 rounded-xl border p-4 text-sm ${pricingFreshnessGate.blocksStrongSavingsClaim ? 'border-amber-500/40 bg-amber-950/30 text-amber-100' : 'border-emerald-500/40 bg-emerald-950/30 text-emerald-100'}`}>
-              <div className="font-semibold">TIER pricing freshness gate: {pricingFreshnessGate.status}</div>
-              <p className="mt-1">{pricingFreshnessGate.message}</p>
-              <Link to="/credit-banking" className="mt-3 inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200">
-                Pair this memo with the credit banking audit pack <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <ProofPackPanel
-              title={proofBundle.title}
-              summary={proofBundle.summary}
-              artifacts={proofActions}
-            />
-          </section>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Inputs */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <span className="bg-emerald-600 text-white text-sm px-2 py-0.5 rounded">1</span>
+                Your Facility Data
+              </h3>
 
-          <section className="max-w-5xl mx-auto px-6 pb-12">
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700 p-8">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-emerald-600/20 rounded-xl">
-                    <Calculator className="h-8 w-8 text-emerald-400" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-white">TIER Compliance Savings Calculator</h2>
-                    <p className="text-slate-400">Compare all 3 compliance pathways in 30 seconds</p>
-                </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Inputs */}
-                <div className="space-y-6">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <span className="bg-emerald-600 text-white text-sm px-2 py-0.5 rounded">1</span>
-                        Your Facility Data
-                    </h3>
-
-                    <div className="space-y-4">
-                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
-                                    <div className="text-sm font-medium text-emerald-300">Sample Alberta facility preset</div>
-                                    <div className="mt-1 text-xs text-slate-400">
-                                        Preload one realistic industrial scenario to generate a CFO memo without manual setup.
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setAnnualEmissions(sampleFacilityPreset.annualEmissions);
-                                        setBenchmarkExceedance(sampleFacilityPreset.benchmarkExceedance);
-                                        setDirectInvestCapex(sampleFacilityPreset.directInvestCapex);
-                                    }}
-                                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
-                                >
-                                    Load preset
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-slate-400 mb-2">
-                                Annual Emissions (tonnes CO₂e)
-                            </label>
-                            <input
-                                type="number"
-                                value={annualEmissions}
-                                onChange={(e) => setAnnualEmissions(Number(e.target.value))}
-                                className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-slate-400 mb-2">
-                                Benchmark Exceedance (tonnes above limit)
-                            </label>
-                            <input
-                                type="number"
-                                value={benchmarkExceedance}
-                                onChange={(e) => setBenchmarkExceedance(Number(e.target.value))}
-                                className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            />
-                            <p className="text-sm text-slate-500 mt-1">
-                                Your compliance liability = {benchmarkExceedance.toLocaleString()} tonnes
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-slate-400 mb-2">
-                                Direct Investment Capex ($ planned efficiency spend)
-                            </label>
-                            <input
-                                type="number"
-                                value={directInvestCapex}
-                                onChange={(e) => setDirectInvestCapex(Number(e.target.value))}
-                                className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            />
-                            <p className="text-sm text-slate-500 mt-1">
-                                On-site efficiency investment eligible under Dec 2025 amendments
-                            </p>
-                        </div>
+              <div className="space-y-4">
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-emerald-300">
+                        Sample Alberta facility preset
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        Preload one realistic industrial scenario to generate a CFO memo without
+                        manual setup.
+                      </div>
                     </div>
-
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-slate-400">Current planning price basis</h4>
-                            <div className={`text-xs px-2 py-1 rounded-full border ${
-                                liveTierMarketRateSource
-                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                                    : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
-                            }`}>
-                                {liveTierMarketRateSource
-                                    ? `Live source: ${liveTierMarketRateSource.sourceName ?? 'tier_market_rates'}`
-                                    : 'Fallback planning snapshot in use'}
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <div className="text-sm text-red-400">TIER Fund Price</div>
-                                <div className="text-2xl font-bold text-red-500">${FUND_PRICE}/t</div>
-                            </div>
-                            <div className="text-slate-500">vs</div>
-                            <div className="text-right">
-                                <div className="text-sm text-emerald-400">Market Credit Price</div>
-                                <div className="text-2xl font-bold text-emerald-400">${MARKET_PRICE}/t</div>
-                                <div className="text-xs text-slate-500 mt-1">
-                                    {liveTierMarketRateSource
-                                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
-                                        : `${tierPricing.marketPriceSource} · reviewed ${tierPricing.lastVerifiedAt}`}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-3 text-center">
-                            <span className="text-sm bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">
-                                ${ARBITRAGE_SPREAD}/tonne illustrative spread under current inputs
-                            </span>
-                        </div>
-                        <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                                <div className="text-xs uppercase tracking-wide text-slate-500">Fund price provenance</div>
-                                <div className="mt-2 text-sm text-white">{tierPricing.source}</div>
-                                <div className="mt-1 text-xs text-slate-400">Effective {tierPricing.effectiveDate} • verified {tierPricing.lastVerifiedAt}</div>
-                            </div>
-                            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                                <div className="text-xs uppercase tracking-wide text-slate-500">Market price provenance</div>
-                                <div className="mt-2 text-sm text-white">
-                                    {liveTierMarketRateSource?.sourceName ?? tierPricing.marketPriceSource}
-                                </div>
-                                <div className="mt-1 text-xs text-slate-400">
-                                    {liveTierMarketRateSource
-                                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} • ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
-                                        : `${tierPricing.marketPriceDisclosure} Reviewed ${tierPricing.lastVerifiedAt}.`}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-3 text-xs text-slate-500">
-                            Simulator: {simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via {simulatorSource === 'edge' ? 'Supabase Edge' : 'local fallback'}.
-                            {simulatorResult?.meta.staleness_status === 'stale' ? ' Pricing assumptions need reverification.' : ''}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Results */}
-                <div className="space-y-6">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <span className="bg-emerald-600 text-white text-sm px-2 py-0.5 rounded">2</span>
-                        Your Savings with CEIP
-                    </h3>
-
-                    <div className="space-y-3">
-                        {/* Without CEIP */}
-                        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <div className="text-sm text-red-400">Without CEIP (Fund Payment)</div>
-                                    <div className="text-xs text-slate-500">
-                                        {benchmarkExceedance.toLocaleString()} t × ${FUND_PRICE}
-                                    </div>
-                                </div>
-                                <div className="text-2xl font-bold text-red-500">
-                                    {formatCurrency(results.fundPayment)}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* With CEIP */}
-                        <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <div className="text-sm text-emerald-400">With CEIP (Market Credits)</div>
-                                    <div className="text-xs text-slate-500">
-                                        {benchmarkExceedance.toLocaleString()} t × ${MARKET_PRICE}
-                                    </div>
-                                </div>
-                                <div className="text-2xl font-bold text-emerald-400">
-                                    {formatCurrency(results.marketCredits)}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* CEIP Fee */}
-                        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <div className="text-sm text-slate-400">CEIP Platform Fee</div>
-                                    <div className="text-xs text-slate-500">
-                                        ${CEIP_BASE_FEE.toLocaleString()} base + 20% success fee
-                                    </div>
-                                </div>
-                                <div className="text-lg font-semibold text-slate-300">
-                                    {formatCurrency(results.ceipFee)}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Net Result */}
-                    <div className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border-2 border-emerald-500 rounded-xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <div className="text-sm text-emerald-400">Your Net Savings</div>
-                                <div className="text-4xl font-bold text-white">
-                                    {formatCurrency(results.netSavings)}
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-sm text-emerald-400">ROI</div>
-                                <div className="text-3xl font-bold text-emerald-400">
-                                    {results.roiPercent.toFixed(0)}%
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-emerald-300 text-sm">
-                            <TrendingUp className="h-4 w-4" />
-                            <span>
-                                {results.roiPercent >= 500
-                                    ? "Scenario shows exceptional estimated ROI under current assumptions"
-                                    : "Scenario shows CEIP may pay for itself under current assumptions"}
-                            </span>
-                        </div>
-                        {simulatorResult?.warnings.map((warning) => (
-                            <p key={warning} className="mt-2 text-xs text-amber-200">
-                                {warning}
-                            </p>
-                        ))}
-                    </div>
-
-                    {/* Direct Investment Result */}
-                    <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <div className="text-sm text-blue-400">Direct Investment Pathway</div>
-                                <div className="text-xs text-slate-500">
-                                    ${directInvestCapex.toLocaleString()} capex + residual fund
-                                </div>
-                            </div>
-                            <div className="text-lg font-semibold text-blue-400">
-                                {formatCurrency(results.directInvestment)}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Recommendation Badge */}
-                    <div className="bg-slate-700/50 rounded-lg p-3 text-center">
-                        <span className="text-xs text-slate-400">CEIP Recommendation: </span>
-                        <span className="text-sm font-semibold text-emerald-400">
-                            {results.bestOption === 'market_credits' ? 'Buy Market Credits' : 'Direct Investment'}
-                        </span>
-                    </div>
-
-                    {/* CTA */}
-                    <Link
-                        to={`/enterprise?tier=industrial&artifact=tier-cfo-memo&netSavings=${Math.round(results.netSavings)}`}
-                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
+                    <button
+                      onClick={() => {
+                        setAnnualEmissions(sampleFacilityPreset.annualEmissions);
+                        setBenchmarkExceedance(sampleFacilityPreset.benchmarkExceedance);
+                        setDirectInvestCapex(sampleFacilityPreset.directInvestCapex);
+                      }}
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
                     >
-                        Book pilot review with this memo
-                        <ArrowRight className="h-5 w-5" />
-                    </Link>
+                      Load preset
+                    </button>
+                  </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    Annual Emissions (tonnes CO₂e)
+                  </label>
+                  <input
+                    type="number"
+                    value={annualEmissions}
+                    onChange={(e) => setAnnualEmissions(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    Benchmark Exceedance (tonnes above limit)
+                  </label>
+                  <input
+                    type="number"
+                    value={benchmarkExceedance}
+                    onChange={(e) => setBenchmarkExceedance(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <p className="text-sm text-slate-500 mt-1">
+                    Your compliance liability = {benchmarkExceedance.toLocaleString()} tonnes
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    Direct Investment Capex ($ planned efficiency spend)
+                  </label>
+                  <input
+                    type="number"
+                    value={directInvestCapex}
+                    onChange={(e) => setDirectInvestCapex(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <p className="text-sm text-slate-500 mt-1">
+                    On-site efficiency investment eligible under Dec 2025 amendments
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-slate-400">
+                    Current planning price basis
+                  </h4>
+                  <div
+                    className={`text-xs px-2 py-1 rounded-full border ${
+                      liveTierMarketRateSource
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                        : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                    }`}
+                  >
+                    {liveTierMarketRateSource
+                      ? `Live source: ${liveTierMarketRateSource.sourceName ?? 'tier_market_rates'}`
+                      : 'Fallback planning snapshot in use'}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm text-red-400">TIER Fund Price</div>
+                    <div className="text-2xl font-bold text-red-500">${FUND_PRICE}/t</div>
+                  </div>
+                  <div className="text-slate-500">vs</div>
+                  <div className="text-right">
+                    <div className="text-sm text-emerald-400">Market Credit Price</div>
+                    <div className="text-2xl font-bold text-emerald-400">${MARKET_PRICE}/t</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {liveTierMarketRateSource
+                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
+                        : `${tierPricing.marketPriceSource} · reviewed ${tierPricing.lastVerifiedAt}`}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-center">
+                  <span className="text-sm bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">
+                    ${ARBITRAGE_SPREAD}/tonne illustrative spread under current inputs
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                      Fund price provenance
+                    </div>
+                    <div className="mt-2 text-sm text-white">{tierPricing.source}</div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Effective {tierPricing.effectiveDate} • verified {tierPricing.lastVerifiedAt}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                      Market price provenance
+                    </div>
+                    <div className="mt-2 text-sm text-white">
+                      {liveTierMarketRateSource?.sourceName ?? tierPricing.marketPriceSource}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {liveTierMarketRateSource
+                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} • ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
+                        : `${tierPricing.marketPriceDisclosure} Reviewed ${tierPricing.lastVerifiedAt}.`}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-slate-500">
+                  Simulator: {simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via{' '}
+                  {simulatorSource === 'edge' ? 'Supabase Edge' : 'local fallback'}.
+                  {simulatorResult?.meta.staleness_status === 'stale'
+                    ? ' Pricing assumptions need reverification.'
+                    : ''}
+                </div>
+              </div>
             </div>
 
-            {/* Trust Elements */}
-            <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-3 gap-4 text-center">
-                <div className="flex flex-col items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-slate-400">Official 2026 fund basis + disclosed market snapshot</span>
+            {/* Results */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <span className="bg-emerald-600 text-white text-sm px-2 py-0.5 rounded">2</span>
+                Your Savings with CEIP
+              </h3>
+
+              <div className="space-y-3">
+                {/* Without CEIP */}
+                <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-red-400">Without CEIP (Fund Payment)</div>
+                      <div className="text-xs text-slate-500">
+                        {benchmarkExceedance.toLocaleString()} t × ${FUND_PRICE}
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-red-500">
+                      {formatCurrency(results.fundPayment)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-slate-400">3-Pathway Compliance Modeling</span>
+
+                {/* With CEIP */}
+                <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-emerald-400">With CEIP (Market Credits)</div>
+                      <div className="text-xs text-slate-500">
+                        {benchmarkExceedance.toLocaleString()} t × ${MARKET_PRICE}
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-400">
+                      {formatCurrency(results.marketCredits)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-slate-400">Bank-Ready Compliance Reports</span>
+
+                {/* CEIP Fee */}
+                <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-sm text-slate-400">CEIP Platform Fee</div>
+                      <div className="text-xs text-slate-500">
+                        ${CEIP_BASE_FEE.toLocaleString()} base + 20% success fee
+                      </div>
+                    </div>
+                    <div className="text-lg font-semibold text-slate-300">
+                      {formatCurrency(results.ceipFee)}
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Net Result */}
+              <div className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border-2 border-emerald-500 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="text-sm text-emerald-400">Your Net Savings</div>
+                    <div className="text-4xl font-bold text-white">
+                      {formatCurrency(results.netSavings)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-emerald-400">ROI</div>
+                    <div className="text-3xl font-bold text-emerald-400">
+                      {results.roiPercent.toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-emerald-300 text-sm">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>
+                    {results.roiPercent >= 500
+                      ? 'Scenario shows exceptional estimated ROI under current assumptions'
+                      : 'Scenario shows CEIP may pay for itself under current assumptions'}
+                  </span>
+                </div>
+                {simulatorResult?.warnings.map((warning) => (
+                  <p key={warning} className="mt-2 text-xs text-amber-200">
+                    {warning}
+                  </p>
+                ))}
+              </div>
+
+              {/* Direct Investment Result */}
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm text-blue-400">Direct Investment Pathway</div>
+                    <div className="text-xs text-slate-500">
+                      ${directInvestCapex.toLocaleString()} capex + residual fund
+                    </div>
+                  </div>
+                  <div className="text-lg font-semibold text-blue-400">
+                    {formatCurrency(results.directInvestment)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendation Badge */}
+              <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                <span className="text-xs text-slate-400">CEIP Recommendation: </span>
+                <span className="text-sm font-semibold text-emerald-400">
+                  {results.bestOption === 'market_credits'
+                    ? 'Buy Market Credits'
+                    : 'Direct Investment'}
+                </span>
+              </div>
+
+              {/* CTA */}
+              <Link
+                to={`/enterprise?tier=industrial&artifact=tier-cfo-memo&netSavings=${Math.round(results.netSavings)}`}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
+              >
+                Book pilot review with this memo
+                <ArrowRight className="h-5 w-5" />
+              </Link>
             </div>
-        </div>
-
-          {/* Lead Capture */}
-          <div className="mt-8 bg-slate-800 border border-slate-700 rounded-xl p-6 text-center">
-            <Mail className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold mb-2">Get Your Detailed TIER Savings Report</h3>
-            <p className="text-sm text-slate-400 mb-4">
-              Receive the CFO memo and scenario appendix by email for internal review.
-            </p>
-            {emailSubmitted ? (
-              <div className="flex items-center justify-center gap-2 text-emerald-400">
-                <CheckCircle className="h-5 w-5" />
-                <span>Report will be sent shortly. Our team will reach out within 24 hours.</span>
-              </div>
-            ) : (
-              <div className="flex gap-3 max-w-md mx-auto">
-                <input
-                  type="email"
-                  value={emailCapture}
-                  onChange={(e) => setEmailCapture(e.target.value)}
-                  placeholder="your@company.ca"
-                  className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                />
-                <button
-                  onClick={handleEmailSubmit}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition-colors"
-                >
-                  Send Report
-                </button>
-              </div>
-            )}
-            {emailError && (
-              <p className="mt-3 text-sm text-rose-400">{emailError}</p>
-            )}
           </div>
 
-          {/* Data Sources */}
-          <div className="mt-6 text-xs text-slate-500 text-center space-y-1">
-            <p>Data sources: Government of Alberta TIER materials plus route-level market pricing provenance when available.</p>
-            <p>Fund price basis: ${FUND_PRICE}/t ({tierPricing.source}, effective {tierPricing.effectiveDate}). Market credit price: {liveTierMarketRateSource ? 'live route source shown above' : tierPricing.marketPriceDisclosure} Direct Investment eligibility still requires buyer-specific review under current Alberta guidance.</p>
+          {/* Trust Elements */}
+          <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-3 gap-4 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <span className="text-sm text-slate-400">
+                Official 2026 fund basis + disclosed market snapshot
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <span className="text-sm text-slate-400">3-Pathway Compliance Modeling</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <span className="text-sm text-slate-400">Bank-Ready Compliance Reports</span>
+            </div>
           </div>
-          </section>
         </div>
-    );
+
+        {/* Lead Capture */}
+        <div className="mt-8 bg-slate-800 border border-slate-700 rounded-xl p-6 text-center">
+          <Mail className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold mb-2">Get Your Detailed TIER Savings Report</h3>
+          <p className="text-sm text-slate-400 mb-4">
+            Receive the CFO memo and scenario appendix by email for internal review.
+          </p>
+          {emailSubmitted ? (
+            <div className="flex items-center justify-center gap-2 text-emerald-400">
+              <CheckCircle className="h-5 w-5" />
+              <span>Report will be sent shortly. Our team will reach out within 24 hours.</span>
+            </div>
+          ) : (
+            <div className="flex gap-3 max-w-md mx-auto">
+              <input
+                type="email"
+                value={emailCapture}
+                onChange={(e) => setEmailCapture(e.target.value)}
+                placeholder="your@company.ca"
+                className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              />
+              <button
+                onClick={handleEmailSubmit}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition-colors"
+              >
+                Send Report
+              </button>
+            </div>
+          )}
+          {emailError && <p className="mt-3 text-sm text-rose-400">{emailError}</p>}
+        </div>
+
+        {/* Data Sources */}
+        <div className="mt-6 text-xs text-slate-500 text-center space-y-1">
+          <p>
+            Data sources: Government of Alberta TIER materials plus route-level market pricing
+            provenance when available.
+          </p>
+          <p>
+            Fund price basis: ${FUND_PRICE}/t ({tierPricing.source}, effective{' '}
+            {tierPricing.effectiveDate}). Market credit price:{' '}
+            {liveTierMarketRateSource
+              ? 'live route source shown above'
+              : tierPricing.marketPriceDisclosure}{' '}
+            Direct Investment eligibility still requires buyer-specific review under current Alberta
+            guidance.
+          </p>
+        </div>
+      </section>
+    </div>
+  );
 };
 
 export default TIERROICalculator;

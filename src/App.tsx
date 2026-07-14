@@ -16,85 +16,205 @@ import { Phase4RouteGuard } from './components/Phase4RouteGuard';
 // ============================================================================
 // LAZY-LOADED ROUTE COMPONENTS (code-split into separate chunks)
 // ============================================================================
-const EnergyDataDashboard = React.lazy(() => import('./components/EnergyDataDashboard').then(m => ({ default: m.EnergyDataDashboard })));
-const CommercialLandingPage = React.lazy(() => import('./components/CommercialLandingPage').then(m => ({ default: m.CommercialLandingPage })));
-const SolutionsNavigatorPage = React.lazy(() => import('./components/SolutionsNavigatorPage').then(m => ({ default: m.SolutionsNavigatorPage })));
-const PilotReadinessPage = React.lazy(() => import('./components/PilotReadinessPage').then(m => ({ default: m.PilotReadinessPage })));
+const EnergyDataDashboard = React.lazy(() =>
+  import('./components/EnergyDataDashboard').then((m) => ({ default: m.EnergyDataDashboard })),
+);
+const CommercialLandingPage = React.lazy(() =>
+  import('./components/CommercialLandingPage').then((m) => ({ default: m.CommercialLandingPage })),
+);
+const SolutionsNavigatorPage = React.lazy(() =>
+  import('./components/SolutionsNavigatorPage').then((m) => ({
+    default: m.SolutionsNavigatorPage,
+  })),
+);
+const PilotReadinessPage = React.lazy(() =>
+  import('./components/PilotReadinessPage').then((m) => ({ default: m.PilotReadinessPage })),
+);
 const AnalyticsTrendsDashboard = React.lazy(() => import('./components/AnalyticsTrendsDashboard'));
-const AboutPage = React.lazy(() => import('./components/AboutPage').then(m => ({ default: m.AboutPage })));
-const ContactPage = React.lazy(() => import('./components/ContactPage').then(m => ({ default: m.ContactPage })));
-const ProfilePage = React.lazy(() => import('./components/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AboutPage = React.lazy(() =>
+  import('./components/AboutPage').then((m) => ({ default: m.AboutPage })),
+);
+const ContactPage = React.lazy(() =>
+  import('./components/ContactPage').then((m) => ({ default: m.ContactPage })),
+);
+const ProfilePage = React.lazy(() =>
+  import('./components/ProfilePage').then((m) => ({ default: m.ProfilePage })),
+);
 const SettingsPage = React.lazy(() => import('./components/SettingsPage'));
-const BadgesPage = React.lazy(() => import('./components/BadgesPage').then(m => ({ default: m.BadgesPage })));
-const CertificatesPage = React.lazy(() => import('./components/CertificatesPage').then(m => ({ default: m.CertificatesPage })));
-const CertificateTrackPage = React.lazy(() => import('./components/CertificateTrackPage').then(m => ({ default: m.CertificateTrackPage })));
-const PricingPage = React.lazy(() => import('./components/PricingPage').then(m => ({ default: m.PricingPage })));
+const BadgesPage = React.lazy(() =>
+  import('./components/BadgesPage').then((m) => ({ default: m.BadgesPage })),
+);
+const CertificatesPage = React.lazy(() =>
+  import('./components/CertificatesPage').then((m) => ({ default: m.CertificatesPage })),
+);
+const CertificateTrackPage = React.lazy(() =>
+  import('./components/CertificateTrackPage').then((m) => ({ default: m.CertificateTrackPage })),
+);
+const PricingPage = React.lazy(() =>
+  import('./components/PricingPage').then((m) => ({ default: m.PricingPage })),
+);
 const LandfillMethane = React.lazy(() => import('./components/LandfillMethane'));
-const ModulePlayer = React.lazy(() => import('./components/modules').then(m => ({ default: m.ModulePlayer })));
-const CohortAdminPage = React.lazy(() => import('./components/CohortAdminPage').then(m => ({ default: m.CohortAdminPage })));
-const ApiKeysPage = React.lazy(() => import('./components/ApiKeysPage').then(m => ({ default: m.ApiKeysPage })));
+const ModulePlayer = React.lazy(() =>
+  import('./components/modules').then((m) => ({ default: m.ModulePlayer })),
+);
+const CohortAdminPage = React.lazy(() =>
+  import('./components/CohortAdminPage').then((m) => ({ default: m.CohortAdminPage })),
+);
+const ApiKeysPage = React.lazy(() =>
+  import('./components/ApiKeysPage').then((m) => ({ default: m.ApiKeysPage })),
+);
 const FunderReportingDashboard = React.lazy(() => import('./components/FunderReportingDashboard'));
-const EmployersPage = React.lazy(() => import('./components/EmployersPage').then(m => ({ default: m.EmployersPage })));
-const IncubatorsPage = React.lazy(() => import('./components/IncubatorsPage').then(m => ({ default: m.IncubatorsPage })));
-const StakeholderOverview = React.lazy(() => import('./components/StakeholderOverview').then(m => ({ default: m.StakeholderOverview })));
-const TrainingCoordinatorsPage = React.lazy(() => import('./components/TrainingCoordinatorsPage').then(m => ({ default: m.TrainingCoordinatorsPage })));
+const EmployersPage = React.lazy(() =>
+  import('./components/EmployersPage').then((m) => ({ default: m.EmployersPage })),
+);
+const IncubatorsPage = React.lazy(() =>
+  import('./components/IncubatorsPage').then((m) => ({ default: m.IncubatorsPage })),
+);
+const StakeholderOverview = React.lazy(() =>
+  import('./components/StakeholderOverview').then((m) => ({ default: m.StakeholderOverview })),
+);
+const TrainingCoordinatorsPage = React.lazy(() =>
+  import('./components/TrainingCoordinatorsPage').then((m) => ({
+    default: m.TrainingCoordinatorsPage,
+  })),
+);
 // Whop Integration Pages
-const WhopExperiencePage = React.lazy(() => import('./components/WhopExperiencePage').then(m => ({ default: m.WhopExperiencePage })));
-const WhopDashboardPage = React.lazy(() => import('./components/WhopDashboardPage').then(m => ({ default: m.WhopDashboardPage })));
-const WhopDiscoverPage = React.lazy(() => import('./components/WhopDiscoverPage').then(m => ({ default: m.WhopDiscoverPage })));
+const WhopExperiencePage = React.lazy(() =>
+  import('./components/WhopExperiencePage').then((m) => ({ default: m.WhopExperiencePage })),
+);
+const WhopDashboardPage = React.lazy(() =>
+  import('./components/WhopDashboardPage').then((m) => ({ default: m.WhopDashboardPage })),
+);
+const WhopDiscoverPage = React.lazy(() =>
+  import('./components/WhopDiscoverPage').then((m) => ({ default: m.WhopDiscoverPage })),
+);
 // Gemini Strategy Features (Alberta-Focused)
-const MicroGenWizard = React.lazy(() => import('./components/MicroGenWizard').then(m => ({ default: m.MicroGenWizard })));
-const RROAlertSystem = React.lazy(() => import('./components/RROAlertSystem').then(m => ({ default: m.RROAlertSystem })));
-const AICEIReportingModule = React.lazy(() => import('./components/AICEIReportingModule').then(m => ({ default: m.AICEIReportingModule })));
+const MicroGenWizard = React.lazy(() =>
+  import('./components/MicroGenWizard').then((m) => ({ default: m.MicroGenWizard })),
+);
+const RROAlertSystem = React.lazy(() =>
+  import('./components/RROAlertSystem').then((m) => ({ default: m.RROAlertSystem })),
+);
+const AICEIReportingModule = React.lazy(() =>
+  import('./components/AICEIReportingModule').then((m) => ({ default: m.AICEIReportingModule })),
+);
 // Whop Quiz Pivot
-const QuizApp = React.lazy(() => import('./components/whop/QuizApp').then(m => ({ default: m.QuizApp })));
-const QuizDashboard = React.lazy(() => import('./components/whop/QuizDashboard').then(m => ({ default: m.QuizDashboard })));
-const GuestQuizPlayer = React.lazy(() => import('./components/whop/GuestQuizPlayer').then(m => ({ default: m.GuestQuizPlayer })));
-const WatchdogApp = React.lazy(() => import('./components/whop/WatchdogApp').then(m => ({ default: m.WatchdogApp })));
+const QuizApp = React.lazy(() =>
+  import('./components/whop/QuizApp').then((m) => ({ default: m.QuizApp })),
+);
+const QuizDashboard = React.lazy(() =>
+  import('./components/whop/QuizDashboard').then((m) => ({ default: m.QuizDashboard })),
+);
+const GuestQuizPlayer = React.lazy(() =>
+  import('./components/whop/GuestQuizPlayer').then((m) => ({ default: m.GuestQuizPlayer })),
+);
+const WatchdogApp = React.lazy(() =>
+  import('./components/whop/WatchdogApp').then((m) => ({ default: m.WatchdogApp })),
+);
 // Legal Pages (Whop Compliance - Criteria 14, 15)
-const PrivacyPolicy = React.lazy(() => import('./components/legal/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
-const TermsOfService = React.lazy(() => import('./components/legal/TermsOfService').then(m => ({ default: m.TermsOfService })));
-const UtilitySecurityStatement = React.lazy(() => import('./components/legal/UtilitySecurityStatement').then(m => ({ default: m.UtilitySecurityStatement })));
-const RefundPolicy = React.lazy(() => import('./components/legal/RefundPolicy').then(m => ({ default: m.RefundPolicy })));
+const PrivacyPolicy = React.lazy(() =>
+  import('./components/legal/PrivacyPolicy').then((m) => ({ default: m.PrivacyPolicy })),
+);
+const TermsOfService = React.lazy(() =>
+  import('./components/legal/TermsOfService').then((m) => ({ default: m.TermsOfService })),
+);
+const UtilitySecurityStatement = React.lazy(() =>
+  import('./components/legal/UtilitySecurityStatement').then((m) => ({
+    default: m.UtilitySecurityStatement,
+  })),
+);
+const RefundPolicy = React.lazy(() =>
+  import('./components/legal/RefundPolicy').then((m) => ({ default: m.RefundPolicy })),
+);
 // Enterprise (Bypasses Whop for B2B)
-const EnterprisePage = React.lazy(() => import('./components/enterprise/EnterprisePage').then(m => ({ default: m.EnterprisePage })));
-const MunicipalLandingPage = React.lazy(() => import('./components/MunicipalLandingPage').then(m => ({ default: m.MunicipalLandingPage })));
-const RetailerHedgingDashboard = React.lazy(() => import('./components/RetailerHedgingDashboard').then(m => ({ default: m.RetailerHedgingDashboard })));
+const EnterprisePage = React.lazy(() =>
+  import('./components/enterprise/EnterprisePage').then((m) => ({ default: m.EnterprisePage })),
+);
+const MunicipalLandingPage = React.lazy(() =>
+  import('./components/MunicipalLandingPage').then((m) => ({ default: m.MunicipalLandingPage })),
+);
+const RetailerHedgingDashboard = React.lazy(() =>
+  import('./components/RetailerHedgingDashboard').then((m) => ({
+    default: m.RetailerHedgingDashboard,
+  })),
+);
 const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculator'));
+const TIERComplianceLandingPage = React.lazy(
+  () => import('./components/TIERComplianceLandingPage'),
+);
 // Value Prop Research Dec 2025 - MEDIUM Priority Features
-const ShadowBillingModule = React.lazy(() => import('./components/ShadowBillingModule').then(m => ({ default: m.ShadowBillingModule })));
-const DIPAuditTrailGenerator = React.lazy(() => import('./components/DIPAuditTrailGenerator').then(m => ({ default: m.DIPAuditTrailGenerator })));
-const BankReadyExport = React.lazy(() => import('./components/BankReadyExport').then(m => ({ default: m.BankReadyExport })));
+const ShadowBillingModule = React.lazy(() =>
+  import('./components/ShadowBillingModule').then((m) => ({ default: m.ShadowBillingModule })),
+);
+const DIPAuditTrailGenerator = React.lazy(() =>
+  import('./components/DIPAuditTrailGenerator').then((m) => ({
+    default: m.DIPAuditTrailGenerator,
+  })),
+);
+const BankReadyExport = React.lazy(() =>
+  import('./components/BankReadyExport').then((m) => ({ default: m.BankReadyExport })),
+);
 const CompetitorComparison = React.lazy(() => import('./components/CompetitorComparison'));
 const OpenAPIDocsPage = React.lazy(() => import('./components/OpenAPIDocsPage'));
 // Value Prop Research Dec 2025 - LOW Priority Features
-const SovereignDataVault = React.lazy(() => import('./components/SovereignDataVault').then(m => ({ default: m.SovereignDataVault })));
-const CreditBankingDashboard = React.lazy(() => import('./components/CreditBankingDashboard').then(m => ({ default: m.CreditBankingDashboard })));
+const SovereignDataVault = React.lazy(() =>
+  import('./components/SovereignDataVault').then((m) => ({ default: m.SovereignDataVault })),
+);
+const CreditBankingDashboard = React.lazy(() =>
+  import('./components/CreditBankingDashboard').then((m) => ({
+    default: m.CreditBankingDashboard,
+  })),
+);
 // Forecast Benchmarking (standalone page for consulting firms)
 const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastBenchmarkingPage'));
 // P2-P4: Demand Forecasting, Regulatory Filing, Asset Health
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
-const UtilityDemandForecastPage = React.lazy(() => import('./components/UtilityDemandForecastPage'));
+const UtilityDemandForecastPage = React.lazy(
+  () => import('./components/UtilityDemandForecastPage'),
+);
 const ScenarioWorkbenchPage = React.lazy(() => import('./components/ScenarioWorkbenchPage'));
-const DataFreshnessDashboardPage = React.lazy(() => import('./components/DataFreshnessDashboardPage'));
+const DataFreshnessDashboardPage = React.lazy(
+  () => import('./components/DataFreshnessDashboardPage'),
+);
 const UtilityApiDemoPage = React.lazy(() => import('./components/UtilityApiDemoPage'));
 const GaIciPeakPredictorPage = React.lazy(() => import('./components/GaIciPeakPredictorPage'));
 const ByoCsvProofPage = React.lazy(() => import('./components/ByoCsvProofPage'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
 // Trust & Transparency Dashboards
-const ComplianceDashboard = React.lazy(() => import('./components/ComplianceDashboard').then(m => ({ default: m.ComplianceDashboard })));
-const StakeholderDashboard = React.lazy(() => import('./components/StakeholderDashboard').then(m => ({ default: m.StakeholderDashboard })));
+const ComplianceDashboard = React.lazy(() =>
+  import('./components/ComplianceDashboard').then((m) => ({ default: m.ComplianceDashboard })),
+);
+const StakeholderDashboard = React.lazy(() =>
+  import('./components/StakeholderDashboard').then((m) => ({ default: m.StakeholderDashboard })),
+);
 // AI Data Centre Dashboard standalone route
-const AIDataCentreDashboard = React.lazy(() => import('./components/AIDataCentreDashboard').then(m => ({ default: m.AIDataCentreDashboard })));
-const HydrogenEconomyDashboard = React.lazy(() => import('./components/HydrogenEconomyDashboard').then(m => ({ default: m.HydrogenEconomyDashboard })));
-const CriticalMineralsSupplyChainDashboard = React.lazy(() => import('./components/CriticalMineralsSupplyChainDashboard').then(m => ({ default: m.CriticalMineralsSupplyChainDashboard })));
+const AIDataCentreDashboard = React.lazy(() =>
+  import('./components/AIDataCentreDashboard').then((m) => ({ default: m.AIDataCentreDashboard })),
+);
+const TsfmBenchmarkPage = React.lazy(() => import('./components/TsfmBenchmarkPage'));
+const HydrogenEconomyDashboard = React.lazy(() =>
+  import('./components/HydrogenEconomyDashboard').then((m) => ({
+    default: m.HydrogenEconomyDashboard,
+  })),
+);
+const CriticalMineralsSupplyChainDashboard = React.lazy(() =>
+  import('./components/CriticalMineralsSupplyChainDashboard').then((m) => ({
+    default: m.CriticalMineralsSupplyChainDashboard,
+  })),
+);
 // Natural Language Query Interface (NL2SQL)
-const AskDataPage = React.lazy(() => import('./components/AskDataPage').then(m => ({ default: m.AskDataPage })));
+const AskDataPage = React.lazy(() =>
+  import('./components/AskDataPage').then((m) => ({ default: m.AskDataPage })),
+);
 // Multi-Source AI Assistant (Tool Calling)
-const EnergyCopilot = React.lazy(() => import('./components/EnergyCopilot').then(m => ({ default: m.EnergyCopilot })));
+const EnergyCopilot = React.lazy(() =>
+  import('./components/EnergyCopilot').then((m) => ({ default: m.EnergyCopilot })),
+);
 // Automated Workflow Runner (Agent Framework)
-const AgentRunner = React.lazy(() => import('./components/AgentRunner').then(m => ({ default: m.AgentRunner })));
+const AgentRunner = React.lazy(() =>
+  import('./components/AgentRunner').then((m) => ({ default: m.AgentRunner })),
+);
 // Whop Mini-App (Isolated, zero-auth for Whop App Store)
 const WhopMiniApp = React.lazy(() => import('./components/whop-mini/WhopMiniApp'));
 
@@ -115,223 +235,272 @@ function RouteLoader() {
 
 const routerFutureConfig = {
   v7_startTransition: true,
-  v7_relativeSplatPath: true
+  v7_relativeSplatPath: true,
 } as const;
 
-const router = createBrowserRouter(
-  [
-    {
-      errorElement: <RouteErrorFallback />,
-      children: [
-        { path: '/', element: <CommercialLandingPage /> },
-        { path: '/solutions', element: <SolutionsNavigatorPage /> },
-        { path: '/use-cases', element: <SolutionsNavigatorPage /> },
-        { path: '/pilot-readiness', element: <PilotReadinessPage /> },
-        { path: '/pilot-evidence', element: <PilotReadinessPage /> },
-        { path: '/dashboard', element: <EnergyDataDashboard /> },
+const router = createBrowserRouter([
+  {
+    errorElement: <RouteErrorFallback />,
+    children: [
+      { path: '/', element: <CommercialLandingPage /> },
+      { path: '/solutions', element: <SolutionsNavigatorPage /> },
+      { path: '/use-cases', element: <SolutionsNavigatorPage /> },
+      { path: '/pilot-readiness', element: <PilotReadinessPage /> },
+      { path: '/pilot-evidence', element: <PilotReadinessPage /> },
+      { path: '/dashboard', element: <EnergyDataDashboard /> },
 
-        // Analytics & Trends - Standalone Route
-        { path: '/analytics', element: <AnalyticsTrendsDashboard /> },
-        { path: '/analytics-trends', element: <AnalyticsTrendsDashboard /> },
+      // Analytics & Trends - Standalone Route
+      { path: '/analytics', element: <AnalyticsTrendsDashboard /> },
+      { path: '/analytics-trends', element: <AnalyticsTrendsDashboard /> },
 
-        // Whop Integration Routes (CRITICAL for Whop App Store)
-        { path: '/whop/experience', element: <WhopExperiencePage /> },
-        { path: '/whop/experience/:experienceId', element: <WhopExperiencePage /> },
-        { path: '/whop/experience/:experienceId/*', element: <WhopExperiencePage /> },
-        { path: '/whop/dashboard', element: <WhopDashboardPage /> },
-        { path: '/whop/discover', element: <WhopDiscoverPage /> },
+      // Whop Integration Routes (CRITICAL for Whop App Store)
+      { path: '/whop/experience', element: <WhopExperiencePage /> },
+      { path: '/whop/experience/:experienceId', element: <WhopExperiencePage /> },
+      { path: '/whop/experience/:experienceId/*', element: <WhopExperiencePage /> },
+      { path: '/whop/dashboard', element: <WhopDashboardPage /> },
+      { path: '/whop/discover', element: <WhopDiscoverPage /> },
 
-        // Whop Mini-App (ISOLATED - Zero auth, zero external APIs for Whop App Store)
-        { path: '/whop-mini/*', element: <WhopMiniApp /> },
+      // Whop Mini-App (ISOLATED - Zero auth, zero external APIs for Whop App Store)
+      { path: '/whop-mini/*', element: <WhopMiniApp /> },
 
-        // Forecast Benchmarking (standalone for consulting firms / regulatory)
-        { path: '/forecast-benchmarking', element: <ForecastBenchmarkingPage /> },
-        { path: '/forecast-evaluation', element: <ForecastBenchmarkingPage /> },
-        { path: '/forecasts', element: <ForecastBenchmarkingPage /> },
+      // Forecast Benchmarking (standalone for consulting firms / regulatory)
+      { path: '/forecast-benchmarking', element: <ForecastBenchmarkingPage /> },
+      { path: '/forecast-evaluation', element: <ForecastBenchmarkingPage /> },
+      { path: '/forecasts', element: <ForecastBenchmarkingPage /> },
 
-        // Renewable Energy Optimization Hub
-        { path: '/renewable-optimization', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
-        { path: '/renewable-hub', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
-        // Curtailment Reduction Analytics
-        { path: '/curtailment-reduction', element: <EnergyDataDashboard initialTab="CurtailmentAnalytics" /> },
-        // Infrastructure Resilience / Climate Scenario Modeling
-        { path: '/resilience', element: <EnergyDataDashboard initialTab="Resilience" /> },
-        { path: '/arctic-energy', element: <EnergyDataDashboard initialTab="ArcticEnergy" /> },
-        // Existing feature routes
-        { path: '/digital-twin', element: <EnergyDataDashboard initialTab="DigitalTwin" /> },
-        { path: '/climate-policy', element: <EnergyDataDashboard initialTab="ClimatePolicy" /> },
-        { path: '/my-energy-ai', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
-        { path: '/household-advisor', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
-        { path: '/hydrogen', element: <HydrogenEconomyDashboard /> },
-        { path: '/hydrogen-economy', element: <HydrogenEconomyDashboard /> },
-        { path: '/hydrogen-hub', element: <HydrogenEconomyDashboard /> },
-        { path: '/critical-minerals', element: <CriticalMineralsSupplyChainDashboard /> },
-        { path: '/minerals', element: <CriticalMineralsSupplyChainDashboard /> },
-        { path: '/about', element: <AboutPage /> },
-        { path: '/contact', element: <ContactPage /> },
-        { path: '/profile', element: <ProfilePage /> },
-        { path: '/settings', element: <SettingsPage /> },
-        { path: '/badges', element: <BadgesPage /> },
-        { path: '/certificates', element: <CertificatesPage /> },
-        { path: '/certificates/:trackSlug', element: <CertificateTrackPage /> },
-        { path: '/modules/:moduleId', element: <ModulePlayer /> },
-        { path: '/pricing', element: <PricingPage /> },
-        { path: '/admin/cohorts', element: <CohortAdminPage /> },
-        { path: '/api-keys', element: <ApiKeysPage /> },
-        // Indigenous Energy Platform
-        { path: '/indigenous', element: <EnergyDataDashboard initialTab="Indigenous" /> },
-        { path: '/indigenous/reporting', element: <FunderReportingDashboard /> },
-        { path: '/funder-reporting', element: <FunderReportingDashboard /> },
-        // HERO FEATURES - Production Ready
-        // { path: '/tier-calculator', element: <TIERCreditCalculator /> }, // TODO: Recreate - corrupted in all commits
-        { path: '/landfill-methane', element: <LandfillMethane /> },
-        // Employer & Incubator Pages (Gap #8, #9)
-        { path: '/employers', element: <EmployersPage /> },
-        { path: '/incubators', element: <IncubatorsPage /> },
-        { path: '/for-employers', element: <EmployersPage /> },
-        { path: '/hire-me', element: <EmployersPage /> },
-        { path: '/ctn', element: <IncubatorsPage /> },
-        // Gemini Strategy: Alberta-Focused Tools
-        { path: '/solar-wizard', element: <MicroGenWizard /> },
-        { path: '/micro-gen', element: <MicroGenWizard /> },
-        { path: '/rate-alerts', element: <RROAlertSystem /> },
-        { path: '/rro', element: <RROAlertSystem /> },
-        { path: '/indigenous/aicei', element: <AICEIReportingModule /> },
-        { path: '/aicei', element: <AICEIReportingModule /> },
-        // Monetization Strategy: Training Coordinator Cohort Sales
-        { path: '/training-coordinators', element: <TrainingCoordinatorsPage /> },
-        { path: '/cohorts', element: <TrainingCoordinatorsPage /> },
-        { path: '/for-training', element: <TrainingCoordinatorsPage /> },
+      // TSFM Benchmark Results (zero-shot foundation model evaluation)
+      { path: '/tsfm-benchmarks', element: <TsfmBenchmarkPage /> },
 
-        // B2G Municipal & B2B Utility Sales (Research-Driven)
-        { path: '/municipal', element: <MunicipalLandingPage /> },
-        { path: '/for-municipalities', element: <MunicipalLandingPage /> },
-        { path: '/hedging', element: <RetailerHedgingDashboard /> },
-        { path: '/retailer-tools', element: <RetailerHedgingDashboard /> },
+      // Renewable Energy Optimization Hub
+      {
+        path: '/renewable-optimization',
+        element: <EnergyDataDashboard initialTab="RenewableOptimization" />,
+      },
+      {
+        path: '/renewable-hub',
+        element: <EnergyDataDashboard initialTab="RenewableOptimization" />,
+      },
+      // Curtailment Reduction Analytics
+      {
+        path: '/curtailment-reduction',
+        element: <EnergyDataDashboard initialTab="CurtailmentAnalytics" />,
+      },
+      // Infrastructure Resilience / Climate Scenario Modeling
+      { path: '/resilience', element: <EnergyDataDashboard initialTab="Resilience" /> },
+      { path: '/arctic-energy', element: <EnergyDataDashboard initialTab="ArcticEnergy" /> },
+      // Existing feature routes
+      { path: '/digital-twin', element: <EnergyDataDashboard initialTab="DigitalTwin" /> },
+      { path: '/climate-policy', element: <EnergyDataDashboard initialTab="ClimatePolicy" /> },
+      { path: '/my-energy-ai', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
+      {
+        path: '/household-advisor',
+        element: <EnergyDataDashboard initialTab="HouseholdAdvisor" />,
+      },
+      { path: '/hydrogen', element: <HydrogenEconomyDashboard /> },
+      { path: '/hydrogen-economy', element: <HydrogenEconomyDashboard /> },
+      { path: '/hydrogen-hub', element: <HydrogenEconomyDashboard /> },
+      { path: '/critical-minerals', element: <CriticalMineralsSupplyChainDashboard /> },
+      { path: '/minerals', element: <CriticalMineralsSupplyChainDashboard /> },
+      { path: '/about', element: <AboutPage /> },
+      { path: '/contact', element: <ContactPage /> },
+      { path: '/profile', element: <ProfilePage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '/badges', element: <BadgesPage /> },
+      { path: '/certificates', element: <CertificatesPage /> },
+      { path: '/certificates/:trackSlug', element: <CertificateTrackPage /> },
+      { path: '/modules/:moduleId', element: <ModulePlayer /> },
+      { path: '/pricing', element: <PricingPage /> },
+      { path: '/admin/cohorts', element: <CohortAdminPage /> },
+      { path: '/api-keys', element: <ApiKeysPage /> },
+      // Indigenous Energy Platform
+      { path: '/indigenous', element: <EnergyDataDashboard initialTab="Indigenous" /> },
+      { path: '/indigenous/reporting', element: <FunderReportingDashboard /> },
+      { path: '/funder-reporting', element: <FunderReportingDashboard /> },
+      // HERO FEATURES - Production Ready
+      // { path: '/tier-calculator', element: <TIERCreditCalculator /> }, // TODO: Recreate - corrupted in all commits
+      { path: '/landfill-methane', element: <LandfillMethane /> },
+      // Employer & Incubator Pages (Gap #8, #9)
+      { path: '/employers', element: <EmployersPage /> },
+      { path: '/incubators', element: <IncubatorsPage /> },
+      { path: '/for-employers', element: <EmployersPage /> },
+      { path: '/hire-me', element: <EmployersPage /> },
+      { path: '/ctn', element: <IncubatorsPage /> },
+      // Gemini Strategy: Alberta-Focused Tools
+      { path: '/solar-wizard', element: <MicroGenWizard /> },
+      { path: '/micro-gen', element: <MicroGenWizard /> },
+      { path: '/rate-alerts', element: <RROAlertSystem /> },
+      { path: '/rro', element: <RROAlertSystem /> },
+      { path: '/indigenous/aicei', element: <AICEIReportingModule /> },
+      { path: '/aicei', element: <AICEIReportingModule /> },
+      // Monetization Strategy: Training Coordinator Cohort Sales
+      { path: '/training-coordinators', element: <TrainingCoordinatorsPage /> },
+      { path: '/cohorts', element: <TrainingCoordinatorsPage /> },
+      { path: '/for-training', element: <TrainingCoordinatorsPage /> },
 
-        // Industrial TIER ROI evidence (Value Prop Research Dec 2025)
-        { path: '/roi-calculator', element: <TIERROICalculator /> },
-        { path: '/industrial', element: <TIERROICalculator /> },
-        { path: '/tier-savings', element: <TIERROICalculator /> },
+      // B2G Municipal & B2B Utility Sales (Research-Driven)
+      { path: '/municipal', element: <MunicipalLandingPage /> },
+      { path: '/for-municipalities', element: <MunicipalLandingPage /> },
+      { path: '/hedging', element: <RetailerHedgingDashboard /> },
+      { path: '/retailer-tools', element: <RetailerHedgingDashboard /> },
 
-        // Value Prop Research Dec 2025 - MEDIUM Priority Routes
-        { path: '/shadow-billing', element: <ShadowBillingModule /> },
-        { path: '/bill-comparison', element: <ShadowBillingModule /> },
-        { path: '/dip-audit', element: <DIPAuditTrailGenerator /> },
-        { path: '/direct-investment', element: <DIPAuditTrailGenerator /> },
-        { path: '/bank-export', element: <BankReadyExport /> },
-        { path: '/green-loan', element: <BankReadyExport /> },
-        { path: '/compare', element: <CompetitorComparison /> },
-        { path: '/vs-competitors', element: <CompetitorComparison /> },
+      // Industrial TIER ROI evidence (Value Prop Research Dec 2025)
+      { path: '/roi-calculator', element: <TIERROICalculator /> },
+      { path: '/industrial', element: <TIERROICalculator /> },
+      { path: '/tier-savings', element: <TIERROICalculator /> },
+      { path: '/tier-compliance', element: <TIERComplianceLandingPage /> },
 
-        // Value Prop Research Dec 2025 - LOW Priority Routes
-        { path: '/sovereign-vault', element: <SovereignDataVault /> },
-        { path: '/ocap-data', element: <SovereignDataVault /> },
-        { path: '/data-sovereignty', element: <SovereignDataVault /> },
-        { path: '/credit-banking', element: <CreditBankingDashboard /> },
-        { path: '/tier-credits', element: <CreditBankingDashboard /> },
-        { path: '/buy-credits', element: <CreditBankingDashboard /> },
+      // Value Prop Research Dec 2025 - MEDIUM Priority Routes
+      { path: '/shadow-billing', element: <ShadowBillingModule /> },
+      { path: '/bill-comparison', element: <ShadowBillingModule /> },
+      { path: '/dip-audit', element: <DIPAuditTrailGenerator /> },
+      { path: '/direct-investment', element: <DIPAuditTrailGenerator /> },
+      { path: '/bank-export', element: <BankReadyExport /> },
+      { path: '/green-loan', element: <BankReadyExport /> },
+      { path: '/compare', element: <CompetitorComparison /> },
+      { path: '/vs-competitors', element: <CompetitorComparison /> },
 
-        // P2: Ontario Demand Forecasting (ML Load Prediction)
-        { path: '/demand-forecast', element: <DemandForecastDashboard /> },
-        { path: '/load-forecast', element: <DemandForecastDashboard /> },
-        { path: '/ontario-forecast', element: <DemandForecastDashboard /> },
-        { path: '/utility-demand-forecast', element: <UtilityDemandForecastPage /> },
-        { path: '/utility-forecast', element: <UtilityDemandForecastPage /> },
-        { path: '/utilityapi-demo', element: <UtilityApiDemoPage /> },
-        { path: '/ga-ici-5cp', element: <GaIciPeakPredictorPage /> },
-        { path: '/ici-peak', element: <GaIciPeakPredictorPage /> },
-        { path: '/byo-csv-proof', element: <ByoCsvProofPage /> },
-        { path: '/csv-proof', element: <ByoCsvProofPage /> },
+      // Value Prop Research Dec 2025 - LOW Priority Routes
+      { path: '/sovereign-vault', element: <SovereignDataVault /> },
+      { path: '/ocap-data', element: <SovereignDataVault /> },
+      { path: '/data-sovereignty', element: <SovereignDataVault /> },
+      { path: '/credit-banking', element: <CreditBankingDashboard /> },
+      { path: '/tier-credits', element: <CreditBankingDashboard /> },
+      { path: '/buy-credits', element: <CreditBankingDashboard /> },
 
-        // B14: Scenario Workbench (Sensitivity · Uncertainty · Comparison · Export)
-        { path: '/scenario-workbench', element: <Phase4RouteGuard featureName="Scenario Workbench"><ScenarioWorkbenchPage /></Phase4RouteGuard> },
-        { path: '/energy-scenarios', element: <Phase4RouteGuard featureName="Scenario Workbench"><ScenarioWorkbenchPage /></Phase4RouteGuard> },
-        { path: '/scenario-analysis', element: <Phase4RouteGuard featureName="Scenario Workbench"><ScenarioWorkbenchPage /></Phase4RouteGuard> },
+      // P2: Ontario Demand Forecasting (ML Load Prediction)
+      { path: '/demand-forecast', element: <DemandForecastDashboard /> },
+      { path: '/load-forecast', element: <DemandForecastDashboard /> },
+      { path: '/ontario-forecast', element: <DemandForecastDashboard /> },
+      { path: '/utility-demand-forecast', element: <UtilityDemandForecastPage /> },
+      { path: '/utility-forecast', element: <UtilityDemandForecastPage /> },
+      { path: '/utilityapi-demo', element: <UtilityApiDemoPage /> },
+      { path: '/ga-ici-5cp', element: <GaIciPeakPredictorPage /> },
+      { path: '/ici-peak', element: <GaIciPeakPredictorPage /> },
+      { path: '/byo-csv-proof', element: <ByoCsvProofPage /> },
+      { path: '/csv-proof', element: <ByoCsvProofPage /> },
 
-        // B15: Data Freshness Dashboard
-        { path: '/data-freshness', element: <Phase4RouteGuard featureName="Data Freshness Dashboard"><DataFreshnessDashboardPage /></Phase4RouteGuard> },
-        { path: '/connector-status', element: <Phase4RouteGuard featureName="Data Freshness Dashboard"><DataFreshnessDashboardPage /></Phase4RouteGuard> },
+      // B14: Scenario Workbench (Sensitivity · Uncertainty · Comparison · Export)
+      {
+        path: '/scenario-workbench',
+        element: (
+          <Phase4RouteGuard featureName="Scenario Workbench">
+            <ScenarioWorkbenchPage />
+          </Phase4RouteGuard>
+        ),
+      },
+      {
+        path: '/energy-scenarios',
+        element: (
+          <Phase4RouteGuard featureName="Scenario Workbench">
+            <ScenarioWorkbenchPage />
+          </Phase4RouteGuard>
+        ),
+      },
+      {
+        path: '/scenario-analysis',
+        element: (
+          <Phase4RouteGuard featureName="Scenario Workbench">
+            <ScenarioWorkbenchPage />
+          </Phase4RouteGuard>
+        ),
+      },
 
-        // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
-        { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
-        { path: '/regulatory', element: <RegulatoryFilingExport /> },
-        { path: '/rule-005', element: <RegulatoryFilingExport /> },
-        { path: '/oeb-filing', element: <RegulatoryFilingExport /> },
+      // B15: Data Freshness Dashboard
+      {
+        path: '/data-freshness',
+        element: (
+          <Phase4RouteGuard featureName="Data Freshness Dashboard">
+            <DataFreshnessDashboardPage />
+          </Phase4RouteGuard>
+        ),
+      },
+      {
+        path: '/connector-status',
+        element: (
+          <Phase4RouteGuard featureName="Data Freshness Dashboard">
+            <DataFreshnessDashboardPage />
+          </Phase4RouteGuard>
+        ),
+      },
 
-        // P4: Asset Health Index (CSV-Based CBRM Scoring)
-        { path: '/asset-health', element: <AssetHealthDashboard /> },
-        { path: '/asset-scoring', element: <AssetHealthDashboard /> },
-        { path: '/cbrm', element: <AssetHealthDashboard /> },
+      // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
+      { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
+      { path: '/regulatory', element: <RegulatoryFilingExport /> },
+      { path: '/rule-005', element: <RegulatoryFilingExport /> },
+      { path: '/oeb-filing', element: <RegulatoryFilingExport /> },
 
-        // Open API Documentation (Gartner Integration)
-        { path: '/api-docs', element: <OpenAPIDocsPage /> },
-        { path: '/api', element: <OpenAPIDocsPage /> },
-        { path: '/developers', element: <OpenAPIDocsPage /> },
+      // P4: Asset Health Index (CSV-Based CBRM Scoring)
+      { path: '/asset-health', element: <AssetHealthDashboard /> },
+      { path: '/asset-scoring', element: <AssetHealthDashboard /> },
+      { path: '/cbrm', element: <AssetHealthDashboard /> },
 
-        // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
-        {
-          path: '/whop/quiz',
-          element: <QuizApp />,
-          children: [
-            { index: true, element: <QuizDashboard /> },
-            { path: 'modules/:moduleId', element: <GuestQuizPlayer /> }
-          ]
-        },
-        { path: '/whop-quiz', element: <Navigate to="/whop/quiz" replace /> },
+      // Open API Documentation (Gartner Integration)
+      { path: '/api-docs', element: <OpenAPIDocsPage /> },
+      { path: '/api', element: <OpenAPIDocsPage /> },
+      { path: '/developers', element: <OpenAPIDocsPage /> },
 
-        // Whop "Alberta Rate Watchdog" - Primary Wedge Product
-        { path: '/whop/watchdog', element: <WatchdogApp /> },
-        { path: '/watchdog', element: <WatchdogApp /> },
-        { path: '/rate-watchdog', element: <WatchdogApp /> },
+      // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
+      {
+        path: '/whop/quiz',
+        element: <QuizApp />,
+        children: [
+          { index: true, element: <QuizDashboard /> },
+          { path: 'modules/:moduleId', element: <GuestQuizPlayer /> },
+        ],
+      },
+      { path: '/whop-quiz', element: <Navigate to="/whop/quiz" replace /> },
 
-        // Legal Pages (Whop Compliance - Criteria 14, 15)
-        { path: '/legal', element: <Navigate to="/privacy" replace /> },
-        { path: '/privacy', element: <PrivacyPolicy /> },
-        { path: '/terms', element: <TermsOfService /> },
-        { path: '/utility-security', element: <UtilitySecurityStatement /> },
-        { path: '/refund', element: <RefundPolicy /> },
+      // Whop "Alberta Rate Watchdog" - Primary Wedge Product
+      { path: '/whop/watchdog', element: <WatchdogApp /> },
+      { path: '/watchdog', element: <WatchdogApp /> },
+      { path: '/rate-watchdog', element: <WatchdogApp /> },
 
-        // Enterprise (Bypasses Whop for B2B - whop_criterias.md Section 7)
-        { path: '/enterprise', element: <EnterprisePage /> },
-        { path: '/overview', element: <StakeholderOverview /> },
-        { path: '/stakeholders', element: <StakeholderOverview /> },
+      // Legal Pages (Whop Compliance - Criteria 14, 15)
+      { path: '/legal', element: <Navigate to="/privacy" replace /> },
+      { path: '/privacy', element: <PrivacyPolicy /> },
+      { path: '/terms', element: <TermsOfService /> },
+      { path: '/utility-security', element: <UtilitySecurityStatement /> },
+      { path: '/refund', element: <RefundPolicy /> },
 
-        // Trust & Transparency Dashboards (Cycle 3 QA fixes)
-        { path: '/compliance', element: <ComplianceDashboard /> },
-        { path: '/stakeholder', element: <StakeholderDashboard /> },
+      // Enterprise (Bypasses Whop for B2B - whop_criterias.md Section 7)
+      { path: '/enterprise', element: <EnterprisePage /> },
+      { path: '/overview', element: <StakeholderOverview /> },
+      { path: '/stakeholders', element: <StakeholderOverview /> },
 
-        // AI Data Centre Dashboard standalone route
-        { path: '/ai-datacentres', element: <AIDataCentreDashboard /> },
-        { path: '/ai-data-centre', element: <AIDataCentreDashboard /> },
-        { path: '/ai-datacentre', element: <AIDataCentreDashboard /> },
+      // Trust & Transparency Dashboards (Cycle 3 QA fixes)
+      { path: '/compliance', element: <ComplianceDashboard /> },
+      { path: '/stakeholder', element: <StakeholderDashboard /> },
 
-        // Natural Language Query Interface (NL2SQL)
-        { path: '/ask-data', element: <AskDataPage /> },
-        { path: '/nl2sql', element: <AskDataPage /> },
-        { path: '/query', element: <AskDataPage /> },
+      // AI Data Centre Dashboard standalone route
+      { path: '/ai-datacentres', element: <AIDataCentreDashboard /> },
+      { path: '/ai-data-centre', element: <AIDataCentreDashboard /> },
+      { path: '/ai-datacentre', element: <AIDataCentreDashboard /> },
 
-        // Multi-Source AI Assistant (Tool Calling)
-        { path: '/copilot', element: <EnergyCopilot /> },
-        { path: '/assistant', element: <EnergyCopilot /> },
+      // Natural Language Query Interface (NL2SQL)
+      { path: '/ask-data', element: <AskDataPage /> },
+      { path: '/nl2sql', element: <AskDataPage /> },
+      { path: '/query', element: <AskDataPage /> },
 
-        // Automated Workflow Runner (Agent Framework)
-        { path: '/agent', element: <AgentRunner /> },
-        { path: '/workflows', element: <AgentRunner /> },
-        { path: '/automation', element: <AgentRunner /> },
+      // Multi-Source AI Assistant (Tool Calling)
+      { path: '/copilot', element: <EnergyCopilot /> },
+      { path: '/assistant', element: <EnergyCopilot /> },
 
-        // /status page (Phase 0 Foundation - Uptime Monitoring)
-        { path: '/status', element: <StatusPage /> },
+      // Automated Workflow Runner (Agent Framework)
+      { path: '/agent', element: <AgentRunner /> },
+      { path: '/workflows', element: <AgentRunner /> },
+      { path: '/automation', element: <AgentRunner /> },
 
-        // /features now redirects to the commercial use-case navigator
-        { path: '/features', element: <Navigate to="/solutions" replace /> },
+      // /status page (Phase 0 Foundation - Uptime Monitoring)
+      { path: '/status', element: <StatusPage /> },
 
-        // 404 catch-all
-        { path: '*', element: <RouteErrorFallback /> },
-      ],
-    },
-  ]
-);
+      // /features now redirects to the commercial use-case navigator
+      { path: '/features', element: <Navigate to="/solutions" replace /> },
+
+      // 404 catch-all
+      { path: '*', element: <RouteErrorFallback /> },
+    ],
+  },
+]);
 
 function App() {
   return (
