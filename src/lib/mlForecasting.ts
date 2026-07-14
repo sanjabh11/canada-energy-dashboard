@@ -254,29 +254,36 @@ export interface HorizonSpecificForecast {
   };
 }
 
-export const HORIZON_MODEL_MAP: Record<HorizonType, {
-  defaultModel: string;
-  rationale: string;
-  weatherRequired: boolean;
-}> = {
+export const HORIZON_MODEL_MAP: Record<
+  HorizonType,
+  {
+    defaultModel: string;
+    rationale: string;
+    weatherRequired: boolean;
+  }
+> = {
   day_ahead: {
     defaultModel: 'seasonal_decomposition_weather',
-    rationale: 'Day-ahead: seasonal decomposition + weather adjustment captures diurnal patterns and short-term temperature sensitivity. Highest accuracy for 1-24h horizon.',
+    rationale:
+      'Day-ahead: seasonal decomposition + weather adjustment captures diurnal patterns and short-term temperature sensitivity. Highest accuracy for 1-24h horizon.',
     weatherRequired: true,
   },
   week_ahead: {
     defaultModel: 'lgbm_features',
-    rationale: 'Week-ahead: LightGBM with lagged features and calendar variables handles medium-term load patterns. Weather features improve accuracy for 24-168h horizon.',
+    rationale:
+      'Week-ahead: LightGBM with lagged features and calendar variables handles medium-term load patterns. Weather features improve accuracy for 24-168h horizon.',
     weatherRequired: true,
   },
   month_ahead: {
     defaultModel: 'trend_seasonal_regression',
-    rationale: 'Month-ahead: trend + seasonal decomposition with NWP covariates. Weather uncertainty grows; emphasis on seasonal patterns and long-term trend.',
+    rationale:
+      'Month-ahead: trend + seasonal decomposition with NWP covariates. Weather uncertainty grows; emphasis on seasonal patterns and long-term trend.',
     weatherRequired: false,
   },
   seasonal_ahead: {
     defaultModel: 'long_term_regression',
-    rationale: 'Seasonal-ahead: long-term regression with climate covariates and economic drivers. Weather not used — climate normals and trend dominate.',
+    rationale:
+      'Seasonal-ahead: long-term regression with climate covariates and economic drivers. Weather not used — climate normals and trend dominate.',
     weatherRequired: false,
   },
 };
@@ -408,9 +415,7 @@ function generateHorizonPointForecast(
       const dow = Math.floor(h / 24) % 7;
       const hourOfDay = h % 24;
       const dayValues = dowPattern[dow];
-      let val = dayValues.length > hourOfDay
-        ? dayValues[hourOfDay]
-        : historicalDemand[n - 1];
+      let val = dayValues.length > hourOfDay ? dayValues[hourOfDay] : historicalDemand[n - 1];
 
       // Apply weather adjustment if available
       if (weatherFeatures && h < weatherFeatures.length) {
@@ -425,8 +430,10 @@ function generateHorizonPointForecast(
 
   if (horizon === 'month_ahead') {
     // Trend + seasonal decomposition
-    const recentMean = historicalDemand.slice(-24 * 30).reduce((s, v) => s + v, 0) / Math.min(24 * 30, n);
-    const olderMean = historicalDemand.slice(0, 24 * 30).reduce((s, v) => s + v, 0) / Math.min(24 * 30, n);
+    const recentMean =
+      historicalDemand.slice(-24 * 30).reduce((s, v) => s + v, 0) / Math.min(24 * 30, n);
+    const olderMean =
+      historicalDemand.slice(0, 24 * 30).reduce((s, v) => s + v, 0) / Math.min(24 * 30, n);
     const trendPerDay = n > 24 * 60 ? (recentMean - olderMean) / 30 : 0;
 
     const forecast: number[] = [];
@@ -448,11 +455,13 @@ function generateHorizonPointForecast(
   // seasonal_ahead: long-term regression with climate normals
   const longTermMean = historicalDemand.reduce((s, v) => s + v, 0) / n;
   const recent30 = historicalDemand.slice(-24 * 30);
-  const recentMean = recent30.length > 0 ? recent30.reduce((s, v) => s + v, 0) / recent30.length : longTermMean;
+  const recentMean =
+    recent30.length > 0 ? recent30.reduce((s, v) => s + v, 0) / recent30.length : longTermMean;
 
   // Simple linear trend from first to last 30-day means
   const first30 = historicalDemand.slice(0, 24 * 30);
-  const firstMean = first30.length > 0 ? first30.reduce((s, v) => s + v, 0) / first30.length : longTermMean;
+  const firstMean =
+    first30.length > 0 ? first30.reduce((s, v) => s + v, 0) / first30.length : longTermMean;
   const totalDays = n / 24;
   const trendPerDay = totalDays > 30 ? (recentMean - firstMean) / totalDays : 0;
 
@@ -466,9 +475,10 @@ function generateHorizonPointForecast(
     for (let i = hourOfDay; i < n; i += 24) {
       seasonalValues.push(historicalDemand[i]);
     }
-    const seasonalMean = seasonalValues.length > 0
-      ? seasonalValues.reduce((s, v) => s + v, 0) / seasonalValues.length
-      : longTermMean;
+    const seasonalMean =
+      seasonalValues.length > 0
+        ? seasonalValues.reduce((s, v) => s + v, 0) / seasonalValues.length
+        : longTermMean;
 
     // Ratio of seasonal to overall mean
     const seasonalRatio = longTermMean > 0 ? seasonalMean / longTermMean : 1;
@@ -527,7 +537,9 @@ export function buildForecastResponseMeta(params: {
     .at(-1);
 
   const staleness_status = freshestSourceDate
-    ? daysBetween(freshestSourceDate, generatedAt) > staleAfterDays ? 'stale' : 'fresh'
+    ? daysBetween(freshestSourceDate, generatedAt) > staleAfterDays
+      ? 'stale'
+      : 'fresh'
     : 'unknown';
 
   const meta: SharedForecastMeta = {
@@ -542,11 +554,13 @@ export function buildForecastResponseMeta(params: {
     warnings: params.warnings ?? [],
   };
 
-  if (params.trainingDataProfile !== undefined) meta.training_data_profile = params.trainingDataProfile;
+  if (params.trainingDataProfile !== undefined)
+    meta.training_data_profile = params.trainingDataProfile;
   if (params.evaluationSummary !== undefined) meta.evaluation_summary = params.evaluationSummary;
   if (params.calibrationStatus !== undefined) meta.calibration_status = params.calibrationStatus;
   if (params.claimLabel !== undefined) meta.claim_label = params.claimLabel;
-  if (params.trainingArtifactSha !== undefined) meta.training_artifact_sha = params.trainingArtifactSha;
+  if (params.trainingArtifactSha !== undefined)
+    meta.training_artifact_sha = params.trainingArtifactSha;
   if (params.simulatorConfig !== undefined) meta.simulator_config = params.simulatorConfig;
   if (params.trainedAt !== undefined) meta.trained_at = params.trainedAt;
 
@@ -573,7 +587,12 @@ export interface TierScenarioResult {
   pathways: {
     fundPayment: { costCad: number; priceCadPerTonne: number };
     marketCredits: { costCad: number; priceCadPerTonne: number };
-    directInvestment: { costCad: number; capexCad: number; creditedTonnes: number; residualTonnes: number };
+    directInvestment: {
+      costCad: number;
+      capexCad: number;
+      creditedTonnes: number;
+      residualTonnes: number;
+    };
   };
   bestPathway: 'fund_payment' | 'market_credits' | 'direct_investment';
   estimatedSavingsCad: number;
@@ -603,10 +622,14 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
 
   const warnings: string[] = [];
   if (daysBetween(input.creditAssumptions.lastVerifiedAt, asOfDate) > 90) {
-    warnings.push('TIER pricing assumptions are stale; verify current Alberta rules before using for a binding decision.');
+    warnings.push(
+      'TIER pricing assumptions are stale; verify current Alberta rules before using for a binding decision.',
+    );
   }
   if (input.discountRate < 0 || input.discountRate > 0.5) {
-    warnings.push('Discount rate is outside the normal scenario range; review financing assumptions.');
+    warnings.push(
+      'Discount rate is outside the normal scenario range; review financing assumptions.',
+    );
   }
 
   return {
@@ -637,7 +660,8 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
         },
       ],
       isFallback: false,
-      methodology: 'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
+      methodology:
+        'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
       warnings,
       generatedAt: `${asOfDate}T00:00:00.000Z`,
       claimLabel: 'estimated',
@@ -663,16 +687,21 @@ export function evaluateRateWatchdog(input: {
 }) {
   const usageKwh = Math.max(0, input.usageKwh);
   const currentRate = Math.max(0, input.currentRateCadPerKwh);
-  const evaluatedOffers = input.retailerOffers.map((offer) => {
-    const monthlySavingsCad = (currentRate - Math.max(0, offer.fixedRateCadPerKwh)) * usageKwh;
-    const yearlySavingsCad = monthlySavingsCad * 12 - Math.max(0, offer.cancellationFeeCad ?? 0);
-    return {
-      ...offer,
-      estimatedMonthlySavingsCad: round(monthlySavingsCad),
-      estimatedYearlySavingsCad: round(yearlySavingsCad),
-      percentSavings: currentRate > 0 ? round(((currentRate - offer.fixedRateCadPerKwh) / currentRate) * 100, 1) : 0,
-    };
-  }).sort((a, b) => b.estimatedYearlySavingsCad - a.estimatedYearlySavingsCad);
+  const evaluatedOffers = input.retailerOffers
+    .map((offer) => {
+      const monthlySavingsCad = (currentRate - Math.max(0, offer.fixedRateCadPerKwh)) * usageKwh;
+      const yearlySavingsCad = monthlySavingsCad * 12 - Math.max(0, offer.cancellationFeeCad ?? 0);
+      return {
+        ...offer,
+        estimatedMonthlySavingsCad: round(monthlySavingsCad),
+        estimatedYearlySavingsCad: round(yearlySavingsCad),
+        percentSavings:
+          currentRate > 0
+            ? round(((currentRate - offer.fixedRateCadPerKwh) / currentRate) * 100, 1)
+            : 0,
+      };
+    })
+    .sort((a, b) => b.estimatedYearlySavingsCad - a.estimatedYearlySavingsCad);
 
   const bestOffer = evaluatedOffers[0] ?? null;
   const warnings = [
@@ -694,9 +723,15 @@ export function evaluateRateWatchdog(input: {
       modelVersion: 'rate-watchdog-v1',
       validAt: `${input.asOfDate ?? new Date().toISOString().slice(0, 10)}T00:00:00.000Z`,
       confidenceScore: 0.78,
-      dataSources: [{ name: 'Alberta UCA RoLR and retailer comparison assumptions', lastUpdated: input.asOfDate }],
+      dataSources: [
+        {
+          name: 'Alberta UCA RoLR and retailer comparison assumptions',
+          lastUpdated: input.asOfDate,
+        },
+      ],
       isFallback: true,
-      methodology: 'Rate comparison calculator using current/default RoLR rate and user usage assumptions.',
+      methodology:
+        'Rate comparison calculator using current/default RoLR rate and user usage assumptions.',
       warnings,
       claimLabel: 'estimated',
       generatedAt: `${input.asOfDate ?? new Date().toISOString().slice(0, 10)}T00:00:00.000Z`,
@@ -720,8 +755,8 @@ function pearson(x: number[], y: number[]): number {
   const yMean = mean(y);
   const numerator = x.reduce((sum, value, index) => sum + (value - xMean) * (y[index] - yMean), 0);
   const denominator = Math.sqrt(
-    x.reduce((sum, value) => sum + (value - xMean) ** 2, 0)
-    * y.reduce((sum, value) => sum + (value - yMean) ** 2, 0)
+    x.reduce((sum, value) => sum + (value - xMean) ** 2, 0) *
+      y.reduce((sum, value) => sum + (value - yMean) ** 2, 0),
   );
   return denominator === 0 ? 0 : numerator / denominator;
 }
@@ -743,7 +778,13 @@ function normalizedQuantileDistance(left: number[], right: number[]): number {
   const n = Math.max(cleanLeft.length, cleanRight.length);
   const leftRange = Math.max(...cleanLeft) - Math.min(...cleanLeft);
   const rightRange = Math.max(...cleanRight) - Math.min(...cleanRight);
-  const scale = Math.max(leftRange, rightRange, Math.abs(mean(cleanLeft)), Math.abs(mean(cleanRight)), 1);
+  const scale = Math.max(
+    leftRange,
+    rightRange,
+    Math.abs(mean(cleanLeft)),
+    Math.abs(mean(cleanRight)),
+    1,
+  );
   let distance = 0;
   for (let i = 0; i < n; i++) {
     const q = n === 1 ? 0 : i / (n - 1);
@@ -763,7 +804,10 @@ export function detectWassersteinDrift(input: {
   const metrics: Record<string, { distance: number; threshold: number; drift: boolean }> = {};
   let maxDistance = 0;
   for (const feature of Object.keys(input.baseline)) {
-    const distance = round(normalizedQuantileDistance(input.baseline[feature], input.recent[feature] ?? []), 6);
+    const distance = round(
+      normalizedQuantileDistance(input.baseline[feature], input.recent[feature] ?? []),
+      6,
+    );
     metrics[feature] = { distance, threshold, drift: distance > threshold };
     maxDistance = Math.max(maxDistance, distance);
   }
@@ -774,10 +818,14 @@ export function detectWassersteinDrift(input: {
     modelVersion: 'wasserstein-drift-v1',
     status,
     metrics,
-    confidenceMultiplier: round(status === 'drift_detected' ? Math.max(0.4, 1 - maxDistance) : 1, 4),
-    recommendation: status === 'drift_detected'
-      ? 'Lower forecast confidence and schedule model retraining.'
-      : 'No retraining trigger from distribution drift.',
+    confidenceMultiplier: round(
+      status === 'drift_detected' ? Math.max(0.4, 1 - maxDistance) : 1,
+      4,
+    ),
+    recommendation:
+      status === 'drift_detected'
+        ? 'Lower forecast confidence and schedule model retraining.'
+        : 'No retraining trigger from distribution drift.',
   };
 }
 
@@ -788,7 +836,11 @@ export function forecastPriceSpikeRisk(input: {
   reserveMarginPercent: number;
   windGenerationMw: number;
   temperatureC: number;
-  trainingRows?: Array<Parameters<typeof forecastPriceSpikeRiskForest>[0]['trainingRows'] extends Array<infer T> ? T : never>;
+  trainingRows?: Array<
+    Parameters<typeof forecastPriceSpikeRiskForest>[0]['trainingRows'] extends Array<infer T>
+      ? T
+      : never
+  >;
 }) {
   return {
     ...forecastPriceSpikeRiskForest(input),
@@ -802,7 +854,13 @@ export function evaluateGridRisk(input: {
   frequencyHz: number;
   loadMw?: number;
   availableGenerationMw?: number;
-  recommendations: Array<{ id: string; action: string; magnitudeMw: number; maxCapacityMw: number; rampLimitMwPerHour: number }>;
+  recommendations: Array<{
+    id: string;
+    action: string;
+    magnitudeMw: number;
+    maxCapacityMw: number;
+    rampLimitMwPerHour: number;
+  }>;
   topology: {
     nodes: Array<{ id: string; status: string; capacityMw: number }>;
     edges: Array<{ fromNodeId: string; toNodeId: string; limitMw: number; currentMw: number }>;
@@ -868,7 +926,8 @@ export function evaluateWeakGridShortCircuit(input: {
   const edges = input.topology?.edges ?? [];
   const nodes = input.topology?.nodes ?? [];
   const overloadedEdgeShare = edges.length
-    ? edges.filter((edge) => Math.abs(edge.currentMw) / Math.max(1, edge.limitMw) >= 0.9).length / edges.length
+    ? edges.filter((edge) => Math.abs(edge.currentMw) / Math.max(1, edge.limitMw) >= 0.9).length /
+      edges.length
     : 0;
   const nodeAssessments = nodes.map((node) => {
     const nodeShortCircuitKa = Math.max(0, Number(node.shortCircuitKa ?? shortCircuitLevelKa));
@@ -879,8 +938,12 @@ export function evaluateWeakGridShortCircuit(input: {
       reserveMarginPercent <= 6 ? 'aeso_reserve_margin_watch' : null,
     ].filter((tag): tag is string => Boolean(tag));
     const riskBand: 'stable' | 'watch' | 'warning' | 'critical' = flagged
-      ? (nodeShortCircuitKa < minimumShortCircuitKa * 0.75 ? 'critical' : 'warning')
-      : overloadedEdgeShare > 0 ? 'watch' : 'stable';
+      ? nodeShortCircuitKa < minimumShortCircuitKa * 0.75
+        ? 'critical'
+        : 'warning'
+      : overloadedEdgeShare > 0
+        ? 'watch'
+        : 'stable';
     return {
       nodeId: node.id,
       shortCircuitKa: round(nodeShortCircuitKa, 4),
@@ -891,17 +954,26 @@ export function evaluateWeakGridShortCircuit(input: {
   });
   const weakNodes = nodeAssessments.filter((node) => node.flagged).map((node) => node.nodeId);
 
-  const weakGridRiskScore = round(clamp(
-    ((minimumShortCircuitKa - shortCircuitLevelKa) / minimumShortCircuitKa) * 0.45
-    + clamp(inverterPenetrationPct / 100) * 0.2
-    + clamp((10 - reserveMarginPercent) / 10) * 0.15
-    + clamp(overloadedEdgeShare) * 0.2,
-  ), 4);
+  const weakGridRiskScore = round(
+    clamp(
+      ((minimumShortCircuitKa - shortCircuitLevelKa) / minimumShortCircuitKa) * 0.45 +
+        clamp(inverterPenetrationPct / 100) * 0.2 +
+        clamp((10 - reserveMarginPercent) / 10) * 0.15 +
+        clamp(overloadedEdgeShare) * 0.2,
+    ),
+    4,
+  );
 
   const warnings = [
-    shortCircuitLevelKa < minimumShortCircuitKa ? 'Short-circuit strength is below the configured minimum.' : null,
-    inverterPenetrationPct >= 40 ? 'High inverter penetration increases sensitivity to weak-grid events.' : null,
-    overloadedEdgeShare > 0 ? 'Transmission loading is elevated on one or more monitored edges.' : null,
+    shortCircuitLevelKa < minimumShortCircuitKa
+      ? 'Short-circuit strength is below the configured minimum.'
+      : null,
+    inverterPenetrationPct >= 40
+      ? 'High inverter penetration increases sensitivity to weak-grid events.'
+      : null,
+    overloadedEdgeShare > 0
+      ? 'Transmission loading is elevated on one or more monitored edges.'
+      : null,
   ].filter((warning): warning is string => Boolean(warning));
 
   const ruleMappings = [
@@ -917,14 +989,18 @@ export function evaluateWeakGridShortCircuit(input: {
       ruleLabel: 'Inverter penetration watch',
       triggered: inverterPenetrationPct >= 40,
       description: 'High inverter penetration can amplify weak-grid sensitivity.',
-      nodeIds: nodeAssessments.filter((node) => node.ruleTags.includes('aeso_high_inverter_penetration')).map((node) => node.nodeId),
+      nodeIds: nodeAssessments
+        .filter((node) => node.ruleTags.includes('aeso_high_inverter_penetration'))
+        .map((node) => node.nodeId),
     },
     {
       ruleId: 'AESO-SC-003',
       ruleLabel: 'Reserve margin watch',
       triggered: reserveMarginPercent <= 6,
       description: 'Thin reserve margins reduce operational headroom for weak-grid mitigation.',
-      nodeIds: nodeAssessments.filter((node) => node.ruleTags.includes('aeso_reserve_margin_watch')).map((node) => node.nodeId),
+      nodeIds: nodeAssessments
+        .filter((node) => node.ruleTags.includes('aeso_reserve_margin_watch'))
+        .map((node) => node.nodeId),
     },
     {
       ruleId: 'AESO-SC-004',
@@ -940,7 +1016,14 @@ export function evaluateWeakGridShortCircuit(input: {
     region: input.region,
     weakGridRiskScore,
     shortCircuitLevelKa: round(shortCircuitLevelKa, 4),
-    status: weakGridRiskScore >= 0.75 ? 'critical' : weakGridRiskScore >= 0.55 ? 'warning' : weakGridRiskScore >= 0.35 ? 'watch' : 'stable',
+    status:
+      weakGridRiskScore >= 0.75
+        ? 'critical'
+        : weakGridRiskScore >= 0.55
+          ? 'warning'
+          : weakGridRiskScore >= 0.35
+            ? 'watch'
+            : 'stable',
     weakNodes,
     nodeAssessments,
     ruleMappings,
@@ -949,9 +1032,15 @@ export function evaluateWeakGridShortCircuit(input: {
       inverterPenetrationPct: round(inverterPenetrationPct, 2),
       reserveMarginPercent: round(reserveMarginPercent, 2),
     },
-    alertCondition: weakGridRiskScore >= 0.75 ? 'immediate_review' : weakGridRiskScore >= 0.55 ? 'operator_watch' : 'monitor',
+    alertCondition:
+      weakGridRiskScore >= 0.75
+        ? 'immediate_review'
+        : weakGridRiskScore >= 0.55
+          ? 'operator_watch'
+          : 'monitor',
     warnings,
-    methodology: 'Weak-grid screening using short-circuit level, inverter penetration, reserve margin, and congested-edge pressure.',
+    methodology:
+      'Weak-grid screening using short-circuit level, inverter penetration, reserve margin, and congested-edge pressure.',
   } satisfies WeakGridShortCircuitResult;
 }
 
@@ -980,10 +1069,34 @@ export function buildLocalMlForecastRun(input: {
   const scenario = input.scenario ?? {};
   const horizonHours = Math.min(168, Math.max(1, Number(input.horizon_hours ?? 24)));
   const sampleRows = [
-    { temperature_c: -15, demand_mw: 11500, reserve_margin_percent: 4, wind_generation_mw: 150, target: 850 },
-    { temperature_c: 5, demand_mw: 9800, reserve_margin_percent: 12, wind_generation_mw: 900, target: 120 },
-    { temperature_c: 30, demand_mw: 11200, reserve_margin_percent: 5, wind_generation_mw: 260, target: 650 },
-    { temperature_c: 18, demand_mw: 9000, reserve_margin_percent: 18, wind_generation_mw: 700, target: 80 },
+    {
+      temperature_c: -15,
+      demand_mw: 11500,
+      reserve_margin_percent: 4,
+      wind_generation_mw: 150,
+      target: 850,
+    },
+    {
+      temperature_c: 5,
+      demand_mw: 9800,
+      reserve_margin_percent: 12,
+      wind_generation_mw: 900,
+      target: 120,
+    },
+    {
+      temperature_c: 30,
+      demand_mw: 11200,
+      reserve_margin_percent: 5,
+      wind_generation_mw: 260,
+      target: 650,
+    },
+    {
+      temperature_c: 18,
+      demand_mw: 9000,
+      reserve_margin_percent: 18,
+      wind_generation_mw: 700,
+      target: 80,
+    },
   ];
   const featureRanking = rankFeaturesRfeV1(sampleRows, 'target', { minFeatures: 3 });
   const positiveForecast = (base: number, hour: number, forecastDomain: string) => {
@@ -996,8 +1109,11 @@ export function buildLocalMlForecastRun(input: {
   let analysis: any = null;
   let modelVersion = 'svm-rfe-adapter-v1';
   let confidenceScore = 0.76;
-  let methodology = 'Lightweight v1 forecast adapter with positive forecasts, feature ranking, and baseline-ready metadata.';
-  let warnings = ['Backtest against persistence and seasonal-naive baselines before claiming uplift.'];
+  let methodology =
+    'Lightweight v1 forecast adapter with positive forecasts, feature ranking, and baseline-ready metadata.';
+  let warnings = [
+    'Backtest against persistence and seasonal-naive baselines before claiming uplift.',
+  ];
   let isFallback = true;
   let dataSources: MlDataSource[] = [{ name: 'Existing weather/load/AESO feature adapters' }];
   let trainingDataProfile: 'real' | 'mixed' | 'synthetic' | 'simulator-calibrated' | undefined;
@@ -1028,7 +1144,9 @@ export function buildLocalMlForecastRun(input: {
       reserveMarginPercent: Number(scenario.reserveMarginPercent ?? 8),
       windGenerationMw: Number(scenario.windGenerationMw ?? 500),
       temperatureC: Number(scenario.temperatureC ?? 0),
-      trainingRows: Array.isArray(scenario.trainingRows) ? scenario.trainingRows as any : undefined,
+      trainingRows: Array.isArray(scenario.trainingRows)
+        ? (scenario.trainingRows as any)
+        : undefined,
     });
     analysis = spike;
     modelVersion = spike.modelVersion;
@@ -1042,41 +1160,59 @@ export function buildLocalMlForecastRun(input: {
       ...prediction,
       target_name: 'pool_price',
       unit: 'CAD/MWh',
-      predicted_value: positiveForecast(Number(scenario.poolPriceCadPerMwh ?? 250), Number(new Date(prediction.valid_at).getHours()) || 1, 'price'),
+      predicted_value: positiveForecast(
+        Number(scenario.poolPriceCadPerMwh ?? 250),
+        Number(new Date(prediction.valid_at).getHours()) || 1,
+        'price',
+      ),
       risk_score: spike.riskScore,
       drivers: spike.reasons,
     }));
   } else if (domain === 'dispatch') {
-    const dispatchResult = evaluatePhysicsInformedDispatch({
-      loadMw: Number(scenario.loadMw ?? scenario.demandMw ?? 10000),
-      temperatureC: Number(scenario.temperatureC ?? 0),
-      windGenerationMw: Number(scenario.windGenerationMw ?? 500),
-      solarGenerationMw: Number(scenario.solarGenerationMw ?? 0),
-      reserveMarginPercent: Number(scenario.reserveMarginPercent ?? 8),
-      rampLimitMwPerHour: Number(scenario.rampLimitMwPerHour ?? 300),
-      availableGenerationMw: Number(scenario.availableGenerationMw ?? Math.max(1000, Number(scenario.loadMw ?? scenario.demandMw ?? 10000) * 1.1)),
-      previousDispatchMw: scenario.previousDispatchMw != null ? Number(scenario.previousDispatchMw) : undefined,
-      hourOfDay: scenario.hourOfDay != null ? Number(scenario.hourOfDay) : undefined,
-    }, dispatchWeights as any);
+    const dispatchResult = evaluatePhysicsInformedDispatch(
+      {
+        loadMw: Number(scenario.loadMw ?? scenario.demandMw ?? 10000),
+        temperatureC: Number(scenario.temperatureC ?? 0),
+        windGenerationMw: Number(scenario.windGenerationMw ?? 500),
+        solarGenerationMw: Number(scenario.solarGenerationMw ?? 0),
+        reserveMarginPercent: Number(scenario.reserveMarginPercent ?? 8),
+        rampLimitMwPerHour: Number(scenario.rampLimitMwPerHour ?? 300),
+        availableGenerationMw: Number(
+          scenario.availableGenerationMw ??
+            Math.max(1000, Number(scenario.loadMw ?? scenario.demandMw ?? 10000) * 1.1),
+        ),
+        previousDispatchMw:
+          scenario.previousDispatchMw != null ? Number(scenario.previousDispatchMw) : undefined,
+        hourOfDay: scenario.hourOfDay != null ? Number(scenario.hourOfDay) : undefined,
+      },
+      dispatchWeights as any,
+    );
     analysis = dispatchResult;
     modelVersion = dispatchResult.modelVersion;
     confidenceScore = dispatchResult.confidenceScore;
     methodology = dispatchResult.methodology;
-    warnings = dispatchResult.runtimeMode === 'trained'
-      ? ['Simulator-calibrated dispatch runtime active; partner-data validation still pending.']
-      : [
-        dispatchResult.fallbackReason === 'placeholder_artifact_gate'
-          ? 'Dispatch runtime remains heuristic until simulator-trained weights replace the placeholder artifact.'
-          : 'Dispatch runtime remains heuristic until trained weights are enabled.',
-      ];
+    warnings =
+      dispatchResult.runtimeMode === 'trained'
+        ? ['Simulator-calibrated dispatch runtime active; partner-data validation still pending.']
+        : [
+            dispatchResult.fallbackReason === 'placeholder_artifact_gate'
+              ? 'Dispatch runtime remains heuristic until simulator-trained weights replace the placeholder artifact.'
+              : 'Dispatch runtime remains heuristic until trained weights are enabled.',
+          ];
     trainingDataProfile = dispatchResult.trainingDataProfile;
     evaluationSummary = dispatchResult.evaluationSummary;
     calibrationStatus = dispatchResult.calibrationStatus;
     claimLabel = dispatchResult.claimLabel;
     isFallback = dispatchResult.runtimeMode !== 'trained';
-    dataSources = dispatchResult.runtimeMode === 'trained'
-      ? [{ name: dispatchResult.simulatorConfig?.name ?? 'pandapower IEEE-30 simulator', lastUpdated: dispatchResult.trainedAt }]
-      : [{ name: 'Existing weather/load/AESO feature adapters' }];
+    dataSources =
+      dispatchResult.runtimeMode === 'trained'
+        ? [
+            {
+              name: dispatchResult.simulatorConfig?.name ?? 'pandapower IEEE-30 simulator',
+              lastUpdated: dispatchResult.trainedAt,
+            },
+          ]
+        : [{ name: 'Existing weather/load/AESO feature adapters' }];
     predictions = Array.from({ length: horizonHours }, (_, index) => {
       const validAt = new Date(now.getTime() + (index + 1) * 60 * 60 * 1000).toISOString();
       return {
@@ -1087,9 +1223,10 @@ export function buildLocalMlForecastRun(input: {
         confidence_lower: round(Math.max(0, dispatchResult.predictedDispatchMw * 0.92), 4),
         confidence_upper: round(dispatchResult.predictedDispatchMw * 1.08, 4),
         risk_score: round(1 - dispatchResult.confidenceScore, 4),
-        drivers: dispatchResult.constraintViolations.length > 0
-          ? dispatchResult.constraintViolations
-          : ['load', 'temperature', 'wind', 'solar', 'reserve', 'ramp'],
+        drivers:
+          dispatchResult.constraintViolations.length > 0
+            ? dispatchResult.constraintViolations
+            : ['load', 'temperature', 'wind', 'solar', 'reserve', 'ramp'],
         synthetic: false,
       };
     });
@@ -1102,11 +1239,18 @@ export function buildLocalMlForecastRun(input: {
       temperatureC: Number(scenario.temperatureC ?? -12),
       basisLag1: Number(scenario.basisLag1 ?? 1.45),
       basisLag7: Number(scenario.basisLag7 ?? 1.4),
-      trainingRows: Array.isArray(scenario.historyRows) ? scenario.historyRows as any : undefined,
-      backtestRows: Array.isArray(scenario.backtestRows) ? scenario.backtestRows as any : undefined,
-      sourceProfile: (scenario.sourceProfile === 'real' || scenario.sourceProfile === 'mixed' || scenario.sourceProfile === 'synthetic')
-        ? scenario.sourceProfile
-        : Array.isArray(scenario.historyRows) ? 'mixed' : 'synthetic',
+      trainingRows: Array.isArray(scenario.historyRows) ? (scenario.historyRows as any) : undefined,
+      backtestRows: Array.isArray(scenario.backtestRows)
+        ? (scenario.backtestRows as any)
+        : undefined,
+      sourceProfile:
+        scenario.sourceProfile === 'real' ||
+        scenario.sourceProfile === 'mixed' ||
+        scenario.sourceProfile === 'synthetic'
+          ? scenario.sourceProfile
+          : Array.isArray(scenario.historyRows)
+            ? 'mixed'
+            : 'synthetic',
     });
     analysis = gasBasis;
     modelVersion = gasBasis.modelVersion;
@@ -1119,22 +1263,27 @@ export function buildLocalMlForecastRun(input: {
       rmse: gasBasis.backtest.rmseCadPerGj,
       directional_accuracy: gasBasis.backtest.directionalAccuracy,
     };
-    calibrationStatus = gasBasis.backtest.sample_count > 0 && gasBasis.backtest.directionalAccuracy >= 0.6
-      ? 'calibrated'
-      : gasBasis.backtest.sample_count > 0
-        ? 'drifting'
-        : 'uncalibrated';
-    claimLabel = gasBasis.sourceProfile === 'real' && gasBasis.backtest.sample_count > 0
-      ? 'validated'
-      : gasBasis.sourceProfile === 'mixed'
-        ? 'advisory'
-        : 'estimated';
-    warnings = gasBasis.sourceProfile === 'synthetic'
-      ? ['Synthetic default corpus is used unless real AECO and Henry Hub history is supplied.']
-      : [
-        'AECO/Henry Hub history supplied; backtest metrics are computed against observed spread rows.',
-        ...(gasBasis.backtest.sample_count > 0 ? [] : ['Gas basis backtest history is empty; confidence should remain advisory.']),
-      ];
+    calibrationStatus =
+      gasBasis.backtest.sample_count > 0 && gasBasis.backtest.directionalAccuracy >= 0.6
+        ? 'calibrated'
+        : gasBasis.backtest.sample_count > 0
+          ? 'drifting'
+          : 'uncalibrated';
+    claimLabel =
+      gasBasis.sourceProfile === 'real' && gasBasis.backtest.sample_count > 0
+        ? 'validated'
+        : gasBasis.sourceProfile === 'mixed'
+          ? 'advisory'
+          : 'estimated';
+    warnings =
+      gasBasis.sourceProfile === 'synthetic'
+        ? ['Synthetic default corpus is used unless real AECO and Henry Hub history is supplied.']
+        : [
+            'AECO/Henry Hub history supplied; backtest metrics are computed against observed spread rows.',
+            ...(gasBasis.backtest.sample_count > 0
+              ? []
+              : ['Gas basis backtest history is empty; confidence should remain advisory.']),
+          ];
     predictions = predictions.map((prediction, index) => {
       const drift = Math.sin(((index + 1) / 24) * Math.PI * 2) * 0.05;
       const spread = Math.max(0, gasBasis.predictedSpreadCadPerGj + drift);
@@ -1164,7 +1313,9 @@ export function buildLocalMlForecastRun(input: {
     modelVersion = byop.modelVersion;
     confidenceScore = 0.81;
     methodology = byop.methodology;
-    warnings = ['BYOP results are scenario-based and do not replace site-specific interconnection studies.'];
+    warnings = [
+      'BYOP results are scenario-based and do not replace site-specific interconnection studies.',
+    ];
     trainingDataProfile = 'synthetic';
     claimLabel = 'advisory';
     predictions = byop.aggregateLoadSeries.map((point) => ({
@@ -1181,9 +1332,30 @@ export function buildLocalMlForecastRun(input: {
   } else if (domain === 'pv_fault') {
     const pvFault = analyzePvFaultGraph({
       nodes: (scenario.nodes as Array<any> | undefined) ?? [
-        { id: 'inv-1', expectedOutputMw: 2.6, observedOutputMw: 1.1, voltageV: 540, inverterTempC: 61, irradiance: 780 },
-        { id: 'inv-2', expectedOutputMw: 2.4, observedOutputMw: 2.2, voltageV: 598, inverterTempC: 43, irradiance: 760 },
-        { id: 'inv-3', expectedOutputMw: 2.1, observedOutputMw: 1.6, voltageV: 565, inverterTempC: 57, irradiance: 740 },
+        {
+          id: 'inv-1',
+          expectedOutputMw: 2.6,
+          observedOutputMw: 1.1,
+          voltageV: 540,
+          inverterTempC: 61,
+          irradiance: 780,
+        },
+        {
+          id: 'inv-2',
+          expectedOutputMw: 2.4,
+          observedOutputMw: 2.2,
+          voltageV: 598,
+          inverterTempC: 43,
+          irradiance: 760,
+        },
+        {
+          id: 'inv-3',
+          expectedOutputMw: 2.1,
+          observedOutputMw: 1.6,
+          voltageV: 565,
+          inverterTempC: 57,
+          irradiance: 740,
+        },
       ],
       edges: (scenario.edges as Array<any> | undefined) ?? [
         { fromNodeId: 'inv-1', toNodeId: 'inv-2', weight: 1 },
@@ -1195,25 +1367,29 @@ export function buildLocalMlForecastRun(input: {
     modelVersion = pvFault.modelVersion;
     confidenceScore = pvFault.confidenceScore;
     methodology = pvFault.methodology;
-    warnings = pvFault.runtimeMode === 'trained'
-      ? ['Simulator-calibrated PV fault runtime active; partner feeder validation remains pending.']
-      : ['Graph fault localization should be validated against feeder events before automated dispatch actions.'];
-    trainingDataProfile = pvFault.runtimeMode === 'trained'
-      ? pvFault.trainingDataProfile
-      : 'synthetic';
-    evaluationSummary = pvFault.runtimeMode === 'trained'
-      ? pvFault.evaluationSummary
-      : undefined;
-    calibrationStatus = pvFault.runtimeMode === 'trained'
-      ? pvFault.calibrationStatus
-      : undefined;
-    claimLabel = pvFault.runtimeMode === 'trained'
-      ? pvFault.claimLabel
-      : 'advisory';
+    warnings =
+      pvFault.runtimeMode === 'trained'
+        ? [
+            'Simulator-calibrated PV fault runtime active; partner feeder validation remains pending.',
+          ]
+        : [
+            'Graph fault localization should be validated against feeder events before automated dispatch actions.',
+          ];
+    trainingDataProfile =
+      pvFault.runtimeMode === 'trained' ? pvFault.trainingDataProfile : 'synthetic';
+    evaluationSummary = pvFault.runtimeMode === 'trained' ? pvFault.evaluationSummary : undefined;
+    calibrationStatus = pvFault.runtimeMode === 'trained' ? pvFault.calibrationStatus : undefined;
+    claimLabel = pvFault.runtimeMode === 'trained' ? pvFault.claimLabel : 'advisory';
     isFallback = pvFault.runtimeMode !== 'trained';
-    dataSources = pvFault.runtimeMode === 'trained'
-      ? [{ name: pvFault.simulatorConfig?.name ?? 'pvlib simulator', lastUpdated: pvFault.trainedAt }]
-      : [{ name: 'Existing inverter telemetry and feeder topology adapters' }];
+    dataSources =
+      pvFault.runtimeMode === 'trained'
+        ? [
+            {
+              name: pvFault.simulatorConfig?.name ?? 'pvlib simulator',
+              lastUpdated: pvFault.trainedAt,
+            },
+          ]
+        : [{ name: 'Existing inverter telemetry and feeder topology adapters' }];
     if (pvFault.runtimeMode === 'trained') {
       modelVersion = pvFault.modelVersion;
     }
@@ -1232,11 +1408,13 @@ export function buildLocalMlForecastRun(input: {
     modelVersion = overlay.modelVersion;
     confidenceScore = Math.max(0.5, 1 - overlay.strandedAssetRiskScore / 2);
     methodology = overlay.methodology;
-    warnings = ['Policy overlay is scenario-based and should be paired with project-specific regulatory review.'];
+    warnings = [
+      'Policy overlay is scenario-based and should be paired with project-specific regulatory review.',
+    ];
     trainingDataProfile = 'synthetic';
     claimLabel = 'advisory';
     predictions = Array.from({ length: Math.min(horizonHours, 12) }, (_, index) => {
-      const year = (Number(scenario.currentYear ?? new Date().getFullYear()) + index);
+      const year = Number(scenario.currentYear ?? new Date().getFullYear()) + index;
       const risk = clamp(overlay.strandedAssetRiskScore + index * 0.03);
       return {
         valid_at: `${year}-01-01T00:00:00.000Z`,
@@ -1263,7 +1441,9 @@ export function buildLocalMlForecastRun(input: {
     modelVersion = weakGrid.modelVersion;
     confidenceScore = Math.max(0.45, 1 - weakGrid.weakGridRiskScore / 2);
     methodology = weakGrid.methodology;
-    warnings = weakGrid.warnings.length ? weakGrid.warnings : ['Weak-grid screening is advisory and not a replacement for protection studies.'];
+    warnings = weakGrid.warnings.length
+      ? weakGrid.warnings
+      : ['Weak-grid screening is advisory and not a replacement for protection studies.'];
     trainingDataProfile = 'synthetic';
     claimLabel = 'advisory';
     predictions = [];
@@ -1284,7 +1464,7 @@ export function buildLocalMlForecastRun(input: {
   });
 
   return {
-    run_id: null,
+    run_id: null as string | null,
     domain,
     province,
     predictions,

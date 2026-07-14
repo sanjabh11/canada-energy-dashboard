@@ -197,7 +197,7 @@ serve(async (req: Request) => {
         investment_opportunities: identifyInvestmentOpportunities(projects || [], evDemand || []),
       },
       snapshot_type: 'live',
-      snapshot_stored_at: null,
+      snapshot_stored_at: null as string | null,
       is_fallback: false,
       metadata: {
         last_updated: new Date().toISOString(),
@@ -205,7 +205,7 @@ serve(async (req: Request) => {
         strategic_context: '$6.4B federal investment, 30% exploration tax credit, national security priority',
         priority_minerals: PRIORITY_MINERALS,
         snapshot_type: 'live',
-        snapshot_stored_at: null,
+        snapshot_stored_at: null as string | null,
         is_fallback: false,
       }
     };

@@ -13,13 +13,13 @@ function edgeRoutePattern(endpoint: string): string {
 
 // Minimal valid payloads for mocking live edge responses
 const hydrogenLivePayload = {
-  facilities: [],
-  projects: [],
-  infrastructure: [],
-  production: [],
-  pricing: [],
-  demand_forecast: [],
-  price_forecasts: [],
+  facilities: [] as unknown[],
+  projects: [] as unknown[],
+  infrastructure: [] as unknown[],
+  production: [] as unknown[],
+  pricing: [] as unknown[],
+  demand_forecast: [] as unknown[],
+  price_forecasts: [] as unknown[],
   summary: {
     facilities: { total_count: 5, operational_count: 2, total_design_capacity_kg_per_day: 10000, operational_capacity_kg_per_day: 4000, by_type: {}, ccus_integrated_count: 1 },
     projects: { total_count: 3, total_investment_cad: 500000000, federal_funding_cad: 100000000, by_status: {} },
@@ -40,25 +40,25 @@ const hydrogenLivePayload = {
 };
 
 const mineralsLivePayload = {
-  projects: [],
-  supply_chain: [],
-  battery_facilities: [],
-  prices: [],
-  trade_flows: [],
-  ev_demand_forecast: [],
-  stockpile: [],
+  projects: [] as unknown[],
+  supply_chain: [] as unknown[],
+  battery_facilities: [] as unknown[],
+  prices: [] as unknown[],
+  trade_flows: [] as unknown[],
+  ev_demand_forecast: [] as unknown[],
+  stockpile: [] as unknown[],
   summary: {
     projects: { total_count: 12, priority_mineral_count: 6, total_investment_cad: 6400000000, federal_funding_cad: 2000000000, by_province: {}, by_stage: {} },
-    supply_chain: { stages: [], gaps: [] },
+    supply_chain: { stages: [] as unknown[], gaps: [] as unknown[] },
     battery_facilities: { total_count: 3, total_capacity_gwh: 50, minerals_demand: { lithium_tonnes_per_year: 1000, cobalt_tonnes_per_year: 500, nickel_tonnes_per_year: 2000, graphite_tonnes_per_year: 1500 } },
     pricing: { price_volatility: {} },
     trade: { china_dependency: 45 },
     stockpile: { critical_status_count: 2, low_status_count: 3 },
   },
   insights: {
-    strategic_recommendations: [],
+    strategic_recommendations: [] as unknown[],
     supply_chain_gaps: [{ gap_description: 'Domestic refining capacity limited' }],
-    investment_opportunities: [],
+    investment_opportunities: [] as unknown[],
   },
   metadata: {
     last_updated: new Date().toISOString(),
@@ -69,7 +69,7 @@ const mineralsLivePayload = {
 };
 
 const aiLivePayload = {
-  data_centres: [],
+  data_centres: [] as unknown[],
   summary: {
     total_count: 8,
     total_contracted_capacity_mw: 2500,
@@ -89,7 +89,7 @@ const aiLivePayload = {
     phase1_allocated_mw: 800,
     phase1_remaining_mw: 400,
   },
-  power_consumption: [],
+  power_consumption: [] as unknown[],
   metadata: {
     province: 'AB',
     last_updated: new Date().toISOString(),
@@ -316,12 +316,12 @@ test.describe('AI Data Centre Dashboard Provenance States', () => {
     const cachedPayload = {
       dcData: aiLivePayload,
       queueData: {
-        queue: [],
+        queue: [] as unknown[],
         summary: { total_projects: 0, total_requested_mw: 0, phase1_allocated_mw: 0, phase1_remaining_mw: 1200, by_type: {}, by_phase: {} },
         insights: { data_centre_dominance: { dc_projects: 0, dc_mw: 0, dc_percentage_of_queue: 0 }, phase1_allocation_status: { limit_mw: 1200, allocated_mw: 0, remaining_mw: 1200, utilization_percentage: 0, is_fully_allocated: false }, grid_reliability_concern: { queue_to_peak_ratio: 0, message: '' } },
         metadata: { last_updated: new Date().toISOString(), data_source: 'AESO Queue API' },
       },
-      queueHistory: null,
+      queueHistory: null as unknown,
     };
     await page.addInitScript((payload) => {
       const snapshot = { payload, cachedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() };
@@ -410,10 +410,10 @@ test.describe('Stakeholder Dashboard Provenance States', () => {
 
   test('cached state: shows cached snapshot notice when network fails', async ({ page }) => {
     const cachedPayload = {
-      stakeholders: [],
-      meetings: [],
-      feedback: [],
-      messages: [],
+      stakeholders: [] as unknown[],
+      meetings: [] as unknown[],
+      feedback: [] as unknown[],
+      messages: [] as unknown[],
       metadata: {
         data_source: 'Stakeholder coordination API',
         last_updated: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
@@ -456,10 +456,10 @@ test.describe('Compliance Dashboard Provenance States', () => {
 
   test('cached state: shows cached snapshot notice when network fails', async ({ page }) => {
     const cachedPayload = {
-      projects: [],
-      violations: [],
-      auditLog: [],
-      alerts: [],
+      projects: [] as unknown[],
+      violations: [] as unknown[],
+      auditLog: [] as unknown[],
+      alerts: [] as unknown[],
       metadata: {
         data_source: 'Environment Canada & Provincial Regulator APIs',
         last_updated: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),

@@ -59,11 +59,11 @@ serve(async (req) => {
     }
 
     // Summary data to be populated when additional tables are created
-    const derAssets = [];
-    const dispatchEvents = [];
-    const drPrograms = [];
-    const summary = [];
-    const fleetComposition = [];
+    const derAssets: unknown[] = [];
+    const dispatchEvents: unknown[] = [];
+    const drPrograms: unknown[] = [];
+    const summary: unknown[] = [];
+    const fleetComposition: unknown[] = [];
 
     // Calculate statistics
     const totalCapacity = (platforms ?? []).reduce((sum, p) => sum + (p.aggregated_capacity_mw ?? 0), 0);
@@ -73,8 +73,9 @@ serve(async (req) => {
       platforms: platforms ?? [],
       der_assets_summary: {
         total_count: (derAssets ?? []).length,
-        by_type: (derAssets ?? []).reduce((acc, asset) => {
-          acc[asset.der_type] = (acc[asset.der_type] || 0) + 1;
+        by_type: (derAssets ?? []).reduce((acc: Record<string, number>, asset: Record<string, unknown>) => {
+          const derType = String(asset.der_type ?? 'unknown');
+          acc[derType] = (acc[derType] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
       },

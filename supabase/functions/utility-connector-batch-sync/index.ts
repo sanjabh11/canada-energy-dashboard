@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 import {
   authorizeUtilityConnectorRequest,
   getUtilityConnectorClient,
@@ -31,6 +32,8 @@ interface NormalizedIntervalRow {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
+  const rl = applyRateLimit(req, "utility-connector-batch-sync");
+  if (rl.response) return rl.response;
     return handleCorsOptions(req);
   }
 

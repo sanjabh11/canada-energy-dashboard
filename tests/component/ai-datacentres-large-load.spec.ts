@@ -40,7 +40,7 @@ const aiLivePayload = {
 };
 
 const queuePayload = {
-  queue: [],
+  queue: [] as unknown[],
   summary: {
     total_projects: 8,
     total_requested_mw: 1500,
@@ -61,7 +61,7 @@ const queuePayload = {
 };
 
 const queueHistoryPayload = {
-  history: [],
+  history: [] as unknown[],
   metadata: { last_updated: new Date().toISOString(), snapshots_available: 0 },
 };
 

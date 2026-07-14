@@ -1,6 +1,6 @@
 /**
  * Enhanced Error Boundary Component
- * 
+ *
  * Catches React errors and provides user-friendly fallback UI.
  * Phase 2: Testing & Hardening - Error Resilience
  */
@@ -39,13 +39,25 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // In production, send to error tracking service (e.g., Sentry)
     if (import.meta.env.PROD) {
-      // TODO: Send to error tracking
-      // Example: Sentry.captureException(error, { contexts: { react: errorInfo } });
+      const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+      if (sentryDsn) {
+        import('@sentry/react')
+          .then(
+            (Sentry: {
+              captureException: (error: Error, contexts?: Record<string, unknown>) => void;
+            }) => {
+              Sentry.captureException(error, { contexts: { react: errorInfo } });
+            },
+          )
+          .catch(() => {
+            console.error('Failed to load Sentry for error reporting');
+          });
+      }
     }
-    
+
     this.setState({ errorInfo });
   }
 
@@ -81,12 +93,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
             {/* Error Message */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-primary mb-2">
-                Something Went Wrong
-              </h1>
+              <h1 className="text-2xl font-bold text-primary mb-2">Something Went Wrong</h1>
               <p className="text-secondary">
-                We encountered an unexpected error. Your work has been preserved,
-                and you can try reloading the page.
+                We encountered an unexpected error. Your work has been preserved, and you can try
+                reloading the page.
               </p>
             </div>
 

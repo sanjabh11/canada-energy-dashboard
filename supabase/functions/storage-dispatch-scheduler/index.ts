@@ -73,7 +73,7 @@ async function getGridSnapshot(supabase: any, province: string): Promise<GridSna
     .order('period_start', { ascending: false })
     .limit(10);
 
-  const renewableGen = genData?.reduce((sum, g) => sum + (g.value_mwh || 0), 0) || 0;
+  const renewableGen = genData?.reduce((sum: number, g: Record<string, unknown>) => sum + Number(g.value_mwh || 0), 0) || 0;
   const indicativePrice = priceData?.hoep || 50; // fallback to $50/MWh
 
   // Curtailment risk if price < $10 or renewable > threshold

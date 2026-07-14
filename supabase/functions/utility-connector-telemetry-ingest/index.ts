@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 import {
   authorizeUtilityConnectorRequest,
   getUtilityConnectorClient,
@@ -11,6 +12,8 @@ import { runTelemetryIngest } from "../_shared/utilityConnectorRuntime.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
+  const rl = applyRateLimit(req, "utility-connector-telemetry-ingest");
+  if (rl.response) return rl.response;
     return handleCorsOptions(req);
   }
 

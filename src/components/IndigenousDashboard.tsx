@@ -15,10 +15,22 @@ import {
   Area,
   AreaChart,
   Bar,
-  Pie
+  Pie,
 } from 'recharts';
 import TerritorialMap, { type MapPoint, type TerritoryBoundary } from './TerritorialMap';
-import { AlertTriangle, Plus, Edit, X, Download, Shield, Users, Calendar, Save, FileText, ExternalLink } from 'lucide-react';
+import {
+  AlertTriangle,
+  Plus,
+  Edit,
+  X,
+  Download,
+  Shield,
+  Users,
+  Calendar,
+  Save,
+  FileText,
+  ExternalLink,
+} from 'lucide-react';
 import DataTrustNotice from './DataTrustNotice';
 import { Link } from 'react-router-dom';
 import { localStorageManager, type IndigenousProjectRecord } from '../lib/localStorageManager';
@@ -89,7 +101,7 @@ const CONSULTATION_STATUS_COLORS: Record<TerritoryData['consultationStatus'], st
   completed: '#10b981',
   ongoing: '#f59e0b',
   pending: '#ef4444',
-  not_started: '#6b7280'
+  not_started: '#6b7280',
 };
 
 const DEFAULT_TERRITORIES: TerritoryData[] = [
@@ -99,12 +111,12 @@ const DEFAULT_TERRITORIES: TerritoryData[] = [
     coordinates: [
       [55, -95],
       [55.6, -96.2],
-      [54.4, -96.6]
+      [54.4, -96.6],
     ],
     consultationStatus: 'completed',
     community: 'Cree, Ojibwe, Dene',
     traditionalTerritory: 'Treaty 5 Territory',
-    lastActivity: '2024-04-15T00:00:00.000Z'
+    lastActivity: '2024-04-15T00:00:00.000Z',
   },
   {
     id: 'treaty-9',
@@ -112,12 +124,12 @@ const DEFAULT_TERRITORIES: TerritoryData[] = [
     coordinates: [
       [50, -80],
       [50.7, -81.5],
-      [49.6, -82.1]
+      [49.6, -82.1],
     ],
     consultationStatus: 'ongoing',
     community: 'Ojibwe, Cree, Oji-Cree',
     traditionalTerritory: 'Treaty 9 Territory',
-    lastActivity: '2024-05-02T00:00:00.000Z'
+    lastActivity: '2024-05-02T00:00:00.000Z',
   },
   {
     id: 'dene',
@@ -125,13 +137,13 @@ const DEFAULT_TERRITORIES: TerritoryData[] = [
     coordinates: [
       [60, -120],
       [60.8, -118.6],
-      [59.5, -119.2]
+      [59.5, -119.2],
     ],
     consultationStatus: 'pending',
     community: 'Dene, Sahtu, North Slave',
     traditionalTerritory: 'Dene Territory',
-    lastActivity: '2024-03-21T00:00:00.000Z'
-  }
+    lastActivity: '2024-03-21T00:00:00.000Z',
+  },
 ];
 
 const DEFAULT_MAP_POINTS: MapPoint[] = [
@@ -142,7 +154,7 @@ const DEFAULT_MAP_POINTS: MapPoint[] = [
     title: 'Treaty 5 Consultation',
     type: 'consultation',
     status: 'completed',
-    description: 'Community wind partnership review.'
+    description: 'Community wind partnership review.',
   },
   {
     id: 'treaty-9-point',
@@ -151,7 +163,7 @@ const DEFAULT_MAP_POINTS: MapPoint[] = [
     title: 'Treaty 9 Energy Forum',
     type: 'consultation',
     status: 'active',
-    description: 'Joint planning meeting with utilities & leadership.'
+    description: 'Joint planning meeting with utilities & leadership.',
   },
   {
     id: 'dene-point',
@@ -160,8 +172,8 @@ const DEFAULT_MAP_POINTS: MapPoint[] = [
     title: 'Dene FPIC Workshop',
     type: 'consultation',
     status: 'pending',
-    description: 'FPIC readiness workshops with advisors.'
-  }
+    description: 'FPIC readiness workshops with advisors.',
+  },
 ];
 
 const derivePolygon = (coordinates: [number, number][]): [number, number][][] => {
@@ -170,7 +182,10 @@ const derivePolygon = (coordinates: [number, number][]): [number, number][][] =>
   }
 
   const ring = coordinates.map(([lat, lng]) => [lng, lat] as [number, number]);
-  if (ring.length > 0 && (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])) {
+  if (
+    ring.length > 0 &&
+    (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])
+  ) {
     ring.push([...ring[0]] as [number, number]);
   }
 
@@ -190,12 +205,15 @@ const buildTerritoryBoundary = (territory: TerritoryData, index: number): Territ
     color: CONSULTATION_STATUS_COLORS[territory.consultationStatus] ?? '#3b82f6',
     metadata: {
       indigenousGroups: territory.community
-        ? territory.community.split(',').map((group) => group.trim()).filter(Boolean)
+        ? territory.community
+            .split(',')
+            .map((group) => group.trim())
+            .filter(Boolean)
         : [],
-      area: polygon.length > 0 ? 120000 : undefined
+      area: polygon.length > 0 ? 120000 : undefined,
     },
     coordinates: polygon,
-    centroid
+    centroid,
   };
 };
 
@@ -210,8 +228,8 @@ const buildMapPoint = (territory: TerritoryData, index: number): MapPoint | null
     territory.consultationStatus === 'completed'
       ? 'completed'
       : territory.consultationStatus === 'ongoing'
-      ? 'active'
-      : 'pending';
+        ? 'active'
+        : 'pending';
 
   return {
     id: `territory-point-${territory.id ?? index}`,
@@ -220,7 +238,7 @@ const buildMapPoint = (territory: TerritoryData, index: number): MapPoint | null
     title: `${territory.name} consultation`,
     type: 'consultation',
     status,
-    description: `Community: ${territory.community || 'TBD'}`
+    description: `Community: ${territory.community || 'TBD'}`,
   };
 };
 
@@ -229,7 +247,7 @@ export const IndigenousDashboard: React.FC = () => {
   const [fpicWorkflows, setFpicWorkflows] = useState<FPICWorkflow[]>([]);
   const [tekEntries, setTekEntries] = useState<TEKEntry[]>([]);
   const [selectedTerritory, setSelectedTerritory] = useState<TerritoryData | null>(
-    DEFAULT_TERRITORIES[0] ?? null
+    DEFAULT_TERRITORIES[0] ?? null,
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -245,21 +263,23 @@ export const IndigenousDashboard: React.FC = () => {
     territory_name: '',
     community: '',
     consultation_status: 'not_started',
-    fpic_status: 'required'
+    fpic_status: 'required',
   });
   const hasLoadedRef = React.useRef(false);
 
   // Use streaming data for real Indigenous data (governance-compliant sources)
   // IMPORTANT: Only use data that has been approved through proper governance processes
   const { data: indigenousData, connectionStatus } = useStreamingData('indigenous');
-  const isUsingFallbackData = connectionStatus === 'fallback' || (connectionStatus !== 'connected' && indigenousData.length === 0);
+  const isUsingFallbackData =
+    connectionStatus === 'fallback' ||
+    (connectionStatus !== 'connected' && indigenousData.length === 0);
 
   // Use WebSocket for real-time consultation updates
   const {
     messages: wsMessages,
     connectionStatus: wsConnectionStatus,
     isConnected: wsConnected,
-    sendMessage: sendWsMessage
+    sendMessage: sendWsMessage,
   } = useWebSocketConsultation('general-consultation');
 
   // Load initial data from local storage (guarded to avoid React StrictMode double-invoke)
@@ -282,14 +302,14 @@ export const IndigenousDashboard: React.FC = () => {
       setIndigenousProjects(projects);
 
       // Convert projects to territory data for map display
-      const territoryData: TerritoryData[] = projects.map(project => ({
+      const territoryData: TerritoryData[] = projects.map((project) => ({
         id: project.id,
         name: project.territory_name,
         coordinates: [[-95, 55]], // Default coordinates - would be real in production
         consultationStatus: project.consultation_status,
         community: project.community,
         traditionalTerritory: project.traditional_territory,
-        lastActivity: project.updated_at
+        lastActivity: project.updated_at,
       }));
 
       setTerritories(territoryData);
@@ -303,7 +323,7 @@ export const IndigenousDashboard: React.FC = () => {
           consultationStatus: 'completed' as const,
           community: 'Cree, Ojibwe, Dene',
           traditionalTerritory: 'Treaty 5 Territory',
-          lastActivity: new Date().toISOString()
+          lastActivity: new Date().toISOString(),
         },
         {
           id: '2',
@@ -312,7 +332,7 @@ export const IndigenousDashboard: React.FC = () => {
           consultationStatus: 'ongoing' as const,
           community: 'Ojibwe, Cree, Oji-Cree',
           traditionalTerritory: 'Treaty 9 Territory',
-          lastActivity: new Date().toISOString()
+          lastActivity: new Date().toISOString(),
         },
         {
           id: '3',
@@ -321,8 +341,8 @@ export const IndigenousDashboard: React.FC = () => {
           consultationStatus: 'pending' as const,
           community: 'Dene, Sahtu, North Slave',
           traditionalTerritory: 'Dene Territory',
-          lastActivity: new Date().toISOString()
-        }
+          lastActivity: new Date().toISOString(),
+        },
       ];
 
       const mockFpicWorkflows = [
@@ -333,7 +353,7 @@ export const IndigenousDashboard: React.FC = () => {
           status: 'approved' as const,
           participants: ['Community Council', 'Energy Company', 'Government'],
           dateCreated: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         },
         {
           id: '2',
@@ -342,8 +362,8 @@ export const IndigenousDashboard: React.FC = () => {
           status: 'pending' as const,
           participants: ['Community Council', 'Energy Company'],
           dateCreated: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        }
+          lastUpdated: new Date().toISOString(),
+        },
       ];
 
       const mockTekEntries = [
@@ -355,7 +375,7 @@ export const IndigenousDashboard: React.FC = () => {
           community: 'Cree Nation',
           dateRecorded: new Date().toISOString(),
           custodians: ['Elder John', 'Knowledge Keeper Mary'],
-          relatedTerritories: ['Treaty 5 Territory']
+          relatedTerritories: ['Treaty 5 Territory'],
         },
         {
           id: '2',
@@ -365,7 +385,7 @@ export const IndigenousDashboard: React.FC = () => {
           community: 'Ojibwe Community',
           dateRecorded: new Date().toISOString(),
           custodians: ['Traditional Healer'],
-          relatedTerritories: ['Treaty 9 Territory']
+          relatedTerritories: ['Treaty 9 Territory'],
         },
         {
           id: '3',
@@ -375,8 +395,8 @@ export const IndigenousDashboard: React.FC = () => {
           community: 'Dene First Nation',
           dateRecorded: new Date().toISOString(),
           custodians: ['Elder Council'],
-          relatedTerritories: ['Dene Territory']
-        }
+          relatedTerritories: ['Dene Territory'],
+        },
       ];
 
       // Merge real data with legacy mock data (temporary during transition)
@@ -399,7 +419,9 @@ export const IndigenousDashboard: React.FC = () => {
 
             if (territoriesRes.ok) {
               const tJson = await territoriesRes.json();
-              const apiTerritories: any[] = Array.isArray(tJson.territories) ? tJson.territories : [];
+              const apiTerritories: any[] = Array.isArray(tJson.territories)
+                ? tJson.territories
+                : [];
               const mapped: TerritoryData[] = apiTerritories.map((t) => {
                 const lat = typeof t.latitude === 'number' ? t.latitude : null;
                 const lng = typeof t.longitude === 'number' ? t.longitude : null;
@@ -408,7 +430,8 @@ export const IndigenousDashboard: React.FC = () => {
                   id: t.id,
                   name: t.name,
                   coordinates: coords.length > 0 ? coords : [[55, -95]],
-                  consultationStatus: (t.consultation_status as TerritoryData['consultationStatus']) ?? 'not_started',
+                  consultationStatus:
+                    (t.consultation_status as TerritoryData['consultationStatus']) ?? 'not_started',
                   community: t.community ?? '',
                   traditionalTerritory: t.traditional_territory ?? t.name,
                   lastActivity: t.updated_at ?? new Date().toISOString(),
@@ -462,21 +485,27 @@ export const IndigenousDashboard: React.FC = () => {
       territory_id: `territory_${Date.now()}`,
       traditional_territory: newProject.territory_name || '',
       benefit_sharing: {},
-      consultation_log: []
+      consultation_log: [] as Array<{
+        date: string;
+        participants: string[];
+        topics: string[];
+        outcomes: string[];
+        next_steps: string[];
+      }>,
     };
 
     const projectId = localStorageManager.addIndigenousProject(projectData);
-    
+
     // Refresh data
     loadInitialData();
-    
+
     // Reset form
     setNewProject({
       name: '',
       territory_name: '',
       community: '',
       consultation_status: 'not_started',
-      fpic_status: 'required'
+      fpic_status: 'required',
     });
     setShowAddProject(false);
   };
@@ -501,16 +530,16 @@ export const IndigenousDashboard: React.FC = () => {
   // Calculate dashboard metrics
   const dashboardMetrics = React.useMemo(() => {
     const total = territories.length;
-    const ongoing = territories.filter(t => t.consultationStatus === 'ongoing').length;
-    const completed = territories.filter(t => t.consultationStatus === 'completed').length;
-    const pending = territories.filter(t => t.consultationStatus === 'pending').length;
+    const ongoing = territories.filter((t) => t.consultationStatus === 'ongoing').length;
+    const completed = territories.filter((t) => t.consultationStatus === 'completed').length;
+    const pending = territories.filter((t) => t.consultationStatus === 'pending').length;
 
     return {
       totalTerritories: total,
       ongoingConsultations: ongoing,
       completedConsultations: completed,
       pendingConsultations: pending,
-      completionRate: total > 0 ? (completed / total) * 100 : 0
+      completionRate: total > 0 ? (completed / total) * 100 : 0,
     };
   }, [territories]);
 
@@ -518,7 +547,7 @@ export const IndigenousDashboard: React.FC = () => {
 
   const territoryBoundaries = useMemo<TerritoryBoundary[]>(
     () => effectiveTerritories.map(buildTerritoryBoundary),
-    [effectiveTerritories]
+    [effectiveTerritories],
   );
 
   const mapPoints = useMemo<MapPoint[]>(() => {
@@ -535,14 +564,25 @@ export const IndigenousDashboard: React.FC = () => {
     { name: 'Completed', value: dashboardMetrics.completedConsultations, color: '#10b981' },
     { name: 'Ongoing', value: dashboardMetrics.ongoingConsultations, color: '#f59e0b' },
     { name: 'Pending', value: dashboardMetrics.pendingConsultations, color: '#ef4444' },
-    { name: 'Not Started', value: dashboardMetrics.totalTerritories - dashboardMetrics.completedConsultations - dashboardMetrics.ongoingConsultations - dashboardMetrics.pendingConsultations, color: '#6b7280' }
+    {
+      name: 'Not Started',
+      value:
+        dashboardMetrics.totalTerritories -
+        dashboardMetrics.completedConsultations -
+        dashboardMetrics.ongoingConsultations -
+        dashboardMetrics.pendingConsultations,
+      color: '#6b7280',
+    },
   ];
 
   const tekByCategoryData = [
-    { name: 'Cultural', value: tekEntries.filter(e => e.category === 'cultural').length },
-    { name: 'Environmental', value: tekEntries.filter(e => e.category === 'environmental').length },
-    { name: 'Spiritual', value: tekEntries.filter(e => e.category === 'spiritual').length },
-    { name: 'Economic', value: tekEntries.filter(e => e.category === 'economic').length }
+    { name: 'Cultural', value: tekEntries.filter((e) => e.category === 'cultural').length },
+    {
+      name: 'Environmental',
+      value: tekEntries.filter((e) => e.category === 'environmental').length,
+    },
+    { name: 'Spiritual', value: tekEntries.filter((e) => e.category === 'spiritual').length },
+    { name: 'Economic', value: tekEntries.filter((e) => e.category === 'economic').length },
   ];
 
   const funderSummary = reportingSummary?.summary;
@@ -575,9 +615,7 @@ export const IndigenousDashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="hero-title">
-                    Indigenous Energy Sovereignty Dashboard
-                  </h1>
+                  <h1 className="hero-title">Indigenous Energy Sovereignty Dashboard</h1>
                   <HelpButton id="module.indigenous.overview" />
                 </div>
                 <p className="hero-subtitle mt-2">
@@ -598,12 +636,14 @@ export const IndigenousDashboard: React.FC = () => {
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 text-warning mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-amber-800 mb-2">Governance & Data Sovereignty Notice</h3>
+                <h3 className="font-semibold text-amber-800 mb-2">
+                  Governance & Data Sovereignty Notice
+                </h3>
                 <p className="text-amber-700 text-sm">
-                  This dashboard currently uses placeholder data for demonstration purposes.
-                  Real Indigenous data integration requires formal governance agreements and
-                  Free, Prior, Informed Consent (FPIC) from affected communities.
-                  Contact Indigenous governance representatives before implementing real data sources.
+                  This dashboard currently uses placeholder data for demonstration purposes. Real
+                  Indigenous data integration requires formal governance agreements and Free, Prior,
+                  Informed Consent (FPIC) from affected communities. Contact Indigenous governance
+                  representatives before implementing real data sources.
                 </p>
               </div>
             </div>
@@ -617,15 +657,21 @@ export const IndigenousDashboard: React.FC = () => {
               <h3 className="text-lg font-semibold text-primary metric-label">Total Territories</h3>
               <HelpButton id="metric.indigenous.total_territories" />
             </div>
-            <p className="text-3xl font-bold text-electric mt-2 metric-value">{dashboardMetrics.totalTerritories}</p>
+            <p className="text-3xl font-bold text-electric mt-2 metric-value">
+              {dashboardMetrics.totalTerritories}
+            </p>
           </div>
 
           <div className="card card-metric p-6">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="text-lg font-semibold text-primary metric-label">Ongoing Consultations</h3>
+              <h3 className="text-lg font-semibold text-primary metric-label">
+                Ongoing Consultations
+              </h3>
               <HelpButton id="metric.indigenous.ongoing_consultations" />
             </div>
-            <p className="text-3xl font-bold text-warning mt-2 metric-value">{dashboardMetrics.ongoingConsultations}</p>
+            <p className="text-3xl font-bold text-warning mt-2 metric-value">
+              {dashboardMetrics.ongoingConsultations}
+            </p>
           </div>
 
           <div className="card card-metric p-6">
@@ -633,7 +679,9 @@ export const IndigenousDashboard: React.FC = () => {
               <h3 className="text-lg font-semibold text-primary metric-label">Completed</h3>
               <HelpButton id="metric.indigenous.completed_consultations" />
             </div>
-            <p className="text-3xl font-bold text-success mt-2 metric-value">{dashboardMetrics.completedConsultations}</p>
+            <p className="text-3xl font-bold text-success mt-2 metric-value">
+              {dashboardMetrics.completedConsultations}
+            </p>
           </div>
 
           <div className="card card-metric p-6">
@@ -679,7 +727,9 @@ export const IndigenousDashboard: React.FC = () => {
           {/* TEK Categories Chart */}
           <div className="card shadow p-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-semibold text-primary">Traditional Ecological Knowledge</h3>
+              <h3 className="text-xl font-semibold text-primary">
+                Traditional Ecological Knowledge
+              </h3>
               <HelpButton id="chart.indigenous.tek_categories" />
             </div>
             <ResponsiveContainer width="100%" height={300}>
@@ -711,11 +761,11 @@ export const IndigenousDashboard: React.FC = () => {
                   zoom: 4,
                   showBoundaries: true,
                   showPoints: true,
-                  showLabels: true
+                  showLabels: true,
                 }}
                 onTerritoryClick={(boundary) => {
                   const match = territoryList.find(
-                    (territory) => territory.id === boundary.id || territory.name === boundary.name
+                    (territory) => territory.id === boundary.id || territory.name === boundary.name,
                   );
                   setSelectedTerritory(match ?? territoryList[0] ?? null);
                 }}
@@ -738,35 +788,44 @@ export const IndigenousDashboard: React.FC = () => {
                 <div className="text-center text-tertiary text-sm">
                   No Indigenous territories available. Confirm Supabase seed ran.
                 </div>
-              ) : territoryList.map((territory) => (
-                <div
-                  key={territory.id}
-                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                    selectedTerritory?.id === territory.id
-                      ? 'border-blue-500 bg-secondary'
-                      : 'border-[var(--border-subtle)] hover-border-[var(--border-medium)]'
-                  }`}
-                  onClick={() => setSelectedTerritory(territory)}
-                >
-                  <h4 className="font-medium text-primary">{territory.name}</h4>
-                  <p className="text-sm text-secondary">{territory.community || 'Community TBD'}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      territory.consultationStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                      territory.consultationStatus === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
-                      territory.consultationStatus === 'pending' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {territory.consultationStatus.replace('_', ' ').toUpperCase()}
-                    </span>
-                    <span className="text-xs text-tertiary">
-                      {territory.lastActivity
-                        ? new Date(territory.lastActivity).toLocaleDateString('en-CA')
-                        : 'Date TBD'}
-                    </span>
+              ) : (
+                territoryList.map((territory) => (
+                  <div
+                    key={territory.id}
+                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                      selectedTerritory?.id === territory.id
+                        ? 'border-blue-500 bg-secondary'
+                        : 'border-[var(--border-subtle)] hover-border-[var(--border-medium)]'
+                    }`}
+                    onClick={() => setSelectedTerritory(territory)}
+                  >
+                    <h4 className="font-medium text-primary">{territory.name}</h4>
+                    <p className="text-sm text-secondary">
+                      {territory.community || 'Community TBD'}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          territory.consultationStatus === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : territory.consultationStatus === 'ongoing'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : territory.consultationStatus === 'pending'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {territory.consultationStatus.replace('_', ' ').toUpperCase()}
+                      </span>
+                      <span className="text-xs text-tertiary">
+                        {territory.lastActivity
+                          ? new Date(territory.lastActivity).toLocaleDateString('en-CA')
+                          : 'Date TBD'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -784,19 +843,28 @@ export const IndigenousDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary">Consultation Status</label>
-                  <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
-                    selectedTerritory.consultationStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                    selectedTerritory.consultationStatus === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
-                    selectedTerritory.consultationStatus === 'pending' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <label className="block text-sm font-medium text-secondary">
+                    Consultation Status
+                  </label>
+                  <span
+                    className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                      selectedTerritory.consultationStatus === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : selectedTerritory.consultationStatus === 'ongoing'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : selectedTerritory.consultationStatus === 'pending'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
                     {selectedTerritory.consultationStatus.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary">Traditional Territory</label>
+                  <label className="block text-sm font-medium text-secondary">
+                    Traditional Territory
+                  </label>
                   <p className="text-primary">{selectedTerritory.traditionalTerritory}</p>
                 </div>
 
@@ -809,19 +877,26 @@ export const IndigenousDashboard: React.FC = () => {
 
                 {edgeProjects.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-secondary">Projects in this Territory</label>
-                    {edgeProjects.filter(p => p.territory_id === selectedTerritory.id).length === 0 ? (
-                      <p className="text-sm text-tertiary mt-1">No projects from the central registry are linked to this territory yet.</p>
+                    <label className="block text-sm font-medium text-secondary">
+                      Projects in this Territory
+                    </label>
+                    {edgeProjects.filter((p) => p.territory_id === selectedTerritory.id).length ===
+                    0 ? (
+                      <p className="text-sm text-tertiary mt-1">
+                        No projects from the central registry are linked to this territory yet.
+                      </p>
                     ) : (
                       <ul className="mt-2 space-y-1 text-sm">
                         {edgeProjects
-                          .filter(p => p.territory_id === selectedTerritory.id)
+                          .filter((p) => p.territory_id === selectedTerritory.id)
                           .slice(0, 5)
                           .map((p) => (
                             <li key={p.id} className="flex items-center justify-between">
                               <div>
                                 <span className="font-medium text-primary">{p.name}</span>
-                                <span className="ml-2 text-xs text-tertiary">{p.energy_type || 'energy'}</span>
+                                <span className="ml-2 text-xs text-tertiary">
+                                  {p.energy_type || 'energy'}
+                                </span>
                               </div>
                               <span className="text-xs text-tertiary capitalize">
                                 {p.stage || 'planning'} • {p.consent_type || 'public'}
@@ -867,29 +942,40 @@ export const IndigenousDashboard: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-secondary">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Territory</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">
+                    Territory
+                  </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Stage</th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Status</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Participants</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Last Updated</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">
+                    Participants
+                  </th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">
+                    Last Updated
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
                 {fpicWorkflows.slice(0, 10).map((workflow) => (
                   <tr key={workflow.id} className="hover:bg-secondary">
                     <td className="px-4 py-2 text-sm text-primary">
-                      {territories.find(t => t.id === workflow.territoryId)?.name || 'Unknown'}
+                      {territories.find((t) => t.id === workflow.territoryId)?.name || 'Unknown'}
                     </td>
                     <td className="px-4 py-2 text-sm text-secondary">
                       {workflow.stage.replace('_', ' ').toUpperCase()}
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                        workflow.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        workflow.status === 'declined' ? 'bg-red-100 text-red-800' :
-                        workflow.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
+                      <span
+                        className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          workflow.status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : workflow.status === 'declined'
+                              ? 'bg-red-100 text-red-800'
+                              : workflow.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
                         {workflow.status.toUpperCase()}
                       </span>
                     </td>
@@ -909,10 +995,12 @@ export const IndigenousDashboard: React.FC = () => {
         <div className="mt-8 card shadow p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-xl font-semibold text-primary">Funder View – Indigenous Projects</h3>
+              <h3 className="text-xl font-semibold text-primary">
+                Funder View – Indigenous Projects
+              </h3>
               <p className="text-sm text-secondary mt-1">
-                High-level summary of Indigenous energy projects across the central registry for funders and
-                reconciliation partners.
+                High-level summary of Indigenous energy projects across the central registry for
+                funders and reconciliation partners.
               </p>
             </div>
             <HelpButton id="module.indigenous.funder_view" />
@@ -920,8 +1008,9 @@ export const IndigenousDashboard: React.FC = () => {
 
           {!funderSummary ? (
             <div className="text-sm text-tertiary">
-              Reporting API (api-v2-indigenous-reporting) is currently unavailable from this environment. Once the
-              Edge function is deployed and CORS is configured, this card will populate with live project metrics.
+              Reporting API (api-v2-indigenous-reporting) is currently unavailable from this
+              environment. Once the Edge function is deployed and CORS is configured, this card will
+              populate with live project metrics.
             </div>
           ) : (
             <>
@@ -963,12 +1052,14 @@ export const IndigenousDashboard: React.FC = () => {
                 <div>
                   <p className="font-medium text-primary mb-1">Consultation & FPIC Status</p>
                   <ul className="space-y-1">
-                    {Object.entries(funderSummary.by_consultation_status || {}).map(([status, count]) => (
-                      <li key={`consult-${status}`} className="flex items-center justify-between">
-                        <span className="capitalize">Consultation: {status || 'unknown'}</span>
-                        <span className="font-medium">{count}</span>
-                      </li>
-                    ))}
+                    {Object.entries(funderSummary.by_consultation_status || {}).map(
+                      ([status, count]) => (
+                        <li key={`consult-${status}`} className="flex items-center justify-between">
+                          <span className="capitalize">Consultation: {status || 'unknown'}</span>
+                          <span className="font-medium">{count}</span>
+                        </li>
+                      ),
+                    )}
                     {Object.entries(funderSummary.by_fpic_status || {}).map(([status, count]) => (
                       <li key={`fpic-${status}`} className="flex items-center justify-between">
                         <span className="capitalize">FPIC: {status || 'unknown'}</span>
@@ -985,19 +1076,31 @@ export const IndigenousDashboard: React.FC = () => {
         {/* Connection Status */}
         <div className="mt-4 flex items-center justify-end space-x-4">
           <div className="flex items-center space-x-2 text-sm">
-            <span className={`inline-block w-2 h-2 rounded-full ${
-              wsConnected ? 'bg-secondary0' : 'bg-secondary0'
-            }`}></span>
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                wsConnected ? 'bg-secondary0' : 'bg-secondary0'
+              }`}
+            ></span>
             <span className="text-secondary">
               {wsConnected ? 'WebSocket Connected' : 'WebSocket Offline'}
             </span>
           </div>
           <div className="flex items-center space-x-2 text-sm">
-            <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'fallback' ? 'bg-amber-500' : 'bg-red-500'
-            }`}></span>
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                connectionStatus === 'connected'
+                  ? 'bg-green-500'
+                  : connectionStatus === 'fallback'
+                    ? 'bg-amber-500'
+                    : 'bg-red-500'
+              }`}
+            ></span>
             <span className="text-secondary">
-              {connectionStatus === 'connected' ? 'Data Stream Active' : connectionStatus === 'fallback' ? 'Using Backup Data' : 'Data Stream Offline'}
+              {connectionStatus === 'connected'
+                ? 'Data Stream Active'
+                : connectionStatus === 'fallback'
+                  ? 'Using Backup Data'
+                  : 'Data Stream Offline'}
             </span>
           </div>
         </div>
@@ -1041,32 +1144,46 @@ export const IndigenousDashboard: React.FC = () => {
                   <h4 className="font-medium text-primary">{project.name}</h4>
                   <p className="text-sm text-secondary mt-1">{project.community}</p>
                   <p className="text-sm text-tertiary">{project.territory_name}</p>
-                  
+
                   <div className="flex items-center gap-4 mt-3">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      project.consultation_status === 'completed' ? 'bg-green-100 text-green-800' :
-                      project.consultation_status === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
-                      project.consultation_status === 'pending' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        project.consultation_status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : project.consultation_status === 'ongoing'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : project.consultation_status === 'pending'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {project.consultation_status.replace('_', ' ').toUpperCase()}
                     </span>
-                    
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      project.fpic_status === 'obtained' ? 'bg-green-100 text-green-800' :
-                      project.fpic_status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                      project.fpic_status === 'declined' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        project.fpic_status === 'obtained'
+                          ? 'bg-green-100 text-green-800'
+                          : project.fpic_status === 'in_progress'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : project.fpic_status === 'declined'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       FPIC: {project.fpic_status.replace('_', ' ').toUpperCase()}
                     </span>
 
                     {project.governance_status && (
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        project.governance_status === 'approved' ? 'bg-green-100 text-green-800' :
-                        project.governance_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          project.governance_status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : project.governance_status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                        }`}
+                      >
                         {project.governance_status.toUpperCase()}
                       </span>
                     )}
@@ -1078,7 +1195,7 @@ export const IndigenousDashboard: React.FC = () => {
                     </p>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingProject(project.id)}
@@ -1115,7 +1232,9 @@ export const IndigenousDashboard: React.FC = () => {
             <div className="text-center py-8 text-tertiary">
               <Shield size={48} className="mx-auto mb-4 text-slate-300" />
               <p>No Indigenous energy projects recorded yet.</p>
-              <p className="text-sm">Add your first project to start tracking consultation and benefit-sharing.</p>
+              <p className="text-sm">
+                Add your first project to start tracking consultation and benefit-sharing.
+              </p>
             </div>
           )}
         </div>
@@ -1141,19 +1260,20 @@ export const IndigenousDashboard: React.FC = () => {
 
               <IndigenousProjectForm
                 onSubmit={(project: EnhancedIndigenousProject) => {
-                  const record: Omit<IndigenousProjectRecord, 'id' | 'created_at' | 'updated_at'> = {
-                    name: project.project_name,
-                    territory_id: `territory_${Date.now()}`,
-                    territory_name: project.traditional_territory || project.community_name,
-                    community: project.community_name,
-                    traditional_territory: project.traditional_territory,
-                    consultation_status: 'not_started',
-                    fpic_status: project.fpic_status,
-                    benefit_sharing: {},
-                    consultation_log: [],
-                    data_source: 'user_input',
-                    governance_status: 'pending'
-                  };
+                  const record: Omit<IndigenousProjectRecord, 'id' | 'created_at' | 'updated_at'> =
+                    {
+                      name: project.project_name,
+                      territory_id: `territory_${Date.now()}`,
+                      territory_name: project.traditional_territory || project.community_name,
+                      community: project.community_name,
+                      traditional_territory: project.traditional_territory,
+                      consultation_status: 'not_started',
+                      fpic_status: project.fpic_status,
+                      benefit_sharing: {},
+                      consultation_log: [],
+                      data_source: 'user_input',
+                      governance_status: 'pending',
+                    };
 
                   localStorageManager.addIndigenousProject(record);
                   loadInitialData();

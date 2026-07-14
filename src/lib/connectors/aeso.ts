@@ -12,7 +12,13 @@
  * License: Open access (see https://www.aeso.ca/market/market-and-system-reporting/data-requests/)
  */
 
-import { BaseConnector, ConnectorMeta, DiscoverResult, FetchResult, NormalizedRecord } from './index.ts';
+import {
+  BaseConnector,
+  ConnectorMeta,
+  DiscoverResult,
+  FetchResult,
+  NormalizedRecord,
+} from './index.ts';
 
 const AESO_API_BASE = 'https://api.aeso.ca/web/api';
 
@@ -62,7 +68,7 @@ export class AesoConnector extends BaseConnector {
         message: resp.ok ? 'AESO API reachable' : `HTTP ${resp.status}`,
       };
     } catch (err) {
-      return { available: false, message: String(err) };
+      return { available: false, sourceLastUpdated: null, message: String(err) };
     }
   }
 
@@ -83,7 +89,7 @@ export class AesoConnector extends BaseConnector {
       if (!resp.ok) {
         warnings.push(`AESO current/summary HTTP ${resp.status}`);
       } else {
-        const json = await resp.json() as {
+        const json = (await resp.json()) as {
           return?: {
             alberta_internal_load?: number;
             net_to_grid_generation?: number;
@@ -162,9 +168,8 @@ export class AesoConnector extends BaseConnector {
     // Optionally fetch pool price (last 24h)
     if (params?.includePoolPrice !== 'false') {
       const endDate = params?.endDate ?? new Date().toISOString().slice(0, 10);
-      const startDate = params?.startDate ?? new Date(Date.now() - 86_400_000 * 7)
-        .toISOString()
-        .slice(0, 10);
+      const startDate =
+        params?.startDate ?? new Date(Date.now() - 86_400_000 * 7).toISOString().slice(0, 10);
       const priceUrl = `${AESO_API_BASE}/v1/market/clearing-price/pool-price?startDate=${startDate}&endDate=${endDate}`;
       try {
         const resp = await fetch(priceUrl, {
@@ -172,7 +177,7 @@ export class AesoConnector extends BaseConnector {
           signal: AbortSignal.timeout(15_000),
         });
         if (resp.ok) {
-          const json = await resp.json() as {
+          const json = (await resp.json()) as {
             return?: Array<{ begin_datetime_utc?: string; pool_price?: number }>;
           };
           for (const item of json.return ?? []) {

@@ -91,10 +91,7 @@ export interface HybridSearchConfig {
  * rrf_score(d) = Σ_i 1 / (k + rank_i(d))
  * where rank_i is the 1-based rank of document d in list i.
  */
-function reciprocalRankFusion(
-  lists: Array<string[]>,
-  k = 60,
-): Map<string, number> {
+function reciprocalRankFusion(lists: Array<string[]>, k = 60): Map<string, number> {
   const scores = new Map<string, number>();
   for (const list of lists) {
     for (let i = 0; i < list.length; i++) {
@@ -107,11 +104,14 @@ function reciprocalRankFusion(
 
 // ── Domain relevance boost ─────────────────────────────────────────────────────
 
-function domainBoost(doc: {
-  jurisdiction?: string;
-  publishedAt?: string;
-  trustTier?: number;
-}, queryJurisdictions?: string[]): number {
+function domainBoost(
+  doc: {
+    jurisdiction?: string;
+    publishedAt?: string;
+    trustTier?: number;
+  },
+  queryJurisdictions?: string[],
+): number {
   let boost = 1.0;
 
   // Trust tier boost: tier 1 = 1.2×, tier 2 = 1.1×, tier 3 = 1.0×, tier 4 = 0.9×
@@ -141,10 +141,7 @@ export class HybridSearcher {
   private readonly config: Required<HybridSearchConfig>;
   private readonly supabase: unknown;
 
-  constructor(
-    supabaseClient: unknown,
-    config: HybridSearchConfig = {},
-  ) {
+  constructor(supabaseClient: unknown, config: HybridSearchConfig = {}) {
     this.supabase = supabaseClient;
     this.config = {
       embeddingDim: config.embeddingDim ?? 1536,
@@ -175,7 +172,7 @@ export class HybridSearcher {
         console.warn(`[HybridSearcher] Embedding API error: HTTP ${resp.status}`);
         return null;
       }
-      const json = await resp.json() as { data?: Array<{ embedding: number[] }> };
+      const json = (await resp.json()) as { data?: Array<{ embedding: number[] }> };
       return json.data?.[0]?.embedding ?? null;
     } catch (err) {
       console.warn('[HybridSearcher] Embedding API unreachable:', err);
@@ -194,16 +191,20 @@ export class HybridSearcher {
     const client = this.supabase as {
       from: (t: string) => {
         select: (cols: string) => {
-          textSearch: (col: string, query: string, opts: unknown) => {
+          textSearch: (
+            col: string,
+            query: string,
+            opts: unknown,
+          ) => {
             in?: (...args: unknown[]) => unknown;
             gte?: (...args: unknown[]) => unknown;
             lte?: (...args: unknown[]) => unknown;
-            limit: (n: number) => { then: Function };
+            limit: (n: number) => { then: (onFulfilled: (value: unknown) => unknown) => unknown };
           };
           in: (col: string, vals: string[]) => unknown;
           gte: (col: string, val: unknown) => unknown;
           lte: (col: string, val: unknown) => unknown;
-          limit: (n: number) => { then: Function };
+          limit: (n: number) => { then: (onFulfilled: (value: unknown) => unknown) => unknown };
         };
         rpc: (fn: string, params: unknown) => Promise<{ data: unknown[]; error: unknown }>;
       };
@@ -268,7 +269,10 @@ export class HybridSearcher {
     const client = this.supabase as {
       from: (t: string) => {
         select: (cols: string) => {
-          in: (col: string, vals: string[]) => Promise<{ data: SearchDocument[] | null; error: unknown }>;
+          in: (
+            col: string,
+            vals: string[],
+          ) => Promise<{ data: SearchDocument[] | null; error: unknown }>;
         };
       };
     };
@@ -340,7 +344,11 @@ export class HybridSearcher {
 
         const rrf = rrfScores.get(id) ?? 0;
         const boost = domainBoost(
-          { jurisdiction: doc.jurisdiction, publishedAt: doc.publishedAt, trustTier: doc.trustTier },
+          {
+            jurisdiction: doc.jurisdiction,
+            publishedAt: doc.publishedAt,
+            trustTier: doc.trustTier,
+          },
           jurisdictions,
         );
         const score = rrf * boost;
@@ -351,8 +359,14 @@ export class HybridSearcher {
           ...(debug
             ? {
                 scoreBreakdown: {
-                  sparse: sparseIds.indexOf(id) >= 0 ? 1 / (this.config.rrfK + sparseIds.indexOf(id) + 1) : null,
-                  dense: denseIds.indexOf(id) >= 0 ? 1 / (this.config.rrfK + denseIds.indexOf(id) + 1) : null,
+                  sparse:
+                    sparseIds.indexOf(id) >= 0
+                      ? 1 / (this.config.rrfK + sparseIds.indexOf(id) + 1)
+                      : null,
+                  dense:
+                    denseIds.indexOf(id) >= 0
+                      ? 1 / (this.config.rrfK + denseIds.indexOf(id) + 1)
+                      : null,
                   rrf,
                   domainBoost: boost,
                 },
@@ -361,7 +375,7 @@ export class HybridSearcher {
         } as SearchResult;
       })
       .filter(Boolean)
-      .sort((a, b) => (b!.score - a!.score)) as SearchResult[];
+      .sort((a, b) => b!.score - a!.score) as SearchResult[];
 
     return results.slice(0, limit);
   }

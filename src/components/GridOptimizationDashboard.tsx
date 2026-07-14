@@ -1,6 +1,34 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Zap, TrendingUp, AlertTriangle, CheckCircle, Settings, Battery, Gauge, Target, Activity, Wifi, WifiOff } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import {
+  Zap,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Settings,
+  Battery,
+  Gauge,
+  Target,
+  Activity,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
@@ -60,43 +88,50 @@ const GridOptimizationDashboard: React.FC = () => {
     messages: wsMessages,
     connectionStatus: wsConnectionStatus,
     isConnected: wsConnected,
-    sendMessage: sendWsMessage
+    sendMessage: sendWsMessage,
   } = useWebSocketConsultation('grid-optimization');
 
   // Load initial data
-  const mapToGridStatus = useCallback((record: any, fallbackRegion: string, defaultIndex: number): GridStatus | null => {
-    if (!record) return null;
+  const mapToGridStatus = useCallback(
+    (record: any, fallbackRegion: string, defaultIndex: number): GridStatus | null => {
+      if (!record) return null;
 
-    const demand = Number(record.demand_mw ?? record.demand ?? record.ontario_demand ?? record.load ?? NaN);
-    const supply = Number(record.supply_mw ?? record.supply ?? record.generation ?? NaN);
+      const demand = Number(
+        record.demand_mw ?? record.demand ?? record.ontario_demand ?? record.load ?? NaN,
+      );
+      const supply = Number(record.supply_mw ?? record.supply ?? record.generation ?? NaN);
 
-    const hasDemand = Number.isFinite(demand);
-    const hasSupply = Number.isFinite(supply);
+      const hasDemand = Number.isFinite(demand);
+      const hasSupply = Number.isFinite(supply);
 
-    if (!hasDemand && !hasSupply) {
-      return null;
-    }
+      if (!hasDemand && !hasSupply) {
+        return null;
+      }
 
-    const resolvedDemand = hasDemand ? demand : 0;
-    const resolvedSupply = hasSupply ? supply : resolvedDemand * 1.05;
+      const resolvedDemand = hasDemand ? demand : 0;
+      const resolvedSupply = hasSupply ? supply : resolvedDemand * 1.05;
 
-    const frequency = Number(record.frequency_hz ?? record.frequency ?? 60);
-    const voltage = Number(record.voltage_kv ?? record.voltage ?? 120);
-    const congestion = Number(record.congestion_index ?? record.congestion ?? 0);
-    const status = (record.status || (congestion > 0.25 ? 'warning' : 'stable')) as GridStatus['status'];
+      const frequency = Number(record.frequency_hz ?? record.frequency ?? 60);
+      const voltage = Number(record.voltage_kv ?? record.voltage ?? 120);
+      const congestion = Number(record.congestion_index ?? record.congestion ?? 0);
+      const status = (record.status ||
+        (congestion > 0.25 ? 'warning' : 'stable')) as GridStatus['status'];
 
-    return {
-      id: record.id || `grid_${record.captured_at || defaultIndex}`,
-      region: record.region || fallbackRegion,
-      demand: resolvedDemand,
-      supply: resolvedSupply,
-      frequency,
-      voltage,
-      congestion,
-      timestamp: record.captured_at || record.timestamp || record.last_updated || new Date().toISOString(),
-      status
-    };
-  }, []);
+      return {
+        id: record.id || `grid_${record.captured_at || defaultIndex}`,
+        region: record.region || fallbackRegion,
+        demand: resolvedDemand,
+        supply: resolvedSupply,
+        frequency,
+        voltage,
+        congestion,
+        timestamp:
+          record.captured_at || record.timestamp || record.last_updated || new Date().toISOString(),
+        status,
+      };
+    },
+    [],
+  );
 
   const loadGridData = useCallback(async () => {
     try {
@@ -105,18 +140,15 @@ const GridOptimizationDashboard: React.FC = () => {
       const regionQuery = encodeURIComponent(selectedRegion);
 
       const [gridStatusResult, stabilityResult, recommendationsResult] = await Promise.all([
-        fetchEdgeJson([
-          `api-v2-grid-status?region=${regionQuery}`,
-          'api/grid/status'
-        ]),
+        fetchEdgeJson([`api-v2-grid-status?region=${regionQuery}`, 'api/grid/status']),
         fetchEdgeJson([
           `api-v2-grid-stability-metrics?region=${regionQuery}`,
-          'api/grid/stability-metrics'
+          'api/grid/stability-metrics',
         ]),
         fetchEdgeJson([
           `api-v2-grid-optimization-recommendations?region=${regionQuery}`,
-          'api/grid/optimization-recommendations'
-        ])
+          'api/grid/optimization-recommendations',
+        ]),
       ]);
 
       const statusRecordsRaw = Array.isArray(gridStatusResult.json?.records)
@@ -127,7 +159,7 @@ const GridOptimizationDashboard: React.FC = () => {
 
       const mappedStatus: GridStatus[] = statusRecordsRaw
         .map((record: any, index: number) => mapToGridStatus(record, selectedRegion, index))
-        .filter((item): item is GridStatus => item !== null);
+        .filter((item: GridStatus | null): item is GridStatus => item !== null);
       setGridStatus(mappedStatus);
 
       const stabilityPayload = Array.isArray(stabilityResult.json)
@@ -136,11 +168,22 @@ const GridOptimizationDashboard: React.FC = () => {
 
       if (stabilityPayload) {
         setStabilityMetrics({
-          frequencyStability: Number(stabilityPayload.frequency_stability ?? stabilityPayload.frequencyStability ?? 0),
-          voltageStability: Number(stabilityPayload.voltage_stability ?? stabilityPayload.voltageStability ?? 0),
-          congestionIndex: Number(stabilityPayload.congestion_index ?? stabilityPayload.congestionIndex ?? 0),
-          reserveMargin: Number(stabilityPayload.reserve_margin ?? stabilityPayload.reserveMargin ?? 0),
-          lastUpdated: stabilityPayload.last_updated || stabilityPayload.lastUpdated || new Date().toISOString()
+          frequencyStability: Number(
+            stabilityPayload.frequency_stability ?? stabilityPayload.frequencyStability ?? 0,
+          ),
+          voltageStability: Number(
+            stabilityPayload.voltage_stability ?? stabilityPayload.voltageStability ?? 0,
+          ),
+          congestionIndex: Number(
+            stabilityPayload.congestion_index ?? stabilityPayload.congestionIndex ?? 0,
+          ),
+          reserveMargin: Number(
+            stabilityPayload.reserve_margin ?? stabilityPayload.reserveMargin ?? 0,
+          ),
+          lastUpdated:
+            stabilityPayload.last_updated ||
+            stabilityPayload.lastUpdated ||
+            new Date().toISOString(),
         });
       } else {
         setStabilityMetrics(null);
@@ -152,19 +195,25 @@ const GridOptimizationDashboard: React.FC = () => {
           ? recommendationsResult.json
           : [];
 
-      const processedRecommendations: OptimizationRecommendation[] = recommendationItems.map((rec: any, index: number) => ({
-        id: rec.id || `recommendation_${rec.generated_at || index}`,
-        type: (rec.recommendation_type || rec.type || 'demand_response') as OptimizationRecommendation['type'],
-        priority: (rec.priority || 'medium') as OptimizationRecommendation['priority'],
-        description: rec.description || 'Optimization recommendation',
-        expectedImpact: Number(rec.expected_impact_percent ?? rec.expectedImpact ?? 0),
-        implementationTime: Number(rec.implementation_time_minutes ?? rec.implementationTime ?? 0),
-        confidence: typeof rec.confidence === 'number' ? rec.confidence : Number(rec.confidence ?? 0),
-        timestamp: rec.generated_at || rec.timestamp || new Date().toISOString()
-      }));
+      const processedRecommendations: OptimizationRecommendation[] = recommendationItems.map(
+        (rec: any, index: number) => ({
+          id: rec.id || `recommendation_${rec.generated_at || index}`,
+          type: (rec.recommendation_type ||
+            rec.type ||
+            'demand_response') as OptimizationRecommendation['type'],
+          priority: (rec.priority || 'medium') as OptimizationRecommendation['priority'],
+          description: rec.description || 'Optimization recommendation',
+          expectedImpact: Number(rec.expected_impact_percent ?? rec.expectedImpact ?? 0),
+          implementationTime: Number(
+            rec.implementation_time_minutes ?? rec.implementationTime ?? 0,
+          ),
+          confidence:
+            typeof rec.confidence === 'number' ? rec.confidence : Number(rec.confidence ?? 0),
+          timestamp: rec.generated_at || rec.timestamp || new Date().toISOString(),
+        }),
+      );
       setRecommendations(processedRecommendations);
       setIsFallbackData(false);
-
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const isEdgeDisabled = message.includes('VITE_ENABLE_EDGE_FETCH=false');
@@ -175,34 +224,37 @@ const GridOptimizationDashboard: React.FC = () => {
       setError(
         isEdgeDisabled
           ? 'Supabase Edge fetch disabled via configuration. Using local grid dataset.'
-          : 'Using locally generated grid dataset while Supabase APIs are unavailable.'
+          : 'Using locally generated grid dataset while Supabase APIs are unavailable.',
       );
       setIsFallbackData(true);
 
       const fallbackStatus = await realDataService.getGridStatus();
       setGridStatus(
-        fallbackStatus.map((record, index) =>
-          mapToGridStatus(
-            {
-              id: record.id,
-              region: record.region,
-              demand_mw: record.load_mw,
-              supply_mw: record.generation_mw,
-              frequency_hz: record.grid_frequency_hz,
-              voltage_kv: 120,
-              congestion_index:
-                record.congestion_level === 'high'
-                  ? 0.6
-                  : record.congestion_level === 'medium'
-                  ? 0.35
-                  : 0.15,
-              status: record.voltage_stability,
-              captured_at: record.timestamp,
-            },
-            record.region,
-            index,
-          ) ?? null,
-        ).filter((item): item is GridStatus => item !== null),
+        fallbackStatus
+          .map(
+            (record, index) =>
+              mapToGridStatus(
+                {
+                  id: record.id,
+                  region: record.region,
+                  demand_mw: record.load_mw,
+                  supply_mw: record.generation_mw,
+                  frequency_hz: record.grid_frequency_hz,
+                  voltage_kv: 120,
+                  congestion_index:
+                    record.congestion_level === 'high'
+                      ? 0.6
+                      : record.congestion_level === 'medium'
+                        ? 0.35
+                        : 0.15,
+                  status: record.voltage_stability,
+                  captured_at: record.timestamp,
+                },
+                record.region,
+                index,
+              ) ?? null,
+          )
+          .filter((item): item is GridStatus => item !== null),
       );
 
       const reserveMargin = fallbackStatus[0]?.reserve_margin_percent ?? 8;
@@ -225,15 +277,18 @@ const GridOptimizationDashboard: React.FC = () => {
   }, [selectedRegion, loadGridData]);
 
   // Process real-time IESO data
-  const processIESOData = useCallback((data: any[]) => {
-    if (data.length === 0) return;
+  const processIESOData = useCallback(
+    (data: any[]) => {
+      if (data.length === 0) return;
 
-    const latestData = data[data.length - 1];
-    const mapped = mapToGridStatus(latestData, selectedRegion, Date.now());
-    if (!mapped) return;
+      const latestData = data[data.length - 1];
+      const mapped = mapToGridStatus(latestData, selectedRegion, Date.now());
+      if (!mapped) return;
 
-    setGridStatus(prev => [mapped, ...prev].slice(0, 100));
-  }, [mapToGridStatus, selectedRegion]);
+      setGridStatus((prev) => [mapped, ...prev].slice(0, 100));
+    },
+    [mapToGridStatus, selectedRegion],
+  );
 
   useEffect(() => {
     if (iesoData.length > 0) {
@@ -246,8 +301,12 @@ const GridOptimizationDashboard: React.FC = () => {
     if (gridStatus.length === 0) return null;
 
     const latest = gridStatus[0];
-    const avgDemand = gridStatus.slice(0, 24).reduce((sum, s) => sum + s.demand, 0) / Math.min(24, gridStatus.length);
-    const avgSupply = gridStatus.slice(0, 24).reduce((sum, s) => sum + s.supply, 0) / Math.min(24, gridStatus.length);
+    const avgDemand =
+      gridStatus.slice(0, 24).reduce((sum, s) => sum + s.demand, 0) /
+      Math.min(24, gridStatus.length);
+    const avgSupply =
+      gridStatus.slice(0, 24).reduce((sum, s) => sum + s.supply, 0) /
+      Math.min(24, gridStatus.length);
 
     return {
       currentDemand: latest.demand,
@@ -257,45 +316,67 @@ const GridOptimizationDashboard: React.FC = () => {
       voltageDeviation: Math.abs(120 - latest.voltage),
       avgDemand,
       avgSupply,
-      criticalAlerts: recommendations.filter(r => r.priority === 'critical').length,
-      highPriorityActions: recommendations.filter(r => r.priority === 'high').length
+      criticalAlerts: recommendations.filter((r) => r.priority === 'critical').length,
+      highPriorityActions: recommendations.filter((r) => r.priority === 'high').length,
     };
   }, [gridStatus, recommendations]);
 
   // Prepare chart data
   const demandSupplyData = useMemo(() => {
-    return gridStatus.slice(0, 24).reverse().map((status, index) => ({
-      time: `${24 - index}h ago`,
-      demand: status.demand,
-      supply: status.supply,
-      reserve: status.supply - status.demand
-    }));
+    return gridStatus
+      .slice(0, 24)
+      .reverse()
+      .map((status, index) => ({
+        time: `${24 - index}h ago`,
+        demand: status.demand,
+        supply: status.supply,
+        reserve: status.supply - status.demand,
+      }));
   }, [gridStatus]);
 
   const stabilityData = useMemo(() => {
-    return gridStatus.slice(0, 12).reverse().map((status, index) => ({
-      time: `${12 - index}h ago`,
-      frequency: status.frequency,
-      voltage: status.voltage,
-      congestion: status.congestion
-    }));
+    return gridStatus
+      .slice(0, 12)
+      .reverse()
+      .map((status, index) => ({
+        time: `${12 - index}h ago`,
+        frequency: status.frequency,
+        voltage: status.voltage,
+        congestion: status.congestion,
+      }));
   }, [gridStatus]);
 
   const recommendationsByPriority = useMemo(() => {
-    const priorityCount = recommendations.reduce((acc, rec) => {
-      acc[rec.priority] = (acc[rec.priority] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const priorityCount = recommendations.reduce(
+      (acc, rec) => {
+        acc[rec.priority] = (acc[rec.priority] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return Object.entries(priorityCount).map(([priority, count]) => ({
       priority: priority.charAt(0).toUpperCase() + priority.slice(1),
       count,
-      color: priority === 'critical' ? '#ef4444' : priority === 'high' ? '#f59e0b' : priority === 'medium' ? '#3b82f6' : '#10b981'
+      color:
+        priority === 'critical'
+          ? '#ef4444'
+          : priority === 'high'
+            ? '#f59e0b'
+            : priority === 'medium'
+              ? '#3b82f6'
+              : '#10b981',
     }));
   }, [recommendations]);
 
   const gridLastUpdated = gridStatus[0]?.timestamp ?? stabilityMetrics?.lastUpdated ?? null;
-  const gridFreshnessStatus = isFallbackData ? 'demo' : connectionStatus === 'connected' ? 'live' : connectionStatus === 'fallback' ? 'demo' : 'unknown';
+  const gridFreshnessStatus = isFallbackData
+    ? 'demo'
+    : connectionStatus === 'connected'
+      ? 'live'
+      : connectionStatus === 'fallback'
+        ? 'demo'
+        : 'unknown';
 
   if (loading) {
     return (
@@ -318,22 +399,28 @@ const GridOptimizationDashboard: React.FC = () => {
             className="mb-6"
           />
         )}
-        
+
         <section className="hero-section mb-8">
           <div className="hero-content">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="hero-title">
-                  Grid Optimization Dashboard
-                </h1>
+                <h1 className="hero-title">Grid Optimization Dashboard</h1>
                 <p className="hero-subtitle mt-2">
-                  {isFallbackData ? 'Fallback grid telemetry, stability analysis, and indicative optimization recommendations' : 'Grid monitoring, stability analysis, and optimization recommendations'}
+                  {isFallbackData
+                    ? 'Fallback grid telemetry, stability analysis, and indicative optimization recommendations'
+                    : 'Grid monitoring, stability analysis, and optimization recommendations'}
                 </p>
                 <div className="mt-3">
                   <DataFreshnessBadge
                     timestamp={gridLastUpdated}
                     status={gridFreshnessStatus}
-                    source={isFallbackData ? 'Fallback grid dataset' : isUsingRealData ? 'IESO stream' : 'Cached operational feed'}
+                    source={
+                      isFallbackData
+                        ? 'Fallback grid dataset'
+                        : isUsingRealData
+                          ? 'IESO stream'
+                          : 'Cached operational feed'
+                    }
                   />
                 </div>
               </div>
@@ -362,7 +449,9 @@ const GridOptimizationDashboard: React.FC = () => {
                 >
                   {isFallbackData ? 'Fallback Dataset Active' : 'Data Load Issue'}
                 </h3>
-                <p className={`${isFallbackData ? 'text-amber-700' : 'text-danger'} text-sm`}>{error}</p>
+                <p className={`${isFallbackData ? 'text-amber-700' : 'text-danger'} text-sm`}>
+                  {error}
+                </p>
               </div>
             </div>
           </div>
@@ -375,16 +464,29 @@ const GridOptimizationDashboard: React.FC = () => {
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Zap className="h-6 w-6 text-electric" />
               </div>
-              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? 'bg-green-100 text-success' :
-                dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? 'bg-yellow-100 text-warning' :
-                'bg-red-100 text-danger'
-              }`}>
-                {dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? <CheckCircle className="h-3 w-3" /> :
-                 dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? <AlertTriangle className="h-3 w-3" /> :
-                 <AlertTriangle className="h-3 w-3" />}
-                <span>{dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? 'HEALTHY' :
-                       dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? 'MONITOR' : 'CRITICAL'}</span>
+              <div
+                className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10
+                    ? 'bg-green-100 text-success'
+                    : dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5
+                      ? 'bg-yellow-100 text-warning'
+                      : 'bg-red-100 text-danger'
+                }`}
+              >
+                {dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? (
+                  <CheckCircle className="h-3 w-3" />
+                ) : dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? (
+                  <AlertTriangle className="h-3 w-3" />
+                ) : (
+                  <AlertTriangle className="h-3 w-3" />
+                )}
+                <span>
+                  {dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10
+                    ? 'HEALTHY'
+                    : dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5
+                      ? 'MONITOR'
+                      : 'CRITICAL'}
+                </span>
               </div>
             </div>
             <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Reserve Margin</h3>
@@ -392,7 +494,8 @@ const GridOptimizationDashboard: React.FC = () => {
               {dashboardMetrics?.reserveMargin?.toFixed(1)}%
             </p>
             <p className="text-sm text-secondary mt-1">
-              {dashboardMetrics?.currentSupply?.toLocaleString()} MW supply vs {dashboardMetrics?.currentDemand?.toLocaleString()} MW demand
+              {dashboardMetrics?.currentSupply?.toLocaleString()} MW supply vs{' '}
+              {dashboardMetrics?.currentDemand?.toLocaleString()} MW demand
             </p>
           </div>
 
@@ -401,23 +504,35 @@ const GridOptimizationDashboard: React.FC = () => {
               <div className="p-3 bg-green-100 rounded-lg">
                 <Gauge className="h-6 w-6 text-success" />
               </div>
-              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? 'bg-green-100 text-success' :
-                dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.1 ? 'bg-yellow-100 text-warning' :
-                'bg-red-100 text-danger'
-              }`}>
-                {dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? <CheckCircle className="h-3 w-3" /> :
-                 <AlertTriangle className="h-3 w-3" />}
-                <span>{dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? 'STABLE' : 'DEVIATION'}</span>
+              <div
+                className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05
+                    ? 'bg-green-100 text-success'
+                    : dashboardMetrics?.frequencyDeviation &&
+                        dashboardMetrics.frequencyDeviation < 0.1
+                      ? 'bg-yellow-100 text-warning'
+                      : 'bg-red-100 text-danger'
+                }`}
+              >
+                {dashboardMetrics?.frequencyDeviation &&
+                dashboardMetrics.frequencyDeviation < 0.05 ? (
+                  <CheckCircle className="h-3 w-3" />
+                ) : (
+                  <AlertTriangle className="h-3 w-3" />
+                )}
+                <span>
+                  {dashboardMetrics?.frequencyDeviation &&
+                  dashboardMetrics.frequencyDeviation < 0.05
+                    ? 'STABLE'
+                    : 'DEVIATION'}
+                </span>
               </div>
             </div>
             <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Frequency</h3>
             <p className="text-3xl font-bold text-success metric-value">
               {gridStatus[0]?.frequency?.toFixed(3)} Hz
             </p>
-            <p className="text-sm text-secondary mt-1">
-              Target: 60.000 Hz
-            </p>
+            <p className="text-sm text-secondary mt-1">Target: 60.000 Hz</p>
           </div>
 
           <div className="card card-metric p-6">
@@ -425,11 +540,15 @@ const GridOptimizationDashboard: React.FC = () => {
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Target className="h-6 w-6 text-electric" />
               </div>
-              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                dashboardMetrics?.criticalAlerts === 0 ? 'bg-green-100 text-success' :
-                dashboardMetrics?.criticalAlerts && dashboardMetrics.criticalAlerts < 3 ? 'bg-yellow-100 text-warning' :
-                'bg-red-100 text-danger'
-              }`}>
+              <div
+                className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  dashboardMetrics?.criticalAlerts === 0
+                    ? 'bg-green-100 text-success'
+                    : dashboardMetrics?.criticalAlerts && dashboardMetrics.criticalAlerts < 3
+                      ? 'bg-yellow-100 text-warning'
+                      : 'bg-red-100 text-danger'
+                }`}
+              >
                 <AlertTriangle className="h-3 w-3" />
                 <span>{dashboardMetrics?.criticalAlerts || 0} CRITICAL</span>
               </div>
@@ -448,9 +567,11 @@ const GridOptimizationDashboard: React.FC = () => {
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Activity className="h-6 w-6 text-orange-600" />
               </div>
-              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                wsConnected ? 'bg-green-100 text-success' : 'bg-yellow-100 text-warning'
-              }`}>
+              <div
+                className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  wsConnected ? 'bg-green-100 text-success' : 'bg-yellow-100 text-warning'
+                }`}
+              >
                 {wsConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
                 <span>{wsConnected ? 'LIVE' : 'OFFLINE'}</span>
               </div>
@@ -460,7 +581,11 @@ const GridOptimizationDashboard: React.FC = () => {
               {isUsingRealData ? 'IESO' : isFallbackData ? 'FALLBACK' : 'OFFLINE'}
             </p>
             <p className="text-sm text-secondary mt-1">
-              {connectionStatus === 'connected' ? 'Live streaming' : connectionStatus === 'fallback' || isFallbackData ? 'Fallback telemetry' : 'Cached data'}
+              {connectionStatus === 'connected'
+                ? 'Live streaming'
+                : connectionStatus === 'fallback' || isFallbackData
+                  ? 'Fallback telemetry'
+                  : 'Cached data'}
             </p>
           </div>
         </div>
@@ -476,8 +601,20 @@ const GridOptimizationDashboard: React.FC = () => {
                 <YAxis />
                 <Tooltip formatter={(value: any) => [`${value.toLocaleString()} MW`, '']} />
                 <Legend />
-                <Area type="monotone" dataKey="demand" stackId="1" stroke="#ef4444" fill="#fee2e2" />
-                <Area type="monotone" dataKey="supply" stackId="2" stroke="#10b981" fill="#d1fae5" />
+                <Area
+                  type="monotone"
+                  dataKey="demand"
+                  stackId="1"
+                  stroke="#ef4444"
+                  fill="#fee2e2"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="supply"
+                  stackId="2"
+                  stroke="#10b981"
+                  fill="#d1fae5"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -493,8 +630,22 @@ const GridOptimizationDashboard: React.FC = () => {
                 <YAxis yAxisId="volt" orientation="right" domain={[118, 122]} />
                 <Tooltip />
                 <Legend />
-                <Line yAxisId="freq" type="monotone" dataKey="frequency" stroke="#3b82f6" strokeWidth={2} name="Frequency (Hz)" />
-                <Line yAxisId="volt" type="monotone" dataKey="voltage" stroke="#f59e0b" strokeWidth={2} name="Voltage (V)" />
+                <Line
+                  yAxisId="freq"
+                  type="monotone"
+                  dataKey="frequency"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  name="Frequency (Hz)"
+                />
+                <Line
+                  yAxisId="volt"
+                  type="monotone"
+                  dataKey="voltage"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  name="Voltage (V)"
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -503,7 +654,9 @@ const GridOptimizationDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Optimization Recommendations */}
           <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">AI Optimization Recommendations</h3>
+            <h3 className="text-xl font-semibold text-primary mb-4">
+              AI Optimization Recommendations
+            </h3>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {recommendations.length === 0 ? (
                 <div className="text-center py-8 text-tertiary">
@@ -512,25 +665,39 @@ const GridOptimizationDashboard: React.FC = () => {
                 </div>
               ) : (
                 recommendations.slice(0, 5).map((rec) => (
-                  <div key={rec.id} className={`p-4 rounded-lg border ${
-                    rec.priority === 'critical' ? 'border-red-200 bg-secondary' :
-                    rec.priority === 'high' ? 'border-yellow-200 bg-secondary' :
-                    rec.priority === 'medium' ? 'border-blue-200 bg-secondary' :
-                    'border-green-200 bg-secondary'
-                  }`}>
+                  <div
+                    key={rec.id}
+                    className={`p-4 rounded-lg border ${
+                      rec.priority === 'critical'
+                        ? 'border-red-200 bg-secondary'
+                        : rec.priority === 'high'
+                          ? 'border-yellow-200 bg-secondary'
+                          : rec.priority === 'medium'
+                            ? 'border-blue-200 bg-secondary'
+                            : 'border-green-200 bg-secondary'
+                    }`}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-primary">{rec.description}</h4>
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        rec.priority === 'critical' ? 'bg-red-100 text-danger' :
-                        rec.priority === 'high' ? 'bg-yellow-100 text-warning' :
-                        rec.priority === 'medium' ? 'bg-blue-100 text-electric' :
-                        'bg-green-100 text-success'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          rec.priority === 'critical'
+                            ? 'bg-red-100 text-danger'
+                            : rec.priority === 'high'
+                              ? 'bg-yellow-100 text-warning'
+                              : rec.priority === 'medium'
+                                ? 'bg-blue-100 text-electric'
+                                : 'bg-green-100 text-success'
+                        }`}
+                      >
                         {rec.priority.toUpperCase()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm text-secondary">
-                      <span>Expected Impact: {rec.expectedImpact > 0 ? '+' : ''}{rec.expectedImpact}%</span>
+                      <span>
+                        Expected Impact: {rec.expectedImpact > 0 ? '+' : ''}
+                        {rec.expectedImpact}%
+                      </span>
                       <span>Time: {rec.implementationTime}min</span>
                     </div>
                     <div className="mt-2 text-xs text-tertiary">
@@ -570,19 +737,27 @@ const GridOptimizationDashboard: React.FC = () => {
         {/* Connection Status */}
         <div className="mt-4 flex items-center justify-end space-x-4">
           <div className="flex items-center space-x-2 text-sm">
-            <span className={`inline-block w-2 h-2 rounded-full ${
-              wsConnected ? 'bg-secondary0' : 'bg-secondary0'
-            }`}></span>
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                wsConnected ? 'bg-secondary0' : 'bg-secondary0'
+              }`}
+            ></span>
             <span className="text-secondary">
               {wsConnected ? 'Live WebSocket Connected' : 'WebSocket Offline'}
             </span>
           </div>
           <div className="flex items-center space-x-2 text-sm">
-            <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
-            }`}></span>
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
+              }`}
+            ></span>
             <span className="text-secondary">
-              {connectionStatus === 'connected' ? 'IESO Data Stream Active' : connectionStatus === 'fallback' || isFallbackData ? 'IESO Data Stream In Fallback Mode' : 'IESO Data Stream Offline'}
+              {connectionStatus === 'connected'
+                ? 'IESO Data Stream Active'
+                : connectionStatus === 'fallback' || isFallbackData
+                  ? 'IESO Data Stream In Fallback Mode'
+                  : 'IESO Data Stream Offline'}
             </span>
           </div>
         </div>

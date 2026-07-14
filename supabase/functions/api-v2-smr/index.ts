@@ -81,7 +81,7 @@ serve(async (req) => {
 
     const payload = {
       projects: projects ?? [],
-      vendors: [], // Will be populated when smr_technology_vendors table is available
+      vendors: [] as unknown[], // Will be populated when smr_technology_vendors table is available
       summary: [{
         total_projects: totalProjects,
         total_capacity_mw: totalCapacity,

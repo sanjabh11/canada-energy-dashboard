@@ -116,7 +116,7 @@ describe('validateSubstrateAttachment', () => {
 
   it('throws if provenanceChain is empty', () => {
     const attached = attachSubstrateToProofPack(MOCK_PACK, SCENARIO_REF, CHAIN);
-    const broken = { ...attached, _substrate: { ...attached._substrate, provenanceChain: [] } };
+    const broken = { ...attached, _substrate: { ...attached._substrate, provenanceChain: [] as unknown[] } };
     expect(() => validateSubstrateAttachment(broken)).toThrow('Provenance chain is empty');
   });
 });

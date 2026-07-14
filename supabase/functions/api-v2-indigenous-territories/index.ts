@@ -51,7 +51,7 @@ serve(async (req) => {
 
     const territories = (data ?? []).map((row) => {
       const centroid = row.centroid as GeometryPoint | null;
-      const coordinates = Array.isArray(centroid?.coordinates) ? centroid?.coordinates : [null, null];
+      const coordinates: unknown[] = Array.isArray(centroid?.coordinates) ? centroid?.coordinates : [null, null];
       const [longitude, latitude] = coordinates;
 
       return {

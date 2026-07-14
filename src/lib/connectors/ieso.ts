@@ -9,7 +9,13 @@
  * License: IESO Open Data Licence (ieso.ca/en/The-IESO/Open-Data-Licence)
  */
 
-import { BaseConnector, ConnectorMeta, DiscoverResult, FetchResult, NormalizedRecord } from './index.ts';
+import {
+  BaseConnector,
+  ConnectorMeta,
+  DiscoverResult,
+  FetchResult,
+  NormalizedRecord,
+} from './index.ts';
 
 const IESO_REPORTS_BASE = 'https://reports.ieso.ca/public';
 const IESO_LANDING = 'https://www.ieso.ca/power-data';
@@ -24,7 +30,8 @@ export class IesoConnector extends BaseConnector {
     refreshCadenceHours: 24,
     jurisdictions: ['CA-ON'],
     metricFamilies: [
-      'electricity_generation_mw', 'electricity_demand_mw',
+      'electricity_generation_mw',
+      'electricity_demand_mw',
       'electricity_price_ontario_hoep_cad_mwh',
     ],
     requiresAuth: false,
@@ -44,7 +51,7 @@ export class IesoConnector extends BaseConnector {
         message: resp.ok ? 'IESO reports reachable' : `HTTP ${resp.status}`,
       };
     } catch (err) {
-      return { available: false, message: String(err) };
+      return { available: false, sourceLastUpdated: null, message: String(err) };
     }
   }
 
@@ -134,7 +141,7 @@ export class IesoConnector extends BaseConnector {
     // IESO CSV has metadata header rows before actual data
     const lines = rawText.split('\n').filter(Boolean);
     // Find the actual header row (contains 'Hour' or 'Interval')
-    let headerIdx = lines.findIndex((l) => /hour|interval/i.test(l));
+    const headerIdx = lines.findIndex((l) => /hour|interval/i.test(l));
     if (headerIdx < 0) {
       warnings.push('IESO: could not find data header row');
       return { records, warnings };

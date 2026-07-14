@@ -81,8 +81,8 @@ serve(async (req) => {
     }
 
     // Summary data to be populated when additional tables are created
-    const adoption = [];
-    const summary = [];
+    const adoption: unknown[] = [];
+    const summary: unknown[] = [];
 
     // Calculate statistics
     const totalCapacity = (stations ?? []).reduce((sum, s) => sum + (s.total_site_capacity_kw ?? 0), 0);

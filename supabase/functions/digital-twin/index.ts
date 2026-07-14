@@ -127,8 +127,8 @@ async function handleSystemState(req: Request, cors: Record<string, string>): Pr
     renewable_percentage: Number(renewablePct.toFixed(1)),
     carbon_intensity_g_co2_per_kwh: Math.round(carbonIntensity),
     economic_dispatch_cost_cad: Math.round(totalDemandMw * 100),
-    nodes: [],
-    flows: [],
+    nodes: [] as unknown[],
+    flows: [] as unknown[],
     weather_impact: {
       temperature_effect_mw: 0,
       wind_generation_mw: 0,

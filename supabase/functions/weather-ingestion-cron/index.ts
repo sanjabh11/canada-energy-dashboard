@@ -103,7 +103,7 @@ serve(async (req) => {
           quality_flags: {
             calibrated: true,
             age_hours: ageHours,
-            missing_fields: [],
+            missing_fields: [] as string[],
             source_api: 'open-meteo',
             city: coords.city,
           },

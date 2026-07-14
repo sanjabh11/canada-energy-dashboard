@@ -8,7 +8,7 @@ const groundsourceLivePayload = {
   llm_source_count: 4,
   heuristic_source_count: 0,
   extraction_mode: 'llm',
-  fallback_reason: null,
+  fallback_reason: null as string | null,
   documents: [{ id: 'doc-1' }],
   events: [
     {
@@ -34,7 +34,7 @@ const groundsourceLivePayload = {
     is_fallback: false,
     staleness_status: 'fresh',
     methodology: 'Allowlisted public-source fetch, content hash deduplication, and structured LLM extraction with heuristic fallback.',
-    warnings: [],
+    warnings: [] as unknown[],
     claim_label: 'validated',
   },
 };
@@ -46,8 +46,8 @@ const groundsourceFallbackPayload = {
   heuristic_source_count: 1,
   extraction_mode: 'mixed',
   fallback_reason: 'llm_parse_failed',
-  documents: [],
-  events: [],
+  documents: [] as unknown[],
+  events: [] as unknown[],
   event_count: 0,
   provenance_score: 0.62,
   meta: {

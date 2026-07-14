@@ -263,7 +263,7 @@ async function introspectTable(supabase: any, tableName: string): Promise<TableS
   // Get primary keys
   const { data: pkData, error: pkError } = await supabase.rpc('get_primary_keys', {
     p_table_name: tableName,
-  }).catch(() => ({ data: null, error: null }));
+  }).catch(() => ({ data: null as unknown, error: null as string | null }));
 
   // Get foreign keys
   const { data: fkData, error: fkError } = await supabase
@@ -287,7 +287,7 @@ async function introspectTable(supabase: any, tableName: string): Promise<TableS
   const { data: countData } = await supabase
     .from(tableName)
     .select('*', { count: 'estimated', head: true })
-    .catch(() => ({ count: null }));
+    .catch(() => ({ count: null as number | null }));
 
   // Get last updated timestamp if exists
   let lastUpdated: string | undefined;
@@ -303,7 +303,7 @@ async function introspectTable(supabase: any, tableName: string): Promise<TableS
         .order(timeCol.name, { ascending: false })
         .limit(1)
         .single()
-        .catch(() => ({ data: null }));
+        .catch(() => ({ data: null as unknown }));
       if (latestData) {
         lastUpdated = latestData[timeCol.name];
       }

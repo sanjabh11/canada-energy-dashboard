@@ -144,7 +144,9 @@ describe('safeParseDIPManifest', () => {
   it('returns success: false for invalid manifest', () => {
     const result = safeParseDIPManifest({ broken: true });
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.error).toBeTruthy();
+    if (!result.success) {
+      expect((result as { success: false; error: string }).error).toBeTruthy();
+    }
   });
 });
 

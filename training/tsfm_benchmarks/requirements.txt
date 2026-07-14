@@ -1,0 +1,19 @@
+# TSFM Benchmark Requirements
+# Install with: pip install -r requirements.txt
+
+# Core
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# TSFM models (install as needed)
+# Chronos (Amazon)
+transformers>=4.40.0
+torch>=2.2.0
+chronos-forecasting>=0.1.0
+
+# Moirai (Salesforce) — optional
+# uni2ts>=0.3.0
+
+# IBM TTM — optional
+# tsfm-public>=0.0.1

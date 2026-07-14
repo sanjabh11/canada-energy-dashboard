@@ -11,7 +11,13 @@
  * License: Open Government Licence – Canada
  */
 
-import { BaseConnector, ConnectorMeta, DiscoverResult, FetchResult, NormalizedRecord } from './index.ts';
+import {
+  BaseConnector,
+  ConnectorMeta,
+  DiscoverResult,
+  FetchResult,
+  NormalizedRecord,
+} from './index.ts';
 
 const CER_FUTURES_CSV =
   'https://www.cer-rec.gc.ca/open/energy/energyfutures2026/canada-energy-futures-2026-data.csv';
@@ -20,19 +26,19 @@ const CER_LANDING =
 
 const CER_PROVINCE_MAP: Record<string, string> = {
   'British Columbia': 'BC',
-  'Alberta': 'AB',
-  'Saskatchewan': 'SK',
-  'Manitoba': 'MB',
-  'Ontario': 'ON',
-  'Quebec': 'QC',
+  Alberta: 'AB',
+  Saskatchewan: 'SK',
+  Manitoba: 'MB',
+  Ontario: 'ON',
+  Quebec: 'QC',
   'New Brunswick': 'NB',
   'Nova Scotia': 'NS',
   'Prince Edward Island': 'PE',
   'Newfoundland and Labrador': 'NL',
   'Northwest Territories': 'NT',
-  'Yukon': 'YT',
-  'Nunavut': 'NU',
-  'Canada': 'CA',
+  Yukon: 'YT',
+  Nunavut: 'NU',
+  Canada: 'CA',
 };
 
 export class CerConnector extends BaseConnector {
@@ -41,12 +47,17 @@ export class CerConnector extends BaseConnector {
     name: 'CER Energy Futures 2026',
     sourceUrl: CER_LANDING,
     publisher: 'Canada Energy Regulator',
-    license: 'Open Government Licence – Canada (https://open.canada.ca/en/open-government-licence-canada)',
+    license:
+      'Open Government Licence – Canada (https://open.canada.ca/en/open-government-licence-canada)',
     refreshCadenceHours: 8760, // annual release cycle
     jurisdictions: ['CA'],
     metricFamilies: [
-      'electricity_generation', 'primary_energy_demand', 'ghg_emissions',
-      'renewable_capacity', 'natural_gas_demand', 'oil_demand',
+      'electricity_generation',
+      'primary_energy_demand',
+      'ghg_emissions',
+      'renewable_capacity',
+      'natural_gas_demand',
+      'oil_demand',
     ],
     requiresAuth: false,
     caveatNotes:
@@ -67,7 +78,7 @@ export class CerConnector extends BaseConnector {
         message: resp.ok ? 'CER CSV reachable' : `HTTP ${resp.status}`,
       };
     } catch (err) {
-      return { available: false, message: String(err) };
+      return { available: false, sourceLastUpdated: null, message: String(err) };
     }
   }
 
@@ -105,14 +116,14 @@ export class CerConnector extends BaseConnector {
       const header = lines[0].split(',').map((h) => h.trim().replace(/"/g, ''));
 
       // CER CSV columns (typical): Year,Province,Scenario,Sector,Fuel,Technology,Unit,Value
-      const yearIdx   = header.findIndex((h) => /^year$/i.test(h));
-      const provIdx   = header.findIndex((h) => /province|geography|region/i.test(h));
-      const valueIdx  = header.findIndex((h) => /^value$/i.test(h));
-      const unitIdx   = header.findIndex((h) => /^unit/i.test(h));
+      const yearIdx = header.findIndex((h) => /^year$/i.test(h));
+      const provIdx = header.findIndex((h) => /province|geography|region/i.test(h));
+      const valueIdx = header.findIndex((h) => /^value$/i.test(h));
+      const unitIdx = header.findIndex((h) => /^unit/i.test(h));
       const sectorIdx = header.findIndex((h) => /^sector/i.test(h));
-      const fuelIdx   = header.findIndex((h) => /^fuel/i.test(h));
+      const fuelIdx = header.findIndex((h) => /^fuel/i.test(h));
       const metricIdx = header.findIndex((h) => /metric|variable|indicator/i.test(h));
-      const scenIdx   = header.findIndex((h) => /scenario/i.test(h));
+      const scenIdx = header.findIndex((h) => /scenario/i.test(h));
 
       // Filter to Reference scenario only (avoids inflating storage)
       const targetScenario = params?.scenario ?? 'Reference';
@@ -122,12 +133,12 @@ export class CerConnector extends BaseConnector {
         const scenario = scenIdx >= 0 ? cols[scenIdx] : 'Reference';
         if (scenario !== targetScenario) continue;
 
-        const year   = cols[yearIdx];
-        const prov   = CER_PROVINCE_MAP[cols[provIdx]] ?? cols[provIdx];
-        const val    = parseFloat(cols[valueIdx]);
-        const unit   = unitIdx >= 0 ? cols[unitIdx] : 'PJ';
+        const year = cols[yearIdx];
+        const prov = CER_PROVINCE_MAP[cols[provIdx]] ?? cols[provIdx];
+        const val = parseFloat(cols[valueIdx]);
+        const unit = unitIdx >= 0 ? cols[unitIdx] : 'PJ';
         const sector = sectorIdx >= 0 ? cols[sectorIdx] : null;
-        const fuel   = fuelIdx >= 0 ? cols[fuelIdx] : null;
+        const fuel = fuelIdx >= 0 ? cols[fuelIdx] : null;
         const metric = metricIdx >= 0 ? cols[metricIdx] : 'primary_energy_demand_pj';
 
         if (!Number.isFinite(val)) continue;

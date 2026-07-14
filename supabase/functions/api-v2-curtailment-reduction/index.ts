@@ -214,12 +214,12 @@ serve(async (req) => {
         market_price_cad_per_mwh: marketPrice || null,
         opportunity_cost_cad: opportunityCostCad,
         grid_demand_mw: gridDemand || null,
-        mitigation_actions: null,
-        mitigation_effective: null,
+        mitigation_actions: null as unknown[] | null,
+        mitigation_effective: null as boolean | null,
         occurred_at: new Date().toISOString(),
-        ended_at: null,
+        ended_at: null as string | null,
         data_source: 'ceip_api',
-        notes: null
+        notes: null as string | null
       };
 
       // Store in database
@@ -496,10 +496,10 @@ serve(async (req) => {
         market_price_cad_per_mwh: marketPrice,
         opportunity_cost_cad: curtailedMw * Math.max(marketPrice, 30),
         grid_demand_mw: Math.random() * 15000 + 10000,
-        mitigation_actions: null,
-        mitigation_effective: null,
+        mitigation_actions: null as unknown[] | null,
+        mitigation_effective: null as boolean | null,
         occurred_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        ended_at: null,
+        ended_at: null as string | null,
         data_source: 'mock',
         notes: 'Generated for testing'
       };

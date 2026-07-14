@@ -13,17 +13,33 @@
  * License: Statistics Canada Open Licence
  */
 
-import { BaseConnector, ConnectorMeta, DiscoverResult, FetchResult, NormalizedRecord } from './index.ts';
+import {
+  BaseConnector,
+  ConnectorMeta,
+  DiscoverResult,
+  FetchResult,
+  NormalizedRecord,
+} from './index.ts';
 
 const WDS_BASE = 'https://www150.statcan.gc.ca/t1/tbl1/en';
-const WDS_API  = 'https://www150.statcan.gc.ca/t1/tbl1/en/downloadIVData/';
+const WDS_API = 'https://www150.statcan.gc.ca/t1/tbl1/en/downloadIVData/';
 
 /** Map StatCan member codes → our province codes */
 const STATCAN_GEO_MAP: Record<string, string> = {
   '1': 'CA',
-  '10': 'NL', '11': 'PE', '12': 'NS', '13': 'NB',
-  '24': 'QC', '35': 'ON', '46': 'MB', '47': 'SK',
-  '48': 'AB', '59': 'BC', '60': 'YT', '61': 'NT', '62': 'NU',
+  '10': 'NL',
+  '11': 'PE',
+  '12': 'NS',
+  '13': 'NB',
+  '24': 'QC',
+  '35': 'ON',
+  '46': 'MB',
+  '47': 'SK',
+  '48': 'AB',
+  '59': 'BC',
+  '60': 'YT',
+  '61': 'NT',
+  '62': 'NU',
 };
 
 export class StatCanConnector extends BaseConnector {
@@ -46,16 +62,16 @@ export class StatCanConnector extends BaseConnector {
       const url = `${WDS_BASE}/dtbl/25-10-0015-01/tblId.json`;
       const resp = await fetch(url, { signal: AbortSignal.timeout(10_000) });
       if (!resp.ok) {
-        return { available: false, message: `HTTP ${resp.status}` };
+        return { available: false, sourceLastUpdated: null, message: `HTTP ${resp.status}` };
       }
-      const meta = await resp.json() as { releaseTime?: string };
+      const meta = (await resp.json()) as { releaseTime?: string };
       return {
         available: true,
         sourceLastUpdated: meta.releaseTime ?? null,
         message: 'StatCan WDS reachable',
       };
     } catch (err) {
-      return { available: false, message: String(err) };
+      return { available: false, sourceLastUpdated: null, message: String(err) };
     }
   }
 

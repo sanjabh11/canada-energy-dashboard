@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Building2, CheckCircle2, Clock3, FileSearch, ShieldCheck, Target } from 'lucide-react';
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  Clock3,
+  FileSearch,
+  ShieldCheck,
+  Target,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
 import {
@@ -8,6 +16,9 @@ import {
   segmentNarratives,
   supportSurfaces,
   topCommercialWedges,
+  bundleSpines,
+  indigenousCoDesignPathway,
+  buyerLanguageAliases,
   type BuyerSegment,
 } from '../lib/commercialPositioning';
 
@@ -41,6 +52,7 @@ export function SolutionsNavigatorPage() {
           'BYO CSV privacy proof',
           'industrial compliance software',
           'utility asset health',
+          ...buyerLanguageAliases.flatMap((a) => a.aliases),
         ]}
       />
 
@@ -54,19 +66,32 @@ export function SolutionsNavigatorPage() {
                   <Target className="h-5 w-5 text-emerald-100" />
                 </div>
                 <div>
-                  <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">Solutions</div>
-                  <div className="text-sm text-slate-300">The page-two use-case navigator for buyers and pilots</div>
+                  <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">
+                    Solutions
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    The page-two use-case navigator for buyers and pilots
+                  </div>
                 </div>
               </div>
 
               <nav className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-                <Link to="/" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-white">
+                <Link
+                  to="/"
+                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-white"
+                >
                   Home
                 </Link>
-                <Link to="/dashboard" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-white">
+                <Link
+                  to="/dashboard"
+                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-white"
+                >
                   Dashboard
                 </Link>
-                <Link to="/pilot-readiness" className="rounded-full bg-emerald-300 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-200">
+                <Link
+                  to="/pilot-readiness"
+                  className="rounded-full bg-emerald-300 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-200"
+                >
                   Pilot readiness
                 </Link>
               </nav>
@@ -76,11 +101,13 @@ export function SolutionsNavigatorPage() {
               <div className="max-w-4xl">
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">Page two</div>
                 <h1 className="mt-4 text-4xl font-semibold leading-tight text-white md:text-6xl">
-                  Each wedge now explains who buys it, why they pay, what proof they need, and how little CEIP has to build first.
+                  Each wedge now explains who buys it, why they pay, what proof they need, and how
+                  little CEIP has to build first.
                 </h1>
                 <p className="mt-6 text-lg leading-8 text-slate-300">
-                  This page is the commercial navigator. It is designed to get a utility planner, industrial compliance lead,
-                  privacy reviewer, Ontario peak-response advisor, or municipal operator to the right wedge with one click and one credible proof path.
+                  This page is the commercial navigator. It is designed to get a utility planner,
+                  industrial compliance lead, privacy reviewer, Ontario peak-response advisor, or
+                  municipal operator to the right wedge with one click and one credible proof path.
                 </p>
               </div>
 
@@ -99,6 +126,74 @@ export function SolutionsNavigatorPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Role-based quick navigation */}
+              <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Link
+                  to="/utility-demand-forecast"
+                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
+                    Utility planner
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">
+                    Demand forecast planning pack →
+                  </div>
+                </Link>
+                <Link
+                  to="/roi-calculator"
+                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
+                    Industrial compliance / CFO
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">TIER ROI calculator →</div>
+                </Link>
+                <Link
+                  to="/regulatory-filing"
+                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
+                    Regulator / reviewer
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">
+                    Regulatory filing evidence →
+                  </div>
+                </Link>
+                <Link
+                  to="/forecast-benchmarking"
+                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
+                    Consultant / API user
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">
+                    Benchmark + export packs →
+                  </div>
+                </Link>
+                <Link
+                  to="/municipal"
+                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
+                    Municipal / public sector
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">
+                    Municipal climate tools →
+                  </div>
+                </Link>
+                <Link
+                  to="/funder-reporting"
+                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-amber-300/30 hover:bg-amber-300/[0.04]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-amber-200/80">
+                    Indigenous / co-design
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">
+                    Funder reporting + co-design →
+                  </div>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -111,7 +206,9 @@ export function SolutionsNavigatorPage() {
                 <span className="text-sm uppercase tracking-[0.22em]">Current segment</span>
               </div>
               <h2 className="mt-4 text-3xl font-semibold text-white">{activeNarrative.headline}</h2>
-              <p className="mt-4 max-w-4xl text-base leading-7 text-slate-200">{activeNarrative.summary}</p>
+              <p className="mt-4 max-w-4xl text-base leading-7 text-slate-200">
+                {activeNarrative.summary}
+              </p>
             </div>
           </div>
         </section>
@@ -120,12 +217,17 @@ export function SolutionsNavigatorPage() {
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">Top 10 proof packs</div>
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">
+                  Top 10 proof packs
+                </div>
                 <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
                   Use cases optimized for fast buyer comprehension and first pilots
                 </h2>
               </div>
-              <Link to="/enterprise" className="hidden rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/30 hover:bg-white/5 md:inline-flex">
+              <Link
+                to="/enterprise"
+                className="hidden rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/30 hover:bg-white/5 md:inline-flex"
+              >
                 Start the conversation
               </Link>
             </div>
@@ -151,10 +253,26 @@ export function SolutionsNavigatorPage() {
                       <p className="mt-4 text-base leading-7 text-slate-300">{wedge.pain}</p>
 
                       <div className="mt-6 grid gap-4 md:grid-cols-2">
-                        <DetailCard label="Primary buyer" value={wedge.primaryBuyer} icon={<Building2 className="h-4 w-4 text-emerald-200" />} />
-                        <DetailCard label="Timeline to value" value={wedge.timelineToValue} icon={<Clock3 className="h-4 w-4 text-cyan-200" />} />
-                        <DetailCard label="Minimum pilot scope" value={wedge.pilotScope} icon={<Target className="h-4 w-4 text-amber-200" />} />
-                        <DetailCard label="Current state" value={wedge.currentState} icon={<CheckCircle2 className="h-4 w-4 text-emerald-200" />} />
+                        <DetailCard
+                          label="Primary buyer"
+                          value={wedge.primaryBuyer}
+                          icon={<Building2 className="h-4 w-4 text-emerald-200" />}
+                        />
+                        <DetailCard
+                          label="Timeline to value"
+                          value={wedge.timelineToValue}
+                          icon={<Clock3 className="h-4 w-4 text-cyan-200" />}
+                        />
+                        <DetailCard
+                          label="Minimum pilot scope"
+                          value={wedge.pilotScope}
+                          icon={<Target className="h-4 w-4 text-amber-200" />}
+                        />
+                        <DetailCard
+                          label="Current state"
+                          value={wedge.currentState}
+                          icon={<CheckCircle2 className="h-4 w-4 text-emerald-200" />}
+                        />
                       </div>
                     </div>
 
@@ -169,8 +287,12 @@ export function SolutionsNavigatorPage() {
                           <FileSearch className="h-4 w-4" />
                           Proof artifact
                         </div>
-                        <div className="mt-3 text-lg font-semibold text-white">{wedge.proofLabel}</div>
-                        <div className="mt-2 text-sm text-slate-200">Open supporting proof page →</div>
+                        <div className="mt-3 text-lg font-semibold text-white">
+                          {wedge.proofLabel}
+                        </div>
+                        <div className="mt-2 text-sm text-slate-200">
+                          Open supporting proof page →
+                        </div>
                       </Link>
                       <div className="flex flex-col gap-3 sm:flex-row">
                         <Link
@@ -197,7 +319,9 @@ export function SolutionsNavigatorPage() {
 
         <section className="border-y border-white/10 bg-slate-900/40">
           <div className="mx-auto max-w-7xl px-6 py-16">
-            <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/75">Supporting proof</div>
+            <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/75">
+              Supporting proof
+            </div>
             <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
               These routes stay visible, but they no longer lead the commercial story.
             </h2>
@@ -221,15 +345,119 @@ export function SolutionsNavigatorPage() {
           </div>
         </section>
 
+        {/* Cross-sell bundle map */}
+        <section className="border-b border-white/10 bg-slate-950">
+          <div className="mx-auto max-w-7xl px-6 py-14">
+            <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/75">
+              Product bundles
+            </div>
+            <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
+              Four product spines connect proof packs into buyer-ready workflows.
+            </h2>
+            <div className="mt-10 grid gap-4 md:grid-cols-2">
+              {bundleSpines.map((spine) => (
+                <div
+                  key={spine.id}
+                  className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
+                >
+                  <div className="flex items-center gap-2 text-sm uppercase tracking-[0.22em] text-emerald-100/80">
+                    <Building2 className="h-4 w-4" />
+                    {spine.buyerSegment}
+                  </div>
+                  <h3 className="mt-3 text-xl font-semibold text-white">{spine.label}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{spine.description}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {spine.routes.map((route) => (
+                      <Link
+                        key={route}
+                        to={route}
+                        className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:border-emerald-300/30 hover:text-white"
+                      >
+                        {route}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Indigenous co-design pathway */}
+        <section className="border-b border-white/10 bg-slate-950">
+          <div className="mx-auto max-w-7xl px-6 py-14">
+            <div className="rounded-[1.8rem] border border-amber-300/20 bg-amber-300/[0.04] p-8">
+              <div className="flex items-center gap-2 text-sm uppercase tracking-[0.24em] text-amber-200/80">
+                <ShieldCheck className="h-4 w-4" />
+                Co-design pathway
+              </div>
+              <h2 className="mt-3 text-2xl font-semibold text-white">
+                {indigenousCoDesignPathway.label}
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-200">
+                {indigenousCoDesignPathway.description}
+              </p>
+              <div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3 text-sm text-amber-100">
+                <strong>Boundary:</strong> {indigenousCoDesignPathway.boundary}
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                    Capabilities
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm text-slate-200">
+                    {indigenousCoDesignPathway.capabilities.map((cap) => (
+                      <li key={cap} className="flex items-start gap-2">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                        {cap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                    Explicit non-claims
+                  </div>
+                  <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                    {indigenousCoDesignPathway.notClaims.map((claim) => (
+                      <li key={claim} className="flex items-start gap-2">
+                        <span className="mt-0.5 h-4 w-4 shrink-0 text-amber-300">⚠</span>
+                        {claim}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-6">
+                <Link
+                  to={indigenousCoDesignPathway.route}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/30 px-5 py-3 text-sm font-semibold text-amber-100 transition hover:border-amber-300/50 hover:bg-amber-300/[0.08]"
+                >
+                  Explore funder reporting pack
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-slate-950">
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
               <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.04] p-8">
-                <div className="text-sm uppercase tracking-[0.24em] text-slate-400">Reserve lanes</div>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Follow-on wedges after the first five</h2>
+                <div className="text-sm uppercase tracking-[0.24em] text-slate-400">
+                  Reserve lanes
+                </div>
+                <h2 className="mt-3 text-2xl font-semibold text-white">
+                  Follow-on wedges after the first five
+                </h2>
                 <div className="mt-6 space-y-4">
                   {reserveWedges.map((wedge) => (
-                    <Link key={wedge.id} to={wedge.href} className="block rounded-[1.2rem] border border-white/10 bg-black/10 p-4 transition hover:border-white/20">
+                    <Link
+                      key={wedge.id}
+                      to={wedge.href}
+                      className="block rounded-[1.2rem] border border-white/10 bg-black/10 p-4 transition hover:border-white/20"
+                    >
                       <div className="text-base font-semibold text-white">{wedge.title}</div>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{wedge.currentState}</p>
                     </Link>
@@ -238,11 +466,16 @@ export function SolutionsNavigatorPage() {
               </div>
 
               <div className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(6,78,59,0.55),rgba(15,23,42,0.94))] p-8">
-                <div className="text-sm uppercase tracking-[0.24em] text-emerald-100/75">Execution bias</div>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Build 25% to 40% first, then sell.</h2>
+                <div className="text-sm uppercase tracking-[0.24em] text-emerald-100/75">
+                  Execution bias
+                </div>
+                <h2 className="mt-3 text-2xl font-semibold text-white">
+                  Build 25% to 40% first, then sell.
+                </h2>
                 <p className="mt-4 text-base leading-7 text-slate-200">
-                  The implementation strategy now favors minimum sellable slices: enough proof, export behavior, trust copy,
-                  and buyer-specific language to win pilots before expanding the full platform scope.
+                  The implementation strategy now favors minimum sellable slices: enough proof,
+                  export behavior, trust copy, and buyer-specific language to win pilots before
+                  expanding the full platform scope.
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Link
@@ -268,7 +501,15 @@ export function SolutionsNavigatorPage() {
   );
 }
 
-function DetailCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function DetailCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+}) {
   return (
     <div className="rounded-[1.2rem] border border-white/10 bg-black/10 p-4">
       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-400">

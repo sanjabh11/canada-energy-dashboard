@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 

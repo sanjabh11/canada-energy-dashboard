@@ -7,6 +7,8 @@
 // against the contract to produce structured pass/fail results.
 // ============================================================================
 
+import { evaluateForecast, type ForecastEvaluationInput } from './scoringRules';
+
 export type EvaluationHorizon = '1h' | '6h' | '24h' | '168h' | '720h' | '8760h';
 
 export type ModelClass =
@@ -75,20 +77,56 @@ export const DEFAULT_EVALUATION_CONTRACT: EvaluationContract = {
   horizons: ['1h', '24h', '168h'],
   requiredMetrics: [
     { name: 'mae', horizons: ['1h', '24h', '168h'], description: 'Mean Absolute Error in MW' },
-    { name: 'mape', horizons: ['1h', '24h', '168h'], description: 'Mean Absolute Percentage Error' },
+    {
+      name: 'mape',
+      horizons: ['1h', '24h', '168h'],
+      description: 'Mean Absolute Percentage Error',
+    },
     { name: 'rmse', horizons: ['1h', '24h', '168h'], description: 'Root Mean Square Error in MW' },
     { name: 'crps', horizons: ['24h', '168h'], description: 'Continuous Ranked Probability Score' },
-    { name: 'coverage_rate', horizons: ['24h', '168h'], description: 'Prediction interval coverage rate' },
-    { name: 'skill_score', horizons: ['24h', '168h'], description: 'Skill score vs persistence baseline' },
+    {
+      name: 'coverage_rate',
+      horizons: ['24h', '168h'],
+      description: 'Prediction interval coverage rate',
+    },
+    {
+      name: 'skill_score',
+      horizons: ['24h', '168h'],
+      description: 'Skill score vs persistence baseline',
+    },
   ],
   acceptanceThresholds: [
     { metric: 'mape', horizon: '1h', threshold: 3.0, operator: '<=', severity: 'must_pass' },
     { metric: 'mape', horizon: '24h', threshold: 5.0, operator: '<=', severity: 'must_pass' },
     { metric: 'mape', horizon: '168h', threshold: 8.0, operator: '<=', severity: 'should_pass' },
-    { metric: 'coverage_rate', horizon: '24h', threshold: 0.90, operator: '>=', severity: 'must_pass' },
-    { metric: 'coverage_rate', horizon: '168h', threshold: 0.85, operator: '>=', severity: 'should_pass' },
-    { metric: 'skill_score', horizon: '24h', threshold: 0.15, operator: '>=', severity: 'should_pass' },
-    { metric: 'skill_score', horizon: '168h', threshold: 0.10, operator: '>=', severity: 'informational' },
+    {
+      metric: 'coverage_rate',
+      horizon: '24h',
+      threshold: 0.9,
+      operator: '>=',
+      severity: 'must_pass',
+    },
+    {
+      metric: 'coverage_rate',
+      horizon: '168h',
+      threshold: 0.85,
+      operator: '>=',
+      severity: 'should_pass',
+    },
+    {
+      metric: 'skill_score',
+      horizon: '24h',
+      threshold: 0.15,
+      operator: '>=',
+      severity: 'should_pass',
+    },
+    {
+      metric: 'skill_score',
+      horizon: '168h',
+      threshold: 0.1,
+      operator: '>=',
+      severity: 'informational',
+    },
   ],
   rollingOriginConfig: {
     minTrainSize: 336,
@@ -134,9 +172,11 @@ export function evaluateAgainstContract(
       }
 
       const passed =
-        threshold.operator === '<=' ? value <= threshold.threshold :
-        threshold.operator === '>=' ? value >= threshold.threshold :
-        value === threshold.threshold;
+        threshold.operator === '<='
+          ? value <= threshold.threshold
+          : threshold.operator === '>='
+            ? value >= threshold.threshold
+            : value === threshold.threshold;
 
       if (!passed && threshold.severity === 'must_pass') {
         failedThresholds.push(
@@ -186,7 +226,9 @@ export function generateEvaluationSummary(results: EvaluationResult[]): string {
     const coverage = r.metrics.coverage_rate?.toFixed(2) ?? '—';
     const skill = r.metrics.skill_score?.toFixed(2) ?? '—';
     const pass = r.passedThresholds ? '✅' : '❌';
-    lines.push(`| ${r.modelName} | ${r.horizon} | ${mape}% | ${crps} | ${coverage} | ${skill} | ${pass} |`);
+    lines.push(
+      `| ${r.modelName} | ${r.horizon} | ${mape}% | ${crps} | ${coverage} | ${skill} | ${pass} |`,
+    );
   }
 
   lines.push('', '## Failed Thresholds', '');
@@ -204,4 +246,20 @@ export function generateEvaluationSummary(results: EvaluationResult[]): string {
   }
 
   return lines.join('\n');
+}
+
+/**
+ * Compute scoring-rule metrics from raw forecast/actual arrays and evaluate
+ * them against a contract in one step.
+ */
+export function computeAndEvaluate(
+  contract: EvaluationContract,
+  horizon: EvaluationHorizon,
+  input: ForecastEvaluationInput,
+  modelName: string,
+  modelClass: ModelClass,
+): EvaluationResult {
+  const metrics = evaluateForecast(input);
+  const results = evaluateAgainstContract(contract, [{ horizon, metrics }], modelName, modelClass);
+  return results[0];
 }

@@ -1,20 +1,20 @@
 /**
  * Whop SDK Integration for Canada Energy Academy
- * 
+ *
  * Implements access control, tier management, and user authentication
  * for the Whop Marketplace monetization strategy.
- * 
+ *
  * KEY CHANGES FOR WHOP COMPLIANCE:
  * - Uses Whop JWT authentication (no custom login)
  * - Uses browser-safe Whop API calls plus server/edge verification paths
  * - Supports standalone mode for non-Whop deployments
- * 
+ *
  * Access Tiers:
  * - Free: Public dashboards only
  * - Basic ($29/mo): Full citations + French
  * - Pro ($99/mo): AI co-pilot + Policy Map + Impact Dashboard + Consent logs
  * - Team ($299/mo): Bulk seats + API key + Team management
- * 
+ *
  * Environment Variables:
  * - WHOP_API_KEY: Server-only Whop API key (Edge Functions only, NO VITE_ prefix)
  * - VITE_WHOP_MODE: 'live' | 'simulated' | 'standalone' (default: 'standalone')
@@ -127,15 +127,15 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
       'basic_charts',
       'sample_data',
       'help_tooltips',
-      'certificates_preview'
+      'certificates_preview',
     ],
     limits: {
       apiCallsPerDay: 100,
       teamMembers: 1,
       exportFormats: ['csv'],
       dataRetentionDays: 7,
-      aiQueriesPerDay: 5
-    }
+      aiQueriesPerDay: 5,
+    },
   },
   basic: {
     tier: 'basic',
@@ -150,15 +150,15 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
       'data_freshness_badges',
       'email_support',
       'certificate_tracks',
-      'module_access'
+      'module_access',
     ],
     limits: {
       apiCallsPerDay: 1000,
       teamMembers: 1,
       exportFormats: ['csv', 'json'],
       dataRetentionDays: 30,
-      aiQueriesPerDay: 25
-    }
+      aiQueriesPerDay: 25,
+    },
   },
   pro: {
     tier: 'pro',
@@ -184,15 +184,15 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
       'certificate_tracks',
       'module_access',
       'cohort_management',
-      'unlimited_ai_queries'
+      'unlimited_ai_queries',
     ],
     limits: {
       apiCallsPerDay: 10000,
       teamMembers: 1,
       exportFormats: ['csv', 'json', 'xlsx', 'pdf'],
       dataRetentionDays: 365,
-      aiQueriesPerDay: 100
-    }
+      aiQueriesPerDay: 100,
+    },
   },
   team: {
     tier: 'team',
@@ -225,16 +225,16 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
       'module_access',
       'cohort_management',
       'unlimited_ai_queries',
-      'creator_dashboard'
+      'creator_dashboard',
     ],
     limits: {
       apiCallsPerDay: 100000,
       teamMembers: 25,
       exportFormats: ['csv', 'json', 'xlsx', 'pdf', 'api'],
       dataRetentionDays: 730,
-      aiQueriesPerDay: -1 // unlimited
-    }
-  }
+      aiQueriesPerDay: -1, // unlimited
+    },
+  },
 };
 
 // Feature to tier mapping for quick lookups
@@ -267,7 +267,7 @@ export const FEATURE_TIER_MAP: Record<string, WhopTier[]> = {
   module_access: ['basic', 'pro', 'team'],
   cohort_management: ['pro', 'team'],
   creator_dashboard: ['team'],
-  unlimited_ai_queries: ['pro', 'team']
+  unlimited_ai_queries: ['pro', 'team'],
 };
 
 /**
@@ -297,7 +297,7 @@ export async function verifyWhopToken(token: string): Promise<{
         valid: true,
         userId: payload.sub || payload.user_id,
         email: payload.email,
-        tier: payload.tier || 'free'
+        tier: payload.tier || 'free',
       };
     } catch {
       return { valid: false, error: 'Invalid token format' };
@@ -308,9 +308,9 @@ export async function verifyWhopToken(token: string): Promise<{
   try {
     const response = await fetch('https://api.whop.com/v5/me', {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!response.ok) {
@@ -333,7 +333,7 @@ export async function verifyWhopToken(token: string): Promise<{
       valid: true,
       userId: data.id,
       email: data.email,
-      tier
+      tier,
     };
   } catch (error) {
     return { valid: false, error: `Token verification failed: ${error}` };
@@ -347,9 +347,9 @@ export async function verifyWhopToken(token: string): Promise<{
 function mapWhopProductToTier(productId: string): WhopTier {
   const tierMap: Record<string, WhopTier> = {
     // These should match your Whop product IDs
-    'prod_basic': 'basic',
-    'prod_pro': 'pro',
-    'prod_team': 'team',
+    prod_basic: 'basic',
+    prod_pro: 'pro',
+    prod_team: 'team',
     // Add your actual Whop product IDs here
   };
   return tierMap[productId] || 'free';
@@ -392,7 +392,7 @@ export async function handleWhopCallback(code: string): Promise<{
     const response = await fetch('/api/auth/whop/callback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ code }),
     });
 
     if (!response.ok) {
@@ -412,7 +412,10 @@ export async function handleWhopCallback(code: string): Promise<{
  * Check if user has access to a specific experience
  * Used for Whop iframe integration
  */
-export async function checkWhopAccess(userId: string, experienceId?: string): Promise<{
+export async function checkWhopAccess(
+  userId: string,
+  experienceId?: string,
+): Promise<{
   hasAccess: boolean;
   tier: WhopTier;
   features: string[];
@@ -423,17 +426,40 @@ export async function checkWhopAccess(userId: string, experienceId?: string): Pr
     return {
       hasAccess: true,
       tier: user?.tier || 'free',
-      features: user?.features || WHOP_ACCESS_MATRIX.free.features
+      features: user?.features || WHOP_ACCESS_MATRIX.free.features,
     };
   }
 
-  // TODO: Replace this fallback with authoritative iframe entitlement verification.
-  // For now, use the current user's cached data
+  // Verify entitlements via server-side Edge Function to prevent client-side bypass
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whop-verify-access`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userId, experienceId }),
+      },
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        hasAccess: data.hasAccess ?? false,
+        tier: data.tier || 'free',
+        features: data.features || WHOP_ACCESS_MATRIX.free.features,
+      };
+    }
+  } catch {
+    // Network error — fall through to cached data with reduced trust
+  }
+
+  // Fallback: use cached user data with hasAccess=false to fail closed
   const user = whopClient.getCurrentUser();
   return {
-    hasAccess: !!user,
+    hasAccess: false,
     tier: user?.tier || 'free',
-    features: user?.features || WHOP_ACCESS_MATRIX.free.features
+    features: WHOP_ACCESS_MATRIX.free.features,
   };
 }
 
@@ -516,7 +542,8 @@ class WhopClient {
         await this.loginFromToken(whopToken);
         // Clean up URL
         urlParams.delete('whop_token');
-        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        const newUrl =
+          window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
         window.history.replaceState({}, '', newUrl);
       }
     }
@@ -587,7 +614,7 @@ class WhopClient {
       features: WHOP_ACCESS_MATRIX[verified.tier || 'free'].features,
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
-      isWhopUser: true
+      isWhopUser: true,
     };
 
     this.currentUser = user;
@@ -603,7 +630,9 @@ class WhopClient {
       });
     } catch {
       // Fallback for local dev without Netlify Functions — store in memory only
-      console.warn('[Whop] Could not store token in httpOnly cookie (Netlify Function unavailable)');
+      console.warn(
+        '[Whop] Could not store token in httpOnly cookie (Netlify Function unavailable)',
+      );
     }
 
     return user;
@@ -622,7 +651,7 @@ class WhopClient {
       features: WHOP_ACCESS_MATRIX.free.features,
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
-      isWhopUser: false
+      isWhopUser: false,
     };
 
     this.currentUser = user;
@@ -648,7 +677,7 @@ class WhopClient {
       features: WHOP_ACCESS_MATRIX[tier].features,
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
-      isWhopUser: false
+      isWhopUser: false,
     };
 
     this.currentUser = user;
@@ -681,7 +710,7 @@ class WhopClient {
       free: '#',
       basic: 'https://whop.com/ignite-be15/?d2c=true&plan=basic',
       pro: 'https://whop.com/ignite-be15/?d2c=true&plan=pro',
-      team: 'https://whop.com/ignite-be15/?d2c=true&plan=team'
+      team: 'https://whop.com/ignite-be15/?d2c=true&plan=team',
     };
     return productMap[tier];
   }
@@ -701,7 +730,7 @@ class WhopClient {
         ...this.currentUser,
         tier: webhookData.tier,
         subscriptionStatus: webhookData.status,
-        features: WHOP_ACCESS_MATRIX[webhookData.tier].features
+        features: WHOP_ACCESS_MATRIX[webhookData.tier].features,
       };
       localStorage.setItem('whop_user', JSON.stringify(this.currentUser));
     }
@@ -737,7 +766,7 @@ export function useWhopAccess() {
     simulateLogin: whopClient.simulateLogin.bind(whopClient),
     logout: whopClient.logout.bind(whopClient),
     getUpgradeUrl: whopClient.getUpgradeUrl.bind(whopClient),
-    getWhopLoginUrl
+    getWhopLoginUrl,
   };
 }
 

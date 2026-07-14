@@ -206,7 +206,7 @@ serve(async (req: Request) => {
         }
       },
       snapshot_type: 'live',
-      snapshot_stored_at: null,
+      snapshot_stored_at: null as string | null,
       is_fallback: false,
       metadata: {
         province,
@@ -214,7 +214,7 @@ serve(async (req: Request) => {
         data_source: 'Canada Energy Dashboard',
         strategic_context: '$300M federal investment, Edmonton/Calgary hydrogen hubs',
         snapshot_type: 'live',
-        snapshot_stored_at: null,
+        snapshot_stored_at: null as string | null,
         is_fallback: false,
       }
     };

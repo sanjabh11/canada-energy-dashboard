@@ -155,7 +155,7 @@ serve(async (req) => {
     }
 
     // Summary statistics calculated from actual data instead of separate table
-    const summary = [];
+    const summary: unknown[] = [];
 
     // Calculate totals
     const totalQueueCapacity = (queue ?? []).reduce((sum, p) => sum + (p.capacity_mw ?? 0), 0);

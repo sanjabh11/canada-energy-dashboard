@@ -173,7 +173,8 @@ function sanitizeNodeText(
 
 export function sanitizeUtilityApiLiveXml(xml: string): UtilityApiXmlSanitizeResult {
   const dom = new JSDOM(xml, { contentType: 'text/xml' });
-  const { document, XMLSerializer } = dom.window;
+  const { document } = dom.window;
+  const Serializer = (dom.window as unknown as Record<string, unknown>).XMLSerializer as { new (): { serializeToString: (node: Node) => string } };
   const parserError = document.querySelector('parsererror');
   if (parserError) {
     throw new Error(`Failed to parse UtilityAPI live XML: ${parserError.textContent?.trim() || 'parsererror'}`);
@@ -218,7 +219,7 @@ export function sanitizeUtilityApiLiveXml(xml: string): UtilityApiXmlSanitizeRes
     }
   }
 
-  const sanitizedXml = new XMLSerializer().serializeToString(document);
+  const sanitizedXml = new Serializer().serializeToString(document);
   return {
     sanitizedXml,
     validationErrors: validateSanitizedUtilityApiLiveXml(sanitizedXml),

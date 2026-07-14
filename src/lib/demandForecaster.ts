@@ -1,9 +1,9 @@
 /**
  * Ontario Demand Forecasting Engine
- * 
+ *
  * Implements seasonal decomposition + linear regression forecasting
  * for Ontario electricity demand using historical IESO data.
- * 
+ *
  * Methodology:
  * 1. Trend extraction via simple moving average (SMA-168 for weekly cycle)
  * 2. Hourly seasonality (24-hour profile)
@@ -11,14 +11,26 @@
  * 4. Monthly seasonality (12-month profile)
  * 5. Temperature regression (when exogenous data available)
  * 6. Residual correction via exponential smoothing
- * 
+ *
  * Accuracy metrics: MAE, MAPE, RMSE vs persistence baseline
- * 
+ *
  * References:
  * - Hyndman & Athanasopoulos, "Forecasting: Principles and Practice" (3rd ed.)
  * - IESO Ontario Demand Data (Kaggle, 175K records)
  * - IEC 62325-451 (Energy market communication standards)
  */
+
+import {
+  type WeatherFeatureSet,
+  weatherDemandAdjustment,
+  extractWeatherFeatures,
+} from './weatherFeatures';
+import type { WeatherFeatures } from './types/renewableForecast';
+import {
+  ConformalPredictor,
+  type ConformalInterval,
+  mcQuantilesToForecast,
+} from './conformalPrediction';
 
 // ============================================================================
 // TYPES
@@ -46,6 +58,7 @@ export interface ForecastPoint {
   weekly_seasonal: number;
   monthly_seasonal: number;
   residual: number;
+  conformal_interval?: ConformalInterval;
 }
 
 export interface ForecastMetrics {
@@ -65,9 +78,9 @@ export interface ForecastMetrics {
 }
 
 export interface SeasonalProfile {
-  hourly: number[];       // 24 values (hour 0-23)
-  weekly: number[];       // 7 values (Sun=0 to Sat=6)
-  monthly: number[];      // 12 values (Jan=0 to Dec=11)
+  hourly: number[]; // 24 values (hour 0-23)
+  weekly: number[]; // 7 values (Sun=0 to Sat=6)
+  monthly: number[]; // 12 values (Jan=0 to Dec=11)
 }
 
 export interface ModelState {
@@ -79,14 +92,15 @@ export interface ModelState {
   training_size: number;
   last_training_date: string;
   temperature_coefficient: number | null;
-  temperature_base: number;        // Base temperature (HDD/CDD breakpoint)
+  temperature_base: number; // Base temperature (HDD/CDD breakpoint)
 }
 
 export interface ForecastConfig {
   horizon_hours: number;
   include_confidence_interval: boolean;
-  confidence_level: number;         // e.g. 0.95
+  confidence_level: number; // e.g. 0.95
   use_temperature: boolean;
+  weather_features?: WeatherFeatures[]; // HRDPS/RDPS NWP features for weather-informed forecasting
 }
 
 // ============================================================================
@@ -108,6 +122,44 @@ const SMOOTHING_ALPHA = 0.3; // Exponential smoothing parameter
 export class DemandForecaster {
   private modelState: ModelState | null = null;
   private trainingData: DemandRecord[] = [];
+  private conformalPredictor: ConformalPredictor | null = null;
+
+  /**
+   * Attach a conformal predictor for calibrated prediction intervals.
+   *
+   * The predictor must be pre-calibrated with historical (forecast, actual) pairs.
+   * Once attached, forecast() will include conformalInterval on each ForecastPoint.
+   */
+  attachConformalPredictor(predictor: ConformalPredictor): void {
+    this.conformalPredictor = predictor;
+  }
+
+  /**
+   * Record a calibration observation for the conformal predictor.
+   *
+   * Call this after each forecast horizon completes with the actual demand value
+   * to maintain online ACI calibration.
+   */
+  recordCalibrationObservation(forecastMw: number, actualMw: number, timestamp?: string): void {
+    if (!this.conformalPredictor) return;
+    const quantileForecast = mcQuantilesToForecast({
+      p5: forecastMw * 0.96,
+      p10: forecastMw * 0.97,
+      p25: forecastMw * 0.985,
+      p50: forecastMw,
+      p75: forecastMw * 1.015,
+      p90: forecastMw * 1.03,
+      p95: forecastMw * 1.04,
+    });
+    this.conformalPredictor.recordObservation(quantileForecast, actualMw, timestamp);
+  }
+
+  /**
+   * Get conformal diagnostics (calibration sample count, coverage, ACI state).
+   */
+  getConformalDiagnostics(): ReturnType<ConformalPredictor['getDiagnostics']> | null {
+    return this.conformalPredictor?.getDiagnostics() ?? null;
+  }
 
   /**
    * Train the model on historical demand data
@@ -115,17 +167,17 @@ export class DemandForecaster {
   train(data: DemandRecord[]): ModelState {
     if (data.length < WEEKLY_CYCLE_HOURS * 2) {
       throw new Error(
-        `Insufficient training data: need at least ${WEEKLY_CYCLE_HOURS * 2} hourly records (2 weeks), got ${data.length}`
+        `Insufficient training data: need at least ${WEEKLY_CYCLE_HOURS * 2} hourly records (2 weeks), got ${data.length}`,
       );
     }
 
     // Sort by datetime
     const sorted = [...data].sort(
-      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
     );
     this.trainingData = sorted;
 
-    const demands = sorted.map(r => r.total_demand_mw);
+    const demands = sorted.map((r) => r.total_demand_mw);
 
     // 1. Compute overall statistics
     const mean_demand = demands.reduce((s, v) => s + v, 0) / demands.length;
@@ -135,7 +187,7 @@ export class DemandForecaster {
     // 2. Extract trend via linear regression on index
     const { slope: trend_slope, intercept: trend_intercept } = linearRegression(
       demands.map((_, i) => i),
-      demands
+      demands,
     );
 
     // 3. Detrend
@@ -171,9 +223,10 @@ export class DemandForecaster {
     const monthly_counts = new Array(MONTHS_PER_YEAR).fill(0);
     sorted.forEach((record, i) => {
       const month = new Date(record.datetime).getMonth();
-      const residual_after_hw = detrended[i]
-        - hourly[new Date(record.datetime).getHours()]
-        - weekly[new Date(record.datetime).getDay()];
+      const residual_after_hw =
+        detrended[i] -
+        hourly[new Date(record.datetime).getHours()] -
+        weekly[new Date(record.datetime).getDay()];
       monthly[month] += residual_after_hw;
       monthly_counts[month]++;
     });
@@ -227,6 +280,17 @@ export class DemandForecaster {
 
       let forecast_mw = trend + hourly_s + weekly_s + monthly_s;
 
+      // Weather-informed adjustment using HRDPS/RDPS NWP features
+      if (config.weather_features && h - 1 < config.weather_features.length) {
+        const wf = config.weather_features[h - 1];
+        const engineered = extractWeatherFeatures(wf);
+        // Seasonal climate normal temperature (simplified)
+        const monthNorms = [-7, -5, 0, 7, 13, 18, 21, 20, 15, 8, 2, -4];
+        const normalTemp = monthNorms[month] ?? 10;
+        const adjustment = weatherDemandAdjustment(engineered, normalTemp);
+        forecast_mw *= adjustment;
+      }
+
       // Clamp to reasonable range (no negative demand)
       forecast_mw = Math.max(forecast_mw, state.mean_demand * 0.3);
       forecast_mw = Math.min(forecast_mw, state.mean_demand * 2.5);
@@ -236,9 +300,25 @@ export class DemandForecaster {
 
       // Seasonal naive: same hour, same day last week
       const sameHourLastWeek = this.trainingData.length - WEEKLY_CYCLE_HOURS + (h - 1);
-      const seasonal_naive_mw = sameHourLastWeek >= 0 && sameHourLastWeek < this.trainingData.length
-        ? this.trainingData[sameHourLastWeek].total_demand_mw
-        : lastDemand;
+      const seasonal_naive_mw =
+        sameHourLastWeek >= 0 && sameHourLastWeek < this.trainingData.length
+          ? this.trainingData[sameHourLastWeek].total_demand_mw
+          : lastDemand;
+
+      // Conformal prediction interval (if predictor attached)
+      let conformal_interval: ConformalInterval | undefined;
+      if (this.conformalPredictor) {
+        const quantileForecast = mcQuantilesToForecast({
+          p5: forecast_mw * 0.96,
+          p10: forecast_mw * 0.97,
+          p25: forecast_mw * 0.985,
+          p50: forecast_mw,
+          p75: forecast_mw * 1.015,
+          p90: forecast_mw * 1.03,
+          p95: forecast_mw * 1.04,
+        });
+        conformal_interval = this.conformalPredictor.predict(quantileForecast);
+      }
 
       points.push({
         datetime: forecastTime.toISOString(),
@@ -254,6 +334,7 @@ export class DemandForecaster {
         weekly_seasonal: Math.round(weekly_s * 100) / 100,
         monthly_seasonal: Math.round(monthly_s * 100) / 100,
         residual: 0,
+        conformal_interval,
       });
     }
 
@@ -264,7 +345,10 @@ export class DemandForecaster {
    * Backtest the model using train/test split
    * Uses last `test_hours` of data as holdout
    */
-  backtest(data: DemandRecord[], test_hours: number = 168): {
+  backtest(
+    data: DemandRecord[],
+    test_hours: number = 168,
+  ): {
     metrics: ForecastMetrics;
     predictions: ForecastPoint[];
   } {
@@ -273,7 +357,7 @@ export class DemandForecaster {
     }
 
     const sorted = [...data].sort(
-      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
     );
 
     const trainData = sorted.slice(0, sorted.length - test_hours);
@@ -283,7 +367,7 @@ export class DemandForecaster {
     this.train(trainData);
 
     // Generate forecasts
-    const forecasts = this.forecast({ 
+    const forecasts = this.forecast({
       horizon_hours: test_hours,
       include_confidence_interval: false,
       confidence_level: 0.95,
@@ -302,7 +386,7 @@ export class DemandForecaster {
     const persists: number[] = [];
     const seasonals: number[] = [];
 
-    predictions.forEach(p => {
+    predictions.forEach((p) => {
       if (p.actual_mw !== null) {
         actuals.push(p.actual_mw);
         preds.push(p.forecast_mw);
@@ -333,7 +417,7 @@ export class DemandForecaster {
 
     const state = this.modelState!;
     const sorted = [...data].sort(
-      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
     );
 
     const trend: number[] = [];
@@ -375,7 +459,10 @@ function linearRegression(x: number[], y: number[]): { slope: number; intercept:
   const n = x.length;
   if (n === 0) return { slope: 0, intercept: 0 };
 
-  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  let sumX = 0,
+    sumY = 0,
+    sumXY = 0,
+    sumXX = 0;
   for (let i = 0; i < n; i++) {
     sumX += x[i];
     sumY += y[i];
@@ -397,26 +484,41 @@ function computeMetrics(
   actuals: number[],
   predictions: number[],
   persistence: number[],
-  seasonal_naive: number[]
+  seasonal_naive: number[],
 ): ForecastMetrics {
   const n = actuals.length;
   if (n === 0) {
     return {
-      mae: 0, mape: 0, rmse: 0,
-      persistence_mae: 0, persistence_mape: 0, persistence_rmse: 0,
-      seasonal_naive_mae: 0, seasonal_naive_mape: 0, seasonal_naive_rmse: 0,
-      skill_score_vs_persistence: 0, skill_score_vs_seasonal: 0,
-      r_squared: 0, sample_size: 0,
+      mae: 0,
+      mape: 0,
+      rmse: 0,
+      persistence_mae: 0,
+      persistence_mape: 0,
+      persistence_rmse: 0,
+      seasonal_naive_mae: 0,
+      seasonal_naive_mape: 0,
+      seasonal_naive_rmse: 0,
+      skill_score_vs_persistence: 0,
+      skill_score_vs_seasonal: 0,
+      r_squared: 0,
+      sample_size: 0,
     };
   }
 
   // Model metrics
-  let mae = 0, mape = 0, mse = 0;
-  let p_mae = 0, p_mape = 0, p_mse = 0;
-  let s_mae = 0, s_mape = 0, s_mse = 0;
+  let mae = 0,
+    mape = 0,
+    mse = 0;
+  let p_mae = 0,
+    p_mape = 0,
+    p_mse = 0;
+  let s_mae = 0,
+    s_mape = 0,
+    s_mse = 0;
 
   const mean_actual = actuals.reduce((s, v) => s + v, 0) / n;
-  let ss_res = 0, ss_tot = 0;
+  let ss_res = 0,
+    ss_tot = 0;
 
   for (let i = 0; i < n; i++) {
     const actual = actuals[i];
@@ -492,9 +594,7 @@ export async function loadOntarioDemandData(): Promise<DemandRecord[]> {
     const response = await fetch('/data/ontario_demand_sample.json');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data: DemandRecord[] = await response.json();
-    return data.sort(
-      (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
-    );
+    return data.sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
   } catch (error) {
     console.error('Failed to load Ontario demand data:', error);
     return [];
@@ -516,19 +616,25 @@ export function computeDemandStats(data: DemandRecord[]): {
 } {
   if (data.length === 0) {
     return {
-      count: 0, mean_mw: 0, min_mw: 0, max_mw: 0, std_mw: 0,
-      date_range: { start: '', end: '' }, peak_hour: 0, trough_hour: 0,
+      count: 0,
+      mean_mw: 0,
+      min_mw: 0,
+      max_mw: 0,
+      std_mw: 0,
+      date_range: { start: '', end: '' },
+      peak_hour: 0,
+      trough_hour: 0,
     };
   }
 
-  const demands = data.map(r => r.total_demand_mw);
+  const demands = data.map((r) => r.total_demand_mw);
   const mean = demands.reduce((s, v) => s + v, 0) / demands.length;
   const variance = demands.reduce((s, v) => s + (v - mean) ** 2, 0) / demands.length;
 
   // Find peak/trough hours
   const hourlyAvg = new Array(HOURS_PER_DAY).fill(0);
   const hourlyCounts = new Array(HOURS_PER_DAY).fill(0);
-  data.forEach(r => {
+  data.forEach((r) => {
     const h = new Date(r.datetime).getHours();
     hourlyAvg[h] += r.total_demand_mw;
     hourlyCounts[h]++;
@@ -541,7 +647,7 @@ export function computeDemandStats(data: DemandRecord[]): {
   const trough_hour = hourlyAvg.indexOf(Math.min(...hourlyAvg));
 
   const sorted = [...data].sort(
-    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
   );
 
   return {
@@ -564,26 +670,38 @@ export function computeDemandStats(data: DemandRecord[]): {
  */
 export function forecastToCSV(predictions: ForecastPoint[]): string {
   const headers = [
-    'datetime', 'hour', 'day_of_week', 'month',
-    'actual_mw', 'forecast_mw', 'persistence_mw', 'seasonal_naive_mw',
-    'trend', 'hourly_seasonal', 'weekly_seasonal', 'monthly_seasonal', 'residual'
+    'datetime',
+    'hour',
+    'day_of_week',
+    'month',
+    'actual_mw',
+    'forecast_mw',
+    'persistence_mw',
+    'seasonal_naive_mw',
+    'trend',
+    'hourly_seasonal',
+    'weekly_seasonal',
+    'monthly_seasonal',
+    'residual',
   ];
 
-  const rows = predictions.map(p => [
-    p.datetime,
-    p.hour,
-    p.dayOfWeek,
-    p.month,
-    p.actual_mw ?? '',
-    p.forecast_mw,
-    p.persistence_mw,
-    p.seasonal_naive_mw,
-    p.trend_component,
-    p.hourly_seasonal,
-    p.weekly_seasonal,
-    p.monthly_seasonal,
-    p.residual,
-  ].join(','));
+  const rows = predictions.map((p) =>
+    [
+      p.datetime,
+      p.hour,
+      p.dayOfWeek,
+      p.month,
+      p.actual_mw ?? '',
+      p.forecast_mw,
+      p.persistence_mw,
+      p.seasonal_naive_mw,
+      p.trend_component,
+      p.hourly_seasonal,
+      p.weekly_seasonal,
+      p.monthly_seasonal,
+      p.residual,
+    ].join(','),
+  );
 
   return [headers.join(','), ...rows].join('\n');
 }

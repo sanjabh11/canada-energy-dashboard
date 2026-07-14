@@ -20,7 +20,7 @@
  *   - summary (human-readable string)
  */
 
-import type { NormalizedRecord } from './connectors/index.ts';
+import type { NormalizedRecord } from '../connectors/index.ts';
 
 // ── Shared types ───────────────────────────────────────────────────────────────
 
@@ -52,39 +52,37 @@ export interface BalanceValidationResult {
 // Source: Environment and Climate Change Canada, National Inventory Report 2024
 // IPCC AR6 GWP-100 values used where provincial factors not available
 const EMISSION_FACTORS: Record<string, number> = {
-  natural_gas: 0.0492,  // tCO2e / GJ
-  coal: 0.0940,         // tCO2e / GJ
-  oil: 0.0723,          // tCO2e / GJ
-  diesel: 0.0726,       // tCO2e / GJ
-  propane: 0.0637,      // tCO2e / GJ
+  natural_gas: 0.0492, // tCO2e / GJ
+  coal: 0.094, // tCO2e / GJ
+  oil: 0.0723, // tCO2e / GJ
+  diesel: 0.0726, // tCO2e / GJ
+  propane: 0.0637, // tCO2e / GJ
   nuclear: 0.0,
   hydro: 0.0,
   wind: 0.0,
   solar: 0.0,
-  biomass: 0.0,         // treated as carbon-neutral in NRI accounting
+  biomass: 0.0, // treated as carbon-neutral in NRI accounting
   geothermal: 0.0,
 };
 
 // ── LCOE reference bounds (CAD/MWh) by technology — CER 2026 / NREL 2025 ──────
 const LCOE_BOUNDS: Record<string, [number, number]> = {
-  wind_onshore:   [40,  110],
-  wind_offshore:  [80,  200],
-  solar_pv:       [35,   90],
-  nuclear:        [80,  250],
-  natural_gas_cc: [55,  130],
-  natural_gas_ct: [80,  250],
-  hydro:          [20,   90],
-  coal:           [100, 300],
-  biomass:        [70,  200],
-  battery_4h:     [100, 350],
+  wind_onshore: [40, 110],
+  wind_offshore: [80, 200],
+  solar_pv: [35, 90],
+  nuclear: [80, 250],
+  natural_gas_cc: [55, 130],
+  natural_gas_ct: [80, 250],
+  hydro: [20, 90],
+  coal: [100, 300],
+  biomass: [70, 200],
+  battery_4h: [100, 350],
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 /** Group records by (geography, period = YYYY-MM). */
-function groupByGeoPeriod(
-  records: NormalizedRecord[],
-): Map<string, NormalizedRecord[]> {
+function groupByGeoPeriod(records: NormalizedRecord[]): Map<string, NormalizedRecord[]> {
   const map = new Map<string, NormalizedRecord[]>();
   for (const r of records) {
     const period = r.observed_at.slice(0, 7); // YYYY-MM
@@ -123,7 +121,7 @@ export async function validateEnergyBalance(
     const [geography, period] = geoperiod.split('::');
 
     const generation = sumMetric(recs, 'electricity_generation');
-    const demand     = sumMetric(recs, 'electricity_demand');
+    const demand = sumMetric(recs, 'electricity_demand');
 
     // Skip if either side is absent (no imbalance claim possible)
     if (generation === 0 || demand === 0) continue;
@@ -215,7 +213,7 @@ export async function validateCarbonBalance(
     if (reportedEmissions === 0 || impliedEmissions === 0) continue;
 
     const ratio = impliedEmissions / reportedEmissions;
-    const TOLERANCE = 0.20; // ±20%
+    const TOLERANCE = 0.2; // ±20%
 
     if (Math.abs(ratio - 1) > TOLERANCE) {
       violations.push({

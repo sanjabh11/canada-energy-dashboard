@@ -74,7 +74,8 @@ export interface ForecastPerformance {
 // WEATHER TYPES
 // ============================================================================
 
-export type WeatherSource = 'environment_canada' | 'openweathermap' | 'weatherapi';
+export type WeatherSource =
+  'environment_canada' | 'openweathermap' | 'weatherapi' | 'eccc_hrdps' | 'eccc_rdps';
 
 export interface WeatherFeatures {
   temp_c?: number;
@@ -110,7 +111,7 @@ export interface WeatherObservation {
 // CURTAILMENT TYPES
 // ============================================================================
 
-export type CurtailmentReason = 
+export type CurtailmentReason =
   | 'transmission_congestion'
   | 'oversupply'
   | 'negative_pricing'
@@ -148,11 +149,8 @@ export interface MitigationAction {
   timestamp?: string;
 }
 
-export type RecommendationType = 
-  | 'demand_response'
-  | 'storage_charge'
-  | 'export_intertie'
-  | 'industrial_load_shift';
+export type RecommendationType =
+  'demand_response' | 'storage_charge' | 'export_intertie' | 'industrial_load_shift';
 
 export type RecommendationPriority = 'critical' | 'high' | 'medium' | 'low';
 export type RecommendationStatus = 'pending' | 'approved' | 'rejected' | 'implemented' | 'failed';
@@ -194,11 +192,8 @@ export interface CurtailmentReductionRecommendation {
 // ============================================================================
 
 export type DispatchAction = 'charge' | 'discharge' | 'hold';
-export type GridService = 
-  | 'arbitrage'
-  | 'peak_shaving'
-  | 'frequency_regulation'
-  | 'renewable_absorption';
+export type GridService =
+  'arbitrage' | 'peak_shaving' | 'frequency_regulation' | 'renewable_absorption';
 export type DispatchSource = 'ai_optimization' | 'manual' | 'pre_scheduled';
 export type ExecutionStatus = 'pending' | 'executing' | 'completed' | 'failed';
 
@@ -366,27 +361,27 @@ export interface AwardEvidenceMetrics {
   solar_forecast_mae_percent: number; // Target: <6%
   wind_forecast_mae_percent: number; // Target: <8%
   forecast_improvement_vs_baseline_percent: number; // Target: >50%
-  
+
   // Curtailment Reduction
   monthly_curtailment_avoided_mwh: number; // Target: >500 MWh
   monthly_opportunity_cost_recovered_cad: number; // Target: >$25,000
   curtailment_reduction_percent: number; // vs baseline
-  
+
   // Storage Optimization
   avg_round_trip_efficiency_percent: number; // Target: >88%
   monthly_arbitrage_revenue_cad: number;
   storage_dispatch_accuracy_percent: number;
-  
+
   // Grid Stability
   renewable_penetration_increase_percent: number; // Target: >5%
   frequency_deviation_improvement_percent: number;
   grid_reliability_score: number; // 0-100
-  
+
   // Operational
   forecast_count: number;
   data_points_processed: number;
   uptime_percent: number;
-  
+
   // Time period
   period_start: string;
   period_end: string;

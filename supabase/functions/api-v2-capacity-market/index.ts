@@ -73,8 +73,8 @@ serve(async (req) => {
       cleared_capacity_mw: a.cleared_capacity_mw
     }));
 
-    const trends = [];
-    const resourceMix = [];
+    const trends: unknown[] = [];
+    const resourceMix: unknown[] = [];
 
     const payload = {
       auctions: auctions ?? [],

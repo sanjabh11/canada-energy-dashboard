@@ -41,7 +41,7 @@ export async function createGeminiEmbedding(
     ? json.embedding.values.map((value: unknown) => Number(value))
     : null;
 
-  if (!values || values.length !== EMBEDDING_DIMENSION || values.some((value) => !Number.isFinite(value))) {
+  if (!values || values.length !== EMBEDDING_DIMENSION || values.some((value: number) => !Number.isFinite(value))) {
     throw new Error("Embedding provider returned invalid vector dimensions");
   }
 

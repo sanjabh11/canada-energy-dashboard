@@ -332,10 +332,10 @@ serve(async (req) => {
         status: "queued",
         triggered_by: body.triggered_by ?? "api",
         parameters_override: body.parameters_override ?? {},
-        started_at: null,
-        completed_at: null,
-        error_message: null,
-        result_summary: null,
+        started_at: null as string | null,
+        completed_at: null as string | null,
+        error_message: null as string | null,
+        result_summary: null as unknown,
       };
 
       const { data: run, error: runErr } = await supabase

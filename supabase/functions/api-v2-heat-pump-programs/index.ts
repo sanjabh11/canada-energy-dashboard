@@ -64,9 +64,9 @@ serve(async (req) => {
     }
 
     // Summary data to be populated when additional tables are created
-    const deploymentStats = [];
-    const adoptionSummary = [];
-    const programsSummary = [];
+    const deploymentStats: unknown[] = [];
+    const adoptionSummary: unknown[] = [];
+    const programsSummary: unknown[] = [];
 
     // Calculate statistics from programs
     const totalFunding = (programs ?? []).reduce((sum, p) => sum + (p.total_program_budget_cad ?? 0), 0);
@@ -83,8 +83,8 @@ serve(async (req) => {
         total_programs: (programs ?? []).length,
         total_funding_available_cad: totalFunding,
         avg_rebate_amount_cad: avgRebate,
-        latest_installation_count: null,
-        latest_period: null,
+        latest_installation_count: null as number | null,
+        latest_period: null as string | null,
       },
       metadata: {
         province: province ?? 'All',

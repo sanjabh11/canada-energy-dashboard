@@ -1,6 +1,6 @@
 /**
  * Real-Time Energy Dashboard Component
- * 
+ *
  * 4-panel dashboard matching the original working layout:
  * - Ontario Hourly Demand (line chart + temperature)
  * - Provincial Generation Mix (horizontal bar chart)  
@@ -9,20 +9,28 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { 
-  Zap, Activity, Database, CheckCircle,
-  TrendingUp, MapPin, Loader2
-} from 'lucide-react';
-import { 
-  energyDataManager, 
-  DATASETS, 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { Zap, Activity, Database, CheckCircle, TrendingUp, MapPin, Loader2 } from 'lucide-react';
+import {
+  energyDataManager,
+  DATASETS,
   type DatasetType,
   type ConnectionStatus,
   type OntarioDemandRecord,
   type ProvincialGenerationRecord,
   type OntarioPricesRecord,
-  type HFElectricityDemandRecord
+  type HFElectricityDemandRecord,
 } from '../lib/dataManager';
 import { HelpButton } from './HelpButton';
 import { getTransitionKpis, type TransitionKpisResponse } from '../lib/llmClient';
@@ -40,7 +48,10 @@ import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import { SkeletonLoader, SkeletonChart, SkeletonMetricGrid } from './ui/SkeletonLoader';
 import DataTrustNotice from './DataTrustNotice';
 import { buildDataProvenance } from '../lib/foundation';
-import { buildDashboardFreshnessProvenance, resolveMetricCandidate } from '../lib/scoreboardProvenance';
+import {
+  buildDashboardFreshnessProvenance,
+  resolveMetricCandidate,
+} from '../lib/scoreboardProvenance';
 import { describeFreshness, getProvinceCoverageFact } from '../lib/platformFacts';
 
 // Map Canadian fuel type names to standardized display categories
@@ -48,31 +59,31 @@ const GENERATION_TYPE_DISPLAY_MAP: Record<string, string> = {
   // Canadian dataset fuel types
   'combustible fuels': 'GAS',
   'hydraulic turbine': 'HYDRO',
-  'hydraulic_turbine': 'HYDRO',
+  hydraulic_turbine: 'HYDRO',
   'wind power turbine': 'WIND',
-  'wind_power_turbine': 'WIND',
+  wind_power_turbine: 'WIND',
   'other types of electricity generation': 'OTHER',
   'tidal power turbine': 'HYDRO',
-  'tidal_power_turbine': 'HYDRO',
+  tidal_power_turbine: 'HYDRO',
   'nuclear steam turbine': 'NUCLEAR',
-  'nuclear_steam_turbine': 'NUCLEAR',
+  nuclear_steam_turbine: 'NUCLEAR',
   // Standard names (passthrough)
-  'coal': 'COAL',
+  coal: 'COAL',
   'natural gas': 'GAS',
-  'natural_gas': 'GAS',
-  'gas': 'GAS',
-  'oil': 'OIL',
-  'petroleum': 'OIL',
-  'diesel': 'OIL',
-  'nuclear': 'NUCLEAR',
-  'hydro': 'HYDRO',
-  'hydroelectric': 'HYDRO',
-  'wind': 'WIND',
-  'solar': 'SOLAR',
-  'biomass': 'BIOMASS',
-  'biofuel': 'BIOFUEL',
-  'geothermal': 'GEOTHERMAL',
-  'other': 'OTHER'
+  natural_gas: 'GAS',
+  gas: 'GAS',
+  oil: 'OIL',
+  petroleum: 'OIL',
+  diesel: 'OIL',
+  nuclear: 'NUCLEAR',
+  hydro: 'HYDRO',
+  hydroelectric: 'HYDRO',
+  wind: 'WIND',
+  solar: 'SOLAR',
+  biomass: 'BIOMASS',
+  biofuel: 'BIOFUEL',
+  geothermal: 'GEOTHERMAL',
+  other: 'OTHER',
 };
 
 /**
@@ -102,15 +113,16 @@ interface DashboardStats {
 }
 
 export const RealTimeDashboard: React.FC = () => {
-
   const [data, setData] = useState<DashboardData>({
     ontarioDemand: [],
     provincialGeneration: [],
     ontarioPrices: [],
-    weatherData: []
+    weatherData: [],
   });
-  
-  const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>(() => energyDataManager.getAllConnectionStatuses());
+
+  const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>(() =>
+    energyDataManager.getAllConnectionStatuses(),
+  );
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [lastRefreshSuccess, setLastRefreshSuccess] = useState<boolean | null>(null);
@@ -126,16 +138,20 @@ export const RealTimeDashboard: React.FC = () => {
   const nationalOverview = data.nationalOverview;
   const provinceMetrics = data.provinceMetrics;
   const trends = data.trends;
-  const trendDemandProvenance = trends?.provenance?.ontario_demand ?? trends?.metadata?.provenance?.ontario_demand ?? null;
+  const trendDemandProvenance =
+    trends?.provenance?.ontario_demand ?? trends?.metadata?.provenance?.ontario_demand ?? null;
   const trendDemandIsFallback = trendDemandProvenance?.is_fallback === true;
   const trendDemandLastUpdated = trendDemandProvenance?.last_updated ?? null;
   const trendDemandFreshness = trendDemandProvenance?.freshness_status;
 
   // Analytics API-derived quick stats (primary source)
-  const topSourceFromAPI: string | null = (data.provinceMetrics?.generation?.top_source ?? null);
-  const renewableShareFromAPI: number | null = (data.provinceMetrics?.generation?.renewable_share_percent ?? null);
+  const topSourceFromAPI: string | null = data.provinceMetrics?.generation?.top_source ?? null;
+  const renewableShareFromAPI: number | null =
+    data.provinceMetrics?.generation?.renewable_share_percent ?? null;
 
-  const extractLatestTimestamp = (...values: Array<string | Date | null | undefined>): Date | null => {
+  const extractLatestTimestamp = (
+    ...values: Array<string | Date | null | undefined>
+  ): Date | null => {
     const timestamps = values
       .flat()
       .map((value) => {
@@ -149,9 +165,9 @@ export const RealTimeDashboard: React.FC = () => {
       return null;
     }
 
-    return timestamps.reduce((latest, current) => (
-      current.getTime() > latest.getTime() ? current : latest
-    ));
+    return timestamps.reduce((latest, current) =>
+      current.getTime() > latest.getTime() ? current : latest,
+    );
   };
 
   // Load all dashboard data concurrently with cancellation support
@@ -165,33 +181,41 @@ export const RealTimeDashboard: React.FC = () => {
       const signal = controller.signal;
 
       const nationalOverviewPromise = isEdgeFetchEnabled()
-        ? fetchEdgeJson([
-            'api-v2-analytics-national-overview',
-            'api/analytics/national-overview'
-          ], { signal }).then((res) => res.json).catch((err) => {
-            console.warn('National overview fallback triggered', err);
-            return null;
+        ? fetchEdgeJson(['api-v2-analytics-national-overview', 'api/analytics/national-overview'], {
+            signal,
           })
+            .then((res) => res.json)
+            .catch((err) => {
+              console.warn('National overview fallback triggered', err);
+              return null;
+            })
         : Promise.resolve(null);
 
       const provinceMetricsPromise = isEdgeFetchEnabled()
-        ? fetchEdgeJson([
-            'api-v2-analytics-provincial-metrics?province=ON&window_days=2',
-            'api/analytics/provincial/ON?window_days=2'
-          ], { signal }).then((res) => res.json).catch((err) => {
-            console.warn('Provincial metrics fallback triggered', err);
-            return null;
-          })
+        ? fetchEdgeJson(
+            [
+              'api-v2-analytics-provincial-metrics?province=ON&window_days=2',
+              'api/analytics/provincial/ON?window_days=2',
+            ],
+            { signal },
+          )
+            .then((res) => res.json)
+            .catch((err) => {
+              console.warn('Provincial metrics fallback triggered', err);
+              return null;
+            })
         : Promise.resolve(null);
 
       const trendPromise = isEdgeFetchEnabled()
-        ? fetchEdgeJson([
-            'api-v2-analytics-trends?timeframe=30d',
-            'api/analytics/trends?timeframe=30d'
-          ], { signal }).then((res) => res.json).catch((err) => {
-            console.warn('Trend analytics fallback triggered', err);
-            return null;
-          })
+        ? fetchEdgeJson(
+            ['api-v2-analytics-trends?timeframe=30d', 'api/analytics/trends?timeframe=30d'],
+            { signal },
+          )
+            .then((res) => res.json)
+            .catch((err) => {
+              console.warn('Trend analytics fallback triggered', err);
+              return null;
+            })
         : Promise.resolve(null);
 
       const [
@@ -201,31 +225,31 @@ export const RealTimeDashboard: React.FC = () => {
         weatherData,
         nationalOverview,
         provinceMetrics,
-        trends
+        trends,
       ] = await Promise.all([
-        energyDataManager.loadData('ontario_demand', { maxRows: 200, signal }).catch(e => { 
+        energyDataManager.loadData('ontario_demand', { maxRows: 200, signal }).catch((e) => {
           if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
-          console.warn('ontario_demand failed', e); 
-          return []; 
+          console.warn('ontario_demand failed', e);
+          return [];
         }),
-        energyDataManager.loadData('provincial_generation', { maxRows: 500, signal }).catch(e => { 
+        energyDataManager.loadData('provincial_generation', { maxRows: 500, signal }).catch((e) => {
           if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
-          console.warn('provincial_generation failed', e); 
-          return []; 
+          console.warn('provincial_generation failed', e);
+          return [];
         }),
-        energyDataManager.loadData('ontario_prices', { maxRows: 200, signal }).catch(e => { 
+        energyDataManager.loadData('ontario_prices', { maxRows: 200, signal }).catch((e) => {
           if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
-          console.warn('ontario_prices failed', e); 
-          return []; 
+          console.warn('ontario_prices failed', e);
+          return [];
         }),
-        energyDataManager.loadData('hf_electricity_demand', { maxRows: 200, signal }).catch(e => { 
+        energyDataManager.loadData('hf_electricity_demand', { maxRows: 200, signal }).catch((e) => {
           if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
-          console.warn('hf_electricity_demand failed', e); 
-          return []; 
+          console.warn('hf_electricity_demand failed', e);
+          return [];
         }),
         nationalOverviewPromise,
         provinceMetricsPromise,
-        trendPromise
+        trendPromise,
       ]);
 
       if (signal.aborted) {
@@ -240,7 +264,7 @@ export const RealTimeDashboard: React.FC = () => {
         weatherData,
         nationalOverview: nationalOverview ?? undefined,
         provinceMetrics: provinceMetrics ?? undefined,
-        trends: trends ?? undefined
+        trends: trends ?? undefined,
       });
 
       const statuses = energyDataManager.getAllConnectionStatuses();
@@ -252,8 +276,8 @@ export const RealTimeDashboard: React.FC = () => {
           ...weatherData.map((record) => record.datetime),
           trends?.window?.end,
           (provinceMetrics as { as_of?: string } | null)?.as_of,
-          (nationalOverview as { as_of?: string } | null)?.as_of
-        ) ?? null
+          (nationalOverview as { as_of?: string } | null)?.as_of,
+        ) ?? null,
       );
       setConnectionStatuses(statuses);
       setLastRefreshSuccess(true);
@@ -272,13 +296,13 @@ export const RealTimeDashboard: React.FC = () => {
   // Initialize dashboard
   useEffect(() => {
     let mounted = true;
-    
+
     const initializeDashboard = async () => {
       // Initialize all connections
       await Promise.all(
-        DATASETS.map(dataset => energyDataManager.initializeConnection(dataset.key))
+        DATASETS.map((dataset) => energyDataManager.initializeConnection(dataset.key)),
       );
-      
+
       // Load initial data (this will also update statuses)
       if (mounted) {
         await loadDashboardData();
@@ -317,7 +341,9 @@ export const RealTimeDashboard: React.FC = () => {
         return;
       }
       try {
-        const data = await getTransitionKpis('provincial_generation', 'recent', { signal: controller.signal });
+        const data = await getTransitionKpis('provincial_generation', 'recent', {
+          signal: controller.signal,
+        });
         if (!controller.signal.aborted) {
           setKpis(data);
           setKpiStatus('ready');
@@ -356,11 +382,12 @@ export const RealTimeDashboard: React.FC = () => {
     // Last resort: Calculate from streaming data (only if no API data available)
     // NOTE: This path is intentionally avoided in normal operation to prevent instability
     const fallbackGenerationGwh = data.provincialGeneration.reduce((sum, record) => {
-      const valueMwh = typeof record.megawatt_hours === 'number'
-        ? record.megawatt_hours
-        : typeof record.generation_gwh === 'number'
-          ? record.generation_gwh * 1000
-          : 0;
+      const valueMwh =
+        typeof record.megawatt_hours === 'number'
+          ? record.megawatt_hours
+          : typeof record.generation_gwh === 'number'
+            ? record.generation_gwh * 1000
+            : 0;
       return sum + valueMwh / 1000;
     }, 0);
 
@@ -373,38 +400,48 @@ export const RealTimeDashboard: React.FC = () => {
     // Deliberately NOT including data.provincialGeneration to prevent instability
   ]);
 
-  const activeDataSources = connectionStatuses.filter((s) =>
-    s.status === 'connected' ||
-    s.status === 'connecting' ||
-    (s.status === 'fallback' && s.recordCount > 0)
+  const activeDataSources = connectionStatuses.filter(
+    (s) =>
+      s.status === 'connected' ||
+      s.status === 'connecting' ||
+      (s.status === 'fallback' && s.recordCount > 0),
   ).length;
   const displayedDataSources = activeDataSources > 0 ? activeDataSources : DATASETS.length;
   const hasFallbackData = React.useMemo(() => {
-    return connectionStatuses.some(status => status.status === 'fallback' || status.source === 'fallback');
+    return connectionStatuses.some(
+      (status) => status.status === 'fallback' || status.source === 'fallback',
+    );
   }, [connectionStatuses]);
-  const ontarioDemandStatus = connectionStatuses.find((status) => status.dataset === 'ontario_demand');
-  const provincialGenerationStatus = connectionStatuses.find((status) => status.dataset === 'provincial_generation');
+  const ontarioDemandStatus = connectionStatuses.find(
+    (status) => status.dataset === 'ontario_demand',
+  );
+  const provincialGenerationStatus = connectionStatuses.find(
+    (status) => status.dataset === 'provincial_generation',
+  );
   const dashboardLastUpdatedIso = lastUpdate?.toISOString() ?? null;
   const kpiLastUpdated = kpis?.meta?.generated_at ?? kpis?.meta?.freshness ?? null;
-  const nationalOverviewLastUpdated = (nationalOverview as { as_of?: string } | null)?.as_of ?? null;
+  const nationalOverviewLastUpdated =
+    (nationalOverview as { as_of?: string } | null)?.as_of ?? null;
   const provinceMetricsLastUpdated = (provinceMetrics as { as_of?: string } | null)?.as_of ?? null;
   const streamingGenerationMwh = data.provincialGeneration.reduce((sum, record) => {
-    const valueMwh = typeof record.megawatt_hours === 'number'
-      ? record.megawatt_hours
-      : typeof record.generation_gwh === 'number'
-        ? record.generation_gwh * 1000
-        : 0;
+    const valueMwh =
+      typeof record.megawatt_hours === 'number'
+        ? record.megawatt_hours
+        : typeof record.generation_gwh === 'number'
+          ? record.generation_gwh * 1000
+          : 0;
     return sum + valueMwh;
   }, 0);
   const generationChartSeries = React.useMemo(() => {
     const buckets = new Map<string, number>();
     for (const record of data.provincialGeneration) {
       const type = normalizeGenerationDisplayType(record.generation_type ?? 'other');
-      const valueGwh = typeof record.megawatt_hours === 'number'
-        ? record.megawatt_hours / 1000
-        : typeof record.generation_gwh === 'number'
-          ? record.generation_gwh
-          : 0;
+      const valueGwh =
+        typeof record.megawatt_hours === 'number'
+          ? record.megawatt_hours / 1000
+          : typeof record.generation_gwh === 'number'
+            ? record.generation_gwh
+            : 0;
       buckets.set(type, (buckets.get(type) ?? 0) + valueGwh);
     }
 
@@ -424,97 +461,155 @@ export const RealTimeDashboard: React.FC = () => {
   }, [generationChartSeries]);
   const normalizedSourceValue = (value: string | null | undefined) => {
     const normalized = value ? String(value).toUpperCase().trim() : null;
-    if (!normalized || ['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED', '', 'KAGGLE'].includes(normalized)) {
+    if (
+      !normalized ||
+      ['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED', '', 'KAGGLE'].includes(normalized)
+    ) {
       return null;
     }
     return normalized;
   };
-  const totalGenerationMetric = resolveMetricCandidate<number>([
+  const totalGenerationMetric = resolveMetricCandidate<number>(
+    [
+      {
+        value:
+          typeof kpis?.kpis?.total_mwh === 'number' && kpis.kpis.total_mwh > 0
+            ? kpis.kpis.total_mwh
+            : null,
+        source: kpis?.meta?.is_fallback
+          ? 'Transition KPI fallback service'
+          : 'Transition KPI service',
+        lastUpdated: kpiLastUpdated,
+        isFallback: kpis?.meta?.is_fallback ?? false,
+        staleAfterHours: 1,
+        note: 'Displayed as total generation from the KPI service when available.',
+      },
+      {
+        value:
+          typeof nationalOverview?.generation?.total_generation_gwh === 'number' &&
+          nationalOverview.generation.total_generation_gwh > 0
+            ? nationalOverview.generation.total_generation_gwh * 1000
+            : null,
+        source: 'National overview analytics API',
+        lastUpdated: nationalOverviewLastUpdated,
+        staleAfterHours: 24,
+        note: 'Fallback to national overview aggregate when KPI service is unavailable.',
+      },
+      {
+        value:
+          typeof provinceMetrics?.generation?.total_gwh === 'number' &&
+          provinceMetrics.generation.total_gwh > 0
+            ? provinceMetrics.generation.total_gwh * 1000
+            : null,
+        source: 'Provincial metrics analytics API',
+        lastUpdated: provinceMetricsLastUpdated,
+        staleAfterHours: 24,
+        note: 'Derived from the provincial metrics response.',
+      },
+      {
+        value: streamingGenerationMwh > 0 ? streamingGenerationMwh : null,
+        source:
+          provincialGenerationStatus?.source === 'fallback'
+            ? 'Fallback provincial generation stream'
+            : 'Provincial generation stream',
+        lastUpdated:
+          provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
+        isFallback: provincialGenerationStatus?.source === 'fallback',
+        staleAfterHours: 1,
+        note: 'Calculated from the currently loaded generation records.',
+      },
+    ],
     {
-      value: typeof kpis?.kpis?.total_mwh === 'number' && kpis.kpis.total_mwh > 0 ? kpis.kpis.total_mwh : null,
-      source: kpis?.meta?.is_fallback ? 'Transition KPI fallback service' : 'Transition KPI service',
-      lastUpdated: kpiLastUpdated,
-      isFallback: kpis?.meta?.is_fallback ?? false,
+      defaultSource: 'Fallback generation sample',
+      defaultNote: 'No verified generation source is currently available for this KPI.',
       staleAfterHours: 1,
-      note: 'Displayed as total generation from the KPI service when available.',
     },
+  );
+  const topSourceMetric = resolveMetricCandidate<string>(
+    [
+      {
+        value: normalizedSourceValue(topSourceFromAPI),
+        source: 'Provincial metrics analytics API',
+        lastUpdated: provinceMetricsLastUpdated,
+        staleAfterHours: 24,
+        note: 'Top source from the provincial metrics API.',
+      },
+      {
+        value: normalizedSourceValue(kpis?.kpis?.top_source?.type),
+        source: kpis?.meta?.is_fallback
+          ? 'Transition KPI fallback service'
+          : 'Transition KPI service',
+        lastUpdated: kpiLastUpdated,
+        isFallback: kpis?.meta?.is_fallback ?? false,
+        staleAfterHours: 1,
+        note: 'Top source returned by the KPI service.',
+      },
+      {
+        value: normalizedSourceValue(topSourceFromStreaming),
+        source:
+          provincialGenerationStatus?.source === 'fallback'
+            ? 'Fallback provincial generation stream'
+            : 'Provincial generation stream',
+        lastUpdated:
+          provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
+        isFallback: provincialGenerationStatus?.source === 'fallback',
+        staleAfterHours: 1,
+        note: 'Derived from the displayed generation mix when API values are unavailable.',
+      },
+    ],
     {
-      value: typeof nationalOverview?.generation?.total_generation_gwh === 'number' && nationalOverview.generation.total_generation_gwh > 0
-        ? nationalOverview.generation.total_generation_gwh * 1000
-        : null,
-      source: 'National overview analytics API',
-      lastUpdated: nationalOverviewLastUpdated,
-      staleAfterHours: 24,
-      note: 'Fallback to national overview aggregate when KPI service is unavailable.',
-    },
-    {
-      value: typeof provinceMetrics?.generation?.total_gwh === 'number' && provinceMetrics.generation.total_gwh > 0
-        ? provinceMetrics.generation.total_gwh * 1000
-        : null,
-      source: 'Provincial metrics analytics API',
-      lastUpdated: provinceMetricsLastUpdated,
-      staleAfterHours: 24,
-      note: 'Derived from the provincial metrics response.',
-    },
-    {
-      value: streamingGenerationMwh > 0 ? streamingGenerationMwh : null,
-      source: provincialGenerationStatus?.source === 'fallback' ? 'Fallback provincial generation stream' : 'Provincial generation stream',
-      lastUpdated: provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
-      isFallback: provincialGenerationStatus?.source === 'fallback',
+      defaultSource: 'Fallback generation sample',
+      defaultNote: 'No verified top source is currently available for this KPI.',
       staleAfterHours: 1,
-      note: 'Calculated from the currently loaded generation records.',
     },
-  ], { defaultSource: 'Fallback generation sample', defaultNote: 'No verified generation source is currently available for this KPI.', staleAfterHours: 1 });
-  const topSourceMetric = resolveMetricCandidate<string>([
+  );
+  const renewableShareMetric = resolveMetricCandidate<number>(
+    [
+      {
+        value:
+          typeof renewableShareFromAPI === 'number' && renewableShareFromAPI > 0
+            ? renewableShareFromAPI
+            : null,
+        source: 'Provincial metrics analytics API',
+        lastUpdated: provinceMetricsLastUpdated,
+        staleAfterHours: 24,
+        note: 'Renewable share from the analytics API.',
+      },
+      {
+        value:
+          typeof kpis?.kpis?.renewable_share === 'number' && kpis.kpis.renewable_share > 0
+            ? kpis.kpis.renewable_share * 100
+            : null,
+        source: kpis?.meta?.is_fallback
+          ? 'Transition KPI fallback service'
+          : 'Transition KPI service',
+        lastUpdated: kpiLastUpdated,
+        isFallback: kpis?.meta?.is_fallback ?? false,
+        staleAfterHours: 1,
+        note: 'Renewable share returned by the KPI service.',
+      },
+      {
+        value:
+          typeof renewableShareFromStreaming === 'number' && renewableShareFromStreaming > 0
+            ? renewableShareFromStreaming
+            : null,
+        source:
+          provincialGenerationStatus?.source === 'fallback'
+            ? 'Fallback provincial generation stream'
+            : 'Provincial generation stream',
+        lastUpdated:
+          provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
+        isFallback: provincialGenerationStatus?.source === 'fallback',
+        staleAfterHours: 1,
+        note: 'Derived from the displayed generation mix when API values are unavailable.',
+      },
+    ],
     {
-      value: normalizedSourceValue(topSourceFromAPI),
-      source: 'Provincial metrics analytics API',
-      lastUpdated: provinceMetricsLastUpdated,
-      staleAfterHours: 24,
-      note: 'Top source from the provincial metrics API.',
-    },
-    {
-      value: normalizedSourceValue(kpis?.kpis?.top_source?.type),
-      source: kpis?.meta?.is_fallback ? 'Transition KPI fallback service' : 'Transition KPI service',
-      lastUpdated: kpiLastUpdated,
-      isFallback: kpis?.meta?.is_fallback ?? false,
+      defaultSource: 'Fallback generation sample',
+      defaultNote: 'No verified renewable share is currently available for this KPI.',
       staleAfterHours: 1,
-      note: 'Top source returned by the KPI service.',
     },
-    {
-      value: normalizedSourceValue(topSourceFromStreaming),
-      source: provincialGenerationStatus?.source === 'fallback' ? 'Fallback provincial generation stream' : 'Provincial generation stream',
-      lastUpdated: provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
-      isFallback: provincialGenerationStatus?.source === 'fallback',
-      staleAfterHours: 1,
-      note: 'Derived from the displayed generation mix when API values are unavailable.',
-    },
-  ], { defaultSource: 'Fallback generation sample', defaultNote: 'No verified top source is currently available for this KPI.', staleAfterHours: 1 });
-  const renewableShareMetric = resolveMetricCandidate<number>([
-    {
-      value: typeof renewableShareFromAPI === 'number' && renewableShareFromAPI > 0 ? renewableShareFromAPI : null,
-      source: 'Provincial metrics analytics API',
-      lastUpdated: provinceMetricsLastUpdated,
-      staleAfterHours: 24,
-      note: 'Renewable share from the analytics API.',
-    },
-    {
-      value: typeof kpis?.kpis?.renewable_share === 'number' && kpis.kpis.renewable_share > 0 ? kpis.kpis.renewable_share * 100 : null,
-      source: kpis?.meta?.is_fallback ? 'Transition KPI fallback service' : 'Transition KPI service',
-      lastUpdated: kpiLastUpdated,
-      isFallback: kpis?.meta?.is_fallback ?? false,
-      staleAfterHours: 1,
-      note: 'Renewable share returned by the KPI service.',
-    },
-    {
-      value: typeof renewableShareFromStreaming === 'number' && renewableShareFromStreaming > 0 ? renewableShareFromStreaming : null,
-      source: provincialGenerationStatus?.source === 'fallback' ? 'Fallback provincial generation stream' : 'Provincial generation stream',
-      lastUpdated: provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
-      isFallback: provincialGenerationStatus?.source === 'fallback',
-      staleAfterHours: 1,
-      note: 'Derived from the displayed generation mix when API values are unavailable.',
-    },
-  ], { defaultSource: 'Fallback generation sample', defaultNote: 'No verified renewable share is currently available for this KPI.', staleAfterHours: 1 });
+  );
   const connectedDashboardFreshnessMeta = buildDashboardFreshnessProvenance({
     connectionStatuses,
     lastUpdated: dashboardLastUpdatedIso,
@@ -529,64 +624,89 @@ export const RealTimeDashboard: React.FC = () => {
       ? 'Ontario demand trend is currently modeled or supplemented.'
       : connectedDashboardFreshnessMeta.note,
   });
-  const dashboardFreshnessLabel = React.useMemo(() => describeFreshness({
-    timestamp: lastUpdate?.toISOString() ?? trendDemandLastUpdated ?? dashboardLastUpdatedIso ?? null,
-    status: dashboardFreshnessMeta.freshnessStatus,
-    isFallback: dashboardFreshnessMeta.isFallback,
-    staleAfterHours: 1,
-  }), [dashboardFreshnessMeta.freshnessStatus, dashboardFreshnessMeta.isFallback, dashboardLastUpdatedIso, lastUpdate, trendDemandLastUpdated]);
+  const dashboardFreshnessLabel = React.useMemo(
+    () =>
+      describeFreshness({
+        timestamp:
+          lastUpdate?.toISOString() ?? trendDemandLastUpdated ?? dashboardLastUpdatedIso ?? null,
+        status: dashboardFreshnessMeta.freshnessStatus,
+        isFallback: dashboardFreshnessMeta.isFallback,
+        staleAfterHours: 1,
+      }),
+    [
+      dashboardFreshnessMeta.freshnessStatus,
+      dashboardFreshnessMeta.isFallback,
+      dashboardLastUpdatedIso,
+      lastUpdate,
+      trendDemandLastUpdated,
+    ],
+  );
 
-  const dashboardFreshnessDisplay = kpiStatus === 'error'
-    ? 'Unavailable'
-    : dashboardFreshnessLabel;
+  const dashboardFreshnessDisplay = kpiStatus === 'error' ? 'Unavailable' : dashboardFreshnessLabel;
 
-  const dashboardStats: DashboardStats = React.useMemo(() => ({
-    dataSources: displayedDataSources,
-    coverage: dashboardCoverageFact.value,
-    updateFreq: dashboardFreshnessDisplay,
-    architecture: 'Resilient',
-  }), [dashboardCoverageFact.value, dashboardFreshnessDisplay, displayedDataSources]);
+  const dashboardStats: DashboardStats = React.useMemo(
+    () => ({
+      dataSources: displayedDataSources,
+      coverage: dashboardCoverageFact.value,
+      updateFreq: dashboardFreshnessDisplay,
+      architecture: 'Resilient',
+    }),
+    [dashboardCoverageFact.value, dashboardFreshnessDisplay, displayedDataSources],
+  );
   const ontarioDemandChartData = React.useMemo(() => {
     return [...data.ontarioDemand]
       .sort((a, b) => a.datetime.localeCompare(b.datetime))
       .slice(-48)
       .map((record) => ({
-        time: new Date(record.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: new Date(record.datetime).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
         demand: record.total_demand_mw,
       }));
   }, [data.ontarioDemand]);
-  const currentDemand = ontarioDemandChartData.length > 0
-    ? ontarioDemandChartData[ontarioDemandChartData.length - 1]?.demand ?? null
-    : null;
+  const currentDemand =
+    ontarioDemandChartData.length > 0
+      ? (ontarioDemandChartData[ontarioDemandChartData.length - 1]?.demand ?? null)
+      : null;
   const supplyDemandChartData = React.useMemo(() => {
     if (Array.isArray(trends?.ontario_demand) && trends.ontario_demand.length > 0) {
-      return trends.ontario_demand.map((row: { date?: string; average_mw?: number; bucket_date?: string }) => {
-        const label = row.date ?? row.bucket_date ?? '';
-        return {
-          label,
-          demand: row.average_mw ?? 0,
-        };
-      });
+      return trends.ontario_demand.map(
+        (row: { date?: string; average_mw?: number; bucket_date?: string }) => {
+          const label = row.date ?? row.bucket_date ?? '';
+          return {
+            label,
+            demand: row.average_mw ?? 0,
+          };
+        },
+      );
     }
 
     return [...data.ontarioDemand]
       .sort((a, b) => a.datetime.localeCompare(b.datetime))
       .slice(-24)
       .map((record) => ({
-        label: new Date(record.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        label: new Date(record.datetime).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
         demand: record.total_demand_mw,
       }));
   }, [trends, data.ontarioDemand]);
   const hasDemandTrend = Array.isArray(trends?.ontario_demand) && trends.ontario_demand.length > 0;
-  const trendWindowStart = trends?.window?.start ? new Date(trends.window.start).toLocaleDateString() : '—';
-  const trendWindowEnd = trends?.window?.end ? new Date(trends.window.end).toLocaleDateString() : '—';
-  const currentSupply = null;
-  const currentDemandAlberta = supplyDemandChartData.length > 0
-    ? supplyDemandChartData[supplyDemandChartData.length - 1]?.demand ?? null
-    : null;
-  const currentPrice = data.ontarioPrices.length > 0
-    ? data.ontarioPrices[0]?.energy_price ?? null
-    : null;
+  const trendWindowStart = trends?.window?.start
+    ? new Date(trends.window.start).toLocaleDateString()
+    : '—';
+  const trendWindowEnd = trends?.window?.end
+    ? new Date(trends.window.end).toLocaleDateString()
+    : '—';
+  const currentSupply: unknown = null;
+  const currentDemandAlberta =
+    supplyDemandChartData.length > 0
+      ? (supplyDemandChartData[supplyDemandChartData.length - 1]?.demand ?? null)
+      : null;
+  const currentPrice =
+    data.ontarioPrices.length > 0 ? (data.ontarioPrices[0]?.energy_price ?? null) : null;
   const sourceText = (key: DatasetType) => {
     try {
       const s = energyDataManager.getConnectionStatus(key);
@@ -601,13 +721,18 @@ export const RealTimeDashboard: React.FC = () => {
   const envDebug = {
     edgeFetch: import.meta.env.VITE_ENABLE_EDGE_FETCH,
     streaming: import.meta.env.VITE_USE_STREAMING_DATASETS,
-    debug: import.meta.env.VITE_DEBUG_LOGS
+    debug: import.meta.env.VITE_DEBUG_LOGS,
   };
   console.log('🔧 RealTimeDashboard env check:', envDebug);
 
   // Calculate if data is actually live (freshness check + data presence check + last refresh success)
   const isDataLive = React.useMemo(() => {
-    if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback || kpiStatus === 'error') {
+    if (
+      hasFallbackData ||
+      trendDemandIsFallback ||
+      dashboardFreshnessMeta.isFallback ||
+      kpiStatus === 'error'
+    ) {
       return false;
     }
     if (lastRefreshSuccess === false) {
@@ -618,21 +743,34 @@ export const RealTimeDashboard: React.FC = () => {
       return false;
     }
     const now = Date.now();
-    const isFresh = (now - lastUpdate.getTime()) < stalenessThresholdMs;
-    const hasData = data.ontarioDemand.length > 0 || 
-                    data.provincialGeneration.length > 0 || 
-                    (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
-                    (currentDemand !== null && currentDemand > 0);
+    const isFresh = now - lastUpdate.getTime() < stalenessThresholdMs;
+    const hasData =
+      data.ontarioDemand.length > 0 ||
+      data.provincialGeneration.length > 0 ||
+      (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
+      (currentDemand !== null && currentDemand > 0);
     return isFresh && hasData;
-  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, kpiStatus, lastRefreshSuccess, lastUpdate, data, totalGenerationGwh, currentDemand]);
+  }, [
+    hasFallbackData,
+    trendDemandIsFallback,
+    dashboardFreshnessMeta.isFallback,
+    kpiStatus,
+    lastRefreshSuccess,
+    lastUpdate,
+    data,
+    totalGenerationGwh,
+    currentDemand,
+  ]);
 
   // Check for partial data (fresh timestamp but some metrics missing)
   const hasPartialData = React.useMemo(() => {
     if (kpiStatus === 'error') {
-      return data.ontarioDemand.length > 0 ||
+      return (
+        data.ontarioDemand.length > 0 ||
         data.provincialGeneration.length > 0 ||
         (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
-        (currentDemand !== null && currentDemand > 0);
+        (currentDemand !== null && currentDemand > 0)
+      );
     }
     if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback) {
       return false;
@@ -642,21 +780,30 @@ export const RealTimeDashboard: React.FC = () => {
       return false;
     }
     const now = Date.now();
-    const isFresh = (now - lastUpdate.getTime()) < stalenessThresholdMs;
+    const isFresh = now - lastUpdate.getTime() < stalenessThresholdMs;
     const hasSomeData = data.ontarioDemand.length > 0 || data.provincialGeneration.length > 0;
     const hasAllData = totalGenerationGwh > 0 && currentDemand > 0 && data.ontarioDemand.length > 5;
     return isFresh && hasSomeData && !hasAllData;
-  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, kpiStatus, lastUpdate, data, totalGenerationGwh, currentDemand]);
+  }, [
+    hasFallbackData,
+    trendDemandIsFallback,
+    dashboardFreshnessMeta.isFallback,
+    kpiStatus,
+    lastUpdate,
+    data,
+    totalGenerationGwh,
+    currentDemand,
+  ]);
 
   return (
     <div className="min-h-screen bg-primary">
       {hasFallbackData && (
-      <DataTrustNotice
-        mode="fallback"
-        title="Fallback energy data in use"
-        message="This dashboard is currently displaying backup sources rather than live feeds. Demand, generation, and price data may be delayed or drawn from historical samples."
-        className="mx-6 mt-6"
-      />
+        <DataTrustNotice
+          mode="fallback"
+          title="Fallback energy data in use"
+          message="This dashboard is currently displaying backup sources rather than live feeds. Demand, generation, and price data may be delayed or drawn from historical samples."
+          className="mx-6 mt-6"
+        />
       )}
       {trendDemandIsFallback && (
         <DataTrustNotice
@@ -682,7 +829,8 @@ export const RealTimeDashboard: React.FC = () => {
             Energy Operations Dashboard
           </h1>
           <p className="hero-subtitle">
-            Live-when-available monitoring of Canadian energy systems with clearly labeled freshness status
+            Live-when-available monitoring of Canadian energy systems with clearly labeled freshness
+            status
           </p>
           <div className="flex items-center justify-center gap-2 mt-2">
             {isDataLive ? (
@@ -728,413 +876,465 @@ export const RealTimeDashboard: React.FC = () => {
       </section>
 
       <div className={`${CONTAINER_CLASSES.page} space-y-8 animate-fade-in`}>
+        {/* Phase III.0: Peak Alert Banner */}
+        <PeakAlertBanner
+          currentDemand={currentDemand || 0}
+          recentDemand={data.ontarioDemand.slice(0, 10).map((d) => d.total_demand_mw)}
+          historicalPattern={[
+            { hour: 6, avg_demand: 15000 },
+            { hour: 9, avg_demand: 18000 },
+            { hour: 12, avg_demand: 19000 },
+            { hour: 15, avg_demand: 17500 },
+            { hour: 18, avg_demand: 21000 },
+            { hour: 21, avg_demand: 18500 },
+          ]}
+        />
 
-      {/* Phase III.0: Peak Alert Banner */}
-      <PeakAlertBanner
-        currentDemand={currentDemand || 0}
-        recentDemand={data.ontarioDemand.slice(0, 10).map(d => d.total_demand_mw)}
-        historicalPattern={[
-          { hour: 6, avg_demand: 15000 },
-          { hour: 9, avg_demand: 18000 },
-          { hour: 12, avg_demand: 19000 },
-          { hour: 15, avg_demand: 17500 },
-          { hour: 18, avg_demand: 21000 },
-          { hour: 21, avg_demand: 18500 }
-        ]}
-      />
+        {/* Grid: CO2 Emissions + Ops Health + Storage */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            {/* Phase III.0: CO2 Emissions Tracker - Connected to Live Generation Mix */}
+            {(() => {
+              // Use real data if available, otherwise fallback to Ontario average mix
+              const co2GenerationData =
+                totalGenerationGwh > 0 && generationChartSeries.length > 0
+                  ? generationChartSeries.map((source) => ({
+                      source_type: source.type.toLowerCase(),
+                      capacity_mw: (source.gwh * 1000) / 24,
+                      percentage:
+                        totalGenerationGwh > 0 ? (source.gwh / totalGenerationGwh) * 100 : 0,
+                    }))
+                  : [
+                      // Fallback: Ontario typical generation mix (based on IESO data)
+                      { source_type: 'nuclear', capacity_mw: 8000, percentage: 55 },
+                      { source_type: 'hydro', capacity_mw: 3500, percentage: 24 },
+                      { source_type: 'gas', capacity_mw: 2200, percentage: 15 },
+                      { source_type: 'wind', capacity_mw: 800, percentage: 5.5 },
+                      { source_type: 'solar', capacity_mw: 100, percentage: 0.5 },
+                    ];
 
-      {/* Grid: CO2 Emissions + Ops Health + Storage */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div>
-          {/* Phase III.0: CO2 Emissions Tracker - Connected to Live Generation Mix */}
-          {(() => {
-            // Use real data if available, otherwise fallback to Ontario average mix
-            const co2GenerationData = (totalGenerationGwh > 0 && generationChartSeries.length > 0)
-              ? generationChartSeries.map(source => ({
-                  source_type: source.type.toLowerCase(),
-                  capacity_mw: (source.gwh * 1000) / 24,
-                  percentage: totalGenerationGwh > 0 ? (source.gwh / totalGenerationGwh) * 100 : 0
-                }))
-              : [
-                  // Fallback: Ontario typical generation mix (based on IESO data)
-                  { source_type: 'nuclear', capacity_mw: 8000, percentage: 55 },
-                  { source_type: 'hydro', capacity_mw: 3500, percentage: 24 },
-                  { source_type: 'gas', capacity_mw: 2200, percentage: 15 },
-                  { source_type: 'wind', capacity_mw: 800, percentage: 5.5 },
-                  { source_type: 'solar', capacity_mw: 100, percentage: 0.5 }
-                ];
-            
-            return (
-              <CO2EmissionsTracker
-                generationData={co2GenerationData}
-                compact={true}
-                showBreakdown={false}
-              />
-            );
-          })()}
-        </div>
-        <div>
-          {/* Ops Health Panel - Real-time SLO Metrics */}
-          <OpsHealthPanel variant="compact" autoRefresh={true} refreshInterval={30000} />
-        </div>
-        <div>
-          {/* Storage Dispatch Metrics */}
-          <StorageMetricsCard province="ON" compact={true} />
-        </div>
-      </div>
-
-      {/* 4-Panel Dashboard Grid */}
-      {/* Transition KPIs / Analytics quick tiles */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
-        <div className="card card-metric">
-          <span className="metric-label">Total Generation</span>
-          <span className="metric-value">
-            {
-              typeof totalGenerationMetric.value === 'number'
-                ? Math.round(totalGenerationMetric.value).toLocaleString()
-                : '—'
-            } MWh
-          </span>
-          <div className="mt-2 flex justify-center">
-            <DataFreshnessBadge
-              timestamp={totalGenerationMetric.meta.lastUpdated}
-              status={totalGenerationMetric.meta.freshnessStatus}
-              source={totalGenerationMetric.meta.source}
-              compact={true}
-              showRelative={false}
-            />
-          </div>
-        </div>
-        <div className="card card-metric">
-          <span className="metric-label">Top Source</span>
-          <span className="metric-value">
-            {topSourceMetric.value ?? '—'}
-          </span>
-          <div className="mt-2 flex justify-center">
-            <DataFreshnessBadge
-              timestamp={topSourceMetric.meta.lastUpdated}
-              status={topSourceMetric.meta.freshnessStatus}
-              source={topSourceMetric.meta.source}
-              compact={true}
-              showRelative={false}
-            />
-          </div>
-        </div>
-        <div className="card card-metric">
-          <span className="metric-label">Renewable Share</span>
-          <span className="metric-value">
-            {typeof renewableShareMetric.value === 'number' ? `${renewableShareMetric.value.toFixed(1)}%` : '—'}
-          </span>
-          <div className="mt-2 flex justify-center">
-            <DataFreshnessBadge
-              timestamp={renewableShareMetric.meta.lastUpdated}
-              status={renewableShareMetric.meta.freshnessStatus}
-              source={renewableShareMetric.meta.source}
-              compact={true}
-              showRelative={false}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {/* Dashboard Header with Dark Card */}
-        <div className="card">
-          <div className="card-header">
-            <div className="flex justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center">
-                  <Database className="h-6 w-6 text-electric mr-3" />
-                  <h2 className="card-title">Energy Operations Dashboard</h2>
-                </div>
-                <DataFreshnessBadge 
-                  timestamp={trendDemandLastUpdated ?? lastUpdate}
-                  staleThresholdMinutes={5}
-                  showRefreshButton={true}
-                  onRefresh={loadDashboardData}
-                  isRefreshing={loading}
-                  status={trendDemandFreshness ?? dashboardFreshnessMeta.freshnessStatus}
-                  source={dashboardFreshnessMeta.source}
+              return (
+                <CO2EmissionsTracker
+                  generationData={co2GenerationData}
+                  compact={true}
+                  showBreakdown={false}
                 />
+              );
+            })()}
+          </div>
+          <div>
+            {/* Ops Health Panel - Real-time SLO Metrics */}
+            <OpsHealthPanel variant="compact" autoRefresh={true} refreshInterval={30000} />
+          </div>
+          <div>
+            {/* Storage Dispatch Metrics */}
+            <StorageMetricsCard province="ON" compact={true} />
+          </div>
+        </div>
+
+        {/* 4-Panel Dashboard Grid */}
+        {/* Transition KPIs / Analytics quick tiles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+          <div className="card card-metric">
+            <span className="metric-label">Total Generation</span>
+            <span className="metric-value">
+              {typeof totalGenerationMetric.value === 'number'
+                ? Math.round(totalGenerationMetric.value).toLocaleString()
+                : '—'}{' '}
+              MWh
+            </span>
+            <div className="mt-2 flex justify-center">
+              <DataFreshnessBadge
+                timestamp={totalGenerationMetric.meta.lastUpdated}
+                status={totalGenerationMetric.meta.freshnessStatus}
+                source={totalGenerationMetric.meta.source}
+                compact={true}
+                showRelative={false}
+              />
+            </div>
+          </div>
+          <div className="card card-metric">
+            <span className="metric-label">Top Source</span>
+            <span className="metric-value">{topSourceMetric.value ?? '—'}</span>
+            <div className="mt-2 flex justify-center">
+              <DataFreshnessBadge
+                timestamp={topSourceMetric.meta.lastUpdated}
+                status={topSourceMetric.meta.freshnessStatus}
+                source={topSourceMetric.meta.source}
+                compact={true}
+                showRelative={false}
+              />
+            </div>
+          </div>
+          <div className="card card-metric">
+            <span className="metric-label">Renewable Share</span>
+            <span className="metric-value">
+              {typeof renewableShareMetric.value === 'number'
+                ? `${renewableShareMetric.value.toFixed(1)}%`
+                : '—'}
+            </span>
+            <div className="mt-2 flex justify-center">
+              <DataFreshnessBadge
+                timestamp={renewableShareMetric.meta.lastUpdated}
+                status={renewableShareMetric.meta.freshnessStatus}
+                source={renewableShareMetric.meta.source}
+                compact={true}
+                showRelative={false}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Dashboard Header with Dark Card */}
+          <div className="card">
+            <div className="card-header">
+              <div className="flex justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center">
+                    <Database className="h-6 w-6 text-electric mr-3" />
+                    <h2 className="card-title">Energy Operations Dashboard</h2>
+                  </div>
+                  <DataFreshnessBadge
+                    timestamp={trendDemandLastUpdated ?? lastUpdate}
+                    staleThresholdMinutes={5}
+                    showRefreshButton={true}
+                    onRefresh={loadDashboardData}
+                    isRefreshing={loading}
+                    status={trendDemandFreshness ?? dashboardFreshnessMeta.freshnessStatus}
+                    source={dashboardFreshnessMeta.source}
+                  />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div
+                    className={`badge ${
+                      connectionStatuses.some(
+                        (s) => s.status === 'connected' || s.status === 'fallback',
+                      )
+                        ? 'badge-success'
+                        : connectionStatuses.some((s) => s.status === 'connecting')
+                          ? 'badge-warning'
+                          : 'badge-danger'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1">
+                      {connectionStatuses.some((s) => s.status === 'connecting') &&
+                      !connectionStatuses.some(
+                        (s) => s.status === 'connected' || s.status === 'fallback',
+                      ) ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          {
+                            connectionStatuses.filter(
+                              (s) => s.status === 'connected' || s.status === 'fallback',
+                            ).length
+                          }
+                          /{connectionStatuses.length} Connected
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <HelpButton id="dashboard.overview" />
+                </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className={`badge ${
-                  connectionStatuses.some(s => s.status === 'connected' || s.status === 'fallback')
-                    ? 'badge-success'
-                    : connectionStatuses.some(s => s.status === 'connecting')
-                      ? 'badge-warning'
-                      : 'badge-danger'
-                }`}>
-                  <span className="flex items-center gap-1">
-                    {connectionStatuses.some(s => s.status === 'connecting') && !connectionStatuses.some(s => s.status === 'connected' || s.status === 'fallback') ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      <>
-                        {connectionStatuses.filter(s => s.status === 'connected' || s.status === 'fallback').length}/{connectionStatuses.length} Connected
-                      </>
-                    )}
+            </div>
+
+            <div className="card-body">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+                <div className="card-metric">
+                  <span className="metric-label">Data Sources</span>
+                  <span className="metric-value">{displayedDataSources}</span>
+                </div>
+                <div className="card-metric">
+                  <span className="metric-label">Ontario Demand</span>
+                  <span className="metric-value">
+                    {typeof currentDemand === 'number'
+                      ? `${Math.round(currentDemand).toLocaleString()} MW`
+                      : '—'}
                   </span>
                 </div>
-                <HelpButton id="dashboard.overview" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card-body">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
-              <div className="card-metric">
-                <span className="metric-label">Data Sources</span>
-                <span className="metric-value">{displayedDataSources}</span>
-              </div>
-              <div className="card-metric">
-                <span className="metric-label">Ontario Demand</span>
-                <span className="metric-value">
-                  {typeof currentDemand === 'number'
-                    ? `${Math.round(currentDemand).toLocaleString()} MW`
-                    : '—'}
-                </span>
-              </div>
-              <div className="card-metric">
-                <span className="metric-label">Alberta Price</span>
-                <span className="metric-value">
-                  {currentPrice !== null && currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : '—'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Dashboard Charts with Dark Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
-          {/* Panel 1: Ontario Hourly Demand */}
-          <div className="card">
-            <div className="card-header">
-              <div className="flex justify-between">
-                <h3 className="text-lg font-semibold text-primary mb-2">
-                  <Activity className="h-5 w-5 mr-2 text-electric" />
-                  Ontario Hourly Demand
-                </h3>
-                <div className="px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-semibold text-primary">Ontario Demand</h2>
-                      <p className="text-sm text-secondary">Current electricity demand</p>
-                    </div>
-                    <DataQualityBadge
-                      provenance={createProvenance(
-                        ontarioDemandStatus?.source === 'fallback' ? 'proxy_indicative' : 'real_stream',
-                        ontarioDemandStatus?.source === 'fallback' ? 'Fallback Ontario demand sample' : 'IESO',
-                        ontarioDemandStatus?.source === 'fallback' ? 0.65 : 0.95,
-                        { completeness: Math.min(1, data.ontarioDemand.length / 96) }
-                      )}
-                      sampleCount={data.ontarioDemand.length}
-                      showDetails={true}
-                    />
-                  </div>
-                </div>
-                <div className="text-right">
-              <div className="text-sm text-secondary">Current Demand</div>
-              <div className="text-lg font-semibold text-electric">
-                {typeof currentDemand === 'number'
-                  ? `${Math.round(currentDemand).toLocaleString()} MW`
-                  : '—'}
-              </div>
-                </div>
-              </div>
-            </div>
-            <div className="card-body">
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
-                  <LineChart data={ontarioDemandChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="demand" stroke="var(--chart-electric)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                <DataSource 
-                  {...COMMON_DATA_SOURCES.IESO_DEMAND}
-                  date={ontarioDemandStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso ?? undefined}
-                  compact={true}
-                />
-                <span className="text-xs text-slate-500">
-                  {data.ontarioDemand.length > 0 
-                    ? `${data.ontarioDemand.length} records`
-                    : loading 
-                      ? 'Loading...'
-                      : 'Sample data'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Panel 2: Provincial Generation Mix */}
-          <div className="card">
-            <div className="card-header">
-              <div className="flex justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-primary mb-2">
-                      <Zap className="h-5 w-5 mr-2 text-success" />
-                      Provincial Generation Mix
-                    </h3>
-                    <DataQualityBadge
-                      provenance={createProvenance(
-                        provinceMetrics?.generation ? 'historical_archive' : 'proxy_indicative',
-                        provinceMetrics?.generation ? 'Analytics API' : 'Fallback Sample',
-                        provinceMetrics?.generation ? 0.92 : 0.65,
-                        { completeness: provinceMetrics?.generation ? 0.95 : 0.80 }
-                      )}
-                      sampleCount={generationChartSeries.length}
-                      showDetails={true}
-                    />
-                  </div>
-                </div>
-                <div className="text-right ml-4">
-                  <div className="text-sm text-secondary">2-Day Total Generation</div>
-                  <div className="text-lg font-semibold text-success">
-                    {totalGenerationGwh !== null && totalGenerationGwh !== undefined && totalGenerationGwh > 0
-                      ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
+                <div className="card-metric">
+                  <span className="metric-label">Alberta Price</span>
+                  <span className="metric-value">
+                    {currentPrice !== null && currentPrice !== undefined
+                      ? `$${currentPrice.toFixed(2)}`
                       : '—'}
-                  </div>
-                  {totalGenerationGwh === 0 && (
-                    <div className="text-xs text-warning mt-1">⚠️ Awaiting live data</div>
-                  )}
+                  </span>
                 </div>
-              </div>
-            </div>
-            <div className="card-body">
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={generationChartSeries} layout="horizontal">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="type" type="category" width={120} />
-                    <Tooltip />
-                    <Bar dataKey="gwh" fill="var(--chart-renewable)" name="Generation (GWh)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                <DataSource 
-                  dataset="Provincial Generation Mix"
-                  url="https://www.ieso.ca/en/Power-Data/Supply-Overview/Hourly-Ontario-Energy-Price"
-                  date={provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso ?? undefined}
-                  compact={true}
-                />
-                <span className="text-xs text-slate-500">
-                  {data.provincialGeneration.length > 0 
-                    ? `${data.provincialGeneration.length} records`
-                    : loading 
-                      ? 'Loading...'
-                      : 'Sample data'}
-                </span>
               </div>
             </div>
           </div>
 
-          {/* Panel 3: Alberta Supply & Demand / Ontario Demand Trend */}
-          <div className="card">
-            <div className="card-header">
-              <div className="flex justify-between">
-                <h3 className="text-lg font-semibold text-primary mb-2">
-                  <Activity className="h-5 w-5 mr-2 text-electric" />
-                  {hasDemandTrend ? 'Ontario Demand Trend' : 'Alberta Supply & Demand'}
-                </h3>
-                <div className="col-span-3 flex justify-end">
-                  <HelpButton id="chart.alberta_supply_demand" />
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <div className="text-sm text-secondary">Supply</div>
-                  <div className="text-lg font-semibold text-success">
-                    {typeof currentSupply === 'number' ? `${Math.round(currentSupply).toLocaleString()} MW` : '—'}
+          {/* Main Dashboard Charts with Dark Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+            {/* Panel 1: Ontario Hourly Demand */}
+            <div className="card">
+              <div className="card-header">
+                <div className="flex justify-between">
+                  <h3 className="text-lg font-semibold text-primary mb-2">
+                    <Activity className="h-5 w-5 mr-2 text-electric" />
+                    Ontario Hourly Demand
+                  </h3>
+                  <div className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-semibold text-primary">Ontario Demand</h2>
+                        <p className="text-sm text-secondary">Current electricity demand</p>
+                      </div>
+                      <DataQualityBadge
+                        provenance={createProvenance(
+                          ontarioDemandStatus?.source === 'fallback'
+                            ? 'proxy_indicative'
+                            : 'real_stream',
+                          ontarioDemandStatus?.source === 'fallback'
+                            ? 'Fallback Ontario demand sample'
+                            : 'IESO',
+                          ontarioDemandStatus?.source === 'fallback' ? 0.65 : 0.95,
+                          { completeness: Math.min(1, data.ontarioDemand.length / 96) },
+                        )}
+                        sampleCount={data.ontarioDemand.length}
+                        showDetails={true}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm text-secondary">Demand</div>
-                  <div className="text-lg font-semibold text-electric">
-                    {typeof currentDemandAlberta === 'number'
-                      ? `${Math.round(currentDemandAlberta).toLocaleString()} MW`
-                      : hasDemandTrend && supplyDemandChartData.length
-                        ? `${Math.round(supplyDemandChartData[0]?.demand ?? 0).toLocaleString()} MW`
+                  <div className="text-right">
+                    <div className="text-sm text-secondary">Current Demand</div>
+                    <div className="text-lg font-semibold text-electric">
+                      {typeof currentDemand === 'number'
+                        ? `${Math.round(currentDemand).toLocaleString()} MW`
                         : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-secondary">Price</div>
-                  <div className="text-lg font-semibold text-warning">
-                    {typeof currentPrice === 'number' ? `$${currentPrice.toFixed(2)}` : '—'}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="card-body">
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={supplyDemandChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    {hasDemandTrend ? (
-                      <Line type="monotone" dataKey="demand" stroke="var(--chart-electric)" strokeWidth={2} name="Ontario Demand" />
-                    ) : (
-                      <>
-                        <Line type="monotone" dataKey="supply" stroke="var(--chart-industrial)" strokeWidth={2} name="Supply" />
-                        <Line type="monotone" dataKey="demand" stroke="var(--chart-electric)" strokeWidth={2} name="Demand" />
-                      </>
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                {!hasDemandTrend && (
-                  <DataSource 
-                    {...COMMON_DATA_SOURCES.AESO_DEMAND}
-                    date={dashboardLastUpdatedIso ?? undefined}
+              <div className="card-body">
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
+                    <LineChart data={ontarioDemandChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="time" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="demand"
+                        stroke="var(--chart-electric)"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-center gap-4 mt-2">
+                  <DataSource
+                    {...COMMON_DATA_SOURCES.IESO_DEMAND}
+                    date={
+                      ontarioDemandStatus?.lastUpdate?.toISOString() ??
+                      dashboardLastUpdatedIso ??
+                      undefined
+                    }
                     compact={true}
                   />
-                )}
-                <span className="text-sm text-secondary">
-                  {hasDemandTrend
-                    ? `Trend: ${trendWindowStart} → ${trendWindowEnd} • ${trends?.metadata?.demand_sample_count ?? '—'} samples`
-                    : `${data.ontarioPrices.length} records • ${sourceText('ontario_prices')}`}
-                </span>
+                  <span className="text-xs text-slate-500">
+                    {data.ontarioDemand.length > 0
+                      ? `${data.ontarioDemand.length} records`
+                      : loading
+                        ? 'Loading...'
+                        : 'Sample data'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel 2: Provincial Generation Mix */}
+            <div className="card">
+              <div className="card-header">
+                <div className="flex justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-primary mb-2">
+                        <Zap className="h-5 w-5 mr-2 text-success" />
+                        Provincial Generation Mix
+                      </h3>
+                      <DataQualityBadge
+                        provenance={createProvenance(
+                          provinceMetrics?.generation ? 'historical_archive' : 'proxy_indicative',
+                          provinceMetrics?.generation ? 'Analytics API' : 'Fallback Sample',
+                          provinceMetrics?.generation ? 0.92 : 0.65,
+                          { completeness: provinceMetrics?.generation ? 0.95 : 0.8 },
+                        )}
+                        sampleCount={generationChartSeries.length}
+                        showDetails={true}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <div className="text-sm text-secondary">2-Day Total Generation</div>
+                    <div className="text-lg font-semibold text-success">
+                      {totalGenerationGwh !== null &&
+                      totalGenerationGwh !== undefined &&
+                      totalGenerationGwh > 0
+                        ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
+                        : '—'}
+                    </div>
+                    {totalGenerationGwh === 0 && (
+                      <div className="text-xs text-warning mt-1">⚠️ Awaiting live data</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={generationChartSeries} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="type" type="category" width={120} />
+                      <Tooltip />
+                      <Bar dataKey="gwh" fill="var(--chart-renewable)" name="Generation (GWh)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-center gap-4 mt-2">
+                  <DataSource
+                    dataset="Provincial Generation Mix"
+                    url="https://www.ieso.ca/en/Power-Data/Supply-Overview/Hourly-Ontario-Energy-Price"
+                    date={
+                      provincialGenerationStatus?.lastUpdate?.toISOString() ??
+                      dashboardLastUpdatedIso ??
+                      undefined
+                    }
+                    compact={true}
+                  />
+                  <span className="text-xs text-slate-500">
+                    {data.provincialGeneration.length > 0
+                      ? `${data.provincialGeneration.length} records`
+                      : loading
+                        ? 'Loading...'
+                        : 'Sample data'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel 3: Alberta Supply & Demand / Ontario Demand Trend */}
+            <div className="card">
+              <div className="card-header">
+                <div className="flex justify-between">
+                  <h3 className="text-lg font-semibold text-primary mb-2">
+                    <Activity className="h-5 w-5 mr-2 text-electric" />
+                    {hasDemandTrend ? 'Ontario Demand Trend' : 'Alberta Supply & Demand'}
+                  </h3>
+                  <div className="col-span-3 flex justify-end">
+                    <HelpButton id="chart.alberta_supply_demand" />
+                  </div>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <div className="text-sm text-secondary">Supply</div>
+                    <div className="text-lg font-semibold text-success">
+                      {typeof currentSupply === 'number'
+                        ? `${Math.round(currentSupply).toLocaleString()} MW`
+                        : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-secondary">Demand</div>
+                    <div className="text-lg font-semibold text-electric">
+                      {typeof currentDemandAlberta === 'number'
+                        ? `${Math.round(currentDemandAlberta).toLocaleString()} MW`
+                        : hasDemandTrend && supplyDemandChartData.length
+                          ? `${Math.round(supplyDemandChartData[0]?.demand ?? 0).toLocaleString()} MW`
+                          : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-secondary">Price</div>
+                    <div className="text-lg font-semibold text-warning">
+                      {typeof currentPrice === 'number' ? `$${currentPrice.toFixed(2)}` : '—'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={supplyDemandChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      {hasDemandTrend ? (
+                        <Line
+                          type="monotone"
+                          dataKey="demand"
+                          stroke="var(--chart-electric)"
+                          strokeWidth={2}
+                          name="Ontario Demand"
+                        />
+                      ) : (
+                        <>
+                          <Line
+                            type="monotone"
+                            dataKey="supply"
+                            stroke="var(--chart-industrial)"
+                            strokeWidth={2}
+                            name="Supply"
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="demand"
+                            stroke="var(--chart-electric)"
+                            strokeWidth={2}
+                            name="Demand"
+                          />
+                        </>
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-center gap-4 mt-2">
+                  {!hasDemandTrend && (
+                    <DataSource
+                      {...COMMON_DATA_SOURCES.AESO_DEMAND}
+                      date={dashboardLastUpdatedIso ?? undefined}
+                      compact={true}
+                    />
+                  )}
+                  <span className="text-sm text-secondary">
+                    {hasDemandTrend
+                      ? `Trend: ${trendWindowStart} → ${trendWindowEnd} • ${trends?.metadata?.demand_sample_count ?? '—'} samples`
+                      : `${data.ontarioPrices.length} records • ${sourceText('ontario_prices')}`}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-        </div>
-
-        {/* CTA to Analytics & Trends */}
-        <div className="card flex items-center justify-between gap-md">
-          <div>
-            <h3 className="text-lg font-semibold text-primary mb-2">
-              Explore Historical Trends & Assisted Insights
-            </h3>
-            <p className="text-sm text-secondary">
-              View 30-day trends, weather correlations, renewable penetration heatmaps, and assisted analytics
-            </p>
+          {/* CTA to Analytics & Trends */}
+          <div className="card flex items-center justify-between gap-md">
+            <div>
+              <h3 className="text-lg font-semibold text-primary mb-2">
+                Explore Historical Trends & Assisted Insights
+              </h3>
+              <p className="text-sm text-secondary">
+                View 30-day trends, weather correlations, renewable penetration heatmaps, and
+                assisted analytics
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.assign('/analytics')}
+              className="btn btn-primary"
+            >
+              <TrendingUp size={20} />
+              View Analytics
+            </button>
           </div>
-          <button
-            onClick={() => window.location.assign('/analytics')}
-            className="btn btn-primary"
-          >
-            <TrendingUp size={20} />
-            View Analytics
-          </button>
         </div>
-      </div>
-
       </div>
 
       {/* Status Footer */}
@@ -1143,7 +1343,14 @@ export const RealTimeDashboard: React.FC = () => {
           <div className="flex items-center gap-sm">
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
             <span>
-              Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Unknown'} • {loading ? 'Refreshing...' : kpiStatus === 'error' ? 'KPI unavailable - refresh needed' : isDataLive ? 'Live streaming active' : 'Data stale - refresh needed'}
+              Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Unknown'} •{' '}
+              {loading
+                ? 'Refreshing...'
+                : kpiStatus === 'error'
+                  ? 'KPI unavailable - refresh needed'
+                  : isDataLive
+                    ? 'Live streaming active'
+                    : 'Data stale - refresh needed'}
             </span>
           </div>
         </div>

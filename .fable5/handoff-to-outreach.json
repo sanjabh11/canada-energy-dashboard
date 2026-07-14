@@ -1,0 +1,92 @@
+{
+  "audit_report_path": "docs/audits/audit-2026-07-05-stage1.md",
+  "audited_commit_sha": "4271a12c4e8e1eddd0cb2b406e799d6af4dfb98b",
+  "audit_date": "2026-07-05",
+  "health_grade": "B-",
+  "implemented_gaps": [
+    {"id": "SEC-1", "description": "18 Edge Functions lack rate limiting", "status": "FIXED", "milestone": "M1"},
+    {"id": "SEC-2", "description": "9 Edge Functions do not use shared CORS", "status": "FIXED", "milestone": "M1"},
+    {"id": "SEC-3", "description": "Whop entitlement fallback TODO", "status": "FIXED", "milestone": "M1"},
+    {"id": "TEST-2", "description": "Zero test coverage on pricingCatalog.ts", "status": "FIXED", "milestone": "M0"},
+    {"id": "TEST-3", "description": "Zero test coverage on whop.ts", "status": "FIXED", "milestone": "M0"},
+    {"id": "TEST-4", "description": "Zero test coverage on supabaseClient.ts", "status": "FIXED", "milestone": "M0"},
+    {"id": "CODE-1", "description": "strict: false — noImplicitAny", "status": "FIXED", "milestone": "Phase2-WS1"},
+    {"id": "CODE-2", "description": "ESLint no-unused-vars and no-explicit-any off", "status": "FIXED", "milestone": "M2"},
+    {"id": "CODE-6", "description": "Lexical declaration in case block", "status": "FIXED", "milestone": "M0"},
+    {"id": "CODE-7", "description": "let should be const (uncertaintyEngine.ts)", "status": "FIXED", "milestone": "M0"},
+    {"id": "CODE-8", "description": "let should be const (ieso.ts)", "status": "FIXED", "milestone": "M0"},
+    {"id": "TOOL-1", "description": "No Prettier", "status": "FIXED", "milestone": "M4"},
+    {"id": "TOOL-2", "description": "No Husky", "status": "FIXED", "milestone": "M4"},
+    {"id": "TOOL-3", "description": "No Semgrep", "status": "FIXED", "milestone": "M4"},
+    {"id": "TOOL-4", "description": "No Sentry SDK", "status": "FIXED", "milestone": "M4"},
+    {"id": "A11Y-1", "description": "No reduced-motion CSS", "status": "FIXED", "milestone": "M4"}
+  ],
+  "remaining_gaps": [
+    {"id": "TEST-1", "severity": "Critical", "description": "Coverage threshold only 40% with 73 parallel failures"},
+    {"id": "TEST-5", "severity": "High", "description": "Zero test coverage on demandForecaster.ts"},
+    {"id": "TEST-6", "severity": "High", "description": "Zero test coverage on conformalPrediction.ts"},
+    {"id": "TEST-7", "severity": "Medium", "description": "73 tests fail in parallel (jsdom timeouts)"},
+    {"id": "TEST-8", "severity": "Medium", "description": "8 TODOs for unimplemented gamification tracking"},
+    {"id": "CODE-3", "severity": "Medium", "description": "helpContent.ts 5727 LOC — needs content externalization"},
+    {"id": "CODE-4", "severity": "Medium", "description": "moduleContent.ts 1743 LOC — same pattern"},
+    {"id": "CODE-5", "severity": "Medium", "description": "Function type used in hybridSearch.ts"},
+    {"id": "PERF-1", "severity": "Medium", "description": "vendor-redoc chunk 1187 KB"},
+    {"id": "PERF-2", "severity": "Medium", "description": "chunkSizeWarningLimit masks large chunks"},
+    {"id": "SEC-4", "severity": "Medium", "description": "localStorage for auth tokens"},
+    {"id": "SEC-5", "severity": "Medium", "description": "Placeholder Paddle token"},
+    {"id": "OUT-1", "severity": "Critical", "description": "Zero outreach cadence (0 touches vs 8-16 target)"},
+    {"id": "CUST-1", "severity": "Critical", "description": "Zero buyer-validated evidence"},
+    {"id": "BIZ-1", "severity": "High", "description": "Product-positioning paradox (code broader than positioning)"},
+    {"id": "PRICE-1", "severity": "High", "description": "3 payment providers with different entitlement models"},
+    {"id": "MARKET-1", "severity": "High", "description": "No documented messaging hierarchy"},
+    {"id": "MARKET-2", "severity": "High", "description": "Positioning breadth vs depth tradeoff unresolved"},
+    {"id": "OUT-2", "severity": "High", "description": "No outreach response log entries"},
+    {"id": "CUST-2", "severity": "High", "description": "No customer interviews recorded"},
+    {"id": "CUST-3", "severity": "High", "description": "No lost-deal analysis"},
+    {"id": "LEGAL-1", "severity": "High", "description": "CASL compliance not verified for outreach"}
+  ],
+  "market_segment_table": [
+    {"segment": "Utility (LDC/REA)", "fit": 4.5, "budget": "$5K-50K/yr", "competitors": "Orennia, custom spreadsheets"},
+    {"segment": "Industrial (TIER)", "fit": 4.0, "budget": "$1.5K-15K/yr", "competitors": "cCarbon, Targray, EPC consultants"},
+    {"segment": "Municipal/Public Sector", "fit": 3.5, "budget": "$5.9K-75K/yr", "competitors": "FCM/MCCAC (free), Canoe Procurement"},
+    {"segment": "Indigenous/Community", "fit": 3.0, "budget": "$2.5K-50K/yr", "competitors": "None (blue ocean)"},
+    {"segment": "Security/Procurement", "fit": 4.0, "budget": "Included in utility", "competitors": "Custom security questionnaires"},
+    {"segment": "Consultant/Analyst", "fit": 3.1, "budget": "$149-15K/yr", "competitors": "Orennia, custom scrapes"},
+    {"segment": "Consumer (B2C)", "fit": 2.0, "budget": "$9/mo", "competitors": "RateHub, EnergyRates.ca"}
+  ],
+  "buyer_journey_gaps": [
+    "No demo request route beyond enterprise Calendly link",
+    "No trial/pilot signup flow (manual process only)",
+    "No onboarding workflow post-purchase",
+    "No analytics instrumentation at journey stages",
+    "No dark funnel tracking (self-reported attribution)",
+    "No lead scoring or routing"
+  ],
+  "sales_enablement_gaps": [
+    "No case studies (zero buyers)",
+    "No battle cards",
+    "No demo scripts",
+    "No RFP response templates",
+    "No security questionnaires",
+    "No pilot agreements (digital)",
+    "No reference architectures"
+  ],
+  "gtm_readiness_status": {
+    "documented_strategy": "PARTIAL",
+    "validated_segments": "PARTIAL",
+    "outreach_channels": "NOT READY",
+    "pricing_public": "READY",
+    "sales_enablement": "NOT READY",
+    "analytics": "PARTIAL",
+    "pilot_workflow": "PARTIAL",
+    "compliance_guardrails": "READY"
+  },
+  "unresolved_assumptions": [
+    "Pricing consolidation: Should Whop tiers match direct tiers?",
+    "Payment provider strategy: Consolidate to 2 or keep 3?",
+    "Positioning breadth: Broaden to 'energy intelligence platform' or stay narrow?",
+    "Indigenous segment priority: Invest now or wait for co-design partner?",
+    "Outreach execution: Begin immediately or wait for pricing consolidation?"
+  ],
+  "recommended_outreach_focus": "positioning-and-outreach-cadence"
+}

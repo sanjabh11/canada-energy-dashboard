@@ -1,0 +1,25 @@
+name: Cron Conformal Calibration
+
+on:
+  schedule:
+    # Run hourly at minute 5 (gives AESO time to publish actuals)
+    - cron: '5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger calibration-cron Edge Function
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/calibration-cron" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "HTTP $HTTP_CODE: $BODY"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Calibration cron failed with HTTP $HTTP_CODE"
+            exit 1
+          fi

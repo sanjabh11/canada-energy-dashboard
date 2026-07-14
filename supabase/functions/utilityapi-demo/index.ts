@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 import { handleUtilityApiDemoRequest } from "../_shared/utilityApiDemoEndpoint.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
+  const rl = applyRateLimit(req, "utilityapi-demo");
+  if (rl.response) return rl.response;
     return handleCorsOptions(req);
   }
 

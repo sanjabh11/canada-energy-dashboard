@@ -60,7 +60,7 @@ describe('utilityApiDemoEndpoint', () => {
       operatorEmailAllowlist: 'ops@example.com',
       supabase: {
         auth: {
-          getUser: async () => ({ data: { user: null }, error: null }),
+          getUser: async () => ({ data: { user: null as unknown }, error: null as string | null }),
         },
       },
       logUsage: async () => {},
@@ -87,7 +87,7 @@ describe('utilityApiDemoEndpoint', () => {
                 email: 'outside@example.com',
               },
             },
-            error: null,
+            error: null as string | null,
           }),
         },
       },
@@ -402,11 +402,11 @@ function createAuthorizationStore(initialRows: AuthorizationRow[]) {
           id: `row-${rows.length + 1}`,
         });
         rows.push(created);
-        return { data: created, error: null };
+        return { data: created, error: null as string | null };
       }
 
       const result = this.filteredRows()[0] ?? null;
-      return { data: result, error: null };
+      return { data: result, error: null as string | null };
     }
 
     async maybeSingle() {
@@ -416,15 +416,15 @@ function createAuthorizationStore(initialRows: AuthorizationRow[]) {
         if (target && this.updatePayload) {
           Object.assign(target, this.updatePayload);
         }
-        return { data: target, error: null };
+        return { data: target, error: null as string | null };
       }
 
       const result = this.filteredRows()[0] ?? null;
-      return { data: result, error: null };
+      return { data: result, error: null as string | null };
     }
 
     then<TResult1 = unknown, TResult2 = never>(
-      onfulfilled?: ((value: { data?: AuthorizationRow[]; count?: number; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+      onfulfilled?: ((value: { data?: AuthorizationRow[]; count?: number; error: string | null }) => TResult1 | PromiseLike<TResult1>) | null,
       onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
     ) {
       return Promise.resolve(this.execute()).then(onfulfilled ?? undefined, onrejected ?? undefined);
@@ -433,9 +433,9 @@ function createAuthorizationStore(initialRows: AuthorizationRow[]) {
     private execute() {
       const filtered = this.filteredRows();
       if (this.headCount) {
-        return { count: filtered.length, error: null };
+        return { count: filtered.length, error: null as string | null };
       }
-      return { data: filtered, error: null };
+      return { data: filtered, error: null as string | null };
     }
 
     private filteredRows() {

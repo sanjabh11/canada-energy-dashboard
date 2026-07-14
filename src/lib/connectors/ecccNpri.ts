@@ -9,10 +9,17 @@
  * License: Open Government Licence – Canada
  */
 
-import { BaseConnector, ConnectorMeta, DiscoverResult, FetchResult, NormalizedRecord } from './index.ts';
+import {
+  BaseConnector,
+  ConnectorMeta,
+  DiscoverResult,
+  FetchResult,
+  NormalizedRecord,
+} from './index.ts';
 
-const NPRI_API_BASE = 'https://services.arcgis.com/ckB9XIVP7WC6p0Ks/arcgis/rest/services/NPRI_Releases_Public/FeatureServer/0/query';
-const NPRI_LANDING  = 'https://pollution-waste.canada.ca/national-release-inventory/';
+const NPRI_API_BASE =
+  'https://services.arcgis.com/ckB9XIVP7WC6p0Ks/arcgis/rest/services/NPRI_Releases_Public/FeatureServer/0/query';
+const NPRI_LANDING = 'https://pollution-waste.canada.ca/national-release-inventory/';
 
 export class EcccNpriConnector extends BaseConnector {
   readonly meta: ConnectorMeta = {
@@ -20,7 +27,8 @@ export class EcccNpriConnector extends BaseConnector {
     name: 'ECCC National Pollutant Release Inventory',
     sourceUrl: NPRI_LANDING,
     publisher: 'Environment and Climate Change Canada',
-    license: 'Open Government Licence – Canada (https://open.canada.ca/en/open-government-licence-canada)',
+    license:
+      'Open Government Licence – Canada (https://open.canada.ca/en/open-government-licence-canada)',
     refreshCadenceHours: 8760, // annual
     jurisdictions: ['CA'],
     metricFamilies: ['facility_ghg_releases_tco2e', 'facility_air_pollutant_releases'],
@@ -34,8 +42,9 @@ export class EcccNpriConnector extends BaseConnector {
     try {
       const url = `${NPRI_API_BASE}?where=1%3D1&returnCountOnly=true&f=json`;
       const resp = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-      if (!resp.ok) return { available: false, message: `HTTP ${resp.status}` };
-      const json = await resp.json() as { count?: number };
+      if (!resp.ok)
+        return { available: false, sourceLastUpdated: null, message: `HTTP ${resp.status}` };
+      const json = (await resp.json()) as { count?: number };
       return {
         available: true,
         sourceLastUpdated: null,
@@ -43,7 +52,7 @@ export class EcccNpriConnector extends BaseConnector {
         message: `NPRI ArcGIS reachable (${json.count ?? 'unknown'} records)`,
       };
     } catch (err) {
-      return { available: false, message: String(err) };
+      return { available: false, sourceLastUpdated: null, message: String(err) };
     }
   }
 
@@ -55,7 +64,9 @@ export class EcccNpriConnector extends BaseConnector {
 
     // Limit to energy sector GHG (CO2 equivalent) releases
     const reportYear = params?.year ?? new Date().getFullYear() - 2;
-    const where = encodeURIComponent(`ReportYear=${reportYear} AND SubstanceName='Total GHG (CO2 equivalent)'`);
+    const where = encodeURIComponent(
+      `ReportYear=${reportYear} AND SubstanceName='Total GHG (CO2 equivalent)'`,
+    );
     const url = `${NPRI_API_BASE}?where=${where}&outFields=FacilityName,Province,Latitude,Longitude,TotalReleasesToAir,ReportYear,SubstanceName,ReleaseUnits&returnGeometry=false&resultRecordCount=2000&f=json`;
 
     try {
@@ -80,7 +91,7 @@ export class EcccNpriConnector extends BaseConnector {
         };
       }
 
-      const json = await resp.json() as {
+      const json = (await resp.json()) as {
         features?: Array<{ attributes: Record<string, unknown> }>;
       };
       const payloadHash = await this.sha256hex(JSON.stringify(json));
