@@ -35,7 +35,7 @@ jobs:
         run: pnpm audit --audit-level moderate
 
       - name: Semgrep SAST scan
-        uses: returntocorp/semgrep-action@v2
+        uses: returntocorp/semgrep-action@v1
         with:
           config: auto
           auditOn: never

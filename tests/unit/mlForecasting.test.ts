@@ -135,7 +135,7 @@ describe('mlForecasting shared engine', () => {
       modelVersion: 'ml-v1',
       validAt: '2026-04-23T00:00:00.000Z',
       confidenceScore: -1,
-      dataSources: [{ name: 'sample', url: 'https://example.com', lastUpdated: '2026-04-01' }],
+      dataSources: [{ name: 'sample', url: 'https://example.com', lastUpdated: new Date().toISOString().slice(0, 10) }],
       isFallback: true,
       methodology: 'test',
       warnings: ['sample warning'],
