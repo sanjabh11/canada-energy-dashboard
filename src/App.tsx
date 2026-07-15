@@ -12,6 +12,7 @@ import { ThemeProvider } from './lib/ThemeContext';
 import './App.css';
 import './styles/layout.css';
 import { Phase4RouteGuard } from './components/Phase4RouteGuard';
+import { CommandPalette } from './components/CommandPalette';
 
 // ============================================================================
 // LAZY-LOADED ROUTE COMPONENTS (code-split into separate chunks)
@@ -516,6 +517,7 @@ function App() {
                   <Suspense fallback={<RouteLoader />}>
                     <RouterProvider router={router} future={routerFutureConfig} />
                   </Suspense>
+                  <CommandPalette />
                 </HelpProvider>
               </AuthProvider>
             </I18nProvider>
