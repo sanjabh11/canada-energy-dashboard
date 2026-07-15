@@ -140,6 +140,9 @@ const RetailerHedgingDashboard = React.lazy(() =>
   })),
 );
 const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculator'));
+const EnergyMapPage = React.lazy(() =>
+  import('./components/EnergyMapPage').then((m) => ({ default: m.EnergyMapPage })),
+);
 const TIERComplianceLandingPage = React.lazy(
   () => import('./components/TIERComplianceLandingPage'),
 );
@@ -348,6 +351,7 @@ const router = createBrowserRouter([
       { path: '/roi-calculator', element: <TIERROICalculator /> },
       { path: '/industrial', element: <TIERROICalculator /> },
       { path: '/tier-savings', element: <TIERROICalculator /> },
+      { path: '/energy-map', element: <EnergyMapPage /> },
       { path: '/tier-compliance', element: <TIERComplianceLandingPage /> },
 
       // Value Prop Research Dec 2025 - MEDIUM Priority Routes

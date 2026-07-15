@@ -39,6 +39,7 @@ const GROUPS: PaletteGroup[] = [
     heading: 'Core Dashboards',
     items: [
       { label: 'Energy Dashboard', path: '/dashboard', icon: LayoutDashboard, keywords: 'main home overview grid' },
+      { label: 'Energy Facility Map', path: '/energy-map', icon: Globe, keywords: 'map gis geographic facilities maplibre' },
       { label: 'Analytics & Trends', path: '/analytics', icon: TrendingUp, keywords: 'charts trends analysis metrics' },
       { label: 'Data Freshness', path: '/data-freshness', icon: Activity, keywords: 'stale freshness update source' },
       { label: 'Status Page', path: '/status', icon: Activity, keywords: 'ops health system status' },
