@@ -5,17 +5,31 @@ import './index.css';
 import './styles/accessibility.css';
 import { debug } from '@/lib/debug';
 import { validateFeatureFlags, getDeploymentStats } from './lib/featureFlags'
+import { initSentry } from './instrumentation/sentry';
+import * as Sentry from '@sentry/react';
 
 const PWA_ENABLED = import.meta.env.VITE_ENABLE_PWA === 'true';
+
+// Initialize Sentry before anything else so it captures all errors
+const sentryEnabled = initSentry();
+if (sentryEnabled) {
+  debug.log('[Sentry] Initialized successfully');
+}
 
 // Global error handlers — catch unhandled async errors outside React tree
 if (typeof window !== 'undefined') {
   window.addEventListener('unhandledrejection', (event) => {
     console.error('[Global] Unhandled promise rejection:', event.reason);
+    if (sentryEnabled) {
+      Sentry.captureException(event.reason);
+    }
     event.preventDefault();
   });
   window.addEventListener('error', (event) => {
     console.error('[Global] Uncaught error:', event.error ?? event.message);
+    if (sentryEnabled && event.error) {
+      Sentry.captureException(event.error);
+    }
   });
 }
 

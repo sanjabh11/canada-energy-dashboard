@@ -40,22 +40,15 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     // Log error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
-    // In production, send to error tracking service (e.g., Sentry)
-    if (import.meta.env.PROD) {
-      const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-      if (sentryDsn) {
-        import('@sentry/react')
-          .then(
-            (Sentry: {
-              captureException: (error: Error, contexts?: Record<string, unknown>) => void;
-            }) => {
-              Sentry.captureException(error, { contexts: { react: errorInfo } });
-            },
-          )
-          .catch(() => {
-            console.error('Failed to load Sentry for error reporting');
-          });
-      }
+    // Report to Sentry if initialized (DSN was set in env)
+    if (import.meta.env.VITE_SENTRY_DSN) {
+      import('@sentry/react')
+        .then((Sentry: { captureException: (e: Error, ctx?: Record<string, unknown>) => void }) => {
+          Sentry.captureException(error, { contexts: { react: errorInfo } });
+        })
+        .catch(() => {
+          console.error('Failed to load Sentry for error reporting');
+        });
     }
 
     this.setState({ errorInfo });
