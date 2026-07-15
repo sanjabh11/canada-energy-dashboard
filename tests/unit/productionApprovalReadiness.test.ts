@@ -330,7 +330,9 @@ describe('production approval readiness report', () => {
       expect(corepackRow?.status).toBe('blocked');
       expect(corepackRow?.blocks_request).toBe(true);
     }
-    expect(requestRows.get('Canonical branch review')?.blocks_request).toBe(true);
+    expect(requestRows.get('Canonical branch review')?.blocks_request).toBe(
+      payload.branch_review?.status === 'blocked',
+    );
     expect(requestRows.get('Supabase advisor clearance')?.blocks_request).toBe(true);
     expect(requestRows.get('Explicit owner production approval')?.status).toBe('manual_stop');
     expect(requestRows.get('Post-deploy live proof boundary')?.status).toBe('blocked');

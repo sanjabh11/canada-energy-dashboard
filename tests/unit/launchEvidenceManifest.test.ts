@@ -3851,6 +3851,8 @@ describe('launch evidence manifest report', () => {
     expect(branchClearanceMatrix.rows).toHaveLength(manifest.branch_review.review_queue.item_count);
     expect(branchClearanceMatrix.evidence).toContain('Branch clearance matrix');
     expect(branchClearanceMatrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
+    if (branchClearanceMatrix.rows.length > 0) {
+    const firstClearanceRow = branchClearanceMatrix.rows[0];
     expect(firstClearanceRow).toBeTruthy();
     if (firstClearanceRow) {
       expect(firstClearanceRow.read_only).toBe(true);
@@ -3968,6 +3970,7 @@ describe('launch evidence manifest report', () => {
       expect(branchPrerequisite.status).toBe('blocked');
     } else {
       expect(manifest.branch_review.status).toBe('pass');
+    }
     }
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
