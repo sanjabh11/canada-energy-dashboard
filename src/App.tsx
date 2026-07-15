@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Outlet, RouterProvider, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { I18nProvider } from './components/I18nProvider';
 import { SkipToMain } from './components/ui/SkipToMain';
@@ -242,8 +242,18 @@ const routerFutureConfig = {
   v7_relativeSplatPath: true,
 } as const;
 
+function RouterAppShell() {
+  return (
+    <>
+      <Outlet />
+      <CommandPalette />
+    </>
+  );
+}
+
 const router = createBrowserRouter([
   {
+    element: <RouterAppShell />,
     errorElement: <RouteErrorFallback />,
     children: [
       { path: '/', element: <CommercialLandingPage /> },
@@ -521,7 +531,6 @@ function App() {
                   <Suspense fallback={<RouteLoader />}>
                     <RouterProvider router={router} future={routerFutureConfig} />
                   </Suspense>
-                  <CommandPalette />
                 </HelpProvider>
               </AuthProvider>
             </I18nProvider>
