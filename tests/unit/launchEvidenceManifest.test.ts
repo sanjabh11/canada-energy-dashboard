@@ -8,7 +8,7 @@ const scriptPath = path.join(process.cwd(), 'scripts/report-launch-evidence-mani
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-launch-evidence-manifest.mjs');
 const checkMarkdownReportScriptPath = path.join(process.cwd(), 'scripts/check-commercial-launch-readiness-report.mjs');
 const markdownReportScriptPath = path.join(process.cwd(), 'scripts/report-commercial-launch-readiness.mjs');
-const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py';
+const validatorPath = path.join(process.cwd(), 'scripts/validate_launch_evidence.py');
 const LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS = 180_000;
 const tempRoots: string[] = [];
 

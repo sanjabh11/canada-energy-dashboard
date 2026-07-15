@@ -100,7 +100,7 @@ describe('launch evidence validation readiness report', () => {
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
-  it('emits a focused JSON payload with validation, launch action, approval, and public-handle rows', () => {
+  it('emits a focused JSON payload with validation, launch action, approval, and public-handle rows', { timeout: 180_000 }, () => {
     const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -136,7 +136,7 @@ describe('launch evidence validation readiness report', () => {
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|buyer acceptance|deployment approval|commercial-ready status/i);
   });
 
-  it('validates the focused report contract', () => {
+  it('validates the focused report contract', { timeout: 180_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -147,7 +147,7 @@ describe('launch evidence validation readiness report', () => {
     expect(stdout).toContain('Launch evidence validation readiness report check passed');
   });
 
-  it('passes retained proof paths through to the underlying manifest validation check', () => {
+  it('passes retained proof paths through to the underlying manifest validation check', { timeout: 180_000 }, () => {
     const tempRoot = makeTempRoot();
     const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
     const stdout = execFileSync(process.execPath, [

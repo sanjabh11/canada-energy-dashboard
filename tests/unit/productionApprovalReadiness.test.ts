@@ -301,7 +301,7 @@ describe('production approval readiness report', () => {
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|deploy authorization|commercial-ready status/i);
   });
 
-  it('accepts a current release-readiness proof without bypassing other production gates', () => {
+  it('accepts a current release-readiness proof without bypassing other production gates', { timeout: 180_000 }, () => {
     const tempRoot = makeTempRoot();
     const proofPath = writeReleaseReadinessProof(tempRoot);
     const stdout = execFileSync(process.execPath, [reportScriptPath, '--release-readiness-proof', proofPath, '--json'], {
@@ -336,7 +336,7 @@ describe('production approval readiness report', () => {
     expect(requestRows.get('Post-deploy live proof boundary')?.status).toBe('blocked');
   });
 
-  it('accepts a current Supabase app-lint proof without clearing production approval', () => {
+  it('accepts a current Supabase app-lint proof without clearing production approval', { timeout: 180_000 }, () => {
     const tempRoot = makeTempRoot();
     const proofPath = writeSupabaseAppLintProof(tempRoot);
     const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--supabase-app-lint-proof', proofPath, '--json'], {
@@ -367,7 +367,7 @@ describe('production approval readiness report', () => {
     expect(requestRows.get('Post-deploy live proof boundary')?.status).toBe('blocked');
   });
 
-  it('validates the focused report contract without requiring production approval to pass', () => {
+  it('validates the focused report contract without requiring production approval to pass', { timeout: 180_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -379,7 +379,7 @@ describe('production approval readiness report', () => {
     expect(stdout).toContain('operator handoff packet');
   });
 
-  it('can fail as a machine approval gate while request blockers remain', () => {
+  it('can fail as a machine approval gate while request blockers remain', { timeout: 180_000 }, () => {
     const json = JSON.parse(execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',

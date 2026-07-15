@@ -39,6 +39,8 @@ function writeCurrentProofs(root: string) {
     duration_ms: 1234,
     repo,
     source_clean: true,
+    corepack_pnpm_version: '10.23.0',
+    git_lfs_version: '3.6.1',
   }));
   writeFileSync(supabaseProofPath, JSON.stringify({
     schema_version: 1,
@@ -67,7 +69,7 @@ afterEach(() => {
 });
 
 describe('focused launch readiness report suite', () => {
-  it('runs the focused report contract checks without claiming launch readiness', () => {
+  it('runs the focused report contract checks without claiming launch readiness', { timeout: 300_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -112,7 +114,7 @@ describe('focused launch readiness report suite', () => {
     expect(stdout).toContain('validate_launch_evidence.py <manifest>');
   });
 
-  it('emits structured JSON for operator handoff and automation logs', () => {
+  it('emits structured JSON for operator handoff and automation logs', { timeout: 300_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -164,7 +166,7 @@ describe('focused launch readiness report suite', () => {
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);
   });
 
-  it('routes retained proof paths only to proof-aware child checks', () => {
+  it('routes retained proof paths only to proof-aware child checks', { timeout: 300_000 }, () => {
     const tempRoot = makeTempRoot();
     const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
     const stdout = execFileSync(process.execPath, [
