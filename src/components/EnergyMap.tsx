@@ -15,6 +15,7 @@ export interface EnergyFacility {
 
 interface EnergyMapProps {
   facilities: EnergyFacility[];
+  styleUrl: string;
   height?: string;
   initialZoom?: number;
   onFacilityClick?: (facility: EnergyFacility) => void;
@@ -38,8 +39,37 @@ const TYPE_LABELS: Record<EnergyFacility['type'], string> = {
 
 const CANADA_CENTER: [number, number] = [-106.3, 56.1];
 
+function createPopupContent(properties: Record<string, unknown>): HTMLDivElement {
+  const container = document.createElement('div');
+  container.style.cssText = 'padding:4px 8px;min-width:180px';
+
+  const appendLine = (text: unknown, style: string) => {
+    const line = document.createElement('div');
+    line.style.cssText = style;
+    line.textContent = String(text ?? '');
+    container.appendChild(line);
+  };
+
+  appendLine(properties.name, 'font-weight:600;font-size:13px;margin-bottom:4px');
+  appendLine(
+    TYPE_LABELS[properties.type as EnergyFacility['type']] ?? properties.type,
+    'font-size:11px;color:#666;margin-bottom:2px',
+  );
+  appendLine(properties.province, 'font-size:11px;color:#999');
+
+  if (typeof properties.capacity === 'number' || typeof properties.capacity === 'string') {
+    appendLine(`${properties.capacity} MW`, 'font-size:11px;margin-top:4px;font-weight:600');
+  }
+  if (properties.description) {
+    appendLine(properties.description, 'font-size:11px;margin-top:4px;color:#666');
+  }
+
+  return container;
+}
+
 export const EnergyMap: React.FC<EnergyMapProps> = ({
   facilities,
+  styleUrl,
   height = '500px',
   initialZoom = 3,
   onFacilityClick,
@@ -47,6 +77,8 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupsRef = useRef<maplibregl.Popup[]>([]);
+  const facilitiesRef = useRef(facilities);
+  const onFacilityClickRef = useRef(onFacilityClick);
   const [selectedType, setSelectedType] = useState<Set<EnergyFacility['type']>>(
     new Set(Object.keys(TYPE_COLORS) as EnergyFacility['type'][]),
   );
@@ -79,13 +111,19 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
       })),
     };
   }, [facilities, selectedType]);
+  const geojsonRef = useRef(geojson);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    facilitiesRef.current = facilities;
+    onFacilityClickRef.current = onFacilityClick;
+  }, [facilities, onFacilityClick]);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current || !styleUrl) return;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: 'https://demotiles.maplibre.org/style.json',
+      style: styleUrl,
       center: CANADA_CENTER,
       zoom: initialZoom,
       attributionControl: {} as maplibregl.AttributionControlOptions,
@@ -97,7 +135,7 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
     map.on('load', () => {
       map.addSource('facilities', {
         type: 'geojson',
-        data: geojson,
+        data: geojsonRef.current,
         cluster: true,
         clusterMaxZoom: 8,
         clusterRadius: 40,
@@ -165,27 +203,19 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
           layers: ['facilities-circle'],
         });
         if (!features.length) return;
-        const props = features[0].properties;
+        const props = features[0].properties as Record<string, unknown>;
         const coords = (features[0].geometry as { coordinates: [number, number] }).coordinates;
 
         const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true })
           .setLngLat(coords)
-          .setHTML(
-            `<div style="padding:4px 8px;min-width:180px">
-              <div style="font-weight:600;font-size:13px;margin-bottom:4px">${props.name}</div>
-              <div style="font-size:11px;color:#666;margin-bottom:2px">${TYPE_LABELS[props.type as EnergyFacility['type']] ?? props.type}</div>
-              <div style="font-size:11px;color:#999">${props.province}</div>
-              ${props.capacity ? `<div style="font-size:11px;margin-top:4px"><b>${props.capacity}</b> MW</div>` : ''}
-              ${props.description ? `<div style="font-size:11px;margin-top:4px;color:#666">${props.description}</div>` : ''}
-            </div>`,
-          )
+          .setDOMContent(createPopupContent(props))
           .addTo(map);
 
         popupsRef.current.push(popup);
 
-        if (onFacilityClick) {
-          const facility = facilities.find((f) => f.id === props.id);
-          if (facility) onFacilityClick(facility);
+        if (onFacilityClickRef.current) {
+          const facility = facilitiesRef.current.find((f) => f.id === props.id);
+          if (facility) onFacilityClickRef.current(facility);
         }
       });
 
@@ -220,9 +250,10 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [initialZoom, styleUrl]);
 
   useEffect(() => {
+    geojsonRef.current = geojson;
     const map = mapRef.current;
     if (!map) return;
     const source = map.getSource('facilities') as maplibregl.GeoJSONSource | undefined;

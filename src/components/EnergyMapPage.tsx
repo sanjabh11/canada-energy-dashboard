@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { EnergyMap, type EnergyFacility } from './EnergyMap';
 import { SEOHead } from './SEOHead';
 
@@ -32,7 +32,9 @@ const SAMPLE_FACILITIES: EnergyFacility[] = [
 ];
 
 export const EnergyMapPage: React.FC = () => {
-  const [facilities] = useState(SAMPLE_FACILITIES);
+  const facilities = SAMPLE_FACILITIES;
+  const styleUrl = import.meta.env.VITE_ENERGY_MAP_STYLE_URL?.trim();
+  const mapEnabled = import.meta.env.VITE_ENABLE_ENERGY_MAP === 'true' && Boolean(styleUrl);
 
   const stats = useMemo(() => {
     const byType = facilities.reduce(
@@ -52,13 +54,13 @@ export const EnergyMapPage: React.FC = () => {
     <div id="main-content" className="min-h-screen bg-primary">
       <SEOHead
         title="Energy Facility Map — Canadian Energy Intelligence Platform"
-        description="Interactive map of Canadian energy facilities: power generation, hydrogen production, AI data centres, resilience assets, and weather stations."
+        description="Experimental map prototype for Canadian energy-facility data."
         path="/energy-map"
       />
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-primary">Canadian Energy Facility Map</h1>
+          <h1 className="text-2xl font-bold text-primary">Canadian Energy Facility Map Prototype</h1>
           <p className="mt-1 text-sm text-secondary">
             Interactive geographic visualization of {stats.total} facilities across Canada.
             Total mapped capacity: {stats.totalCapacity.toLocaleString()} MW.
@@ -74,13 +76,22 @@ export const EnergyMapPage: React.FC = () => {
           ))}
         </div>
 
-        <EnergyMap facilities={facilities} height="600px" initialZoom={3} />
+        {mapEnabled && styleUrl ? (
+          <EnergyMap facilities={facilities} styleUrl={styleUrl} height="600px" initialZoom={3} />
+        ) : (
+          <div
+            data-testid="energy-map-prototype-disabled"
+            className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-sm text-secondary dark:border-gray-700 dark:bg-gray-900"
+          >
+            This prototype is disabled until an approved tile provider and matching Content-Security-Policy host are configured.
+          </div>
+        )}
 
         <div className="mt-4 text-xs text-tertiary">
           <p>
-            Map shows sample facility locations. In production, this connects to live Supabase data from
-            resilience_assets, ai_data_centres, hydrogen_projects, and weather_observations tables.
-            Click markers for facility details. Use the legend to filter by type.
+            The {stats.total} locations are sample data, not live Supabase records. Live data wiring requires a
+            typed source adapter, verified coordinates, provenance, and freshness metadata before this route is
+            promoted beyond prototype status.
           </p>
         </div>
       </div>

@@ -17,8 +17,8 @@
 | Source Coverage | 17 | 25 | 5 types present. Experiments designed to add customer_outcome, user_quote, sales_data types. |
 | Internal Consistency | 19 | 20 | Experiments align with hypotheses from Phase 4. Priority ranking follows cheapest-falsification-first. |
 | Counter-Evidence Survival | 14 | 15 | Adversarial review of experiment design completed. No disconfirmation of experiment validity. |
-| Validation Evidence | 5 | 10 | 8 experiments designed with success/failure thresholds. Not executed yet but design quality is HIGH. |
-| **Composite** | **77%** | **100%** | Below 85% → CONDITIONAL GO (evidence-limited mode) |
+| Validation Evidence | 0 | 10 | Experiments are designed, but no buyer result exists yet. Design quality is tracked separately from validation evidence. |
+| **Composite** | **72%** | **100%** | CONDITIONAL GO — analysis complete, market validation pending. |
 
 ### Iteration Count: 1
 
@@ -67,7 +67,7 @@
 
 ### 5b: Experiment Design per Claim (Fidelity Ladder)
 
-8 experiments designed and stored in `experiments.json`. Summary:
+10 experiments designed and stored in `experiments.json`. Summary:
 
 | Exp ID | Claim | Fidelity | Method | Success | Failure | Duration | Cost | Priority |
 |---|---|---|---|---|---|---|---|---|

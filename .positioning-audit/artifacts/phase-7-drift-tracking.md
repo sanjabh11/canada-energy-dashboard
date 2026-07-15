@@ -17,8 +17,8 @@
 | Source Coverage | 17 | 25 | 5 types present. 6 missing (all customer/commercial). |
 | Internal Consistency | 19 | 20 | Drift comparison shows consistency with previous audit. No significant drift detected. |
 | Counter-Evidence Survival | 14 | 15 | All previous counter-evidence passes remain valid. No new disconfirming evidence. |
-| Validation Evidence | 5 | 10 | 8 experiments designed, 0 executed. |
-| **Composite** | **79%** | **100%** | Below 85% → CONDITIONAL GO (evidence-limited mode) |
+| Validation Evidence | 0 | 10 | Experiments are designed, 0 executed; design quality is not validation evidence. |
+| **Composite** | **74%** | **100%** | CONDITIONAL GO — analysis complete, market validation pending. |
 
 ### Iteration Count: 1
 
@@ -42,7 +42,7 @@
 | **Hypotheses** | Not formally tracked | 6 hypotheses + 1 contrarian, all Unresolved | Improved — formal tracking added | None |
 | **Experiments** | Not designed | 8 experiments with thresholds | Improved — validation plan added | Execute |
 
-**Drift assessment:** No significant drift in market, competitor, or regulatory landscape between v1 and v2. The main change is methodological — v2 applies evidence-limited mode and formal hypothesis tracking, which v1 lacked. v1's 95% confidence was overstated; v2's 79% is more honest.
+**Drift assessment:** Market, competitor, and regulatory assertions require source-date refresh before reuse. The analysis remains evidence-limited: no positioning validation has occurred until buyer experiments produce results.
 
 ### 7b: Segment Re-Ranking (Post-Drift)
 

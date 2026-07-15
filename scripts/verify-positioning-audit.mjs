@@ -80,6 +80,7 @@ function main() {
   const evidenceCorpus = readJson('.positioning-audit/evidence-corpus.json');
   const hypotheses = readJson('.positioning-audit/hypotheses.json').hypotheses;
   const experiments = readJson('.positioning-audit/experiments.json');
+  const claimRegister = readJson('.positioning-audit/claim-register.json');
   const researchQuestions = readJson('.positioning-audit/research-questions.json');
   const appSource = readFileSync(path.join(repoRoot, 'src/App.tsx'), 'utf8');
   const commercialPositioningSource = readFileSync(path.join(repoRoot, 'src/lib/commercialPositioning.ts'), 'utf8');
@@ -123,6 +124,14 @@ function main() {
   const tierRoutePresent = uniqueRoutePaths.includes('/tier-compliance');
   const tierSemanticIdPresent = /['"]tier-compliance['"]/.test(commercialPositioningSource);
   const allHypothesesUnresolved = hypotheses.every((hypothesis) => hypothesis.status === 'Unresolved');
+  const designedExperimentsOnly = state.experiments_executed === 0 && experiments.experiments.every((experiment) => !experiment.result);
+  const validationPending = state.analysis_status === 'complete'
+    && state.market_validation_status === 'validation_pending'
+    && state.current_phase === 'VALIDATION_PENDING'
+    && state.decision_confidence.validation === 0;
+  const claimsAreQualified = claimRegister.claims?.every((claim) =>
+    claim.approved_wording && claim.prohibited_wording?.length && claim.sources?.length && claim.counter_evidence?.length,
+  );
 
   const checks = [
     check(
@@ -132,8 +141,8 @@ function main() {
     ),
     check(
       'buyer-evidence-boundary',
-      state.experiments_executed === 0 && allHypothesesUnresolved ? 'PASS' : 'WARN',
-      `${state.experiments_executed} experiments executed; all hypotheses unresolved=${allHypothesesUnresolved}.`,
+      designedExperimentsOnly && allHypothesesUnresolved && validationPending ? 'PASS' : 'WARN',
+      `${state.experiments_executed} experiments executed; all hypotheses unresolved=${allHypothesesUnresolved}; validation lifecycle=${state.market_validation_status}.`,
     ),
     check(
       'phase-artifacts',
@@ -166,6 +175,11 @@ function main() {
       inventoryMismatches.length === 0 ? 'EV-005 matches the current worktree inventory.' : `${inventoryMismatches.length} EV-005 inventory values differ from the current worktree.`,
       { claimed: claimedInventory, actual: actualInventory, mismatches: inventoryMismatches },
     ),
+    check(
+      'market-claim-register',
+      claimsAreQualified ? 'PASS' : 'WARN',
+      `${claimRegister.claims?.length ?? 0} claim records include approved wording, prohibitions, sources, and counter-evidence.`,
+    ),
   ];
 
   const result = {
@@ -183,15 +197,16 @@ function main() {
 
   console.log(JSON.stringify(result, null, 2));
 
-  // Automatic inventory snapshot
-  const snapshotPath = path.join(repoRoot, '.positioning-audit', 'inventory-snapshot.json');
-  const snapshot = {
-    snapshot_at: result.verified_at,
-    audit_id: state.audit_id,
-    inventory: actualInventory,
-    mismatches: inventoryMismatches,
-  };
-  writeFileSync(snapshotPath, JSON.stringify(snapshot, null, 2) + '\n');
+  if (process.argv.includes('--refresh-inventory')) {
+    const snapshotPath = path.join(repoRoot, '.positioning-audit', 'inventory-snapshot.json');
+    const snapshot = {
+      snapshot_at: result.verified_at,
+      audit_id: state.audit_id,
+      inventory: actualInventory,
+      mismatches: inventoryMismatches,
+    };
+    writeFileSync(snapshotPath, JSON.stringify(snapshot, null, 2) + '\n');
+  }
 
   if (process.argv.includes('--strict') && result.warning_count > 0) process.exitCode = 1;
 }

@@ -88,12 +88,12 @@
 
 | Dimension | Count | Evidence ID |
 |---|---|---|
-| Routes | 73 unique paths | EV-005 |
-| Lazy-loaded components | 52 | EV-005 |
-| Component files | 151 | EV-005 |
-| Lib files | 156 | EV-005 |
-| Documentation files | 121 | EV-005 |
-| Edge Functions | 86 | EV-010 |
+| Routes | 140 unique paths | EV-005 |
+| Lazy-loaded components | 70 | EV-005 |
+| Component files | 210 | EV-005 |
+| Lib files | 183 | EV-005 |
+| Documentation files | 232 | EV-005 |
+| Edge Functions | 109 | EV-010 |
 | Active commercial wedges | 10 | EV-003 |
 | Reserve wedges | 6 | EV-003 |
 | Bundle spines | 4 | EV-003 |
@@ -203,7 +203,7 @@
 
 - [x] Product promise extracted from active sources (4 items, MEDIUM grade)
 - [x] Customer evidence assembled (result: 0 items — evidence-limited mode activated)
-- [x] Actual capability inventoried (73 routes, 10 proof packs, 151 components)
+- [x] Actual capability inventoried (140 routes, 10 proof packs, 210 components)
 - [x] Evidence limitation statement written (6 unanswerable questions, 4 ungrounded assumptions)
 - [x] Product Truth synthesized (promise-capability gap is small; promise-vs-market-reality gap is critical)
 - [x] At least 3 evidence types present (5 present)

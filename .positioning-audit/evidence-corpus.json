@@ -42,9 +42,9 @@
       "type": "codebase_evidence",
       "grade": "HIGH",
       "source": "src/App.tsx",
-      "claim": "73 unique routes (with aliases), 52 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments",
-      "date_collected": "2026-07-13",
-      "provenance": "Direct code reading"
+      "claim": "140 unique routes (with aliases), 70 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments",
+      "date_collected": "2026-07-15",
+      "provenance": "Repository inventory reconciliation"
     },
     {
       "id": "EV-006",

@@ -1,0 +1,42 @@
+{
+  "audit_id": "ceip-v2-2026-07-13",
+  "updated_at": "2026-07-15T17:00:00Z",
+  "claims": [
+    {
+      "id": "LC-1",
+      "scope": "Alberta TIER facility decision support",
+      "approved_wording": "Source-dated, facility-assumption scenario planning and CFO-ready decision-support memo.",
+      "prohibited_wording": ["TIER-compliant", "audit-ready compliance software", "eligibility determination", "guaranteed savings"],
+      "sources": [{"url": "https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation", "checked_at": "2026-07-15", "expires_after_days": 30}],
+      "counter_evidence": ["Spreadsheet, consultant, broker, and EHS workflows remain alternatives."],
+      "status": "hypothesis_requires_buyer_validation"
+    },
+    {
+      "id": "LC-2",
+      "scope": "Procurement",
+      "approved_wording": "A fixed-scope pilot designed to fit the buyer's applicable procurement process.",
+      "prohibited_wording": ["Below $75K bypasses RFP", "NWPTA exemption guaranteed"],
+      "sources": [{"url": "https://www.newwestpartnershiptrade.ca/vendor_or_contractor.HTM", "checked_at": "2026-07-15", "expires_after_days": 30}, {"url": "https://www.alberta.ca/find-and-compete-for-government-contracts", "checked_at": "2026-07-15", "expires_after_days": 30}],
+      "counter_evidence": ["Thresholds and procurement obligations vary by entity and agreement."],
+      "status": "qualified"
+    },
+    {
+      "id": "LC-3",
+      "scope": "Indigenous data governance",
+      "approved_wording": "Supports owner-supplied governance markers and can be co-designed with a Nation.",
+      "prohibited_wording": ["OCAP-aligned", "OCAP-compliant", "sovereignty infrastructure"],
+      "sources": [{"url": "https://fnigc.ca/ocap-training/", "checked_at": "2026-07-15", "expires_after_days": 180}],
+      "counter_evidence": ["OCAP is Nation-specific and requires Nation-led governance and approval."],
+      "status": "qualified"
+    },
+    {
+      "id": "LC-4",
+      "scope": "Competitive differentiation",
+      "approved_wording": "No directly comparable facility-level TIER CFO-memo product was identified in the reviewed set.",
+      "prohibited_wording": ["No competitor does this", "first mover", "only platform"],
+      "sources": [{"url": "https://orennia.com/company", "checked_at": "2026-07-15", "expires_after_days": 90}, {"url": "https://www.targray.com/environmental-commodities/carbon-markets/canada/alberta-tier-regulation", "checked_at": "2026-07-15", "expires_after_days": 90}, {"url": "https://www.ccarbon.info/press-releases/ccarbon-expands-its-market-intelligence-services-to-cover-alberta-tier-canada-cfr-and-sustainable-fuels/", "checked_at": "2026-07-15", "expires_after_days": 90}],
+      "counter_evidence": ["Broad energy analytics and TIER-adjacent alternatives are established."],
+      "status": "qualified"
+    }
+  ]
+}

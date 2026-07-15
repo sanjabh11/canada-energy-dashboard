@@ -3,9 +3,14 @@ import fs from "fs"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import sourceIdentifierPlugin from 'vite-plugin-source-identifier'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 export default defineConfig(({ command }) => {
   const enableSourceIdentifiers = command === 'serve' && process.env.BUILD_MODE !== 'prod'
+  const sentryRelease = process.env.VITE_SENTRY_RELEASE || process.env.COMMIT_REF
+  const uploadSentrySourceMaps = command === 'build' && Boolean(
+    process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT && sentryRelease,
+  )
 
   return {
     plugins: [
@@ -15,6 +20,17 @@ export default defineConfig(({ command }) => {
         attributePrefix: 'data-matrix',
         includeProps: true,
       }),
+      ...(uploadSentrySourceMaps
+        ? [
+            sentryVitePlugin({
+              authToken: process.env.SENTRY_AUTH_TOKEN,
+              org: process.env.SENTRY_ORG,
+              project: process.env.SENTRY_PROJECT,
+              release: { name: sentryRelease },
+              sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
+            }),
+          ]
+        : []),
       {
         name: 'serve-favicon-ico-from-svg',
         configureServer(server) {
@@ -47,6 +63,7 @@ export default defineConfig(({ command }) => {
     },
     build: {
       chunkSizeWarningLimit: 1200,
+      sourcemap: uploadSentrySourceMaps ? 'hidden' : false,
       rollupOptions: {
         output: {
           manualChunks: {
