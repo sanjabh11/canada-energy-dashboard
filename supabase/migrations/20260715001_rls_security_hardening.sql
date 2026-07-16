@@ -198,14 +198,8 @@ CREATE POLICY "allow read forecast_performance_metrics"
   TO anon, authenticated
   USING (true);
 
--- storage_dispatch_log
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "allow read storage_dispatch_log" ON public.storage_dispatch_log;
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
-CREATE POLICY "allow read storage_dispatch_log"
-  ON public.storage_dispatch_log FOR SELECT
-  TO anon, authenticated
-  USING (true);
+-- storage_dispatch_log (singular) is a VIEW — RLS policies cannot be applied to views
+-- Skip; the plural storage_dispatch_logs table is handled below
 
 -- batteries_state
 DO $$ BEGIN
