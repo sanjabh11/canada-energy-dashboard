@@ -15,7 +15,6 @@ const required = [
   'public.llm_feedback',
   'public.llm_reports',
   '"consent_logs_owner_read"',
-  '"error_logs_owner_read"',
   '"governance_requests_owner_read"',
   'user_id = auth.uid()::text',
   '"job_execution_log_insert_all"',
