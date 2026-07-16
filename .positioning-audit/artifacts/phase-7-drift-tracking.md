@@ -40,7 +40,7 @@
 | **Pricing** | 6 tiers ($0-$5,900/mo) | Same | None | None |
 | **Gap types** | 7-phase analysis, no formal taxonomy | 8-type gap classification (3 Critical, 5 Major) | Improved — more systematic | None |
 | **Hypotheses** | Not formally tracked | 6 hypotheses + 1 contrarian, all Unresolved | Improved — formal tracking added | None |
-| **Experiments** | Not designed | 8 experiments with thresholds | Improved — validation plan added | Execute |
+| **Experiments** | Not designed | 10 experiments with thresholds | Improved — validation plan added | Execute |
 
 **Drift assessment:** Market, competitor, and regulatory assertions require source-date refresh before reuse. The analysis remains evidence-limited: no positioning validation has occurred until buyer experiments produce results.
 
@@ -104,14 +104,16 @@
   "confidence": "79% (CONDITIONAL GO — Evidence-Limited Mode)",
   "evidence_types_present": 5,
   "evidence_types_missing": 6,
-  "hypotheses": {
-    "primary": "H-TIER-1 (Unresolved)",
-    "secondary": "H-TIER-2 (Unresolved)",
-    "catalyst": "H-TIER-3/H-DI-1 (Unresolved)",
-    "cross_sell": "H-CREDIT-1/H-CREDIT-2 (Unresolved)",
-    "contrarian": "H-CONTRA-1 (Unresolved)"
-  },
-  "experiments_designed": 8,
+  "hypotheses": [
+    {"id": "H-TIER-1", "status": "unresolved"},
+    {"id": "H-TIER-2", "status": "unresolved"},
+    {"id": "H-TIER-3", "status": "unresolved"},
+    {"id": "H-DI-1", "status": "unresolved"},
+    {"id": "H-CREDIT-1", "status": "unresolved"},
+    {"id": "H-CREDIT-2", "status": "unresolved"},
+    {"id": "H-CONTRA-1", "status": "unresolved"}
+  ],
+  "experiments_designed": 10,
   "experiments_executed": 0,
   "next_audit": "2026-10-13 (90-day refresh) or after EXP-004 completion",
   "key_risks": [
@@ -184,7 +186,7 @@
 
 **Rationale:** Pre-gate self-assessment 20/25 ≥ 18/25 ✅. Drift comparison completed ✅. Segment re-ranking confirms beachhead ✅. Hypothesis status updated ✅. Evidence refresh plan defined ✅. Portfolio updated ✅. Historical snapshot created ✅. But evidence-limited mode → CONDITIONAL GO.
 
-**Final audit verdict:** CEIP's positioning as "Canadian utility and Alberta TIER proof-pack product" is internally consistent and well-supported by codebase evidence and market research. The beachhead (Alberta TIER Facility Compliance CFO Memo) is the strongest candidate by scoring and triangulation. However, **the audit cannot conclude with GO status** because zero customer evidence exists. All 7 hypotheses remain Unresolved. 8 experiments have been designed but not executed. The audit recommends executing EXP-001 through EXP-004 as the path out of evidence-limited mode.
+**Final audit verdict:** CEIP's positioning as "Canadian utility and Alberta TIER proof-pack product" is internally consistent and well-supported by codebase evidence and market research. The beachhead (Alberta TIER Facility Compliance CFO Memo) is the strongest candidate by scoring and triangulation. However, **the audit cannot conclude with GO status** because zero customer evidence exists. All 7 hypotheses remain Unresolved. 10 experiments have been designed but not executed. The audit recommends executing EXP-001 through EXP-004 as the path out of evidence-limited mode.
 
 ### Exit Criteria Checklist
 
@@ -201,15 +203,16 @@
 
 ```json
 {
-  "current_phase": "COMPLETE",
+  "current_phase": "VALIDATION_PENDING",
   "current_gate": "CONDITIONAL_GO",
-  "decision_confidence": { "composite": 79, "quality": 24, "coverage": 17, "consistency": 19, "counter": 14, "validation": 5 },
+  "decision_confidence": { "composite": 74, "quality": 24, "coverage": 17, "consistency": 19, "counter": 14, "validation": 0 },
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
-  "evidence_limitations": ["Zero customer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted", "Contrarian 'spreadsheet is optimal' cannot be dismissed"],
-  "phases_completed": [0, 1, 2, 3, 4, 5, 6, 7],
-  "gates_passed": ["CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO"],
+  "evidence_limitations": ["Zero direct buyer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted"],
+  "phases_completed": ["phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5", "phase-6", "phase-7"],
+  "gates_passed": [{"gate": "gate-0", "decision": "CONDITIONAL_GO"}, {"gate": "gate-1", "decision": "CONDITIONAL_GO"}, {"gate": "gate-2", "decision": "CONDITIONAL_GO"}, {"gate": "gate-3", "decision": "CONDITIONAL_GO"}, {"gate": "gate-4", "decision": "CONDITIONAL_GO"}, {"gate": "gate-5", "decision": "CONDITIONAL_GO"}, {"gate": "gate-6", "decision": "CONDITIONAL_GO"}, {"gate": "gate-7", "decision": "CONDITIONAL_GO"}],
   "evidence_limited_mode": true,
-  "audit_complete": true,
-  "next_audit": "2026-10-13 or after EXP-004"
+  "audit_complete": false,
+  "next_audit": "2026-10-13 or after EXP-004",
+  "schema_version": "v7"
 }
 ```

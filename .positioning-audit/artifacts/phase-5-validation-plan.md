@@ -222,15 +222,16 @@ After EXP-004 passes: 9 of 11 evidence types present → evidence-limited mode d
 
 ```json
 {
-  "current_phase": 6,
+  "current_phase": "VALIDATION_PENDING",
   "current_gate": "CONDITIONAL_GO",
-  "decision_confidence": { "composite": 77, "quality": 22, "coverage": 17, "consistency": 19, "counter": 14, "validation": 5 },
+  "decision_confidence": { "composite": 74, "quality": 24, "coverage": 17, "consistency": 19, "counter": 14, "validation": 0 },
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
-  "evidence_limitations": ["Experiments designed but unexecuted", "Zero customer evidence remains", "All hypotheses remain Unresolved"],
-  "phases_completed": [0, 1, 2, 3, 4, 5],
-  "gates_passed": ["CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO"],
+  "evidence_limitations": ["Zero direct buyer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted"],
+  "phases_completed": ["phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5"],
+  "gates_passed": [{"gate": "gate-0", "decision": "CONDITIONAL_GO"}, {"gate": "gate-1", "decision": "CONDITIONAL_GO"}, {"gate": "gate-2", "decision": "CONDITIONAL_GO"}, {"gate": "gate-3", "decision": "CONDITIONAL_GO"}, {"gate": "gate-4", "decision": "CONDITIONAL_GO"}, {"gate": "gate-5", "decision": "CONDITIONAL_GO"}],
   "evidence_limited_mode": true,
-  "experiments_designed": 8,
-  "experiments_executed": 0
+  "experiments_designed": 10,
+  "experiments_executed": 0,
+  "schema_version": "v7"
 }
 ```

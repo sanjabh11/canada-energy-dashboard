@@ -172,17 +172,18 @@ No new research questions generated. All Phase 0-5 questions remain covered.
 
 ```json
 {
-  "current_phase": 7,
+  "current_phase": "VALIDATION_PENDING",
   "current_gate": "CONDITIONAL_GO",
-  "decision_confidence": { "composite": 79, "quality": 24, "coverage": 17, "consistency": 19, "counter": 14, "validation": 5 },
+  "decision_confidence": { "composite": 74, "quality": 24, "coverage": 17, "consistency": 19, "counter": 14, "validation": 0 },
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
-  "evidence_limitations": ["Experiments unexecuted", "Zero customer evidence", "All hypotheses Unresolved", "P0 remediation items not yet implemented"],
-  "phases_completed": [0, 1, 2, 3, 4, 5, 6],
-  "gates_passed": ["CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO"],
+  "evidence_limitations": ["Zero direct buyer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted"],
+  "phases_completed": ["phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5", "phase-6"],
+  "gates_passed": [{"gate": "gate-0", "decision": "CONDITIONAL_GO"}, {"gate": "gate-1", "decision": "CONDITIONAL_GO"}, {"gate": "gate-2", "decision": "CONDITIONAL_GO"}, {"gate": "gate-3", "decision": "CONDITIONAL_GO"}, {"gate": "gate-4", "decision": "CONDITIONAL_GO"}, {"gate": "gate-5", "decision": "CONDITIONAL_GO"}, {"gate": "gate-6", "decision": "CONDITIONAL_GO"}],
   "evidence_limited_mode": true,
   "p0_items": 2,
   "p1_items": 4,
   "p2_items": 4,
-  "p3_items": 4
+  "p3_items": 4,
+  "schema_version": "v7"
 }
 ```

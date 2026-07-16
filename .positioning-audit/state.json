@@ -4,7 +4,7 @@
   "product_context": "/Users/sanjayb/minimax/canada-energy-dashboard",
   "scope": "deep",
   "started_at": "2026-07-13T17:49:00Z",
-  "completed_at": "2026-07-13",
+  "completed_at": null,
   "current_phase": "VALIDATION_PENDING",
   "current_gate": "CONDITIONAL_GO",
   "evidence_limited_mode": true,
@@ -21,20 +21,31 @@
   },
   "beachhead": "Alberta TIER Facility Compliance CFO Memo",
   "beachhead_score": 51,
-  "hypotheses": {
-    "primary": "H-TIER-1 (Unresolved)",
-    "secondary": "H-TIER-2 (Unresolved)",
-    "catalyst": "H-TIER-3/H-DI-1 (Unresolved)",
-    "cross_sell": "H-CREDIT-1/H-CREDIT-2 (Unresolved)",
-    "contrarian": "H-CONTRA-1 (Unresolved)"
-  },
+  "hypotheses": [
+    {"id": "H-TIER-1", "text": "Alberta large emitters will pay $1,500/mo for TIER compliance CFO memo tool", "status": "unresolved", "load_bearing_claims": ["LC-1", "LC-2", "LC-3", "LC-4"], "evidence": ["EV-003", "EV-005", "EV-007", "EV-008"]},
+    {"id": "H-TIER-2", "text": "Alberta TIER compliance consultants will adopt CEIP as client-serving tool at $149/mo", "status": "unresolved", "load_bearing_claims": ["LC-5", "LC-6", "LC-7"], "evidence": ["EV-003", "EV-011"]},
+    {"id": "H-TIER-3", "text": "DI standard release will create urgent demand for CEIP's DI sensitivity tool", "status": "unresolved", "load_bearing_claims": ["LC-10", "LC-11"], "evidence": []},
+    {"id": "H-DI-1", "text": "DI standard release triggers demand spike for facility-level DI analysis", "status": "unresolved", "load_bearing_claims": ["LC-10", "LC-11"], "evidence": []},
+    {"id": "H-CREDIT-1", "text": "Alberta emitters with credit holdings will pay for credit banking audit tool", "status": "unresolved", "load_bearing_claims": ["LC-8"], "evidence": ["EV-005", "EV-007"]},
+    {"id": "H-CREDIT-2", "text": "Credit banking audit is natural cross-sell from TIER CFO memo", "status": "unresolved", "load_bearing_claims": ["LC-9"], "evidence": []},
+    {"id": "H-CONTRA-1", "text": "Anti-spreadsheet positioning resonates more than Canadian energy compliance positioning", "status": "unresolved", "load_bearing_claims": ["LC-12"], "evidence": []}
+  ],
   "experiments_designed": 10,
   "experiments_executed": 0,
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
   "evidence_types_missing": ["customer_outcome", "user_quote", "behavioral_observation", "support_ticket", "analytics_data", "sales_data"],
   "evidence_limitations": ["Zero direct buyer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted"],
-  "phases_completed": [0, 1, 2, 3, 4, 5, 6, 7],
-  "gates_passed": ["CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO"],
+  "phases_completed": ["phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5", "phase-6", "phase-7"],
+  "gates_passed": [
+    {"gate": "gate-0", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T17:49:00Z"},
+    {"gate": "gate-1", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T18:00:00Z"},
+    {"gate": "gate-2", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T18:30:00Z"},
+    {"gate": "gate-3", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T19:00:00Z"},
+    {"gate": "gate-4", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T19:30:00Z"},
+    {"gate": "gate-5", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T20:00:00Z"},
+    {"gate": "gate-6", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T20:30:00Z"},
+    {"gate": "gate-7", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T21:00:00Z"}
+  ],
   "gaps": {"critical": 3, "major": 5, "minor": 0, "total": 8},
   "remediation_completed": {
     "p0": ["tier-compliance route", "tier-compliance landing page", "homepage TIER banner", "analytics events on TIER pages", "conformalPrediction.ts committed"],
@@ -44,5 +55,6 @@
   "next_audit": "2026-10-13 or after EXP-004",
   "audit_version": "v2",
   "previous_audit": "2026-06-04-v1",
-  "last_updated": "2026-07-15T17:00:00Z"
+  "last_updated": "2026-07-16T10:30:00Z",
+  "schema_version": "v7"
 }

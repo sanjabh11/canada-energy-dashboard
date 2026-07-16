@@ -71,8 +71,19 @@ function collectRoutePaths(appSource) {
 function collectExperimentLinks(experiments) {
   return experiments.experiments.flatMap((experiment) => {
     const ids = [experiment.hypothesis_id, ...(experiment.hypothesis_ids ?? [])].filter(Boolean);
-    return ids.map((hypothesisId) => ({ experimentId: experiment.id, hypothesisId }));
+    const expId = experiment.experiment_id ?? experiment.id;
+    return ids.map((hypothesisId) => ({ experimentId: expId, hypothesisId }));
   });
+}
+
+function extractEmbeddedState(artifactText) {
+  const jsonBlockMatch = artifactText.match(/```json\s*\n([\s\S]*?)\n```/);
+  if (!jsonBlockMatch) return null;
+  try {
+    return JSON.parse(jsonBlockMatch[1]);
+  } catch {
+    return null;
+  }
 }
 
 function main() {
@@ -115,6 +126,25 @@ function main() {
     const content = readFileSync(path.join(auditRoot, 'artifacts', fileName), 'utf8');
     return { file: fileName, pages: countMatches(content, /^## Page [1-4]\b.*$/gm) };
   });
+
+  // Stale artifact detection: check embedded state in artifacts for drift
+  const staleArtifacts = artifactFiles.map((fileName) => {
+    const content = readFileSync(path.join(auditRoot, 'artifacts', fileName), 'utf8');
+    const embedded = extractEmbeddedState(content);
+    if (!embedded) return { file: fileName, stale: false, reason: 'no embedded state' };
+    const reasons = [];
+    if (embedded.current_phase === 'COMPLETE' && state.current_phase === 'VALIDATION_PENDING') {
+      reasons.push('embedded current_phase=COMPLETE but state=VALIDATION_PENDING');
+    }
+    if (embedded.experiments_designed !== undefined && embedded.experiments_designed !== state.experiments_designed) {
+      reasons.push(`embedded experiments_designed=${embedded.experiments_designed} but state=${state.experiments_designed}`);
+    }
+    if (embedded.decision_confidence?.validation !== undefined && embedded.decision_confidence.validation !== state.decision_confidence.validation) {
+      reasons.push(`embedded validation=${embedded.decision_confidence.validation} but state=${state.decision_confidence.validation}`);
+    }
+    return { file: fileName, stale: reasons.length > 0, reason: reasons.join('; ') };
+  }).filter((entry) => entry.stale);
+
   const phaseTrees = Object.keys(researchQuestions.trees ?? {}).sort();
   const hypothesisIds = hypotheses.map((hypothesis) => hypothesis.id);
   const experimentLinks = collectExperimentLinks(experiments);
@@ -123,12 +153,28 @@ function main() {
   const unlinkedHypothesisIds = hypothesisIds.filter((hypothesisId) => !linkedHypothesisIds.has(hypothesisId));
   const tierRoutePresent = uniqueRoutePaths.includes('/tier-compliance');
   const tierSemanticIdPresent = /['"]tier-compliance['"]/.test(commercialPositioningSource);
-  const allHypothesesUnresolved = hypotheses.every((hypothesis) => hypothesis.status === 'Unresolved');
+  const allHypothesesUnresolved = hypotheses.every((hypothesis) => hypothesis.status === 'Unresolved' || hypothesis.status === 'unresolved');
   const designedExperimentsOnly = state.experiments_executed === 0 && experiments.experiments.every((experiment) => !experiment.result);
   const validationPending = state.analysis_status === 'complete'
     && state.market_validation_status === 'validation_pending'
     && state.current_phase === 'VALIDATION_PENDING'
     && state.decision_confidence.validation === 0;
+
+  // Schema version checks
+  const stateSchemaVersion = state.schema_version;
+  const evidenceSchemaVersion = evidenceCorpus.schema_version;
+  const experimentsSchemaVersion = experiments.schema_version;
+  const allSchemaV7 = stateSchemaVersion === 'v7' && evidenceSchemaVersion === 'v7' && experimentsSchemaVersion === 'v7';
+
+  // Count consistency checks
+  const experimentsCountMatch = state.experiments_designed === experiments.experiments.length;
+  const hypothesesCountMatch = state.hypotheses.length === hypotheses.length;
+
+  // Gate semantics
+  const gateSemanticsValid = state.experiments_executed === 0
+    ? state.decision_confidence.validation === 0 && state.current_phase === 'VALIDATION_PENDING'
+    : true;
+
   const claimsAreQualified = claimRegister.claims?.every((claim) =>
     claim.approved_wording && claim.prohibited_wording?.length && claim.sources?.length && claim.counter_evidence?.length,
   );
@@ -143,6 +189,29 @@ function main() {
       'buyer-evidence-boundary',
       designedExperimentsOnly && allHypothesesUnresolved && validationPending ? 'PASS' : 'WARN',
       `${state.experiments_executed} experiments executed; all hypotheses unresolved=${allHypothesesUnresolved}; validation lifecycle=${state.market_validation_status}.`,
+    ),
+    check(
+      'schema-version',
+      allSchemaV7 ? 'PASS' : 'WARN',
+      `Schema versions: state=${stateSchemaVersion}, evidence=${evidenceSchemaVersion}, experiments=${experimentsSchemaVersion}.`,
+    ),
+    check(
+      'count-consistency',
+      experimentsCountMatch && hypothesesCountMatch ? 'PASS' : 'WARN',
+      `Experiments: state=${state.experiments_designed}, file=${experiments.experiments.length}; Hypotheses: state=${state.hypotheses.length}, file=${hypotheses.length}.`,
+    ),
+    check(
+      'gate-semantics',
+      gateSemanticsValid ? 'PASS' : 'WARN',
+      `experiments_executed=${state.experiments_executed}, validation=${state.decision_confidence.validation}, current_phase=${state.current_phase}.`,
+    ),
+    check(
+      'stale-artifact-detection',
+      staleArtifacts.length === 0 ? 'PASS' : 'WARN',
+      staleArtifacts.length === 0
+        ? 'No stale embedded state found in artifacts.'
+        : `${staleArtifacts.length} artifacts have stale embedded state: ${staleArtifacts.map((s) => `${s.file} (${s.reason})`).join(', ')}.`,
+      { staleArtifacts },
     ),
     check(
       'phase-artifacts',

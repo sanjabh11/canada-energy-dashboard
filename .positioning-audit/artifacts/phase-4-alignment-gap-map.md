@@ -213,8 +213,9 @@ DISTRIBUTION GAP (Major) — spans entire chain — no sales channel
 | H-DI-1 | DI standard release triggers demand spike | Unresolved | 3 | Low (timeline risk) |
 | H-CREDIT-1 | Emitters pay for credit banking audit tool | Unresolved | 3 | Low (no buyer evidence) |
 | H-CREDIT-2 | Credit banking is natural cross-sell from CFO memo | Unresolved | 3 | Low (untested assumption) |
+| H-CONTRA-1 | Anti-spreadsheet positioning resonates more than Canadian energy compliance positioning | Unresolved | 0 | Low (not tested) |
 
-**Total: 6 hypotheses, all Unresolved, all Low confidence (evidence-limited mode)**
+**Total: 7 hypotheses (6 primary/secondary + 1 contrarian), all Unresolved, all Low confidence (evidence-limited mode)**
 
 ### Gap Map Summary (8-Type)
 
@@ -296,7 +297,7 @@ DISTRIBUTION GAP (Major) — spans entire chain — no sales channel
   "current_gate": "CONDITIONAL_GO",
   "decision_confidence": { "composite": 72, "quality": 22, "coverage": 17, "consistency": 19, "counter": 14, "validation": 0 },
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
-  "evidence_limitations": ["Zero customer evidence", "3 of 7 alignment chain links broken", "All 6 hypotheses Unresolved", "Contrarian alternatives not dismissed"],
+  "evidence_limitations": ["Zero customer evidence", "3 of 7 alignment chain links broken", "All 7 hypotheses Unresolved", "Contrarian alternatives not dismissed"],
   "phases_completed": [0, 1, 2, 3, 4],
   "gates_passed": ["CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO", "CONDITIONAL_GO"],
   "evidence_limited_mode": true,
