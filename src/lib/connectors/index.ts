@@ -169,10 +169,7 @@ export interface OfficialDataConnector {
    * Write a lineage record to `connector_lineage`.
    * Called after upsert regardless of success/failure.
    */
-  lineageRecord(
-    lineage: LineageRecord,
-    supabaseClient: unknown,
-  ): Promise<void>;
+  lineageRecord(lineage: LineageRecord, supabaseClient: unknown): Promise<void>;
 
   /** Report whether the connector's data is within its configured SLA. */
   freshnessCheck(lastRunAt: string | null): FreshnessCheckResult;
@@ -309,8 +306,10 @@ export abstract class BaseConnector implements OfficialDataConnector {
         .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
     }
-    // Node.js fallback
-    const { createHash } = await import('crypto');
+    // Node.js fallback (SSR/Node only — browser uses Web Crypto above)
+    // Variable indirection prevents Vite from trying to resolve 'crypto' for browser builds
+    const moduleName = 'crypto';
+    const { createHash } = await import(/* @vite-ignore */ moduleName);
     return createHash('sha256').update(input).digest('hex');
   }
 }
@@ -355,7 +354,10 @@ export async function runConnector(
   const runId = `${connectorId}__${Date.now()}`;
   const startedAt = new Date().toISOString();
 
-  const partialLineage: Omit<LineageRecord, 'completed_at' | 'records_upserted' | 'records_skipped'> = {
+  const partialLineage: Omit<
+    LineageRecord,
+    'completed_at' | 'records_upserted' | 'records_skipped'
+  > = {
     connector_id: connectorId,
     run_id: runId,
     started_at: startedAt,

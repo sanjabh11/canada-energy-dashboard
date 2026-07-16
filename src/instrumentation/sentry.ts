@@ -27,8 +27,7 @@ const PII_PATTERNS: Array<{ regex: RegExp; replacement: string }> = [
 const IGNORED_ERRORS: string[] = [
   'Non-Error promise rejection captured',
   'ResizeObserver loop limit exceeded',
-  'Network request failed',
-  'Failed to fetch dynamically imported module',
+  'ResizeObserver loop completed with undelivered notifications',
   'Loading chunk',
 ];
 
