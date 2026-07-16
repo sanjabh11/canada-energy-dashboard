@@ -179,3 +179,70 @@ describe('positioning audit gate semantics', () => {
     }
   });
 });
+
+describe('positioning audit verifier negative fixtures', () => {
+  function runVerifier(): { warning_count: number; checks: Array<{ id: string; status: string; detail: string }> } {
+    const { execSync } = require('node:child_process');
+    const output = execSync('node scripts/verify-positioning-audit.mjs', {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+    });
+    return JSON.parse(output);
+  }
+
+  it('verifier reports 0 warnings on canonical data', () => {
+    const result = runVerifier();
+    expect(result.warning_count).toBe(0);
+  });
+
+  it('verifier schema-validation check passes', () => {
+    const result = runVerifier();
+    const schemaCheck = result.checks.find((c) => c.id === 'schema-validation');
+    expect(schemaCheck).toBeDefined();
+    expect(schemaCheck!.status).toBe('PASS');
+  });
+
+  it('verifier schema-version check covers all 5 files', () => {
+    const result = runVerifier();
+    const versionCheck = result.checks.find((c) => c.id === 'schema-version');
+    expect(versionCheck).toBeDefined();
+    expect(versionCheck!.detail).toContain('hypotheses=');
+    expect(versionCheck!.detail).toContain('claims=');
+  });
+
+  it('verifier stale-artifact-detection checks all embedded blocks', () => {
+    const result = runVerifier();
+    const staleCheck = result.checks.find((c) => c.id === 'stale-artifact-detection');
+    expect(staleCheck).toBeDefined();
+    expect(staleCheck!.status).toBe('PASS');
+  });
+
+  it('hypotheses.json statuses are all lowercase', () => {
+    const hypotheses = readJson('hypotheses.json') as Record<string, unknown>;
+    const hyps = hypotheses.hypotheses as Array<Record<string, unknown>>;
+    for (const h of hyps) {
+      const status = h.status as string;
+      expect(status).toBe(status.toLowerCase());
+      expect(status).not.toBe('Unresolved');
+    }
+  });
+
+  it('master report does not claim 8 experiments when state has 10', () => {
+    const state = readJson('state.json') as Record<string, unknown>;
+    const designed = state.experiments_designed as number;
+    if (designed === 10) {
+      const report = readFileSync(path.join(AUDIT_DIR, 'CEIP_POSITIONING_AUDIT_v2_2026-07-13.md'), 'utf8');
+      expect(report).not.toMatch(/\b8 experiments designed\b/);
+      expect(report).not.toMatch(/\b8 experiments with thresholds\b/);
+    }
+  });
+
+  it('master report composite score matches state', () => {
+    const state = readJson('state.json') as Record<string, unknown>;
+    const composite = (state.decision_confidence as Record<string, number>)?.composite;
+    const report = readFileSync(path.join(AUDIT_DIR, 'CEIP_POSITIONING_AUDIT_v2_2026-07-13.md'), 'utf8');
+    if (composite === 74) {
+      expect(report).not.toMatch(/composite \(79%\)/);
+    }
+  });
+});

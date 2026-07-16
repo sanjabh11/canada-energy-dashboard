@@ -135,9 +135,9 @@
 | Evidence framework | Implicit | Explicit (11 types, Evidence Corpus) | More rigorous |
 | Gap classification | Ad hoc | 8-type taxonomy | More systematic |
 | Hypothesis tracking | None | 7 hypotheses with status | More testable |
-| Experiments | None | 8 designed with thresholds | More actionable |
+| Experiments | None | 10 designed with thresholds | More actionable |
 | Adversarial review | 1 pass | 3-persona × 3 phases | More robust |
-| Confidence scoring | Single number (95%) | 5-dimension composite (79%) | More honest |
+| Confidence scoring | Single number (95%) | 5-dimension composite (74%) | More honest |
 | Evidence-limited mode | Not applied | Applied (0 customer evidence) | More accurate |
 | Persistent state | None | 5 JSON files + 8 artifacts | More resumable |
 

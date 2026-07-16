@@ -86,6 +86,90 @@ function extractEmbeddedState(artifactText) {
   }
 }
 
+function extractAllEmbeddedStates(artifactText) {
+  const blocks = [];
+  const regex = /```json\s*\n([\s\S]*?)\n```/g;
+  let match;
+  while ((match = regex.exec(artifactText)) !== null) {
+    try {
+      blocks.push(JSON.parse(match[1]));
+    } catch {
+      // skip unparseable blocks
+    }
+  }
+  return blocks;
+}
+
+const ISO_DATE_TIME_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+function validateHypothesisSchema(hypotheses) {
+  const errors = [];
+  const validStatuses = ['unresolved', 'supported', 'weakened', 'disproven', 'stale'];
+  for (const h of hypotheses) {
+    if (!h.id) errors.push('hypothesis missing id');
+    if (!h.hypothesis) errors.push(`hypothesis ${h.id || 'unknown'} missing hypothesis text`);
+    if (!h.status) errors.push(`hypothesis ${h.id || 'unknown'} missing status`);
+    else if (!validStatuses.includes(h.status)) errors.push(`hypothesis ${h.id} has invalid status: ${h.status}`);
+  }
+  return errors;
+}
+
+function validateStateSchema(state) {
+  const errors = [];
+  if (!state.audit_id) errors.push('state missing audit_id');
+  if (!state.current_phase) errors.push('state missing current_phase');
+  if (!state.current_gate) errors.push('state missing current_gate');
+  if (state.experiments_designed === undefined) errors.push('state missing experiments_designed');
+  if (state.experiments_executed === undefined) errors.push('state missing experiments_executed');
+  if (!state.hypotheses || !Array.isArray(state.hypotheses)) errors.push('state hypotheses must be an array');
+  if (state.completed_at !== null && state.completed_at !== undefined && !ISO_DATE_TIME_REGEX.test(state.completed_at)) {
+    errors.push('state completed_at is not ISO date-time format');
+  }
+  if (state.decision_confidence === undefined) errors.push('state missing decision_confidence');
+  return errors;
+}
+
+function validateEvidenceSchema(evidenceCorpus) {
+  const errors = [];
+  if (!evidenceCorpus.evidence_items || !Array.isArray(evidenceCorpus.evidence_items)) {
+    errors.push('evidence-corpus missing evidence_items array');
+    return errors;
+  }
+  for (const item of evidenceCorpus.evidence_items) {
+    if (!item.evidence_id && !item.id) errors.push('evidence item missing evidence_id');
+    if (item.timestamp && !ISO_DATE_TIME_REGEX.test(item.timestamp) && item.timestamp !== null) {
+      errors.push(`evidence ${item.evidence_id || item.id} timestamp not ISO format`);
+    }
+  }
+  return errors;
+}
+
+function validateExperimentsSchema(experiments) {
+  const errors = [];
+  if (!experiments.experiments || !Array.isArray(experiments.experiments)) {
+    errors.push('experiments missing experiments array');
+    return errors;
+  }
+  for (const exp of experiments.experiments) {
+    if (!exp.experiment_id && !exp.id) errors.push('experiment missing experiment_id');
+    if (!exp.hypothesis_id && !exp.hypothesis_ids) errors.push(`experiment ${exp.experiment_id || exp.id} missing hypothesis link`);
+  }
+  return errors;
+}
+
+function validateClaimRegisterSchema(claimRegister) {
+  const errors = [];
+  if (!claimRegister.claims || !Array.isArray(claimRegister.claims)) {
+    errors.push('claim-register missing claims array');
+    return errors;
+  }
+  for (const claim of claimRegister.claims) {
+    if (!claim.claim_id && !claim.id) errors.push('claim missing claim_id');
+    if (!claim.approved_wording) errors.push(`claim ${claim.claim_id || claim.id} missing approved_wording`);
+  }
+  return errors;
+}
+
 function main() {
   const state = readJson('.positioning-audit/state.json');
   const evidenceCorpus = readJson('.positioning-audit/evidence-corpus.json');
@@ -127,20 +211,29 @@ function main() {
     return { file: fileName, pages: countMatches(content, /^## Page [1-4]\b.*$/gm) };
   });
 
-  // Stale artifact detection: check embedded state in artifacts for drift
+  // Stale artifact detection: check ALL embedded JSON blocks in artifacts for drift
   const staleArtifacts = artifactFiles.map((fileName) => {
     const content = readFileSync(path.join(auditRoot, 'artifacts', fileName), 'utf8');
-    const embedded = extractEmbeddedState(content);
-    if (!embedded) return { file: fileName, stale: false, reason: 'no embedded state' };
+    const embeddedBlocks = extractAllEmbeddedStates(content);
+    if (embeddedBlocks.length === 0) return { file: fileName, stale: false, reason: 'no embedded state' };
     const reasons = [];
-    if (embedded.current_phase === 'COMPLETE' && state.current_phase === 'VALIDATION_PENDING') {
-      reasons.push('embedded current_phase=COMPLETE but state=VALIDATION_PENDING');
-    }
-    if (embedded.experiments_designed !== undefined && embedded.experiments_designed !== state.experiments_designed) {
-      reasons.push(`embedded experiments_designed=${embedded.experiments_designed} but state=${state.experiments_designed}`);
-    }
-    if (embedded.decision_confidence?.validation !== undefined && embedded.decision_confidence.validation !== state.decision_confidence.validation) {
-      reasons.push(`embedded validation=${embedded.decision_confidence.validation} but state=${state.decision_confidence.validation}`);
+    for (const embedded of embeddedBlocks) {
+      if (embedded.current_phase === 'COMPLETE' && state.current_phase === 'VALIDATION_PENDING') {
+        reasons.push('embedded current_phase=COMPLETE but state=VALIDATION_PENDING');
+      }
+      if (embedded.experiments_designed !== undefined && embedded.experiments_designed !== state.experiments_designed) {
+        reasons.push(`embedded experiments_designed=${embedded.experiments_designed} but state=${state.experiments_designed}`);
+      }
+      if (embedded.decision_confidence?.validation !== undefined && embedded.decision_confidence.validation !== state.decision_confidence.validation) {
+        reasons.push(`embedded validation=${embedded.decision_confidence.validation} but state=${state.decision_confidence.validation}`);
+      }
+      if (embedded.decision_confidence?.composite !== undefined && embedded.decision_confidence.composite !== state.decision_confidence.composite) {
+        // Only flag as stale if the embedded block claims to be the final/current phase
+        const embeddedPhase = embedded.current_phase;
+        if (embeddedPhase === state.current_phase || embeddedPhase === 'COMPLETE') {
+          reasons.push(`embedded composite=${embedded.decision_confidence.composite} but state=${state.decision_confidence.composite}`);
+        }
+      }
     }
     return { file: fileName, stale: reasons.length > 0, reason: reasons.join('; ') };
   }).filter((entry) => entry.stale);
@@ -160,11 +253,21 @@ function main() {
     && state.current_phase === 'VALIDATION_PENDING'
     && state.decision_confidence.validation === 0;
 
-  // Schema version checks
+  // Schema version checks (all five canonical files)
   const stateSchemaVersion = state.schema_version;
   const evidenceSchemaVersion = evidenceCorpus.schema_version;
   const experimentsSchemaVersion = experiments.schema_version;
-  const allSchemaV7 = stateSchemaVersion === 'v7' && evidenceSchemaVersion === 'v7' && experimentsSchemaVersion === 'v7';
+  const hypothesesSchemaVersion = readJson('.positioning-audit/hypotheses.json').schema_version;
+  const claimRegisterSchemaVersion = claimRegister.schema_version;
+  const allSchemaV7 = stateSchemaVersion === 'v7' && evidenceSchemaVersion === 'v7' && experimentsSchemaVersion === 'v7' && hypothesesSchemaVersion === 'v7' && claimRegisterSchemaVersion === 'v7';
+
+  // Inline schema validation
+  const stateSchemaErrors = validateStateSchema(state);
+  const evidenceSchemaErrors = validateEvidenceSchema(evidenceCorpus);
+  const experimentsSchemaErrors = validateExperimentsSchema(experiments);
+  const hypothesisSchemaErrors = validateHypothesisSchema(hypotheses);
+  const claimRegisterSchemaErrors = validateClaimRegisterSchema(claimRegister);
+  const allSchemaErrors = [...stateSchemaErrors, ...evidenceSchemaErrors, ...experimentsSchemaErrors, ...hypothesisSchemaErrors, ...claimRegisterSchemaErrors];
 
   // Count consistency checks
   const experimentsCountMatch = state.experiments_designed === experiments.experiments.length;
@@ -193,7 +296,15 @@ function main() {
     check(
       'schema-version',
       allSchemaV7 ? 'PASS' : 'WARN',
-      `Schema versions: state=${stateSchemaVersion}, evidence=${evidenceSchemaVersion}, experiments=${experimentsSchemaVersion}.`,
+      `Schema versions: state=${stateSchemaVersion}, evidence=${evidenceSchemaVersion}, experiments=${experimentsSchemaVersion}, hypotheses=${hypothesesSchemaVersion}, claims=${claimRegisterSchemaVersion}.`,
+    ),
+    check(
+      'schema-validation',
+      allSchemaErrors.length === 0 ? 'PASS' : 'WARN',
+      allSchemaErrors.length === 0
+        ? 'All 5 audit JSON files pass inline schema validation.'
+        : `${allSchemaErrors.length} schema errors: ${allSchemaErrors.slice(0, 5).join('; ')}${allSchemaErrors.length > 5 ? '...' : ''}`,
+      { errors: allSchemaErrors },
     ),
     check(
       'count-consistency',

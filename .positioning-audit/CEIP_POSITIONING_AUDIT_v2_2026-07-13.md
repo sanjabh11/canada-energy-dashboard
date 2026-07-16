@@ -30,11 +30,11 @@ This audit was conducted using the updated v5 methodology of the ECC Niche Posit
 | Evidence framework | Implicit | Explicit (11 types, Evidence Corpus) |
 | Gap classification | Ad hoc | 8-type taxonomy |
 | Hypothesis tracking | None | 7 hypotheses with status |
-| Experiments | None | 8 designed with thresholds |
+| Experiments | None | 10 designed with thresholds |
 | Adversarial review | 1 pass | 3-persona × 3 phases (9 reviews) |
-| Confidence scoring | Single number (95%) | 5-dimension composite (79%) |
+| Confidence scoring | Single number (95%) | 5-dimension composite (74%) |
 | Evidence-limited mode | Not applied | Applied |
-| Persistent state | None | 5 JSON files + 8 artifacts |
+| Persistent state | None | 5 JSON files + 8 artifacts (v7 schema) |
 
 ### 8 Phases Completed
 
@@ -128,19 +128,19 @@ TIER CFO memo → Credit banking audit → Small emitter opt-in → Ontario GA/I
 
 | ID | Hypothesis | Status | Priority |
 |---|---|---|---|
-| H-TIER-1 | Emitters pay $1,500/mo for TIER CFO memo tool | Unresolved | Primary |
-| H-TIER-2 | Consultants adopt CEIP as client-serving tool ($149/mo) | Unresolved | Secondary |
-| H-TIER-3 | DI standard creates urgent demand for CEIP's DI tool | Unresolved | Catalyst |
-| H-DI-1 | DI standard release triggers demand spike | Unresolved | Catalyst |
-| H-CREDIT-1 | Emitters pay for credit banking audit tool | Unresolved | Cross-sell |
-| H-CREDIT-2 | Credit banking is natural cross-sell from CFO memo | Unresolved | Cross-sell |
-| H-CONTRA-1 | Anti-spreadsheet positioning resonates more than current | Unresolved | Contrarian |
+| H-TIER-1 | Emitters pay $1,500/mo for TIER CFO memo tool | unresolved | Primary |
+| H-TIER-2 | Consultants adopt CEIP as client-serving tool ($149/mo) | unresolved | Secondary |
+| H-TIER-3 | DI standard creates urgent demand for CEIP's DI tool | unresolved | Catalyst |
+| H-DI-1 | DI standard release triggers demand spike | unresolved | Catalyst |
+| H-CREDIT-1 | Emitters pay for credit banking audit tool | unresolved | Cross-sell |
+| H-CREDIT-2 | Credit banking is natural cross-sell from CFO memo | unresolved | Cross-sell |
+| H-CONTRA-1 | Anti-spreadsheet positioning resonates more than current | unresolved | Contrarian |
 
 ---
 
 ## Validation Experiments
 
-8 experiments designed, 0 executed. Priority ranking (cheapest-falsification-first):
+10 experiments designed, 0 executed. Priority ranking (cheapest-falsification-first):
 
 | Priority | Exp ID | Claim tested | Fidelity | Duration | Cost |
 |---|---|---|---|---|---|
@@ -233,8 +233,8 @@ The 79% composite confidence score reflects the strength of available evidence b
 | `state.json` | All | Persistent audit state |
 | `evidence-corpus.json` | 1 | 15 evidence items, 5 types present |
 | `research-questions.json` | 0 | Research question tree |
-| `hypotheses.json` | 4 | 7 hypotheses (all Unresolved) |
-| `experiments.json` | 5 | 8 experiments with thresholds |
+| `hypotheses.json` | 4 | 7 hypotheses (all unresolved) |
+| `experiments.json` | 5 | 10 experiments with thresholds |
 | `extras/domain-extra.md` | 0 | Canadian energy domain sources |
 | `artifacts/phase-0-pre-execution.md` | 0 | Pre-execution artifact |
 | `artifacts/phase-1-evidence-reconnaissance.md` | 1 | Evidence corpus + product truth |
