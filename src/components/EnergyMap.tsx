@@ -82,6 +82,8 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
   const [selectedType, setSelectedType] = useState<Set<EnergyFacility['type']>>(
     new Set(Object.keys(TYPE_COLORS) as EnergyFacility['type'][]),
   );
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const geojson = useMemo(() => {
     const filtered = facilities.filter(
@@ -119,20 +121,36 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
   }, [facilities, onFacilityClick]);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current || !styleUrl) return;
+    if (!containerRef.current || mapRef.current || !styleUrl) {
+      setIsLoading(false);
+      return;
+    }
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: styleUrl,
-      center: CANADA_CENTER,
-      zoom: initialZoom,
-      attributionControl: {} as maplibregl.AttributionControlOptions,
-    });
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: styleUrl,
+        center: CANADA_CENTER,
+        zoom: initialZoom,
+        attributionControl: {} as maplibregl.AttributionControlOptions,
+      });
+    } catch (err) {
+      setMapError(err instanceof Error ? err.message : 'Failed to initialize map');
+      setIsLoading(false);
+      return;
+    }
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
+    map.on('error', (e) => {
+      setMapError(e.error?.message ?? 'Map error occurred');
+      setIsLoading(false);
+    });
+
     map.on('load', () => {
+      setIsLoading(false);
       map.addSource('facilities', {
         type: 'geojson',
         data: geojsonRef.current,
@@ -278,30 +296,54 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
 
   return (
     <div className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-      <div ref={containerRef} style={{ width: '100%', height }} className="bg-gray-100 dark:bg-gray-800" />
+      <div
+        ref={containerRef}
+        style={{ width: '100%', height }}
+        className="bg-gray-100 dark:bg-gray-800"
+      />
 
-      <div className="absolute left-3 top-3 z-10 rounded-lg bg-white/90 px-3 py-2 shadow-md backdrop-blur-sm dark:bg-gray-900/90">
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Facility Types ({facilityCount})
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Loading map…</div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          {(Object.keys(TYPE_COLORS) as EnergyFacility['type'][]).map((type) => (
-            <label key={type} className="flex cursor-pointer items-center gap-2 text-xs text-gray-700 dark:text-gray-200">
-              <input
-                type="checkbox"
-                checked={selectedType.has(type)}
-                onChange={() => toggleType(type)}
-                className="h-3 w-3 rounded"
-              />
-              <span
-                className="inline-block h-3 w-3 rounded-full"
-                style={{ backgroundColor: TYPE_COLORS[type] }}
-              />
-              {TYPE_LABELS[type]}
-            </label>
-          ))}
+      )}
+
+      {mapError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 p-4 text-center">
+          <div className="text-sm font-medium text-red-600 dark:text-red-400">
+            Map failed to load
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{mapError}</div>
         </div>
-      </div>
+      )}
+
+      {!mapError && (
+        <div className="absolute left-3 top-3 z-10 rounded-lg bg-white/90 px-3 py-2 shadow-md backdrop-blur-sm dark:bg-gray-900/90">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Facility Types ({facilityCount})
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {(Object.keys(TYPE_COLORS) as EnergyFacility['type'][]).map((type) => (
+              <label
+                key={type}
+                className="flex cursor-pointer items-center gap-2 text-xs text-gray-700 dark:text-gray-200"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedType.has(type)}
+                  onChange={() => toggleType(type)}
+                  className="h-3 w-3 rounded"
+                />
+                <span
+                  className="inline-block h-3 w-3 rounded-full"
+                  style={{ backgroundColor: TYPE_COLORS[type] }}
+                />
+                {TYPE_LABELS[type]}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
