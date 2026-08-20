@@ -38,6 +38,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/utility-connector-history/*"
+  to = "/.netlify/functions/utility-connector-history/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/leads/*"
   to = "/.netlify/functions/leads"
   status = 200

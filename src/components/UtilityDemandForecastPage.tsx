@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -63,7 +63,10 @@ import {
   type UtilityConnectorAccount,
   type UtilityPublicContext,
 } from '../lib/utilityLiveData';
-import { buildOntarioUtilityOnboardingPacks, getOntarioFastFollowNote } from '../lib/utilityConnectorOnboarding';
+import {
+  buildOntarioUtilityOnboardingPacks,
+  getOntarioFastFollowNote,
+} from '../lib/utilityConnectorOnboarding';
 import {
   buildOntarioSubmissionSprintBundle,
   renderDemoEvidenceMarkdown,
@@ -83,11 +86,19 @@ import {
   renderHtmlProofDocument,
 } from '../lib/proofPack';
 import type { CommercialProofState } from '../lib/proofPack';
-import { UTILITY_CONSTRUCTED_SCENARIOS, type UtilityConstructedScenarioBundle } from '../lib/commercialScenarioBundles';
+import {
+  UTILITY_CONSTRUCTED_SCENARIOS,
+  type UtilityConstructedScenarioBundle,
+} from '../lib/commercialScenarioBundles';
 import {
   buildUtilitySecurityDescriptor,
   buildUtilitySecurityProofBundle,
 } from '../lib/utilitySecurityProofPack';
+import {
+  fetchUtilityConnectorHistory,
+  startUtilityConnectorAuthorization,
+  type UtilityConnectorHistoryReadResult,
+} from '../lib/utilityConnectorHistoryClient';
 
 function createDefaultScenario(jurisdiction: UtilityJurisdiction): UtilityPlanningScenario {
   const defaultGeographyId = jurisdiction === 'Ontario' ? 'ON-FEEDER-1' : 'AB-FEEDER-1';
@@ -105,27 +116,33 @@ function createDefaultScenario(jurisdiction: UtilityJurisdiction): UtilityPlanni
     capacity_buffer_pct: 18,
     stress_test_mode: 'none',
     hosting_capacity_limit_mw: jurisdiction === 'Ontario' ? 3.5 : 4.2,
-    large_point_loads: [{
-      name: 'Committed large point-load',
-      geography_id: defaultGeographyId,
-      geography_level: 'feeder',
-      mw: 0,
-      load_factor_pct: 72,
-    }],
-    industrial_opt_outs: [{
-      name: 'Industrial self-supply',
-      geography_id: defaultGeographyId,
-      geography_level: 'feeder',
-      mw: 0,
-    }],
-    tou_shift_rules: [{
-      name: 'Evening EV shift',
-      from_hour_start: 17,
-      from_hour_end: 21,
-      to_hour_start: 0,
-      to_hour_end: 5,
-      shift_pct: 0,
-    }],
+    large_point_loads: [
+      {
+        name: 'Committed large point-load',
+        geography_id: defaultGeographyId,
+        geography_level: 'feeder',
+        mw: 0,
+        load_factor_pct: 72,
+      },
+    ],
+    industrial_opt_outs: [
+      {
+        name: 'Industrial self-supply',
+        geography_id: defaultGeographyId,
+        geography_level: 'feeder',
+        mw: 0,
+      },
+    ],
+    tou_shift_rules: [
+      {
+        name: 'Evening EV shift',
+        from_hour_start: 17,
+        from_hour_end: 21,
+        to_hour_start: 0,
+        to_hour_end: 5,
+        shift_pct: 0,
+      },
+    ],
   };
 }
 
@@ -135,16 +152,106 @@ const UtilityDemandForecastPage: React.FC = () => {
   const [sourceLabel, setSourceLabel] = useState('Ontario starter utility load dataset');
   const [isSampleData, setIsSampleData] = useState(true);
   const [sourceKind, setSourceKind] = useState<UtilityInputSourceKind>('fallback_starter');
-  const [sourceObservedAt, setSourceObservedAt] = useState<string | null>(() => generateUtilityLoadSampleRows('Ontario', 'hourly').at(-1)?.timestamp ?? null);
+  const [sourceObservedAt, setSourceObservedAt] = useState<string | null>(
+    () => generateUtilityLoadSampleRows('Ontario', 'hourly').at(-1)?.timestamp ?? null,
+  );
   const [isPersistedSource, setIsPersistedSource] = useState(false);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
-  const [commercialProofState, setCommercialProofState] = useState<CommercialProofState>('standard');
-  const [draftScenario, setDraftScenario] = useState<UtilityPlanningScenario>(() => createDefaultScenario('Ontario'));
-  const [activeScenario, setActiveScenario] = useState<UtilityPlanningScenario>(() => createDefaultScenario('Ontario'));
+  const [commercialProofState, setCommercialProofState] =
+    useState<CommercialProofState>('standard');
+  const [draftScenario, setDraftScenario] = useState<UtilityPlanningScenario>(() =>
+    createDefaultScenario('Ontario'),
+  );
+  const [activeScenario, setActiveScenario] = useState<UtilityPlanningScenario>(() =>
+    createDefaultScenario('Ontario'),
+  );
   const [selectedHorizon, setSelectedHorizon] = useState(5);
   const [publicContext, setPublicContext] = useState<UtilityPublicContext | null>(null);
   const [isLoadingContext, setIsLoadingContext] = useState(false);
   const [connectorAccounts, setConnectorAccounts] = useState<UtilityConnectorAccount[]>([]);
+  const [utilityHistoryRead, setUtilityHistoryRead] =
+    useState<UtilityConnectorHistoryReadResult | null>(null);
+  const [isLoadingUtilityHistory, setIsLoadingUtilityHistory] = useState(false);
+  const [connectorActionError, setConnectorActionError] = useState<string | null>(null);
+
+  const loadGreenButtonStarter = useCallback(() => {
+    const xml = buildGreenButtonStarterXml();
+    const parsed = parseGreenButtonXml(xml, {
+      jurisdiction: 'Ontario',
+      geographyId: 'ON-GREEN-BUTTON-1',
+      customerClass: 'mixed',
+    });
+
+    if (parsed.rows.length === 0) {
+      setParseErrors(['Green Button starter XML did not produce any interval rows.']);
+      return;
+    }
+
+    setJurisdiction('Ontario');
+    setRows(parsed.rows);
+    setSourceLabel('Ontario Green Button CMD starter feed');
+    setIsSampleData(true);
+    setSourceKind('fallback_starter');
+    setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
+    setIsPersistedSource(false);
+    setParseErrors(parsed.warnings);
+    setConnectorAccounts([]);
+    setCommercialProofState('standard');
+    const defaults = createDefaultScenario('Ontario');
+    setDraftScenario(defaults);
+    setActiveScenario(defaults);
+    setSelectedHorizon(5);
+  }, []);
+
+  const applyUtilityHistoryRead = useCallback(
+    (result: UtilityConnectorHistoryReadResult) => {
+      setUtilityHistoryRead(result);
+      setConnectorAccounts(result.accounts);
+
+      if (result.status === 'available' && result.sourceTrust) {
+        setRows(result.rows);
+        setSourceLabel(result.sourceLabel);
+        setIsSampleData(false);
+        setSourceKind('green_button_cmd');
+        setSourceObservedAt(result.sourceObservedAt);
+        setIsPersistedSource(true);
+        setParseErrors(result.warnings);
+        return;
+      }
+
+      if (sourceKind === 'green_button_cmd' && isPersistedSource) {
+        loadGreenButtonStarter();
+      }
+    },
+    [isPersistedSource, loadGreenButtonStarter, sourceKind],
+  );
+
+  async function refreshUtilityHistory() {
+    setIsLoadingUtilityHistory(true);
+    try {
+      const result = await fetchUtilityConnectorHistory(jurisdiction);
+      applyUtilityHistoryRead(result);
+    } finally {
+      setIsLoadingUtilityHistory(false);
+    }
+  }
+
+  async function startUtilityConnection(utilityName: 'London Hydro' | 'Alectra Utilities') {
+    setConnectorActionError(null);
+    setIsLoadingUtilityHistory(true);
+    try {
+      const authorization = await startUtilityConnectorAuthorization(utilityName);
+      if (typeof window !== 'undefined') {
+        window.location.assign(authorization.authorize_url);
+      }
+    } catch (error) {
+      setConnectorActionError(
+        error instanceof Error ? error.message : 'Green Button authorization could not be started.',
+      );
+    } finally {
+      setIsLoadingUtilityHistory(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -171,6 +278,22 @@ const UtilityDemandForecastPage: React.FC = () => {
     };
   }, [jurisdiction]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingUtilityHistory(true);
+    fetchUtilityConnectorHistory(jurisdiction)
+      .then((result) => {
+        if (!cancelled) applyUtilityHistoryRead(result);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingUtilityHistory(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyUtilityHistoryRead, jurisdiction]);
+
   const forecastState = useMemo(() => {
     try {
       return {
@@ -181,6 +304,7 @@ const UtilityDemandForecastPage: React.FC = () => {
           isSampleData,
           sourceKind,
           liveSurfaces: publicContext?.live_surfaces ?? [],
+          sourceTrust: utilityHistoryRead?.sourceTrust ?? undefined,
         }),
         error: null as string | null,
       };
@@ -190,17 +314,34 @@ const UtilityDemandForecastPage: React.FC = () => {
         error: error instanceof Error ? error.message : 'Failed to build utility forecast package.',
       };
     }
-  }, [activeScenario, isSampleData, publicContext?.live_surfaces, rows, sourceKind, sourceLabel]);
+  }, [
+    activeScenario,
+    isSampleData,
+    publicContext?.live_surfaces,
+    rows,
+    sourceKind,
+    sourceLabel,
+    utilityHistoryRead?.sourceTrust,
+  ]);
 
   const proofBundle = useMemo(
-    () => (forecastState.forecastPackage ? buildUtilityForecastProofBundle(forecastState.forecastPackage, commercialProofState) : null),
+    () =>
+      forecastState.forecastPackage
+        ? buildUtilityForecastProofBundle(forecastState.forecastPackage, commercialProofState)
+        : null,
     [commercialProofState, forecastState.forecastPackage],
   );
 
   const proofActions = useMemo(() => {
     if (!forecastState.forecastPackage || !proofBundle) return [];
-    const descriptor = buildUtilityPlanningDescriptor(forecastState.forecastPackage, commercialProofState);
-    const benchmarkAppendix = buildUtilityBenchmarkAppendixMarkdown(forecastState.forecastPackage, commercialProofState);
+    const descriptor = buildUtilityPlanningDescriptor(
+      forecastState.forecastPackage,
+      commercialProofState,
+    );
+    const benchmarkAppendix = buildUtilityBenchmarkAppendixMarkdown(
+      forecastState.forecastPackage,
+      commercialProofState,
+    );
 
     return proofBundle.artifacts.map((artifact) => {
       if (artifact.id === 'utility-planning-pack-pdf') {
@@ -212,40 +353,40 @@ const UtilityDemandForecastPage: React.FC = () => {
       if (artifact.id === 'utility-planning-pack') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
-            'text/html;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+              'text/html;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'utility-benchmark-appendix') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            benchmarkAppendix,
-            'text/markdown;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(artifact, benchmarkAppendix, 'text/markdown;charset=utf-8;'),
         };
       }
       if (artifact.id === 'utility-forecast-csv') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            buildUtilityGenericCsv(forecastState.forecastPackage!),
-            'text/csv;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              buildUtilityGenericCsv(forecastState.forecastPackage!),
+              'text/csv;charset=utf-8;',
+            ),
         };
       }
       return {
         ...artifact,
-        onDownload: () => downloadTextArtifact(
-          artifact,
-          buildUtilityJurisdictionCsv(forecastState.forecastPackage!),
-          'text/csv;charset=utf-8;',
-        ),
+        onDownload: () =>
+          downloadTextArtifact(
+            artifact,
+            buildUtilityJurisdictionCsv(forecastState.forecastPackage!),
+            'text/csv;charset=utf-8;',
+          ),
       };
     });
   }, [commercialProofState, forecastState.forecastPackage, proofBundle]);
@@ -254,21 +395,31 @@ const UtilityDemandForecastPage: React.FC = () => {
     if (!forecastState.forecastPackage) return [];
     return forecastState.forecastPackage.cases.expected.yearly.map((expectedYear) => ({
       year: `Y${expectedYear.year}`,
-      low: forecastState.forecastPackage?.cases.low.yearly.find((row) => row.year === expectedYear.year)?.peak_demand_mw ?? 0,
+      low:
+        forecastState.forecastPackage?.cases.low.yearly.find(
+          (row) => row.year === expectedYear.year,
+        )?.peak_demand_mw ?? 0,
       expected: expectedYear.peak_demand_mw,
-      high: forecastState.forecastPackage?.cases.high.yearly.find((row) => row.year === expectedYear.year)?.peak_demand_mw ?? 0,
+      high:
+        forecastState.forecastPackage?.cases.high.yearly.find(
+          (row) => row.year === expectedYear.year,
+        )?.peak_demand_mw ?? 0,
       energy: expectedYear.annual_energy_gwh,
     }));
   }, [forecastState.forecastPackage]);
 
   const highlightedRows = useMemo(() => {
     if (!forecastState.forecastPackage) return [];
-    return forecastState.forecastPackage.highlighted_years.map((year) => ({
-      year,
-      low: forecastState.forecastPackage?.cases.low.yearly.find((row) => row.year === year),
-      expected: forecastState.forecastPackage?.cases.expected.yearly.find((row) => row.year === year),
-      high: forecastState.forecastPackage?.cases.high.yearly.find((row) => row.year === year),
-    })).filter((row) => row.low && row.expected && row.high);
+    return forecastState.forecastPackage.highlighted_years
+      .map((year) => ({
+        year,
+        low: forecastState.forecastPackage?.cases.low.yearly.find((row) => row.year === year),
+        expected: forecastState.forecastPackage?.cases.expected.yearly.find(
+          (row) => row.year === year,
+        ),
+        high: forecastState.forecastPackage?.cases.high.yearly.find((row) => row.year === year),
+      }))
+      .filter((row) => row.low && row.expected && row.high);
   }, [forecastState.forecastPackage]);
 
   const selectedAllocations = useMemo(() => {
@@ -279,8 +430,8 @@ const UtilityDemandForecastPage: React.FC = () => {
   }, [forecastState.forecastPackage, selectedHorizon]);
 
   const selectedProfilePreview = useMemo(() => {
-    const profile = forecastState.forecastPackage?.profiles_8760.find((entry) =>
-      entry.case_label === 'expected' && entry.horizon_year === selectedHorizon,
+    const profile = forecastState.forecastPackage?.profiles_8760.find(
+      (entry) => entry.case_label === 'expected' && entry.horizon_year === selectedHorizon,
     );
     return (profile?.points ?? [])
       .filter((_, index) => index < 168 && index % 6 === 0)
@@ -292,84 +443,93 @@ const UtilityDemandForecastPage: React.FC = () => {
       }));
   }, [forecastState.forecastPackage, selectedHorizon]);
 
-  const selectedReliability = useMemo(() => (
-    forecastState.forecastPackage?.reliability_proxy.horizon_scores.find((entry) => entry.horizon_year === selectedHorizon) ?? null
-  ), [forecastState.forecastPackage, selectedHorizon]);
+  const selectedReliability = useMemo(
+    () =>
+      forecastState.forecastPackage?.reliability_proxy.horizon_scores.find(
+        (entry) => entry.horizon_year === selectedHorizon,
+      ) ?? null,
+    [forecastState.forecastPackage, selectedHorizon],
+  );
 
   const activeGranularity = forecastState.forecastPackage?.summary.granularity ?? 'hourly';
-  const connectionCards = useMemo(() => buildConnectionHealthCards({
-    jurisdiction,
-    activeSourceKind: sourceKind,
-    activeSourceLabel: sourceLabel,
-    activeObservedAt: sourceObservedAt,
-    activePersisted: isPersistedSource,
-    connectorAccounts,
-  }), [connectorAccounts, isPersistedSource, jurisdiction, sourceKind, sourceLabel, sourceObservedAt]);
+  const connectionCards = useMemo(
+    () =>
+      buildConnectionHealthCards({
+        jurisdiction,
+        activeSourceKind: sourceKind,
+        activeSourceLabel: sourceLabel,
+        activeObservedAt: sourceObservedAt,
+        activePersisted: isPersistedSource,
+        connectorAccounts,
+      }),
+    [connectorAccounts, isPersistedSource, jurisdiction, sourceKind, sourceLabel, sourceObservedAt],
+  );
 
-  const isLiveConnected = useMemo(() => connectionCards.some((card) => isConnectorCardLiveConnected(card)), [connectionCards]);
+  const isLiveConnected = useMemo(
+    () => connectionCards.some((card) => isConnectorCardLiveConnected(card)),
+    [connectionCards],
+  );
   const ontarioOnboardingPacks = useMemo(
-    () => buildOntarioUtilityOnboardingPacks({
-      publicAppUrl: getPublicAppUrl(),
-      utilityConnectorBaseUrl: getUtilityConnectorBaseUrl(),
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-    }),
+    () =>
+      buildOntarioUtilityOnboardingPacks({
+        publicAppUrl: getPublicAppUrl(),
+        utilityConnectorBaseUrl: getUtilityConnectorBaseUrl(),
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      }),
     [],
   );
   const ontarioSubmissionBundle = useMemo(
-    () => buildOntarioSubmissionSprintBundle({
-      canonicalAppUrl: getPublicAppUrl(),
-      bridgeBaseUrl: getUtilityConnectorBaseUrl(),
-      currentOrigin: typeof window !== 'undefined' ? window.location.origin : null,
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-    }),
+    () =>
+      buildOntarioSubmissionSprintBundle({
+        canonicalAppUrl: getPublicAppUrl(),
+        bridgeBaseUrl: getUtilityConnectorBaseUrl(),
+        currentOrigin: typeof window !== 'undefined' ? window.location.origin : null,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      }),
     [],
   );
 
   function getOntarioOnboardingPack(utilityName?: string) {
-    return ontarioOnboardingPacks.find((pack) => pack.utility_name === utilityName) ?? ontarioOnboardingPacks[0]!;
+    return (
+      ontarioOnboardingPacks.find((pack) => pack.utility_name === utilityName) ??
+      ontarioOnboardingPacks[0]!
+    );
   }
 
   function upsertConnectorAccount(nextAccount: UtilityConnectorAccount) {
     setConnectorAccounts((current) => {
-      const index = current.findIndex((account) => account.connector_kind === nextAccount.connector_kind);
+      const index = current.findIndex(
+        (account) => account.connector_kind === nextAccount.connector_kind,
+      );
       if (index === -1) return [...current, nextAccount];
-      return current.map((account, accountIndex) => (accountIndex === index ? nextAccount : account));
+      return current.map((account, accountIndex) =>
+        accountIndex === index ? nextAccount : account,
+      );
     });
   }
 
-  function buildMockGreenButtonAccount(utilityName: 'London Hydro' | 'Alectra Utilities' = 'London Hydro'): UtilityConnectorAccount {
-    const pack = getOntarioOnboardingPack(utilityName);
-    const now = new Date();
-    return {
-      id: `mock-${pack.utility_name.toLowerCase().replace(/\s+/g, '-')}`,
-      connector_kind: 'ontario_green_button_cmd',
-      source_kind: 'green_button_cmd',
-      status: 'active',
-      jurisdiction: 'Ontario',
-      utility_name: pack.utility_name,
-      display_name: `${pack.utility_name} Green Button CMD`,
-      last_synced_at: now.toISOString(),
-      last_error: null,
-      metadata: {
-        runtime_validation_mode: 'mock',
-        oauth_espi_scope: pack.oauth_espi_scope,
-        registration_form_categories: pack.registration_form_categories,
-        requested_data_categories: pack.requested_data_categories,
-        revocation_mode: pack.revocation_mode,
-        revocation_url: pack.revocation_url,
-        manage_connections_url: pack.manage_connections_url,
-        token_expires_at: new Date(now.getTime() + (60 * 60 * 1000)).toISOString(),
-        token_material_purged: false,
-      },
-    };
-  }
-
   function handleDisconnectUtility(card: UtilityConnectionHealthCard) {
-    const pack = getOntarioOnboardingPack((card.utility_name as 'London Hydro' | 'Alectra Utilities' | undefined));
+    setConnectorActionError(null);
+    const pack = getOntarioOnboardingPack(
+      card.utility_name as 'London Hydro' | 'Alectra Utilities' | undefined,
+    );
     const now = new Date().toISOString();
     const revocationMode = card.revocation_mode ?? pack.revocation_mode;
-    const baseAccount = connectorAccounts.find((account) => account.connector_kind === 'ontario_green_button_cmd')
-      ?? buildMockGreenButtonAccount(pack.utility_name);
+    const baseAccount = connectorAccounts.find(
+      (account) => account.connector_kind === 'ontario_green_button_cmd',
+    );
+    if (!baseAccount) {
+      setConnectorActionError(
+        'No owner-bound Green Button account is available to disconnect. The starter dataset remains local-only.',
+      );
+      return;
+    }
+    if (baseAccount.metadata?.runtime_validation_mode !== 'mock') {
+      setConnectorActionError(
+        'Live Green Button revocation must use the owner-bound server path; no local account mutation was applied.',
+      );
+      return;
+    }
 
     const nextAccount: UtilityConnectorAccount = {
       ...baseAccount,
@@ -377,9 +537,10 @@ const UtilityDemandForecastPage: React.FC = () => {
       display_name: baseAccount.display_name || `${pack.utility_name} Green Button CMD`,
       last_synced_at: baseAccount.last_synced_at ?? now,
       status: revocationMode === 'api' ? 'revoked' : 'failed',
-      last_error: revocationMode === 'api'
-        ? null
-        : 'Disconnect requested. Complete revocation in the utility portal, then confirm disconnection.',
+      last_error:
+        revocationMode === 'api'
+          ? null
+          : 'Disconnect requested. Complete revocation in the utility portal, then confirm disconnection.',
       metadata: {
         ...(baseAccount.metadata ?? {}),
         runtime_validation_mode: 'mock',
@@ -408,9 +569,23 @@ const UtilityDemandForecastPage: React.FC = () => {
   }
 
   function handleConfirmDisconnect(card: UtilityConnectionHealthCard) {
-    const pack = getOntarioOnboardingPack((card.utility_name as 'London Hydro' | 'Alectra Utilities' | undefined));
-    const baseAccount = connectorAccounts.find((account) => account.connector_kind === 'ontario_green_button_cmd')
-      ?? buildMockGreenButtonAccount(pack.utility_name);
+    setConnectorActionError(null);
+    const pack = getOntarioOnboardingPack(
+      card.utility_name as 'London Hydro' | 'Alectra Utilities' | undefined,
+    );
+    const baseAccount = connectorAccounts.find(
+      (account) => account.connector_kind === 'ontario_green_button_cmd',
+    );
+    if (!baseAccount) {
+      setConnectorActionError('No owner-bound Green Button account is available to confirm.');
+      return;
+    }
+    if (baseAccount.metadata?.runtime_validation_mode !== 'mock') {
+      setConnectorActionError(
+        'Live Green Button revocation confirmation must use the owner-bound server path; no local account mutation was applied.',
+      );
+      return;
+    }
     const now = new Date().toISOString();
 
     upsertConnectorAccount({
@@ -439,7 +614,10 @@ const UtilityDemandForecastPage: React.FC = () => {
     setIsPersistedSource(false);
   }
 
-  function loadStarterDataset(nextJurisdiction: UtilityJurisdiction, granularity: UtilityInputGranularity) {
+  function loadStarterDataset(
+    nextJurisdiction: UtilityJurisdiction,
+    granularity: UtilityInputGranularity,
+  ) {
     const nextRows = generateUtilityLoadSampleRows(nextJurisdiction, granularity);
     setJurisdiction(nextJurisdiction);
     setRows(nextRows);
@@ -527,35 +705,6 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSelectedHorizon(5);
   }
 
-  function loadGreenButtonStarter() {
-    const xml = buildGreenButtonStarterXml();
-    const parsed = parseGreenButtonXml(xml, {
-      jurisdiction: 'Ontario',
-      geographyId: 'ON-GREEN-BUTTON-1',
-      customerClass: 'mixed',
-    });
-
-    if (parsed.rows.length === 0) {
-      setParseErrors(['Green Button starter XML did not produce any interval rows.']);
-      return;
-    }
-
-    setJurisdiction('Ontario');
-    setRows(parsed.rows);
-    setSourceLabel('Ontario Green Button CMD starter feed');
-    setIsSampleData(true);
-    setSourceKind('green_button_cmd');
-    setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
-    setIsPersistedSource(false);
-    setParseErrors(parsed.warnings);
-    setConnectorAccounts([buildMockGreenButtonAccount('London Hydro')]);
-    setCommercialProofState('standard');
-    const defaults = createDefaultScenario('Ontario');
-    setDraftScenario(defaults);
-    setActiveScenario(defaults);
-    setSelectedHorizon(5);
-  }
-
   function handleJurisdictionChange(nextJurisdiction: UtilityJurisdiction) {
     if (isSampleData || sourceKind === 'public_system_sample') {
       loadStarterDataset(nextJurisdiction, activeGranularity);
@@ -566,7 +715,10 @@ const UtilityDemandForecastPage: React.FC = () => {
     setActiveScenario((current) => ({ ...current, jurisdiction: nextJurisdiction }));
   }
 
-  function handleScenarioField<K extends keyof UtilityPlanningScenario>(key: K, value: UtilityPlanningScenario[K]) {
+  function handleScenarioField<K extends keyof UtilityPlanningScenario>(
+    key: K,
+    value: UtilityPlanningScenario[K],
+  ) {
     setDraftScenario((current) => ({ ...current, [key]: value }));
   }
 
@@ -656,7 +808,9 @@ const UtilityDemandForecastPage: React.FC = () => {
 
   const exportPlanningPack = () => {
     if (!forecastState.forecastPackage || !proofBundle) return;
-    const planningArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'utility-planning-pack');
+    const planningArtifact = proofBundle.artifacts.find(
+      (artifact) => artifact.id === 'utility-planning-pack',
+    );
     if (!planningArtifact) return;
     downloadTextArtifact(
       planningArtifact,
@@ -670,7 +824,9 @@ const UtilityDemandForecastPage: React.FC = () => {
 
   const exportBenchmarkAppendix = () => {
     if (!forecastState.forecastPackage || !proofBundle) return;
-    const benchmarkArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'utility-benchmark-appendix');
+    const benchmarkArtifact = proofBundle.artifacts.find(
+      (artifact) => artifact.id === 'utility-benchmark-appendix',
+    );
     if (!benchmarkArtifact) return;
     downloadTextArtifact(
       benchmarkArtifact,
@@ -681,7 +837,9 @@ const UtilityDemandForecastPage: React.FC = () => {
 
   const exportSecurityReviewPack = () => {
     const proofPack = buildUtilitySecurityProofBundle();
-    const artifact = proofPack.artifacts.find((entry) => entry.id === 'utility-security-review-pack');
+    const artifact = proofPack.artifacts.find(
+      (entry) => entry.id === 'utility-security-review-pack',
+    );
     if (!artifact) return;
     downloadTextArtifact(
       artifact,
@@ -731,51 +889,63 @@ const UtilityDemandForecastPage: React.FC = () => {
     );
   };
 
-  function updatePointLoad(field: 'name' | 'geography_id' | 'mw' | 'load_factor_pct', value: string | number) {
+  function updatePointLoad(
+    field: 'name' | 'geography_id' | 'mw' | 'load_factor_pct',
+    value: string | number,
+  ) {
     setDraftScenario((current) => ({
       ...current,
-      large_point_loads: [{
-        ...(current.large_point_loads?.[0] ?? {
-          name: 'Committed large point-load',
-          geography_id: jurisdiction === 'Ontario' ? 'ON-FEEDER-1' : 'AB-FEEDER-1',
-          geography_level: 'feeder',
-          mw: 0,
-          load_factor_pct: 72,
-        }),
-        [field]: value,
-      }],
+      large_point_loads: [
+        {
+          ...(current.large_point_loads?.[0] ?? {
+            name: 'Committed large point-load',
+            geography_id: jurisdiction === 'Ontario' ? 'ON-FEEDER-1' : 'AB-FEEDER-1',
+            geography_level: 'feeder',
+            mw: 0,
+            load_factor_pct: 72,
+          }),
+          [field]: value,
+        },
+      ],
     }));
   }
 
   function updateIndustrialOptOut(field: 'name' | 'geography_id' | 'mw', value: string | number) {
     setDraftScenario((current) => ({
       ...current,
-      industrial_opt_outs: [{
-        ...(current.industrial_opt_outs?.[0] ?? {
-          name: 'Industrial self-supply',
-          geography_id: jurisdiction === 'Ontario' ? 'ON-FEEDER-1' : 'AB-FEEDER-1',
-          geography_level: 'feeder',
-          mw: 0,
-        }),
-        [field]: value,
-      }],
+      industrial_opt_outs: [
+        {
+          ...(current.industrial_opt_outs?.[0] ?? {
+            name: 'Industrial self-supply',
+            geography_id: jurisdiction === 'Ontario' ? 'ON-FEEDER-1' : 'AB-FEEDER-1',
+            geography_level: 'feeder',
+            mw: 0,
+          }),
+          [field]: value,
+        },
+      ],
     }));
   }
 
-  function updateTouShift(field: 'shift_pct' | 'from_hour_start' | 'from_hour_end' | 'to_hour_start' | 'to_hour_end', value: number) {
+  function updateTouShift(
+    field: 'shift_pct' | 'from_hour_start' | 'from_hour_end' | 'to_hour_start' | 'to_hour_end',
+    value: number,
+  ) {
     setDraftScenario((current) => ({
       ...current,
-      tou_shift_rules: [{
-        ...(current.tou_shift_rules?.[0] ?? {
-          name: 'Evening EV shift',
-          from_hour_start: 17,
-          from_hour_end: 21,
-          to_hour_start: 0,
-          to_hour_end: 5,
-          shift_pct: 0,
-        }),
-        [field]: value,
-      }],
+      tou_shift_rules: [
+        {
+          ...(current.tou_shift_rules?.[0] ?? {
+            name: 'Evening EV shift',
+            from_hour_start: 17,
+            from_hour_end: 21,
+            to_hour_start: 0,
+            to_hour_end: 5,
+            shift_pct: 0,
+          }),
+          [field]: value,
+        },
+      ],
     }));
   }
 
@@ -785,7 +955,13 @@ const UtilityDemandForecastPage: React.FC = () => {
         title="Utility Demand Forecasting | Distribution Planning Lane"
         description="Utility-focused demand forecasting for Ontario LDCs and Alberta utilities. Upload historical load data, benchmark against persistence and seasonal-naive baselines, and export filing-ready planning packs."
         path="/utility-demand-forecast"
-        keywords={['utility demand forecasting', 'distribution planning', 'OEB Chapter 5', 'AUC Rule 005', 'load forecast benchmark']}
+        keywords={[
+          'utility demand forecasting',
+          'distribution planning',
+          'OEB Chapter 5',
+          'AUC Rule 005',
+          'load forecast benchmark',
+        ]}
       />
 
       <div className="bg-gradient-to-r from-sky-800 via-cyan-800 to-emerald-800 py-10 px-6">
@@ -796,9 +972,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <Building2 className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white md:text-3xl">Utility Demand Forecasting Lane</h1>
+                <h1 className="text-2xl font-bold text-white md:text-3xl">
+                  Utility Demand Forecasting Lane
+                </h1>
                 <p className="text-sm text-cyan-100 md:text-base">
-                  Statistical, upload-first planning workflows for utilities, not grid-operator analytics.
+                  Statistical, upload-first planning workflows for utilities, not grid-operator
+                  analytics.
                 </p>
               </div>
             </div>
@@ -848,6 +1027,26 @@ const UtilityDemandForecastPage: React.FC = () => {
           />
         ) : null}
 
+        {jurisdiction === 'Ontario' &&
+          utilityHistoryRead &&
+          utilityHistoryRead.status !== 'available' && (
+            <DataTrustNotice
+              mode="fallback"
+              title="Owner-bound Green Button history is not active"
+              message={`The forecast remains on starter, upload, or another explicitly selected source. Current connector read status: ${utilityHistoryRead.status.replace(/_/g, ' ')}. Connect a utility and refresh after the callback completes.`}
+              className="mb-6"
+            />
+          )}
+
+        {connectorActionError && (
+          <div
+            className="mb-6 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-200"
+            role="alert"
+          >
+            {connectorActionError}
+          </div>
+        )}
+
         {forecastState.error && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-900/20 p-5">
             <AlertTriangle className="mt-0.5 h-5 w-5 text-red-400" />
@@ -868,12 +1067,16 @@ const UtilityDemandForecastPage: React.FC = () => {
           </div>
         )}
 
-        <div className="mb-6 rounded-2xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-pilot-pack-flow">
+        <div
+          className="mb-6 rounded-2xl border border-slate-700 bg-slate-800/70 p-5"
+          data-testid="utility-pilot-pack-flow"
+        >
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-white">Guided utility pilot pack</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Buyers should be able to finish the planning path without touching secondary onboarding surfaces.
+                Buyers should be able to finish the planning path without touching secondary
+                onboarding surfaces.
               </p>
               <p className="mt-2 text-xs text-cyan-200">
                 Send us two years of load history, and we return a board-ready planning pack.
@@ -889,7 +1092,10 @@ const UtilityDemandForecastPage: React.FC = () => {
               '4. Review benchmark and trust labels',
               '5. Export planning pack plus security attachment',
             ].map((step) => (
-              <div key={step} className="rounded-xl border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-200">
+              <div
+                key={step}
+                className="rounded-xl border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-200"
+              >
                 {step}
               </div>
             ))}
@@ -909,12 +1115,16 @@ const UtilityDemandForecastPage: React.FC = () => {
 
         <div className="grid gap-6 lg:grid-cols-[1.05fr_1.45fr]">
           <section className="space-y-6">
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-connection-panel">
+            <div
+              className="rounded-xl border border-slate-700 bg-slate-800/70 p-5"
+              data-testid="utility-connection-panel"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-white">1. Choose utility profile</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Keep the broader platform intact and run the utility-specific planning workflow here.
+                    Keep the broader platform intact and run the utility-specific planning workflow
+                    here.
                   </p>
                 </div>
                 <Shield className="h-5 w-5 text-cyan-300" />
@@ -933,7 +1143,9 @@ const UtilityDemandForecastPage: React.FC = () => {
                   >
                     <div className="font-medium">{option}</div>
                     <div className="mt-1 text-xs text-slate-400">
-                      {option === 'Ontario' ? 'OEB Chapter 5 aligned language' : 'AUC / Alberta utility planning aligned language'}
+                      {option === 'Ontario'
+                        ? 'OEB Chapter 5 aligned language'
+                        : 'AUC / Alberta utility planning aligned language'}
                     </div>
                   </button>
                 ))}
@@ -972,467 +1184,621 @@ const UtilityDemandForecastPage: React.FC = () => {
                 Secondary connector, onboarding, and submission readiness
               </summary>
               <p className="mt-2 text-xs text-slate-500">
-                Use the planning flow first. Expand this section only when you need connector truth, Ontario onboarding, or submission-readiness detail.
+                Use the planning flow first. Expand this section only when you need connector truth,
+                Ontario onboarding, or submission-readiness detail.
               </p>
 
               <div className="mt-4 space-y-6">
-            {jurisdiction === 'Ontario' && (
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5" data-testid="utility-onboarding-panel">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Secondary Ontario onboarding readiness</h2>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Utility-specific registration metadata and demo steps for the first real CMD submissions.
-                    </p>
-                  </div>
-                  <Shield className="h-5 w-5 text-emerald-300" />
-                </div>
+                {jurisdiction === 'Ontario' && (
+                  <div
+                    className="rounded-xl border border-slate-700 bg-slate-900/60 p-5"
+                    data-testid="utility-onboarding-panel"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">
+                          Secondary Ontario onboarding readiness
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Utility-specific registration metadata and demo steps for the first real
+                          CMD submissions.
+                        </p>
+                      </div>
+                      <Shield className="h-5 w-5 text-emerald-300" />
+                    </div>
 
-                <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                  {ontarioOnboardingPacks.map((pack) => (
-                    <div key={pack.utility_name} className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium text-white">{pack.utility_name}</div>
-                            <div className="mt-1 text-xs text-slate-400">
-                              Registration categories `{pack.registration_form_categories.join(', ')}` with utility-owned authorization and revocation.
+                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                      {ontarioOnboardingPacks.map((pack) => (
+                        <div
+                          key={pack.utility_name}
+                          className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium text-white">{pack.utility_name}</div>
+                              <div className="mt-1 text-xs text-slate-400">
+                                Registration categories `
+                                {pack.registration_form_categories.join(', ')}` with utility-owned
+                                authorization and revocation.
+                              </div>
+                            </div>
+                            <a
+                              href={pack.registration_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg bg-slate-800 px-3 py-1 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
+                            >
+                              Registration
+                            </a>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => startUtilityConnection(pack.utility_name)}
+                            disabled={isLoadingUtilityHistory}
+                            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-cyan-500/15 px-3 py-2 text-xs font-medium text-cyan-100 transition-colors hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                            {isLoadingUtilityHistory
+                              ? 'Preparing connection…'
+                              : `Connect ${pack.utility_name}`}
+                          </button>
+
+                          <div className="mt-4 space-y-3 text-sm text-slate-300">
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Redirect URI
+                              </div>
+                              <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
+                                {pack.redirect_uri}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Application login URL
+                              </div>
+                              <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
+                                {pack.login_url}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Bridge base URL
+                              </div>
+                              <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
+                                {pack.bridge_base_url}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Requested data categories
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {pack.requested_data_categories.join(', ')}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                OAuth / ESPI scope
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {pack.oauth_espi_scope}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Revocation mode
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {pack.revocation_mode.replace(/_/g, ' ')}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Manage connections URL
+                              </div>
+                              <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
+                                {pack.manage_connections_url}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Revocation behavior
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {pack.revocation_behavior}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Data retention answer
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {pack.data_retention_answer}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Privacy / terms mapping
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {pack.privacy_mapping}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Callback forward target
+                              </div>
+                              <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
+                                {pack.callback_forward_target}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Replayable demo script
+                              </div>
+                              <ol className="mt-1 space-y-1 text-xs text-slate-300">
+                                {pack.demo_script.map((step) => (
+                                  <li key={step}>{step}</li>
+                                ))}
+                              </ol>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Bridge runtime contract
+                              </div>
+                              <ul className="mt-1 space-y-1 text-xs text-slate-300">
+                                {pack.bridge_routes.map((route) => (
+                                  <li key={`${pack.utility_name}-${route}`}>{route}</li>
+                                ))}
+                              </ul>
                             </div>
                           </div>
-                        <a
-                          href={pack.registration_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg bg-slate-800 px-3 py-1 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
-                        >
-                          Registration
-                        </a>
-                      </div>
 
-                      <div className="mt-4 space-y-3 text-sm text-slate-300">
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Redirect URI</div>
-                          <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
-                            {pack.redirect_uri}
+                          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+                            <a
+                              href={pack.terms_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-cyan-300 transition-colors hover:text-cyan-200"
+                            >
+                              View utility terms
+                            </a>
+                            <span className="text-slate-500">
+                              Submit only after the custom app host, custom bridge host, and local
+                              mock auth/callback/sync harness are all passing.
+                            </span>
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Application login URL</div>
-                          <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
-                            {pack.login_url}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Bridge base URL</div>
-                          <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
-                            {pack.bridge_base_url}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Requested data categories</div>
-                          <div className="mt-1 text-xs text-slate-300">{pack.requested_data_categories.join(', ')}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">OAuth / ESPI scope</div>
-                          <div className="mt-1 text-xs text-slate-300">{pack.oauth_espi_scope}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Revocation mode</div>
-                          <div className="mt-1 text-xs text-slate-300">{pack.revocation_mode.replace(/_/g, ' ')}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Manage connections URL</div>
-                          <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
-                            {pack.manage_connections_url}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Revocation behavior</div>
-                          <div className="mt-1 text-xs text-slate-300">{pack.revocation_behavior}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Data retention answer</div>
-                          <div className="mt-1 text-xs text-slate-300">{pack.data_retention_answer}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Privacy / terms mapping</div>
-                          <div className="mt-1 text-xs text-slate-300">{pack.privacy_mapping}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Callback forward target</div>
-                          <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
-                            {pack.callback_forward_target}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Replayable demo script</div>
-                          <ol className="mt-1 space-y-1 text-xs text-slate-300">
-                            {pack.demo_script.map((step) => (
-                              <li key={step}>{step}</li>
-                            ))}
-                          </ol>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Bridge runtime contract</div>
-                          <ul className="mt-1 space-y-1 text-xs text-slate-300">
-                            {pack.bridge_routes.map((route) => (
-                              <li key={`${pack.utility_name}-${route}`}>{route}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
-                        <a
-                          href={pack.terms_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-cyan-300 transition-colors hover:text-cyan-200"
-                        >
-                          View utility terms
-                        </a>
-                        <span className="text-slate-500">
-                          Submit only after the custom app host, custom bridge host, and local mock auth/callback/sync harness are all passing.
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-xs text-amber-100">
-                  {getOntarioFastFollowNote()}
-                </div>
-              </div>
-            )}
-
-            {jurisdiction === 'Ontario' && (
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5" data-testid="utility-submission-panel">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Secondary London Hydro-first submission sprint</h2>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Keep London Hydro production submission blocked while moving staging infrastructure onto burner internet hosts, then keep every claim bounded to repo-backed behavior.
-                    </p>
-                  </div>
-                  <FileText className="h-5 w-5 text-cyan-300" />
-                </div>
-
-                <div className="mt-4 rounded-lg border border-cyan-500/20 bg-cyan-950/30 p-4 text-xs text-cyan-100">
-                  <div className="font-medium text-cyan-50">Submission guardrail</div>
-                  <div className="mt-2 space-y-1">
-                    {ontarioSubmissionBundle.claim_guardrails.map((guardrail) => (
-                      <div key={guardrail}>• {guardrail}</div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 xl:grid-cols-2" data-testid="utility-readiness-tracks">
-                  {ontarioSubmissionBundle.readiness_tracks.map((track) => (
-                    <div key={track.label} className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-medium text-white">{track.label}</div>
-                          <div className="mt-1 text-xs text-slate-400">{track.summary}</div>
-                        </div>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
-                          track.status === 'ready'
-                            ? 'bg-emerald-500/15 text-emerald-200'
-                            : track.status === 'in_progress'
-                              ? 'bg-sky-500/15 text-sky-200'
-                              : 'bg-amber-500/15 text-amber-200'
-                        }`}>
-                          {track.status.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                      {track.blockers.length > 0 && (
-                        <div className="mt-3">
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Active blockers</div>
-                          <ul className="mt-1 space-y-1 text-xs text-slate-300">
-                            {track.blockers.map((blocker) => (
-                              <li key={`${track.label}-${blocker}`}>• {blocker}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {ontarioSubmissionBundle.warnings.length > 0 && (
-                  <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-xs text-amber-100" data-testid="utility-submission-warning">
-                    <div className="font-medium text-amber-50">Do not submit yet</div>
-                    <div className="mt-2 space-y-1">
-                      {ontarioSubmissionBundle.warnings.map((warning) => (
-                        <div key={warning}>• {warning}</div>
                       ))}
+                    </div>
+
+                    <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-xs text-amber-100">
+                      {getOntarioFastFollowNote()}
                     </div>
                   </div>
                 )}
 
-                <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                  {ontarioSubmissionBundle.packets.map((packet) => (
-                    <div
-                      key={packet.slug}
-                      className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
-                      data-testid={`utility-submission-card-${packet.slug}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-medium text-white">{packet.utility_name}</div>
-                          <div className="mt-1 text-xs text-slate-400">{packet.target_outcome}</div>
-                        </div>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
-                          packet.submission_status === 'ready'
-                            ? 'bg-emerald-500/15 text-emerald-200'
-                            : 'bg-amber-500/15 text-amber-200'
-                        }`}>
-                          {packet.submission_status === 'ready'
-                            ? (packet.phase === 'primary' ? 'primary ready' : 'reserve ready')
-                            : 'do not submit yet'}
-                        </span>
+                {jurisdiction === 'Ontario' && (
+                  <div
+                    className="rounded-xl border border-slate-700 bg-slate-900/60 p-5"
+                    data-testid="utility-submission-panel"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">
+                          Secondary London Hydro-first submission sprint
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Keep London Hydro production submission blocked while moving staging
+                          infrastructure onto burner internet hosts, then keep every claim bounded
+                          to repo-backed behavior.
+                        </p>
                       </div>
+                      <FileText className="h-5 w-5 text-cyan-300" />
+                    </div>
 
-                      <div className="mt-4 space-y-3 text-sm text-slate-300">
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Packet status</div>
-                          <div className="mt-1 text-xs text-slate-300">{packet.status_reason}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Supported claims</div>
-                          <ul className="mt-1 space-y-1 text-xs text-slate-300">
-                            {packet.supported_claims.map((claim) => (
-                              <li key={claim}>• {claim}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Claims to avoid</div>
-                          <ul className="mt-1 space-y-1 text-xs text-red-200">
-                            {packet.blocked_claims.map((claim) => (
-                              <li key={claim}>• {claim}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Owner-supplied items</div>
-                          <ul className="mt-1 space-y-1 text-xs text-slate-300">
-                            {packet.owner_supplied_items.map((item) => (
-                              <li key={item}>• {item}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-slate-500">Field-mapped packet</div>
-                          <ul className="mt-1 space-y-1 text-xs text-slate-300">
-                            {packet.field_mappings.map((field) => (
-                              <li key={`${packet.slug}-${field.label}`}>
-                                <span className="text-slate-100">{field.label}:</span> {field.value}
-                                <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
-                                  field.source === 'repo_backed'
-                                    ? 'bg-emerald-500/10 text-emerald-200'
-                                    : 'bg-amber-500/10 text-amber-200'
-                                }`}>
-                                  {field.source === 'repo_backed' ? 'repo-backed' : 'owner-supplied'}
-                                </span>
-                                {field.note && <div className="mt-1 text-[11px] text-slate-500">{field.note}</div>}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
-                        <button
-                          onClick={() => exportSubmissionPacket(packet)}
-                          className="rounded-lg bg-cyan-500/15 px-3 py-1.5 font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
-                        >
-                          Download {packet.submission_status === 'ready' ? packet.utility_name : `${packet.utility_name} draft`} packet
-                        </button>
-                        <Link
-                          to="/utility-security"
-                          className="text-cyan-300 transition-colors hover:text-cyan-200"
-                        >
-                          Utility security statement
-                        </Link>
+                    <div className="mt-4 rounded-lg border border-cyan-500/20 bg-cyan-950/30 p-4 text-xs text-cyan-100">
+                      <div className="font-medium text-cyan-50">Submission guardrail</div>
+                      <div className="mt-2 space-y-1">
+                        {ontarioSubmissionBundle.claim_guardrails.map((guardrail) => (
+                          <div key={guardrail}>• {guardrail}</div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                    <div
+                      className="mt-4 grid gap-3 xl:grid-cols-2"
+                      data-testid="utility-readiness-tracks"
+                    >
+                      {ontarioSubmissionBundle.readiness_tracks.map((track) => (
+                        <div
+                          key={track.label}
+                          className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium text-white">{track.label}</div>
+                              <div className="mt-1 text-xs text-slate-400">{track.summary}</div>
+                            </div>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                                track.status === 'ready'
+                                  ? 'bg-emerald-500/15 text-emerald-200'
+                                  : track.status === 'in_progress'
+                                    ? 'bg-sky-500/15 text-sky-200'
+                                    : 'bg-amber-500/15 text-amber-200'
+                              }`}
+                            >
+                              {track.status.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          {track.blockers.length > 0 && (
+                            <div className="mt-3">
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Active blockers
+                              </div>
+                              <ul className="mt-1 space-y-1 text-xs text-slate-300">
+                                {track.blockers.map((blocker) => (
+                                  <li key={`${track.label}-${blocker}`}>• {blocker}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {ontarioSubmissionBundle.warnings.length > 0 && (
+                      <div
+                        className="mt-4 rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-xs text-amber-100"
+                        data-testid="utility-submission-warning"
+                      >
+                        <div className="font-medium text-amber-50">Do not submit yet</div>
+                        <div className="mt-2 space-y-1">
+                          {ontarioSubmissionBundle.warnings.map((warning) => (
+                            <div key={warning}>• {warning}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                      {ontarioSubmissionBundle.packets.map((packet) => (
+                        <div
+                          key={packet.slug}
+                          className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+                          data-testid={`utility-submission-card-${packet.slug}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium text-white">{packet.utility_name}</div>
+                              <div className="mt-1 text-xs text-slate-400">
+                                {packet.target_outcome}
+                              </div>
+                            </div>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                                packet.submission_status === 'ready'
+                                  ? 'bg-emerald-500/15 text-emerald-200'
+                                  : 'bg-amber-500/15 text-amber-200'
+                              }`}
+                            >
+                              {packet.submission_status === 'ready'
+                                ? packet.phase === 'primary'
+                                  ? 'primary ready'
+                                  : 'reserve ready'
+                                : 'do not submit yet'}
+                            </span>
+                          </div>
+
+                          <div className="mt-4 space-y-3 text-sm text-slate-300">
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Packet status
+                              </div>
+                              <div className="mt-1 text-xs text-slate-300">
+                                {packet.status_reason}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Supported claims
+                              </div>
+                              <ul className="mt-1 space-y-1 text-xs text-slate-300">
+                                {packet.supported_claims.map((claim) => (
+                                  <li key={claim}>• {claim}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Claims to avoid
+                              </div>
+                              <ul className="mt-1 space-y-1 text-xs text-red-200">
+                                {packet.blocked_claims.map((claim) => (
+                                  <li key={claim}>• {claim}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Owner-supplied items
+                              </div>
+                              <ul className="mt-1 space-y-1 text-xs text-slate-300">
+                                {packet.owner_supplied_items.map((item) => (
+                                  <li key={item}>• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                                Field-mapped packet
+                              </div>
+                              <ul className="mt-1 space-y-1 text-xs text-slate-300">
+                                {packet.field_mappings.map((field) => (
+                                  <li key={`${packet.slug}-${field.label}`}>
+                                    <span className="text-slate-100">{field.label}:</span>{' '}
+                                    {field.value}
+                                    <span
+                                      className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${
+                                        field.source === 'repo_backed'
+                                          ? 'bg-emerald-500/10 text-emerald-200'
+                                          : 'bg-amber-500/10 text-amber-200'
+                                      }`}
+                                    >
+                                      {field.source === 'repo_backed'
+                                        ? 'repo-backed'
+                                        : 'owner-supplied'}
+                                    </span>
+                                    {field.note && (
+                                      <div className="mt-1 text-[11px] text-slate-500">
+                                        {field.note}
+                                      </div>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+                            <button
+                              onClick={() => exportSubmissionPacket(packet)}
+                              className="rounded-lg bg-cyan-500/15 px-3 py-1.5 font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
+                            >
+                              Download{' '}
+                              {packet.submission_status === 'ready'
+                                ? packet.utility_name
+                                : `${packet.utility_name} draft`}{' '}
+                              packet
+                            </button>
+                            <Link
+                              to="/utility-security"
+                              className="text-cyan-300 transition-colors hover:text-cyan-200"
+                            >
+                              Utility security statement
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-sm font-semibold text-white">
+                            Submission gate checklist
+                          </h3>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Repo-backed items can move onto burner staging hosts first, but London
+                            Hydro submission still requires canonical corporate hosts and the
+                            operator-owned evidence pack.
+                          </p>
+                        </div>
+                        <button
+                          onClick={exportDemoEvidencePack}
+                          className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-200 transition-colors hover:bg-emerald-500/25"
+                        >
+                          Download demo evidence pack
+                        </button>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        {ontarioSubmissionBundle.submission_gate.map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-lg border border-slate-700 bg-slate-950/50 p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2
+                                className={`h-4 w-4 ${
+                                  item.status === 'ready'
+                                    ? 'text-emerald-300'
+                                    : item.status === 'misconfigured'
+                                      ? 'text-red-300'
+                                      : 'text-amber-300'
+                                }`}
+                              />
+                              <div className="text-sm font-medium text-white">{item.label}</div>
+                            </div>
+                            <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
+                              {item.owner === 'repo' ? 'Repo-backed' : 'Owner-supplied'} •{' '}
+                              {item.status.replace(/_/g, ' ')}
+                            </div>
+                            <div className="mt-2 text-xs text-slate-400">{item.evidence}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-white">Submission gate checklist</h3>
-                      <p className="mt-1 text-xs text-slate-400">
-                        Repo-backed items can move onto burner staging hosts first, but London Hydro submission still requires canonical corporate hosts and the operator-owned evidence pack.
+                      <h2 className="text-lg font-semibold text-white">
+                        Secondary data connections
+                      </h2>
+                      <p className="mt-1 text-sm text-slate-400">
+                        Expose which data path is active now and which connector paths are staged
+                        for live utility integration.
                       </p>
                     </div>
-                    <button
-                      onClick={exportDemoEvidencePack}
-                      className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-200 transition-colors hover:bg-emerald-500/25"
-                    >
-                      Download demo evidence pack
-                    </button>
+                    <Link2 className="h-5 w-5 text-cyan-300" />
                   </div>
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    {ontarioSubmissionBundle.submission_gate.map((item) => (
-                      <div key={item.label} className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className={`h-4 w-4 ${
-                            item.status === 'ready'
-                              ? 'text-emerald-300'
-                              : item.status === 'misconfigured'
-                                ? 'text-red-300'
-                                : 'text-amber-300'
-                          }`} />
-                          <div className="text-sm font-medium text-white">{item.label}</div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {jurisdiction === 'Ontario' && (
+                      <button
+                        type="button"
+                        onClick={refreshUtilityHistory}
+                        disabled={isLoadingUtilityHistory}
+                        className="rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isLoadingUtilityHistory
+                          ? 'Refreshing history…'
+                          : 'Refresh owner-bound history'}
+                      </button>
+                    )}
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide ${
+                        isLiveConnected
+                          ? 'bg-emerald-500/15 text-emerald-200'
+                          : 'bg-amber-500/15 text-amber-200'
+                      }`}
+                    >
+                      {isLiveConnected ? 'Live-connected' : 'Upload-first / staged connectors'}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      Connector-backed status only becomes live when a non-fallback connector path
+                      has produced persisted normalized data.
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {connectionCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+                        data-testid={`utility-connection-card-${card.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-medium text-white">{card.title}</div>
+                            <div className="mt-1 text-xs text-slate-400">{card.description}</div>
+                            {card.utility_name && (
+                              <div className="mt-1 text-[11px] uppercase tracking-wide text-cyan-300">
+                                {card.utility_name}
+                              </div>
+                            )}
+                          </div>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
+                              card.status === 'active'
+                                ? 'bg-emerald-500/15 text-emerald-200'
+                                : card.status === 'failed' || card.status === 'revoked'
+                                  ? 'bg-red-500/15 text-red-200'
+                                  : card.status === 'pending_auth'
+                                    ? 'bg-sky-500/15 text-sky-200'
+                                    : 'bg-slate-700 text-slate-300'
+                            }`}
+                          >
+                            {card.status.replace(/_/g, ' ')}
+                          </span>
                         </div>
-                        <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
-                          {item.owner === 'repo' ? 'Repo-backed' : 'Owner-supplied'} • {item.status.replace(/_/g, ' ')}
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                          <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase tracking-wide">
+                            {card.source_kind.replace(/_/g, ' ')}
+                          </span>
+                          <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase tracking-wide">
+                            {card.freshness_status}
+                          </span>
+                          {card.is_fallback && (
+                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 uppercase tracking-wide text-amber-200">
+                              fallback
+                            </span>
+                          )}
                         </div>
-                        <div className="mt-2 text-xs text-slate-400">{item.evidence}</div>
+                        <div className="mt-3 text-xs text-slate-500">
+                          Last sync: {card.last_synced_at ?? 'none'}
+                        </div>
+                        {card.requested_data_categories &&
+                          card.requested_data_categories.length > 0 && (
+                            <div className="mt-2 text-xs text-slate-400">
+                              Requested categories: {card.requested_data_categories.join(', ')}
+                              {card.oauth_espi_scope ? ` • scope ${card.oauth_espi_scope}` : ''}
+                            </div>
+                          )}
+                        {card.notes && (
+                          <div className="mt-2 text-xs text-slate-400">{card.notes}</div>
+                        )}
+                        {card.error_message && (
+                          <div className="mt-2 text-xs text-red-200">{card.error_message}</div>
+                        )}
+                        {card.can_disconnect && (
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={() => handleDisconnectUtility(card)}
+                              className="rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/25"
+                            >
+                              Disconnect Utility
+                            </button>
+                            {card.awaiting_revocation_confirmation &&
+                              card.manage_connections_url && (
+                                <a
+                                  href={card.manage_connections_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
+                                >
+                                  Manage connections
+                                </a>
+                              )}
+                            {card.awaiting_revocation_confirmation && (
+                              <button
+                                onClick={() => handleConfirmDisconnect(card)}
+                                className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-200 transition-colors hover:bg-emerald-500/25"
+                              >
+                                Confirm disconnect
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            )}
 
-            <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Secondary data connections</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Expose which data path is active now and which connector paths are staged for live utility integration.
-                  </p>
-                </div>
-                <Link2 className="h-5 w-5 text-cyan-300" />
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide ${
-                  isLiveConnected
-                    ? 'bg-emerald-500/15 text-emerald-200'
-                    : 'bg-amber-500/15 text-amber-200'
-                }`}>
-                  {isLiveConnected ? 'Live-connected' : 'Upload-first / staged connectors'}
-                </span>
-                <span className="text-xs text-slate-500">
-                  Connector-backed status only becomes live when a non-fallback connector path has produced persisted normalized data.
-                </span>
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {connectionCards.map((card) => (
-                  <div key={card.id} className="rounded-lg border border-slate-700 bg-slate-900/60 p-4" data-testid={`utility-connection-card-${card.id}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-medium text-white">{card.title}</div>
-                        <div className="mt-1 text-xs text-slate-400">{card.description}</div>
-                        {card.utility_name && (
-                          <div className="mt-1 text-[11px] uppercase tracking-wide text-cyan-300">{card.utility_name}</div>
-                        )}
-                      </div>
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
-                        card.status === 'active'
-                          ? 'bg-emerald-500/15 text-emerald-200'
-                          : card.status === 'failed' || card.status === 'revoked'
-                            ? 'bg-red-500/15 text-red-200'
-                            : card.status === 'pending_auth'
-                              ? 'bg-sky-500/15 text-sky-200'
-                              : 'bg-slate-700 text-slate-300'
-                      }`}>
-                        {card.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase tracking-wide">
-                        {card.source_kind.replace(/_/g, ' ')}
-                      </span>
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase tracking-wide">
-                        {card.freshness_status}
-                      </span>
-                      {card.is_fallback && (
-                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 uppercase tracking-wide text-amber-200">
-                          fallback
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-3 text-xs text-slate-500">
-                      Last sync: {card.last_synced_at ?? 'none'}
-                    </div>
-                    {card.requested_data_categories && card.requested_data_categories.length > 0 && (
-                      <div className="mt-2 text-xs text-slate-400">
-                        Requested categories: {card.requested_data_categories.join(', ')}
-                        {card.oauth_espi_scope ? ` • scope ${card.oauth_espi_scope}` : ''}
-                      </div>
-                    )}
-                    {card.notes && (
-                      <div className="mt-2 text-xs text-slate-400">{card.notes}</div>
-                    )}
-                    {card.error_message && (
-                      <div className="mt-2 text-xs text-red-200">{card.error_message}</div>
-                    )}
-                    {card.can_disconnect && (
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={() => handleDisconnectUtility(card)}
-                          className="rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/25"
-                        >
-                          Disconnect Utility
-                        </button>
-                        {card.awaiting_revocation_confirmation && card.manage_connections_url && (
-                          <a
-                            href={card.manage_connections_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
-                          >
-                            Manage connections
-                          </a>
-                        )}
-                        {card.awaiting_revocation_confirmation && (
-                          <button
-                            onClick={() => handleConfirmDisconnect(card)}
-                            className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-200 transition-colors hover:bg-emerald-500/25"
-                          >
-                            Confirm disconnect
-                          </button>
-                        )}
-                      </div>
-                    )}
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => loadUtilityBatchStarter(jurisdiction)}
+                      className="rounded-lg bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200 transition-colors hover:bg-emerald-500/25"
+                    >
+                      Promote batch starter
+                    </button>
+                    <button
+                      onClick={loadSettlementStarter}
+                      className="rounded-lg bg-amber-500/15 px-4 py-2 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-500/25"
+                    >
+                      Load Alberta settlement starter
+                    </button>
+                    <button
+                      onClick={loadGreenButtonStarter}
+                      className="rounded-lg bg-sky-500/15 px-4 py-2 text-sm font-medium text-sky-200 transition-colors hover:bg-sky-500/25"
+                    >
+                      Load Ontario Green Button starter
+                    </button>
                   </div>
-                ))}
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  onClick={() => loadUtilityBatchStarter(jurisdiction)}
-                  className="rounded-lg bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200 transition-colors hover:bg-emerald-500/25"
-                >
-                  Promote batch starter
-                </button>
-                <button
-                  onClick={loadSettlementStarter}
-                  className="rounded-lg bg-amber-500/15 px-4 py-2 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-500/25"
-                >
-                  Load Alberta settlement starter
-                </button>
-                <button
-                  onClick={loadGreenButtonStarter}
-                  className="rounded-lg bg-sky-500/15 px-4 py-2 text-sm font-medium text-sky-200 transition-colors hover:bg-sky-500/25"
-                >
-                  Load Ontario Green Button starter
-                </button>
-              </div>
-            </div>
+                </div>
               </div>
             </details>
 
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">2. Import utility load history</h2>
+                  <h2 className="text-lg font-semibold text-white">
+                    2. Import utility load history
+                  </h2>
                   <p className="mt-1 text-sm text-slate-400">
                     Local-first CSV import for feeder, substation, or system load history.
                   </p>
@@ -1446,11 +1812,20 @@ const UtilityDemandForecastPage: React.FC = () => {
                   <div>
                     <div className="font-medium text-white">Upload historical load CSV</div>
                     <div className="mt-1 text-xs text-slate-400">
-                      Required: timestamp and demand. Optional: geography, customer class, weather zone, temperature, net/gross load, source system, feeder, and substation identifiers.
+                      Required: timestamp and demand. Optional: geography, customer class, weather
+                      zone, temperature, net/gross load, source system, feeder, and substation
+                      identifiers.
                     </div>
                   </div>
-                  <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileUpload} />
-                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">Select CSV</span>
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">
+                    Select CSV
+                  </span>
                 </label>
               </div>
 
@@ -1471,28 +1846,36 @@ const UtilityDemandForecastPage: React.FC = () => {
                   className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-500/50"
                 >
                   <div className="font-medium">Download hourly starter CSV</div>
-                  <div className="mt-1 text-xs text-slate-500">For interval-level feeder or substation history</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    For interval-level feeder or substation history
+                  </div>
                 </button>
                 <button
                   onClick={() => exportStarterTemplate('monthly')}
                   className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-500/50"
                 >
                   <div className="font-medium">Download monthly starter CSV</div>
-                  <div className="mt-1 text-xs text-slate-500">For planning-timescale utility history</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    For planning-timescale utility history
+                  </div>
                 </button>
                 <button
                   onClick={exportOntarioPublicSample}
                   className="rounded-lg border border-blue-500/40 bg-blue-950/30 px-4 py-3 text-left text-sm text-blue-100 transition-colors hover:border-blue-300/70"
                 >
                   <div className="font-medium">Download Ontario public sample CSV</div>
-                  <div className="mt-1 text-xs text-blue-200/70">IESO/APO-style system workflow proof, not customer LDC history</div>
+                  <div className="mt-1 text-xs text-blue-200/70">
+                    IESO/APO-style system workflow proof, not customer LDC history
+                  </div>
                 </button>
                 <button
                   onClick={exportOntarioPublicSampleManifest}
                   className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-blue-500/50"
                 >
                   <div className="font-medium">Download public sample manifest</div>
-                  <div className="mt-1 text-xs text-slate-500">Source URL, generated date, scope, and disclaimer</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    Source URL, generated date, scope, and disclaimer
+                  </div>
                 </button>
               </div>
             </div>
@@ -1502,7 +1885,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-semibold text-white">3. Live public context</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Promote this route beyond upload-only planning with weather and market context plus explicit freshness and fallback labels.
+                    Promote this route beyond upload-only planning with weather and market context
+                    plus explicit freshness and fallback labels.
                   </p>
                 </div>
                 <Radio className="h-5 w-5 text-sky-300" />
@@ -1516,20 +1900,24 @@ const UtilityDemandForecastPage: React.FC = () => {
                   {isLoadingContext ? 'Refreshing context...' : 'Refresh public context'}
                 </button>
                 <span className="text-xs text-slate-500">
-                  Weather source, market context, and fallback honesty are carried into the forecast package.
+                  Weather source, market context, and fallback honesty are carried into the forecast
+                  package.
                 </span>
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Weather context</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">
+                    Weather context
+                  </div>
                   <div className="mt-2 text-sm text-white">
                     {publicContext?.weather_observation
                       ? `${publicContext.weather_observation.temperature_c?.toFixed(1) ?? 'NA'}°C from ${publicContext.weather_observation.source}`
                       : 'Weather context unavailable in the current environment'}
                   </div>
                   <div className="mt-1 text-xs text-slate-400">
-                    {publicContext?.weather_observation?.observed_at ?? 'No observed weather timestamp'}
+                    {publicContext?.weather_observation?.observed_at ??
+                      'No observed weather timestamp'}
                   </div>
                 </div>
                 <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
@@ -1538,20 +1926,27 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
                   <div className="mt-2 text-sm text-white">
                     {jurisdiction === 'Alberta'
-                      ? publicContext?.alberta_pool_price_cad_per_mwh !== null && publicContext?.alberta_pool_price_cad_per_mwh !== undefined
+                      ? publicContext?.alberta_pool_price_cad_per_mwh !== null &&
+                        publicContext?.alberta_pool_price_cad_per_mwh !== undefined
                         ? `${publicContext.alberta_pool_price_cad_per_mwh.toFixed(2)} CAD/MWh`
                         : 'AESO pool price unavailable'
                       : 'Ontario context currently uses the public-context fallback contract'}
                   </div>
                   <div className="mt-1 text-xs text-slate-400">
-                    {publicContext?.live_surfaces.find((surface) => surface.source_kind === 'public_enrichment')?.freshness_status ?? 'unknown'} freshness
+                    {publicContext?.live_surfaces.find(
+                      (surface) => surface.source_kind === 'public_enrichment',
+                    )?.freshness_status ?? 'unknown'}{' '}
+                    freshness
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 space-y-2">
                 {(publicContext?.live_surfaces ?? []).map((surface) => (
-                  <div key={`${surface.source}-${surface.observed_at ?? 'none'}`} className="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                  <div
+                    key={`${surface.source}-${surface.observed_at ?? 'none'}`}
+                    className="rounded-lg border border-slate-700 bg-slate-900/50 p-3"
+                  >
                     <div className="flex flex-wrap items-center gap-2 text-sm text-white">
                       <span>{surface.source}</span>
                       <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
@@ -1584,7 +1979,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-semibold text-white">4. Set future expectations</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Build low, base, and high planning cases using committed load, electrification, DER, demand response, BYOP, and stress overlays.
+                    Build low, base, and high planning cases using committed load, electrification,
+                    DER, demand response, BYOP, and stress overlays.
                   </p>
                 </div>
                 <TrendingUp className="h-5 w-5 text-sky-300" />
@@ -1594,7 +1990,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <Field label="Weather case">
                   <select
                     value={draftScenario.weather_case}
-                    onChange={(event) => handleScenarioField('weather_case', event.target.value as UtilityPlanningScenario['weather_case'])}
+                    onChange={(event) =>
+                      handleScenarioField(
+                        'weather_case',
+                        event.target.value as UtilityPlanningScenario['weather_case'],
+                      )
+                    }
                     className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
                   >
                     <option value="median">Median weather</option>
@@ -1604,7 +2005,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <Field label="Stress test mode">
                   <select
                     value={draftScenario.stress_test_mode ?? 'none'}
-                    onChange={(event) => handleScenarioField('stress_test_mode', event.target.value as UtilityPlanningScenario['stress_test_mode'])}
+                    onChange={(event) =>
+                      handleScenarioField(
+                        'stress_test_mode',
+                        event.target.value as UtilityPlanningScenario['stress_test_mode'],
+                      )
+                    }
                     className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
                   >
                     <option value="none">No stress test</option>
@@ -1614,31 +2020,58 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </select>
                 </Field>
                 <Field label="Annual load growth (%)">
-                  <NumberInput value={draftScenario.annual_load_growth_pct} onChange={(value) => handleScenarioField('annual_load_growth_pct', value)} />
+                  <NumberInput
+                    value={draftScenario.annual_load_growth_pct}
+                    onChange={(value) => handleScenarioField('annual_load_growth_pct', value)}
+                  />
                 </Field>
                 <Field label="Capacity buffer (%)">
-                  <NumberInput value={draftScenario.capacity_buffer_pct} onChange={(value) => handleScenarioField('capacity_buffer_pct', value)} />
+                  <NumberInput
+                    value={draftScenario.capacity_buffer_pct}
+                    onChange={(value) => handleScenarioField('capacity_buffer_pct', value)}
+                  />
                 </Field>
                 <Field label="Committed load (MW)">
-                  <NumberInput value={draftScenario.committed_load_mw} onChange={(value) => handleScenarioField('committed_load_mw', value)} />
+                  <NumberInput
+                    value={draftScenario.committed_load_mw}
+                    onChange={(value) => handleScenarioField('committed_load_mw', value)}
+                  />
                 </Field>
                 <Field label="EV growth (MW)">
-                  <NumberInput value={draftScenario.ev_growth_mw} onChange={(value) => handleScenarioField('ev_growth_mw', value)} />
+                  <NumberInput
+                    value={draftScenario.ev_growth_mw}
+                    onChange={(value) => handleScenarioField('ev_growth_mw', value)}
+                  />
                 </Field>
                 <Field label="Heat-pump growth (MW)">
-                  <NumberInput value={draftScenario.heat_pump_growth_mw} onChange={(value) => handleScenarioField('heat_pump_growth_mw', value)} />
+                  <NumberInput
+                    value={draftScenario.heat_pump_growth_mw}
+                    onChange={(value) => handleScenarioField('heat_pump_growth_mw', value)}
+                  />
                 </Field>
                 <Field label="DER offset (MW)">
-                  <NumberInput value={draftScenario.der_offset_mw} onChange={(value) => handleScenarioField('der_offset_mw', value)} />
+                  <NumberInput
+                    value={draftScenario.der_offset_mw}
+                    onChange={(value) => handleScenarioField('der_offset_mw', value)}
+                  />
                 </Field>
                 <Field label="Demand-response reduction (MW)">
-                  <NumberInput value={draftScenario.demand_response_reduction_mw} onChange={(value) => handleScenarioField('demand_response_reduction_mw', value)} />
+                  <NumberInput
+                    value={draftScenario.demand_response_reduction_mw}
+                    onChange={(value) => handleScenarioField('demand_response_reduction_mw', value)}
+                  />
                 </Field>
                 <Field label="Demand-response shift (%)">
-                  <NumberInput value={draftScenario.demand_response_shift_pct} onChange={(value) => handleScenarioField('demand_response_shift_pct', value)} />
+                  <NumberInput
+                    value={draftScenario.demand_response_shift_pct}
+                    onChange={(value) => handleScenarioField('demand_response_shift_pct', value)}
+                  />
                 </Field>
                 <Field label="Hosting capacity limit (MW)">
-                  <NumberInput value={draftScenario.hosting_capacity_limit_mw ?? 0} onChange={(value) => handleScenarioField('hosting_capacity_limit_mw', value)} />
+                  <NumberInput
+                    value={draftScenario.hosting_capacity_limit_mw ?? 0}
+                    onChange={(value) => handleScenarioField('hosting_capacity_limit_mw', value)}
+                  />
                 </Field>
                 <Field label="Large point-load geography">
                   <input
@@ -1649,10 +2082,16 @@ const UtilityDemandForecastPage: React.FC = () => {
                   />
                 </Field>
                 <Field label="Large point-load (MW)">
-                  <NumberInput value={draftScenario.large_point_loads?.[0]?.mw ?? 0} onChange={(value) => updatePointLoad('mw', value)} />
+                  <NumberInput
+                    value={draftScenario.large_point_loads?.[0]?.mw ?? 0}
+                    onChange={(value) => updatePointLoad('mw', value)}
+                  />
                 </Field>
                 <Field label="Point-load load factor (%)">
-                  <NumberInput value={draftScenario.large_point_loads?.[0]?.load_factor_pct ?? 72} onChange={(value) => updatePointLoad('load_factor_pct', value)} />
+                  <NumberInput
+                    value={draftScenario.large_point_loads?.[0]?.load_factor_pct ?? 72}
+                    onChange={(value) => updatePointLoad('load_factor_pct', value)}
+                  />
                 </Field>
                 <Field label="Industrial opt-out geography">
                   <input
@@ -1663,22 +2102,40 @@ const UtilityDemandForecastPage: React.FC = () => {
                   />
                 </Field>
                 <Field label="Industrial opt-out (MW)">
-                  <NumberInput value={draftScenario.industrial_opt_outs?.[0]?.mw ?? 0} onChange={(value) => updateIndustrialOptOut('mw', value)} />
+                  <NumberInput
+                    value={draftScenario.industrial_opt_outs?.[0]?.mw ?? 0}
+                    onChange={(value) => updateIndustrialOptOut('mw', value)}
+                  />
                 </Field>
                 <Field label="ToU shift (%)">
-                  <NumberInput value={draftScenario.tou_shift_rules?.[0]?.shift_pct ?? 0} onChange={(value) => updateTouShift('shift_pct', value)} />
+                  <NumberInput
+                    value={draftScenario.tou_shift_rules?.[0]?.shift_pct ?? 0}
+                    onChange={(value) => updateTouShift('shift_pct', value)}
+                  />
                 </Field>
                 <Field label="ToU from hour start">
-                  <NumberInput value={draftScenario.tou_shift_rules?.[0]?.from_hour_start ?? 17} onChange={(value) => updateTouShift('from_hour_start', Math.round(value))} />
+                  <NumberInput
+                    value={draftScenario.tou_shift_rules?.[0]?.from_hour_start ?? 17}
+                    onChange={(value) => updateTouShift('from_hour_start', Math.round(value))}
+                  />
                 </Field>
                 <Field label="ToU from hour end">
-                  <NumberInput value={draftScenario.tou_shift_rules?.[0]?.from_hour_end ?? 21} onChange={(value) => updateTouShift('from_hour_end', Math.round(value))} />
+                  <NumberInput
+                    value={draftScenario.tou_shift_rules?.[0]?.from_hour_end ?? 21}
+                    onChange={(value) => updateTouShift('from_hour_end', Math.round(value))}
+                  />
                 </Field>
                 <Field label="ToU to hour start">
-                  <NumberInput value={draftScenario.tou_shift_rules?.[0]?.to_hour_start ?? 0} onChange={(value) => updateTouShift('to_hour_start', Math.round(value))} />
+                  <NumberInput
+                    value={draftScenario.tou_shift_rules?.[0]?.to_hour_start ?? 0}
+                    onChange={(value) => updateTouShift('to_hour_start', Math.round(value))}
+                  />
                 </Field>
                 <Field label="ToU to hour end">
-                  <NumberInput value={draftScenario.tou_shift_rules?.[0]?.to_hour_end ?? 5} onChange={(value) => updateTouShift('to_hour_end', Math.round(value))} />
+                  <NumberInput
+                    value={draftScenario.tou_shift_rules?.[0]?.to_hour_end ?? 5}
+                    onChange={(value) => updateTouShift('to_hour_end', Math.round(value))}
+                  />
                 </Field>
               </div>
 
@@ -1696,23 +2153,56 @@ const UtilityDemandForecastPage: React.FC = () => {
             {forecastState.forecastPackage && (
               <>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                  <MetricCard label="Intervals" value={forecastState.forecastPackage.summary.interval_count.toLocaleString()} sub={`${activeGranularity} history`} icon={<Calendar className="h-5 w-5 text-cyan-300" />} />
-                  <MetricCard label="Peak baseline" value={`${forecastState.forecastPackage.summary.baseline_peak_mw.toFixed(1)} MW`} sub={`${forecastState.forecastPackage.summary.geography_count} geographies`} icon={<Zap className="h-5 w-5 text-amber-300" />} />
-                  <MetricCard label="Annual energy" value={`${forecastState.forecastPackage.summary.baseline_energy_gwh.toFixed(1)} GWh`} sub={`${forecastState.forecastPackage.summary.customer_classes.length} customer classes`} icon={<BarChart3 className="h-5 w-5 text-emerald-300" />} />
-                  <MetricCard label="Benchmark skill" value={`${forecastState.forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`} sub="vs persistence" icon={<TrendingUp className="h-5 w-5 text-sky-300" />} />
-                  <MetricCard label="Reliability proxy" value={`${forecastState.forecastPackage.reliability_proxy.current_score.toFixed(1)}`} sub={`quality flags: ${forecastState.forecastPackage.input_provenance_summary.total_quality_flags}`} icon={<Shield className="h-5 w-5 text-violet-300" />} />
+                  <MetricCard
+                    label="Intervals"
+                    value={forecastState.forecastPackage.summary.interval_count.toLocaleString()}
+                    sub={`${activeGranularity} history`}
+                    icon={<Calendar className="h-5 w-5 text-cyan-300" />}
+                  />
+                  <MetricCard
+                    label="Peak baseline"
+                    value={`${forecastState.forecastPackage.summary.baseline_peak_mw.toFixed(1)} MW`}
+                    sub={`${forecastState.forecastPackage.summary.geography_count} geographies`}
+                    icon={<Zap className="h-5 w-5 text-amber-300" />}
+                  />
+                  <MetricCard
+                    label="Annual energy"
+                    value={`${forecastState.forecastPackage.summary.baseline_energy_gwh.toFixed(1)} GWh`}
+                    sub={`${forecastState.forecastPackage.summary.customer_classes.length} customer classes`}
+                    icon={<BarChart3 className="h-5 w-5 text-emerald-300" />}
+                  />
+                  <MetricCard
+                    label="Benchmark skill"
+                    value={`${forecastState.forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`}
+                    sub="vs persistence"
+                    icon={<TrendingUp className="h-5 w-5 text-sky-300" />}
+                  />
+                  <MetricCard
+                    label="Reliability proxy"
+                    value={`${forecastState.forecastPackage.reliability_proxy.current_score.toFixed(1)}`}
+                    sub={`quality flags: ${forecastState.forecastPackage.input_provenance_summary.total_quality_flags}`}
+                    icon={<Shield className="h-5 w-5 text-violet-300" />}
+                  />
                 </div>
 
-                <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-forecast-benchmark-card">
+                <div
+                  className="rounded-xl border border-slate-700 bg-slate-800/70 p-5"
+                  data-testid="utility-forecast-benchmark-card"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <h2 className="text-lg font-semibold text-white">Benchmark proof pack</h2>
                       <p className="mt-1 text-sm text-slate-400">
-                        Every utility run shows the baseline comparison, provenance, live-surface truth contract, and assumption pack.
+                        Every utility run shows the baseline comparison, provenance, live-surface
+                        truth contract, and assumption pack.
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <ProvenanceBadge type={forecastState.forecastPackage.provenance.type} source={forecastState.forecastPackage.source_label} compact />
+                      <ProvenanceBadge
+                        type={forecastState.forecastPackage.provenance.type}
+                        source={forecastState.forecastPackage.source_label}
+                        compact
+                      />
                       <span className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
                         Weather: {forecastState.forecastPackage.scenario.weather_case}
                       </span>
@@ -1720,15 +2210,69 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    <BenchmarkStat label="MAE" value={forecastState.forecastPackage.benchmark.mae} baseline={forecastState.forecastPackage.benchmark.persistence_mae} />
-                    <BenchmarkStat label="MAPE" value={forecastState.forecastPackage.benchmark.mape} baseline={forecastState.forecastPackage.benchmark.persistence_mape} suffix="%" />
-                    <BenchmarkStat label="RMSE" value={forecastState.forecastPackage.benchmark.rmse} baseline={forecastState.forecastPackage.benchmark.persistence_rmse} />
-                    <BenchmarkStat label="vs persistence" value={forecastState.forecastPackage.benchmark.skill_score_vs_persistence} baseline={0} suffix="%" />
-                    <BenchmarkStat label="vs seasonal naive" value={forecastState.forecastPackage.benchmark.skill_score_vs_seasonal} baseline={0} suffix="%" />
-                    <BenchmarkStat label="Sample size" value={forecastState.forecastPackage.benchmark.sample_size} baseline={0} baselineLabel="holdout rows" integer />
-                    <BenchmarkStat label="Rolling splits" value={forecastState.forecastPackage.evidence_report.rolling_origin_splits.length} baseline={3} baselineLabel="target splits" integer />
-                    <BenchmarkStat label="Interval coverage" value={forecastState.forecastPackage.evidence_report.conformal_interval_coverage_pct} baseline={90} suffix="%" baselineLabel="coverage target" />
-                    <BenchmarkStat label="Hierarchy error" value={forecastState.forecastPackage.evidence_report.hierarchy_reconciliation.max_reconciliation_error_mw} baseline={0} baselineLabel="MW" />
+                    <BenchmarkStat
+                      label="MAE"
+                      value={forecastState.forecastPackage.benchmark.mae}
+                      baseline={forecastState.forecastPackage.benchmark.persistence_mae}
+                    />
+                    <BenchmarkStat
+                      label="MAPE"
+                      value={forecastState.forecastPackage.benchmark.mape}
+                      baseline={forecastState.forecastPackage.benchmark.persistence_mape}
+                      suffix="%"
+                    />
+                    <BenchmarkStat
+                      label="RMSE"
+                      value={forecastState.forecastPackage.benchmark.rmse}
+                      baseline={forecastState.forecastPackage.benchmark.persistence_rmse}
+                    />
+                    <BenchmarkStat
+                      label="vs persistence"
+                      value={forecastState.forecastPackage.benchmark.skill_score_vs_persistence}
+                      baseline={0}
+                      suffix="%"
+                    />
+                    <BenchmarkStat
+                      label="vs seasonal naive"
+                      value={forecastState.forecastPackage.benchmark.skill_score_vs_seasonal}
+                      baseline={0}
+                      suffix="%"
+                    />
+                    <BenchmarkStat
+                      label="Sample size"
+                      value={forecastState.forecastPackage.benchmark.sample_size}
+                      baseline={0}
+                      baselineLabel="holdout rows"
+                      integer
+                    />
+                    <BenchmarkStat
+                      label="Rolling splits"
+                      value={
+                        forecastState.forecastPackage.evidence_report.rolling_origin_splits.length
+                      }
+                      baseline={3}
+                      baselineLabel="target splits"
+                      integer
+                    />
+                    <BenchmarkStat
+                      label="Interval coverage"
+                      value={
+                        forecastState.forecastPackage.evidence_report
+                          .conformal_interval_coverage_pct
+                      }
+                      baseline={90}
+                      suffix="%"
+                      baselineLabel="coverage target"
+                    />
+                    <BenchmarkStat
+                      label="Hierarchy error"
+                      value={
+                        forecastState.forecastPackage.evidence_report.hierarchy_reconciliation
+                          .max_reconciliation_error_mw
+                      }
+                      baseline={0}
+                      baselineLabel="MW"
+                    />
                   </div>
 
                   <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
@@ -1747,31 +2291,42 @@ const UtilityDemandForecastPage: React.FC = () => {
                     <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
                       <div className="font-medium text-white">Live surface truth contract</div>
                       <div className="mt-2 text-xs text-slate-400">
-                        Assumption pack version: {forecastState.forecastPackage.input_provenance_summary.assumption_pack_version}
+                        Assumption pack version:{' '}
+                        {
+                          forecastState.forecastPackage.input_provenance_summary
+                            .assumption_pack_version
+                        }
                       </div>
                       <div className="mt-3 space-y-2">
-                        {forecastState.forecastPackage.input_provenance_summary.live_surfaces.map((surface) => (
-                          <div key={`${surface.source}-${surface.observed_at ?? 'none'}`} className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-white">
-                              <span>{surface.source}</span>
-                              <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
-                                {surface.freshness_status}
-                              </span>
-                              <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
-                                {surface.source_kind.replace(/_/g, ' ')}
-                              </span>
+                        {forecastState.forecastPackage.input_provenance_summary.live_surfaces.map(
+                          (surface) => (
+                            <div
+                              key={`${surface.source}-${surface.observed_at ?? 'none'}`}
+                              className="rounded-lg border border-slate-700 bg-slate-950/60 p-3"
+                            >
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-white">
+                                <span>{surface.source}</span>
+                                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                                  {surface.freshness_status}
+                                </span>
+                                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                                  {surface.source_kind.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-xs text-slate-400">
+                                observed_at: {surface.observed_at ?? 'none'}
+                              </div>
+                              <div className="mt-1 text-xs text-slate-400">
+                                Fallback: {surface.is_fallback ? 'yes' : 'no'}
+                              </div>
+                              {surface.quality_flags.length > 0 && (
+                                <div className="mt-2 text-xs text-amber-200">
+                                  {surface.quality_flags.join(' • ')}
+                                </div>
+                              )}
                             </div>
-                            <div className="mt-1 text-xs text-slate-400">
-                              observed_at: {surface.observed_at ?? 'none'}
-                            </div>
-                            <div className="mt-1 text-xs text-slate-400">
-                              Fallback: {surface.is_fallback ? 'yes' : 'no'}
-                            </div>
-                            {surface.quality_flags.length > 0 && (
-                              <div className="mt-2 text-xs text-amber-200">{surface.quality_flags.join(' • ')}</div>
-                            )}
-                          </div>
-                        ))}
+                          ),
+                        )}
                       </div>
                     </div>
 
@@ -1780,29 +2335,51 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <div className="mt-3 space-y-2 text-sm text-slate-300">
                         <div className="flex items-center justify-between">
                           <span>Source kind</span>
-                          <span className="text-cyan-300">{forecastState.forecastPackage.input_provenance_summary.source_kind.replace(/_/g, ' ')}</span>
+                          <span className="text-cyan-300">
+                            {forecastState.forecastPackage.input_provenance_summary.source_kind.replace(
+                              /_/g,
+                              ' ',
+                            )}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Gross reconstitution</span>
                           <span className="text-cyan-300">
-                            {forecastState.forecastPackage.input_provenance_summary.gross_reconstitution_applied ? 'applied' : 'not applied'}
+                            {forecastState.forecastPackage.input_provenance_summary
+                              .gross_reconstitution_applied
+                              ? 'applied'
+                              : 'not applied'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Total quality flags</span>
-                          <span className="text-cyan-300">{forecastState.forecastPackage.input_provenance_summary.total_quality_flags}</span>
+                          <span className="text-cyan-300">
+                            {
+                              forecastState.forecastPackage.input_provenance_summary
+                                .total_quality_flags
+                            }
+                          </span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                           <span>Source manifest</span>
-                          <span className="text-right text-cyan-300">{forecastState.forecastPackage.source_manifest.id}</span>
+                          <span className="text-right text-cyan-300">
+                            {forecastState.forecastPackage.source_manifest.id}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                           <span>Source hash</span>
-                          <span className="text-right text-cyan-300">{forecastState.forecastPackage.source_manifest.hash}</span>
+                          <span className="text-right text-cyan-300">
+                            {forecastState.forecastPackage.source_manifest.hash}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                           <span>Champion model</span>
-                          <span className="text-right text-cyan-300">{forecastState.forecastPackage.evidence_report.champion_challenger.champion.replace(/_/g, ' ')}</span>
+                          <span className="text-right text-cyan-300">
+                            {forecastState.forecastPackage.evidence_report.champion_challenger.champion.replace(
+                              /_/g,
+                              ' ',
+                            )}
+                          </span>
                         </div>
                       </div>
                       <div className="mt-3 space-y-2 text-xs text-slate-400">
@@ -1814,8 +2391,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                               <span>{entry.count}</span>
                             </div>
                           ))}
-                        {forecastState.forecastPackage.input_provenance_summary.quality_counts.every((entry) => entry.count === 0) && (
-                          <div>No quality flags were detected in the current normalized dataset.</div>
+                        {forecastState.forecastPackage.input_provenance_summary.quality_counts.every(
+                          (entry) => entry.count === 0,
+                        ) && (
+                          <div>
+                            No quality flags were detected in the current normalized dataset.
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1827,7 +2408,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                     <div>
                       <h2 className="text-lg font-semibold text-white">Scenario matrix</h2>
                       <p className="mt-1 text-sm text-slate-400">
-                        Low, base, and high cases share one statistical engine and export as a single planning matrix for regulators.
+                        Low, base, and high cases share one statistical engine and export as a
+                        single planning matrix for regulators.
                       </p>
                     </div>
                     <Map className="h-5 w-5 text-cyan-300" />
@@ -1839,11 +2421,31 @@ const UtilityDemandForecastPage: React.FC = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="year" stroke="#94a3b8" />
                         <YAxis stroke="#94a3b8" />
-                        <Tooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155' }} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#020617', borderColor: '#334155' }}
+                        />
                         <Legend />
-                        <Line type="monotone" dataKey="low" stroke="#38bdf8" strokeWidth={2} dot={false} />
-                        <Line type="monotone" dataKey="expected" stroke="#10b981" strokeWidth={3} dot={false} />
-                        <Line type="monotone" dataKey="high" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                        <Line
+                          type="monotone"
+                          dataKey="low"
+                          stroke="#38bdf8"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="expected"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          dot={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="high"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={false}
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -1864,11 +2466,21 @@ const UtilityDemandForecastPage: React.FC = () => {
                         {highlightedRows.map((row) => (
                           <tr key={row.year}>
                             <td className="px-3 py-3 font-medium">{row.year} year</td>
-                            <td className="px-3 py-3 text-right text-cyan-300">{row.low?.peak_demand_mw.toFixed(1)}</td>
-                            <td className="px-3 py-3 text-right text-emerald-300">{row.expected?.peak_demand_mw.toFixed(1)}</td>
-                            <td className="px-3 py-3 text-right text-amber-300">{row.high?.peak_demand_mw.toFixed(1)}</td>
-                            <td className="px-3 py-3 text-right">{row.expected?.annual_energy_gwh.toFixed(1)}</td>
-                            <td className="px-3 py-3 text-right">{row.expected?.utilization_pct.toFixed(1)}%</td>
+                            <td className="px-3 py-3 text-right text-cyan-300">
+                              {row.low?.peak_demand_mw.toFixed(1)}
+                            </td>
+                            <td className="px-3 py-3 text-right text-emerald-300">
+                              {row.expected?.peak_demand_mw.toFixed(1)}
+                            </td>
+                            <td className="px-3 py-3 text-right text-amber-300">
+                              {row.high?.peak_demand_mw.toFixed(1)}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              {row.expected?.annual_energy_gwh.toFixed(1)}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              {row.expected?.utilization_pct.toFixed(1)}%
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1882,17 +2494,38 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <div>
                         <h2 className="text-lg font-semibold text-white">Reliability proxy</h2>
                         <p className="mt-1 text-sm text-slate-400">
-                          OEB-style reliability and capacity-strain indicators tied directly to the current planning horizon.
+                          OEB-style reliability and capacity-strain indicators tied directly to the
+                          current planning horizon.
                         </p>
                       </div>
                       <Shield className="h-5 w-5 text-violet-300" />
                     </div>
 
                     <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      <BenchmarkStat label="Current score" value={forecastState.forecastPackage.reliability_proxy.current_score} baseline={80} baselineLabel="watch threshold" />
-                      <BenchmarkStat label="Selected horizon" value={selectedReliability?.score ?? 0} baseline={80} baselineLabel="watch threshold" />
-                      <BenchmarkStat label="Reserve headroom" value={selectedReliability?.reserve_headroom_mw ?? 0} baseline={0} suffix=" MW" />
-                      <BenchmarkStat label="Weather stress" value={selectedReliability?.weather_stress_pct ?? 0} baseline={0} suffix="%" />
+                      <BenchmarkStat
+                        label="Current score"
+                        value={forecastState.forecastPackage.reliability_proxy.current_score}
+                        baseline={80}
+                        baselineLabel="watch threshold"
+                      />
+                      <BenchmarkStat
+                        label="Selected horizon"
+                        value={selectedReliability?.score ?? 0}
+                        baseline={80}
+                        baselineLabel="watch threshold"
+                      />
+                      <BenchmarkStat
+                        label="Reserve headroom"
+                        value={selectedReliability?.reserve_headroom_mw ?? 0}
+                        baseline={0}
+                        suffix=" MW"
+                      />
+                      <BenchmarkStat
+                        label="Weather stress"
+                        value={selectedReliability?.weather_stress_pct ?? 0}
+                        baseline={0}
+                        suffix="%"
+                      />
                     </div>
 
                     <div className="mt-4 overflow-x-auto">
@@ -1908,14 +2541,22 @@ const UtilityDemandForecastPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-800 text-slate-200">
                           {forecastState.forecastPackage.reliability_proxy.horizon_scores
-                            .filter((row) => forecastState.forecastPackage.highlighted_years.includes(row.horizon_year))
+                            .filter((row) =>
+                              forecastState.forecastPackage.highlighted_years.includes(
+                                row.horizon_year,
+                              ),
+                            )
                             .map((row) => (
                               <tr key={row.horizon_year}>
                                 <td className="px-3 py-3">{row.horizon_year} year</td>
                                 <td className="px-3 py-3 text-right">{row.score.toFixed(1)}</td>
                                 <td className="px-3 py-3">{row.band}</td>
-                                <td className="px-3 py-3 text-right">{row.peak_utilization_pct.toFixed(1)}%</td>
-                                <td className="px-3 py-3 text-right">{row.reserve_headroom_mw.toFixed(2)}</td>
+                                <td className="px-3 py-3 text-right">
+                                  {row.peak_utilization_pct.toFixed(1)}%
+                                </td>
+                                <td className="px-3 py-3 text-right">
+                                  {row.reserve_headroom_mw.toFixed(2)}
+                                </td>
                               </tr>
                             ))}
                         </tbody>
@@ -1928,7 +2569,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <div>
                         <h2 className="text-lg font-semibold text-white">8,760 profile preview</h2>
                         <p className="mt-1 text-sm text-slate-400">
-                          The selected expected-case horizon is expanded into an hourly planning profile with DER, DR, ToU, and BYOP overlays.
+                          The selected expected-case horizon is expanded into an hourly planning
+                          profile with DER, DR, ToU, and BYOP overlays.
                         </p>
                       </div>
                       <Calendar className="h-5 w-5 text-cyan-300" />
@@ -1940,17 +2582,39 @@ const UtilityDemandForecastPage: React.FC = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                           <XAxis dataKey="hour" stroke="#94a3b8" />
                           <YAxis stroke="#94a3b8" />
-                          <Tooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#020617', borderColor: '#334155' }}
+                          />
                           <Legend />
-                          <Line type="monotone" dataKey="forecast" stroke="#10b981" strokeWidth={2.5} dot={false} />
-                          <Line type="monotone" dataKey="pointLoad" stroke="#f59e0b" strokeWidth={1.5} dot={false} />
-                          <Line type="monotone" dataKey="derOffset" stroke="#38bdf8" strokeWidth={1.5} dot={false} />
+                          <Line
+                            type="monotone"
+                            dataKey="forecast"
+                            stroke="#10b981"
+                            strokeWidth={2.5}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="pointLoad"
+                            stroke="#f59e0b"
+                            strokeWidth={1.5}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="derOffset"
+                            stroke="#38bdf8"
+                            strokeWidth={1.5}
+                            dot={false}
+                          />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
 
                     <div className="mt-4 text-xs text-slate-400">
-                      Deferred peak load: {forecastState.forecastPackage.deferred_peak_load_mw.toFixed(2)} MW. Exported profiles remain transparent statistical constructions, not opaque ML traces.
+                      Deferred peak load:{' '}
+                      {forecastState.forecastPackage.deferred_peak_load_mw.toFixed(2)} MW. Exported
+                      profiles remain transparent statistical constructions, not opaque ML traces.
                     </div>
                   </div>
                 </div>
@@ -1959,9 +2623,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                   <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white">Geography reconciliation</h2>
+                        <h2 className="text-lg font-semibold text-white">
+                          Geography reconciliation
+                        </h2>
                         <p className="mt-1 text-sm text-slate-400">
-                          Recent geography shares are reconciled to the utility-wide forecast so local issues stay visible.
+                          Recent geography shares are reconciled to the utility-wide forecast so
+                          local issues stay visible.
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -1987,7 +2654,9 @@ const UtilityDemandForecastPage: React.FC = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                           <XAxis dataKey="geography_id" stroke="#94a3b8" />
                           <YAxis stroke="#94a3b8" />
-                          <Tooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#020617', borderColor: '#334155' }}
+                          />
                           <Bar dataKey="peak_demand_mw" fill="#22d3ee" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -2006,11 +2675,17 @@ const UtilityDemandForecastPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-800 text-slate-200">
                           {selectedAllocations.map((allocation) => (
-                            <tr key={`${allocation.horizon_year}-${allocation.geography_id}-${allocation.customer_class}`}>
+                            <tr
+                              key={`${allocation.horizon_year}-${allocation.geography_id}-${allocation.customer_class}`}
+                            >
                               <td className="px-3 py-3">{allocation.geography_id}</td>
                               <td className="px-3 py-3">{allocation.customer_class}</td>
-                              <td className="px-3 py-3 text-right">{allocation.share_pct.toFixed(1)}%</td>
-                              <td className="px-3 py-3 text-right">{allocation.peak_demand_mw.toFixed(2)}</td>
+                              <td className="px-3 py-3 text-right">
+                                {allocation.share_pct.toFixed(1)}%
+                              </td>
+                              <td className="px-3 py-3 text-right">
+                                {allocation.peak_demand_mw.toFixed(2)}
+                              </td>
                               <td className="px-3 py-3">
                                 {allocation.constrained ? (
                                   <span className="rounded-full bg-amber-500/15 px-2 py-1 text-[11px] uppercase tracking-wide text-amber-200">
@@ -2029,12 +2704,18 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-forecast-export-card">
+                  <div
+                    className="rounded-xl border border-slate-700 bg-slate-800/70 p-5"
+                    data-testid="utility-forecast-export-card"
+                  >
                     <div className="flex items-start justify-between gap-4">
-                  <div>
-                        <h2 className="text-lg font-semibold text-white">5. Export planning pack</h2>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">
+                          5. Export planning pack
+                        </h2>
                         <p className="mt-1 text-sm text-slate-400">
-                          Lead with the board-ready planning narrative, then attach the benchmark and schedule exports buyers need for review.
+                          Lead with the board-ready planning narrative, then attach the benchmark
+                          and schedule exports buyers need for review.
                         </p>
                       </div>
                       <FileText className="h-5 w-5 text-emerald-300" />
@@ -2043,10 +2724,15 @@ const UtilityDemandForecastPage: React.FC = () => {
                     <div className="mt-4 space-y-3">
                       <button
                         onClick={() => {
-                          const artifact = proofBundle?.artifacts.find((entry) => entry.id === 'utility-planning-pack-pdf');
+                          const artifact = proofBundle?.artifacts.find(
+                            (entry) => entry.id === 'utility-planning-pack-pdf',
+                          );
                           if (!artifact || !forecastState.forecastPackage) return;
                           void downloadPdfArtifact({
-                            ...buildUtilityPlanningDescriptor(forecastState.forecastPackage, commercialProofState),
+                            ...buildUtilityPlanningDescriptor(
+                              forecastState.forecastPackage,
+                              commercialProofState,
+                            ),
                             definition: artifact,
                           });
                         }}
@@ -2054,7 +2740,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       >
                         <div className="font-medium">Export planning memo PDF</div>
                         <div className="mt-1 text-xs text-emerald-100/80">
-                          Single-file planning memo for board, consultant, or utility reviewer distribution.
+                          Single-file planning memo for board, consultant, or utility reviewer
+                          distribution.
                         </div>
                       </button>
                       <button
@@ -2063,7 +2750,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       >
                         <div className="font-medium">Export board/regulator planning pack</div>
                         <div className="mt-1 text-xs text-cyan-100/80">
-                          Primary HTML planning narrative with scenarios, provenance, benchmark proof, and bounded claims.
+                          Primary HTML planning narrative with scenarios, provenance, benchmark
+                          proof, and bounded claims.
                         </div>
                       </button>
                       <button
@@ -2072,7 +2760,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       >
                         <div className="font-medium">Export benchmark appendix</div>
                         <div className="mt-1 text-xs text-slate-500">
-                          Attach benchmark skill, source labeling, and scenario assumptions to the main planning pack.
+                          Attach benchmark skill, source labeling, and scenario assumptions to the
+                          main planning pack.
                         </div>
                       </button>
                       <button
@@ -2080,14 +2769,18 @@ const UtilityDemandForecastPage: React.FC = () => {
                         className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                       >
                         <div className="font-medium">Export utility forecast package</div>
-                        <div className="mt-1 text-xs text-slate-500">Low / expected / high cases with assumptions and benchmark proof</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Low / expected / high cases with assumptions and benchmark proof
+                        </div>
                       </button>
                       <button
                         onClick={exportJurisdictionPack}
                         className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                       >
                         <div className="font-medium">
-                          {jurisdiction === 'Ontario' ? 'Export OEB scenario matrix' : 'Export AUC DSP data schedule'}
+                          {jurisdiction === 'Ontario'
+                            ? 'Export OEB scenario matrix'
+                            : 'Export AUC DSP data schedule'}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
                           {jurisdiction === 'Ontario'
@@ -2101,17 +2794,25 @@ const UtilityDemandForecastPage: React.FC = () => {
                       >
                         <div className="font-medium">Download utility security review pack</div>
                         <div className="mt-1 text-xs text-slate-500">
-                          Forecast-pilot attachment for privacy, procurement, and review responses with repo-backed versus owner-supplied boundaries.
+                          Forecast-pilot attachment for privacy, procurement, and review responses
+                          with repo-backed versus owner-supplied boundaries.
                         </div>
                       </button>
                     </div>
 
                     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
                       <div className="font-medium text-white">Current source and warnings</div>
-                      <div className="mt-2 text-xs text-slate-400">{forecastState.forecastPackage.source_label}</div>
+                      <div className="mt-2 text-xs text-slate-400">
+                        {forecastState.forecastPackage.source_label}
+                      </div>
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                        <span>Claim label: {proofBundle?.artifacts[0]?.claimLabel ?? 'estimated'}</span>
-                        <Link to="/utility-security" className="text-cyan-300 transition-colors hover:text-cyan-200">
+                        <span>
+                          Claim label: {proofBundle?.artifacts[0]?.claimLabel ?? 'estimated'}
+                        </span>
+                        <Link
+                          to="/utility-security"
+                          className="text-cyan-300 transition-colors hover:text-cyan-200"
+                        >
                           Attach utility security review pack
                         </Link>
                       </div>
@@ -2131,12 +2832,17 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-sm text-amber-100">
                         <div className="font-medium text-white">Hosting-capacity warnings</div>
                         <ul className="mt-3 space-y-2 text-xs">
-                          {forecastState.forecastPackage.hosting_capacity_warnings.slice(0, 5).map((warning) => (
-                            <li key={`${warning.horizon_year}-${warning.geography_id}`} className="flex gap-2">
-                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                              <span>{warning.message}</span>
-                            </li>
-                          ))}
+                          {forecastState.forecastPackage.hosting_capacity_warnings
+                            .slice(0, 5)
+                            .map((warning) => (
+                              <li
+                                key={`${warning.horizon_year}-${warning.geography_id}`}
+                                className="flex gap-2"
+                              >
+                                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                                <span>{warning.message}</span>
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     )}
@@ -2148,25 +2854,45 @@ const UtilityDemandForecastPage: React.FC = () => {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-4">
-          <Link to="/demand-forecast" className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50">
+          <Link
+            to="/demand-forecast"
+            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+          >
             <TrendingUp className="mb-2 h-5 w-5 text-cyan-300" />
             <h3 className="text-sm font-medium text-white">Advanced demand lab</h3>
-            <p className="mt-1 text-xs text-slate-500">Keep the broader advanced forecasting route intact.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Keep the broader advanced forecasting route intact.
+            </p>
           </Link>
-          <Link to="/forecast-benchmarking" className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50">
+          <Link
+            to="/forecast-benchmarking"
+            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+          >
             <BarChart3 className="mb-2 h-5 w-5 text-indigo-300" />
             <h3 className="text-sm font-medium text-white">Benchmarking trust layer</h3>
-            <p className="mt-1 text-xs text-slate-500">Compare forecast discipline against standard baselines.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Compare forecast discipline against standard baselines.
+            </p>
           </Link>
-          <Link to="/regulatory-filing" className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50">
+          <Link
+            to="/regulatory-filing"
+            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+          >
             <FileText className="mb-2 h-5 w-5 text-amber-300" />
             <h3 className="text-sm font-medium text-white">Regulatory filing exports</h3>
-            <p className="mt-1 text-xs text-slate-500">Reuse the existing filing templates without leaving the utility workflow.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Reuse the existing filing templates without leaving the utility workflow.
+            </p>
           </Link>
-          <Link to="/asset-health" className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50">
+          <Link
+            to="/asset-health"
+            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+          >
             <Shield className="mb-2 h-5 w-5 text-emerald-300" />
             <h3 className="text-sm font-medium text-white">Asset health planning</h3>
-            <p className="mt-1 text-xs text-slate-500">Pair load growth with adjacent utility asset decisions.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Pair load growth with adjacent utility asset decisions.
+            </p>
           </Link>
         </div>
       </div>
@@ -2176,10 +2902,11 @@ const UtilityDemandForecastPage: React.FC = () => {
 
 function buildGreenButtonStarterXml(): string {
   const rows = generateUtilityLoadSampleRows('Ontario', 'hourly').slice(0, 24);
-  const intervalReadings = rows.map((row, index) => {
-    const startSeconds = Math.floor(new Date(row.timestamp).getTime() / 1000);
-    const valueWh = Math.round((row.demand_mw * 1_000_000) * 1);
-    return `
+  const intervalReadings = rows
+    .map((row, index) => {
+      const startSeconds = Math.floor(new Date(row.timestamp).getTime() / 1000);
+      const valueWh = Math.round(row.demand_mw * 1_000_000 * 1);
+      return `
       <entry>
         <content>
           <espi:IntervalReading>
@@ -2191,7 +2918,8 @@ function buildGreenButtonStarterXml(): string {
           </espi:IntervalReading>
         </content>
       </entry>`;
-  }).join('');
+    })
+    .join('');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
     <feed xmlns="http://www.w3.org/2005/Atom" xmlns:espi="http://naesb.org/espi">
@@ -2217,7 +2945,9 @@ function buildGreenButtonStarterXml(): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-400">{label}</span>
+      <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
       {children}
     </label>
   );
@@ -2275,7 +3005,9 @@ function BenchmarkStat({
   suffix?: string;
   integer?: boolean;
 }) {
-  const formatter = integer ? (input: number) => `${Math.round(input)}${suffix}` : (input: number) => `${input.toFixed(2)}${suffix}`;
+  const formatter = integer
+    ? (input: number) => `${Math.round(input)}${suffix}`
+    : (input: number) => `${input.toFixed(2)}${suffix}`;
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
       <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>

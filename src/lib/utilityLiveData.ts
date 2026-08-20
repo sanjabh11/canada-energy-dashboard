@@ -33,7 +33,8 @@ export type UtilityConnectorKind =
   | 'alberta_settlement_batch'
   | 'telemetry_gateway_http';
 
-export type UtilityConnectorStatus = 'draft' | 'pending_auth' | 'active' | 'stale' | 'revoked' | 'failed';
+export type UtilityConnectorStatus =
+  'draft' | 'pending_auth' | 'active' | 'stale' | 'revoked' | 'failed';
 export type UtilityConnectorRevocationMode = 'api' | 'portal_redirect';
 
 export interface UtilityBatchIntervalRecord {
@@ -174,7 +175,9 @@ const CSV_ALIASES = {
   settlement_status: ['settlement_status', 'settlement_flag', 'quality_code'],
 } as const;
 
-export function buildStarterUtilityBatchSnapshot(jurisdiction: UtilityJurisdiction): UtilityBatchSnapshot {
+export function buildStarterUtilityBatchSnapshot(
+  jurisdiction: UtilityJurisdiction,
+): UtilityBatchSnapshot {
   const records = generateUtilityLoadSampleRows(jurisdiction, 'hourly')
     .slice(0, 24 * 14)
     .map((row) => ({
@@ -199,7 +202,9 @@ export function buildStarterUtilityBatchSnapshot(jurisdiction: UtilityJurisdicti
   };
 }
 
-export function normalizeUtilityBatchSnapshot(snapshot: UtilityBatchSnapshot): UtilityHistoricalLoadRow[] {
+export function normalizeUtilityBatchSnapshot(
+  snapshot: UtilityBatchSnapshot,
+): UtilityHistoricalLoadRow[] {
   return snapshot.records.map((record) => ({
     timestamp: new Date(record.timestamp).toISOString(),
     geography_level: record.geography_level ?? inferGeographyLevel(record),
@@ -212,8 +217,11 @@ export function normalizeUtilityBatchSnapshot(snapshot: UtilityBatchSnapshot): U
     gross_load_mw: record.gross_load_mw ?? null,
     customer_count: record.customer_count ?? null,
     source_system: snapshot.source_system,
-    feeder_id: record.feeder_id ?? (record.geography_level === 'feeder' ? record.geography_id : undefined),
-    substation_id: record.substation_id ?? (record.geography_level === 'substation' ? record.geography_id : undefined),
+    feeder_id:
+      record.feeder_id ?? (record.geography_level === 'feeder' ? record.geography_id : undefined),
+    substation_id:
+      record.substation_id ??
+      (record.geography_level === 'substation' ? record.geography_id : undefined),
     quality_flags: [],
   }));
 }
@@ -234,7 +242,10 @@ export function parseUtilitySystemBatchCsv(
   };
 }
 
-export function parseUtilitySettlementCsv(text: string, jurisdiction: UtilityJurisdiction): UtilitySettlementParseResult {
+export function parseUtilitySettlementCsv(
+  text: string,
+  jurisdiction: UtilityJurisdiction,
+): UtilitySettlementParseResult {
   const lines = text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -271,12 +282,17 @@ export function parseUtilitySettlementCsv(text: string, jurisdiction: UtilityJur
     const timestamp = readColumn(columns, columnIndexes.timestamp);
     const demandMw = parseNumeric(readColumn(columns, columnIndexes.demand_mw));
 
-    if (!timestamp || !Number.isFinite(new Date(timestamp).getTime()) || !Number.isFinite(demandMw)) {
+    if (
+      !timestamp ||
+      !Number.isFinite(new Date(timestamp).getTime()) ||
+      !Number.isFinite(demandMw)
+    ) {
       errors.push(`Settlement row ${index + 1} skipped: invalid timestamp or demand value.`);
       continue;
     }
 
-    const veeStatus = `${readColumn(columns, columnIndexes.vee_status)} ${readColumn(columns, columnIndexes.settlement_status)}`.toLowerCase();
+    const veeStatus =
+      `${readColumn(columns, columnIndexes.vee_status)} ${readColumn(columns, columnIndexes.settlement_status)}`.toLowerCase();
     const qualityFlags = buildSettlementQualityFlags(veeStatus);
 
     estimatedCount += Number(qualityFlags.includes('vee_estimated'));
@@ -285,11 +301,16 @@ export function parseUtilitySettlementCsv(text: string, jurisdiction: UtilityJur
 
     rows.push({
       timestamp: new Date(timestamp).toISOString(),
-      geography_level: normalizeGeographyLevel(readColumn(columns, columnIndexes.geography_level), readColumn(columns, columnIndexes.geography_id) || 'system'),
+      geography_level: normalizeGeographyLevel(
+        readColumn(columns, columnIndexes.geography_level),
+        readColumn(columns, columnIndexes.geography_id) || 'system',
+      ),
       geography_id: readColumn(columns, columnIndexes.geography_id) || 'system',
       customer_class: readColumn(columns, columnIndexes.customer_class) || 'mixed',
       demand_mw: demandMw,
-      weather_zone: readColumn(columns, columnIndexes.weather_zone) || (jurisdiction === 'Ontario' ? 'south' : 'central'),
+      weather_zone:
+        readColumn(columns, columnIndexes.weather_zone) ||
+        (jurisdiction === 'Ontario' ? 'south' : 'central'),
       temperature_c: parseOptionalNumeric(readColumn(columns, columnIndexes.temperature_c)),
       net_load_mw: parseOptionalNumeric(readColumn(columns, columnIndexes.net_load_mw)),
       gross_load_mw: parseOptionalNumeric(readColumn(columns, columnIndexes.gross_load_mw)),
@@ -331,20 +352,26 @@ export function parseGreenButtonXml(
       href: entry.selfHref,
       usagePointId: readXmlTag(entry.contentXml, 'mRID'),
     }));
-  const meterReadingEntries = new Map<string, {
-    usagePointHref: string | null;
-    readingTypeHref: string | null;
-    localTimeParametersHref: string | null;
-  }>();
+  const meterReadingEntries = new Map<
+    string,
+    {
+      usagePointHref: string | null;
+      readingTypeHref: string | null;
+      localTimeParametersHref: string | null;
+    }
+  >();
   const readingTypeEntries = new Map<string, { uom: string; powerMultiplier: number }>();
   const localTimeParameterEntries = new Map<string, { tzOffset: number | null }>();
 
   for (const entry of entries) {
     if (entry.resourceType === 'MeterReading' && entry.selfHref) {
       meterReadingEntries.set(entry.selfHref, {
-        usagePointHref: entry.links.find((link) => link.href.includes('/UsagePoint/'))?.href ?? null,
-        readingTypeHref: entry.links.find((link) => link.href.includes('/ReadingType/'))?.href ?? null,
-        localTimeParametersHref: entry.links.find((link) => link.href.includes('/LocalTimeParameters/'))?.href ?? null,
+        usagePointHref:
+          entry.links.find((link) => link.href.includes('/UsagePoint/'))?.href ?? null,
+        readingTypeHref:
+          entry.links.find((link) => link.href.includes('/ReadingType/'))?.href ?? null,
+        localTimeParametersHref:
+          entry.links.find((link) => link.href.includes('/LocalTimeParameters/'))?.href ?? null,
       });
     }
     if (entry.resourceType === 'ReadingType' && entry.selfHref) {
@@ -357,35 +384,44 @@ export function parseGreenButtonXml(
     }
   }
 
-  const usagePointId = options.geographyId
-    ?? usagePointEntries.find((entry) => entry.usagePointId)?.usagePointId
-    ?? readXmlTag(xml, 'mRID')
-    ?? readXmlTag(xml, 'UsagePoint');
-  const geographyId = usagePointId ?? (jurisdiction === 'Ontario' ? 'ON-GREEN-BUTTON-1' : 'AB-GREEN-BUTTON-1');
+  const usagePointId =
+    options.geographyId ??
+    usagePointEntries.find((entry) => entry.usagePointId)?.usagePointId ??
+    readXmlTag(xml, 'mRID') ??
+    readXmlTag(xml, 'UsagePoint');
+  const geographyId =
+    usagePointId ?? (jurisdiction === 'Ontario' ? 'ON-GREEN-BUTTON-1' : 'AB-GREEN-BUTTON-1');
   const customerClass = options.customerClass ?? 'mixed';
   const rows: UtilityHistoricalLoadRow[] = [];
   let skippedIntervalCount = 0;
   let unresolvedRelationshipCount = 0;
   let localTimeParametersDetected = false;
 
-  const intervalContainers = entries.filter((entry) => entry.resourceType === 'IntervalBlock' || entry.resourceType === 'IntervalReading');
+  const intervalContainers = entries.filter(
+    (entry) => entry.resourceType === 'IntervalBlock' || entry.resourceType === 'IntervalReading',
+  );
   for (const entry of intervalContainers) {
-    const meterReadingHref = entry.links.find((link) => link.href.includes('/MeterReading/'))?.href ?? null;
-    const meterReading = meterReadingHref ? meterReadingEntries.get(meterReadingHref) ?? null : null;
-    const usagePointHref = meterReading?.usagePointHref ?? null;
-    const resolvedUsagePointId = options.geographyId
-      ?? usagePointEntries.find((usagePoint) => usagePoint.href === usagePointHref)?.usagePointId
-      ?? usagePointEntries[0]?.usagePointId
-      ?? geographyId;
-    const readingType = meterReading?.readingTypeHref
-      ? readingTypeEntries.get(meterReading.readingTypeHref) ?? defaultReadingType
-      : defaultReadingType;
-      const localTimeParameters = meterReading?.localTimeParametersHref
-      ? localTimeParameterEntries.get(meterReading.localTimeParametersHref) ?? null
+    const meterReadingHref =
+      entry.links.find((link) => link.href.includes('/MeterReading/'))?.href ?? null;
+    const meterReading = meterReadingHref
+      ? (meterReadingEntries.get(meterReadingHref) ?? null)
       : null;
-    const intervalReadings = entry.resourceType === 'IntervalReading'
-      ? [entry.contentXml]
-      : readAllXmlBlocks(entry.contentXml, 'IntervalReading');
+    const usagePointHref = meterReading?.usagePointHref ?? null;
+    const resolvedUsagePointId =
+      options.geographyId ??
+      usagePointEntries.find((usagePoint) => usagePoint.href === usagePointHref)?.usagePointId ??
+      usagePointEntries[0]?.usagePointId ??
+      geographyId;
+    const readingType = meterReading?.readingTypeHref
+      ? (readingTypeEntries.get(meterReading.readingTypeHref) ?? defaultReadingType)
+      : defaultReadingType;
+    const localTimeParameters = meterReading?.localTimeParametersHref
+      ? (localTimeParameterEntries.get(meterReading.localTimeParametersHref) ?? null)
+      : null;
+    const intervalReadings =
+      entry.resourceType === 'IntervalReading'
+        ? [entry.contentXml]
+        : readAllXmlBlocks(entry.contentXml, 'IntervalReading');
 
     if (!meterReading && usagePointEntries.length > 1 && !options.geographyId) {
       unresolvedRelationshipCount += intervalReadings.length;
@@ -396,17 +432,25 @@ export function parseGreenButtonXml(
       const durationSeconds = Number(readXmlTag(fragment, 'duration') ?? 3600);
       const rawValue = Number(readXmlTag(fragment, 'value'));
 
-      if (!Number.isFinite(startSeconds) || !Number.isFinite(durationSeconds) || !Number.isFinite(rawValue)) {
+      if (
+        !Number.isFinite(startSeconds) ||
+        !Number.isFinite(durationSeconds) ||
+        !Number.isFinite(rawValue)
+      ) {
         skippedIntervalCount += 1;
         continue;
       }
 
-      const qualityFlags = new Set<UtilityQualityFlag>(['missing_temperature', 'customer_count_missing']);
+      const qualityFlags = new Set<UtilityQualityFlag>([
+        'missing_temperature',
+        'customer_count_missing',
+      ]);
       for (const quality of readAllXmlTags(fragment, 'ReadingQuality')) {
         const normalized = quality.toLowerCase();
         if (normalized.includes('estimate')) qualityFlags.add('vee_estimated');
         if (normalized.includes('edit')) qualityFlags.add('vee_edited');
-        if (normalized.includes('gap') || normalized.includes('fill')) qualityFlags.add('meter_gap_filled');
+        if (normalized.includes('gap') || normalized.includes('fill'))
+          qualityFlags.add('meter_gap_filled');
       }
 
       rows.push({
@@ -414,7 +458,12 @@ export function parseGreenButtonXml(
         geography_level: 'system' as const,
         geography_id: resolvedUsagePointId ?? geographyId,
         customer_class: customerClass,
-        demand_mw: convertGreenButtonUsageToMw(rawValue, durationSeconds, readingType.powerMultiplier, readingType.uom),
+        demand_mw: convertGreenButtonUsageToMw(
+          rawValue,
+          durationSeconds,
+          readingType.powerMultiplier,
+          readingType.uom,
+        ),
         weather_zone: jurisdiction === 'Ontario' ? 'south' : 'central',
         source_system: 'green_button_cmd',
         quality_flags: Array.from(qualityFlags),
@@ -435,13 +484,19 @@ export function parseGreenButtonXml(
     warnings.push('Green Button parsing is implemented for Ontario-first CMD workflows.');
   }
   if (localTimeParametersDetected) {
-    warnings.push('LocalTimeParameters were detected; canonical interval timestamps remain epoch-derived while timezone metadata is preserved for review.');
+    warnings.push(
+      'LocalTimeParameters were detected; canonical interval timestamps remain epoch-derived while timezone metadata is preserved for review.',
+    );
   }
   if (skippedIntervalCount > 0) {
-    warnings.push(`${skippedIntervalCount} interval reading(s) were skipped because required Green Button values were missing.`);
+    warnings.push(
+      `${skippedIntervalCount} interval reading(s) were skipped because required Green Button values were missing.`,
+    );
   }
   if (unresolvedRelationshipCount > 0) {
-    warnings.push(`${unresolvedRelationshipCount} interval reading(s) fell back to the first available UsagePoint because meter relationships were incomplete.`);
+    warnings.push(
+      `${unresolvedRelationshipCount} interval reading(s) fell back to the first available UsagePoint because meter relationships were incomplete.`,
+    );
   }
 
   return {
@@ -452,7 +507,10 @@ export function parseGreenButtonXml(
   };
 }
 
-export function parseUtilityTelemetryPayload(input: unknown): { snapshot: UtilityTelemetrySnapshot | null; errors: string[] } {
+export function parseUtilityTelemetryPayload(input: unknown): {
+  snapshot: UtilityTelemetrySnapshot | null;
+  errors: string[];
+} {
   const parsed = telemetryPayloadSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -501,9 +559,17 @@ export function buildConnectionHealthCards(params: {
   activePersisted?: boolean;
   connectorAccounts?: UtilityConnectorAccount[];
 }): UtilityConnectionHealthCard[] {
-  const { jurisdiction, activeSourceKind, activeSourceLabel, activeObservedAt = null, activePersisted = false, connectorAccounts = [] } = params;
+  const {
+    jurisdiction,
+    activeSourceKind,
+    activeSourceLabel,
+    activeObservedAt = null,
+    activePersisted = false,
+    connectorAccounts = [],
+  } = params;
 
-  const findAccount = (kind: UtilityConnectorKind) => connectorAccounts.find((account) => account.connector_kind === kind);
+  const findAccount = (kind: UtilityConnectorKind) =>
+    connectorAccounts.find((account) => account.connector_kind === kind);
   const activeCard = (kind: LiveSurfaceSourceKind) => activeSourceKind === kind;
 
   const starterCard: UtilityConnectionHealthCard = {
@@ -537,7 +603,9 @@ export function buildConnectionHealthCards(params: {
     }).freshness_status,
     is_fallback: false,
     last_synced_at: activeCard('uploaded_historical') ? activeObservedAt : null,
-    notes: activeCard('uploaded_historical') ? activeSourceLabel : 'No uploaded historical dataset in the current session.',
+    notes: activeCard('uploaded_historical')
+      ? activeSourceLabel
+      : 'No uploaded historical dataset in the current session.',
   };
 
   return [
@@ -565,9 +633,10 @@ export function buildConnectionHealthCards(params: {
     }),
     buildConnectorHealthCard({
       title: 'Ontario Green Button',
-      description: jurisdiction === 'Ontario'
-        ? 'Account-holder authorized Ontario Green Button CMD interval history.'
-        : 'Ontario-only connector. Shown here to preserve the canonical utility connector pattern.',
+      description:
+        jurisdiction === 'Ontario'
+          ? 'Account-holder authorized Ontario Green Button CMD interval history.'
+          : 'Ontario-only connector. Shown here to preserve the canonical utility connector pattern.',
       account: findAccount('ontario_green_button_cmd'),
       fallbackActive: activeCard('green_button_cmd'),
       fallbackSourceKind: 'green_button_cmd',
@@ -575,11 +644,15 @@ export function buildConnectionHealthCards(params: {
       activeObservedAt,
       activePersisted,
       defaultStatus: jurisdiction === 'Ontario' ? 'pending_auth' : 'draft',
-      notes: jurisdiction === 'Ontario' ? 'Requires utility-specific third-party registration and account-holder consent.' : 'Not the primary Alberta live-data path.',
+      notes:
+        jurisdiction === 'Ontario'
+          ? 'Requires utility-specific third-party registration and account-holder consent.'
+          : 'Not the primary Alberta live-data path.',
     }),
     buildConnectorHealthCard({
       title: 'Telemetry gateway',
-      description: 'Signed HTTPS northbound telemetry intake from external gateways or integrators.',
+      description:
+        'Signed HTTPS northbound telemetry intake from external gateways or integrators.',
       account: findAccount('telemetry_gateway_http'),
       fallbackActive: activeCard('telemetry_gateway'),
       fallbackSourceKind: 'telemetry_gateway',
@@ -593,17 +666,19 @@ export function buildConnectionHealthCards(params: {
 
 export function isConnectorCardLiveConnected(card: UtilityConnectionHealthCard): boolean {
   return (
-    (card.source_kind === 'utility_system_batch'
-      || card.source_kind === 'utility_settlement_batch'
-      || card.source_kind === 'green_button_cmd'
-      || card.source_kind === 'telemetry_gateway')
-    && card.status === 'active'
-    && !card.is_fallback
-    && card.freshness_status === 'live'
+    (card.source_kind === 'utility_system_batch' ||
+      card.source_kind === 'utility_settlement_batch' ||
+      card.source_kind === 'green_button_cmd' ||
+      card.source_kind === 'telemetry_gateway') &&
+    card.status === 'active' &&
+    !card.is_fallback &&
+    card.freshness_status === 'live'
   );
 }
 
-export async function fetchUtilityPublicContext(jurisdiction: UtilityJurisdiction): Promise<UtilityPublicContext> {
+export async function fetchUtilityPublicContext(
+  jurisdiction: UtilityJurisdiction,
+): Promise<UtilityPublicContext> {
   const liveSurfaces: LiveSurfaceContract[] = [];
   let weatherObservation: WeatherObservation | null = null;
 
@@ -646,7 +721,8 @@ export async function fetchUtilityPublicContext(jurisdiction: UtilityJurisdictio
     albertaPoolPrice = poolPrice?.poolPrice ?? null;
     liveSurfaces.push(
       buildLiveSurfaceContract({
-        source: poolPrice?.priceType === 'actual' ? 'AESO pool price API' : 'AESO cached pool price',
+        source:
+          poolPrice?.priceType === 'actual' ? 'AESO pool price API' : 'AESO cached pool price',
         observedAt: poolPrice?.timestamp ?? null,
         isFallback: poolPrice?.priceType !== 'actual',
         qualityFlags: poolPrice?.priceType === 'actual' ? [] : ['aeso_pool_price_fallback'],
@@ -666,7 +742,8 @@ export async function fetchUtilityPublicContext(jurisdiction: UtilityJurisdictio
         sourceKind: 'public_enrichment',
         staleAfterHours: 6,
         assumptionPackVersion: UTILITY_ASSUMPTION_PACK_VERSION,
-        notes: 'Ontario market context adapter will be promoted after a browser-safe IESO source path is wired.',
+        notes:
+          'Ontario market context adapter will be promoted after a browser-safe IESO source path is wired.',
       }),
     );
   }
@@ -694,13 +771,14 @@ export function buildInputSourceSurface(params: {
     isFallback: params.isFallback,
     qualityFlags: params.qualityFlags,
     notes: params.notes,
-    staleAfterHours: params.sourceKind === 'fallback_starter'
-      ? 24 * 365
-      : params.sourceKind === 'green_button_cmd'
-        ? 24 * 2
-        : params.sourceKind === 'telemetry_gateway'
-          ? 24
-          : 24 * 30,
+    staleAfterHours:
+      params.sourceKind === 'fallback_starter'
+        ? 24 * 365
+        : params.sourceKind === 'green_button_cmd'
+          ? 24 * 2
+          : params.sourceKind === 'telemetry_gateway'
+            ? 24
+            : 24 * 30,
   });
 }
 
@@ -783,18 +861,26 @@ function buildSettlementQualityFlags(veeStatus: string): UtilityQualityFlag[] {
 }
 
 function readXmlTag(xml: string, localName: string): string | null {
-  const match = new RegExp(`<[^>]*:?${localName}>([\\s\\S]*?)<\\/[^>]*:?${localName}>`, 'i').exec(xml);
+  const match = new RegExp(`<[^>]*:?${localName}>([\\s\\S]*?)<\\/[^>]*:?${localName}>`, 'i').exec(
+    xml,
+  );
   return match ? decodeXmlEntities(match[1].trim()) : null;
 }
 
 function readAllXmlTags(xml: string, localName: string): string[] {
-  return Array.from(xml.matchAll(new RegExp(`<[^>]*:?${localName}>([\\s\\S]*?)<\\/[^>]*:?${localName}>`, 'gi')))
+  return Array.from(
+    xml.matchAll(new RegExp(`<[^>]*:?${localName}>([\\s\\S]*?)<\\/[^>]*:?${localName}>`, 'gi')),
+  )
     .map((match) => decodeXmlEntities((match[1] ?? '').trim()))
     .filter((value) => value.length > 0);
 }
 
 function readAllXmlBlocks(xml: string, localName: string): string[] {
-  return Array.from(xml.matchAll(new RegExp(`<[^>]*:?${localName}\\b[^>]*>([\\s\\S]*?)<\\/[^>]*:?${localName}>`, 'gi')))
+  return Array.from(
+    xml.matchAll(
+      new RegExp(`<[^>]*:?${localName}\\b[^>]*>([\\s\\S]*?)<\\/[^>]*:?${localName}>`, 'gi'),
+    ),
+  )
     .map((match) => (match[1] ?? '').trim())
     .filter((value) => value.length > 0);
 }
@@ -816,12 +902,14 @@ function extractGreenButtonEntries(xml: string): Array<{
     const entryXml = match[1] ?? '';
     const contentXml = readXmlTag(entryXml, 'content') ?? '';
     const resourceTypeMatch = /<(?:(?:\w+):)?([A-Za-z]+)\b/.exec(contentXml);
-    const links = Array.from(entryXml.matchAll(/<link\b([^>]*)\/?>/gi)).map((linkMatch) => {
-      const attributes = linkMatch[1] ?? '';
-      const rel = /rel=["']([^"']+)["']/i.exec(attributes)?.[1] ?? null;
-      const href = /href=["']([^"']+)["']/i.exec(attributes)?.[1] ?? null;
-      return href ? { rel, href } : null;
-    }).filter((link): link is { rel: string | null; href: string } => Boolean(link));
+    const links = Array.from(entryXml.matchAll(/<link\b([^>]*)\/?>/gi))
+      .map((linkMatch) => {
+        const attributes = linkMatch[1] ?? '';
+        const rel = /rel=["']([^"']+)["']/i.exec(attributes)?.[1] ?? null;
+        const href = /href=["']([^"']+)["']/i.exec(attributes)?.[1] ?? null;
+        return href ? { rel, href } : null;
+      })
+      .filter((link): link is { rel: string | null; href: string } => Boolean(link));
 
     return {
       resourceType: resourceTypeMatch?.[1] ?? null,
@@ -841,14 +929,20 @@ function decodeXmlEntities(value: string): string {
     .replace(/&#39;/g, "'");
 }
 
-function convertGreenButtonUsageToMw(value: number, durationSeconds: number, powerMultiplier: number, uom: string): number {
-  const scaledValue = value * (10 ** powerMultiplier);
+function convertGreenButtonUsageToMw(
+  value: number,
+  durationSeconds: number,
+  powerMultiplier: number,
+  uom: string,
+): number {
+  const scaledValue = value * 10 ** powerMultiplier;
   const normalizedUom = String(uom).toLowerCase();
-  const mwh = normalizedUom === 'mwh'
-    ? scaledValue
-    : normalizedUom === 'kwh'
-      ? scaledValue / 1000
-      : scaledValue / 1_000_000;
+  const mwh =
+    normalizedUom === 'mwh'
+      ? scaledValue
+      : normalizedUom === 'kwh'
+        ? scaledValue / 1000
+        : scaledValue / 1_000_000;
   const hours = Math.max(durationSeconds / 3600, 1 / 60);
   return Number((mwh / hours).toFixed(6));
 }
@@ -858,7 +952,10 @@ function buildConnectorHealthCard(params: {
   description: string;
   account?: UtilityConnectorAccount;
   fallbackActive: boolean;
-  fallbackSourceKind: Extract<LiveSurfaceSourceKind, 'utility_system_batch' | 'utility_settlement_batch' | 'green_button_cmd' | 'telemetry_gateway'>;
+  fallbackSourceKind: Extract<
+    LiveSurfaceSourceKind,
+    'utility_system_batch' | 'utility_settlement_batch' | 'green_button_cmd' | 'telemetry_gateway'
+  >;
   activeSourceLabel: string;
   activeObservedAt: string | null;
   activePersisted: boolean;
@@ -866,8 +963,10 @@ function buildConnectorHealthCard(params: {
   notes?: string;
 }): UtilityConnectionHealthCard {
   const account = params.account;
-  const observedAt = account?.last_synced_at ?? (params.fallbackActive ? params.activeObservedAt : null);
-  const source = account?.display_name ?? (params.fallbackActive ? params.activeSourceLabel : params.title);
+  const observedAt =
+    account?.last_synced_at ?? (params.fallbackActive ? params.activeObservedAt : null);
+  const source =
+    account?.display_name ?? (params.fallbackActive ? params.activeSourceLabel : params.title);
   const surface = buildLiveSurfaceContract({
     source,
     observedAt,
@@ -906,15 +1005,34 @@ function buildConnectorHealthCard(params: {
     revocation_url: readMetadataString(account?.metadata, 'revocation_url'),
     manage_connections_url: readMetadataString(account?.metadata, 'manage_connections_url'),
     oauth_espi_scope: readMetadataString(account?.metadata, 'oauth_espi_scope'),
-    requested_data_categories: readMetadataStringArray(account?.metadata, 'requested_data_categories'),
-    registration_form_categories: readMetadataStringArray(account?.metadata, 'registration_form_categories'),
-    awaiting_revocation_confirmation: readMetadataBoolean(account?.metadata, 'awaiting_revocation_confirmation'),
+    requested_data_categories: readMetadataStringArray(
+      account?.metadata,
+      'requested_data_categories',
+    ),
+    registration_form_categories: readMetadataStringArray(
+      account?.metadata,
+      'registration_form_categories',
+    ),
+    awaiting_revocation_confirmation: readMetadataBoolean(
+      account?.metadata,
+      'awaiting_revocation_confirmation',
+    ),
     token_material_purged: readMetadataBoolean(account?.metadata, 'token_material_purged') ?? false,
-    can_disconnect: params.fallbackSourceKind === 'green_button_cmd' && (derivedStatus === 'active' || derivedStatus === 'stale' || derivedStatus === 'failed'),
+    // A starter/fallback surface has no owner-bound account to mutate. Keep
+    // the control off until a persisted connector account is present.
+    can_disconnect:
+      Boolean(account) &&
+      params.fallbackSourceKind === 'green_button_cmd' &&
+      (derivedStatus === 'active' || derivedStatus === 'stale' || derivedStatus === 'failed'),
   };
 }
 
-function connectorKindForSource(sourceKind: Extract<LiveSurfaceSourceKind, 'utility_system_batch' | 'utility_settlement_batch' | 'green_button_cmd' | 'telemetry_gateway'>): UtilityConnectorKind {
+function connectorKindForSource(
+  sourceKind: Extract<
+    LiveSurfaceSourceKind,
+    'utility_system_batch' | 'utility_settlement_batch' | 'green_button_cmd' | 'telemetry_gateway'
+  >,
+): UtilityConnectorKind {
   switch (sourceKind) {
     case 'utility_system_batch':
       return 'utility_batch_csv';
@@ -942,7 +1060,10 @@ function deriveConnectorStatus(params: {
   const revokedAt = readMetadataTimestamp(params.account.metadata, 'revoked_at');
   if (revokedAt) return 'revoked';
 
-  const revocationRequestedAt = readMetadataTimestamp(params.account.metadata, 'revocation_requested_at');
+  const revocationRequestedAt = readMetadataTimestamp(
+    params.account.metadata,
+    'revocation_requested_at',
+  );
   if (revocationRequestedAt) return 'failed';
 
   const tokenExpiresAt = readMetadataTimestamp(params.account.metadata, 'token_expires_at');
@@ -970,13 +1091,23 @@ function deriveConnectorNotes(params: {
 
   const revokedAt = readMetadataTimestamp(params.account.metadata, 'revoked_at');
   if (revokedAt) {
-    notes.push(`Revocation detected at ${revokedAt}. Re-authorize before claiming live connector status.`);
+    notes.push(
+      `Revocation detected at ${revokedAt}. Re-authorize before claiming live connector status.`,
+    );
   }
 
-  const revocationRequestedAt = readMetadataTimestamp(params.account.metadata, 'revocation_requested_at');
-  const manageConnectionsUrl = readMetadataString(params.account.metadata, 'manage_connections_url');
+  const revocationRequestedAt = readMetadataTimestamp(
+    params.account.metadata,
+    'revocation_requested_at',
+  );
+  const manageConnectionsUrl = readMetadataString(
+    params.account.metadata,
+    'manage_connections_url',
+  );
   if (revocationRequestedAt && !revokedAt) {
-    notes.push(`Disconnect requested at ${revocationRequestedAt}. Complete utility-side revocation before reconnecting.`);
+    notes.push(
+      `Disconnect requested at ${revocationRequestedAt}. Complete utility-side revocation before reconnecting.`,
+    );
     if (manageConnectionsUrl) {
       notes.push(`Manage connections: ${manageConnectionsUrl}`);
     }
@@ -984,7 +1115,9 @@ function deriveConnectorNotes(params: {
 
   const tokenExpiresAt = readMetadataTimestamp(params.account.metadata, 'token_expires_at');
   if (tokenExpiresAt && new Date(tokenExpiresAt).getTime() <= Date.now()) {
-    notes.push(`Connector token expired at ${tokenExpiresAt}. Refresh authorization before the next sync.`);
+    notes.push(
+      `Connector token expired at ${tokenExpiresAt}. Refresh authorization before the next sync.`,
+    );
   }
 
   const tokenMaterialPurged = readMetadataBoolean(params.account.metadata, 'token_material_purged');
@@ -995,28 +1128,44 @@ function deriveConnectorNotes(params: {
   return notes.join(' ') || undefined;
 }
 
-function readMetadataTimestamp(metadata: Record<string, unknown> | undefined, key: string): string | null {
+function readMetadataTimestamp(
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+): string | null {
   const value = metadata?.[key];
   const parsed = new Date(String(value ?? ''));
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-function readMetadataString(metadata: Record<string, unknown> | undefined, key: string): string | null {
+function readMetadataString(
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+): string | null {
   const value = String(metadata?.[key] ?? '').trim();
   return value.length > 0 ? value : null;
 }
 
-function readMetadataStringArray(metadata: Record<string, unknown> | undefined, key: string): string[] {
+function readMetadataStringArray(
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+): string[] {
   const value = metadata?.[key];
-  return Array.isArray(value) ? value.map((entry) => String(entry)).filter((entry) => entry.length > 0) : [];
+  return Array.isArray(value)
+    ? value.map((entry) => String(entry)).filter((entry) => entry.length > 0)
+    : [];
 }
 
-function readMetadataBoolean(metadata: Record<string, unknown> | undefined, key: string): boolean | null {
+function readMetadataBoolean(
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+): boolean | null {
   const value = metadata?.[key];
   return typeof value === 'boolean' ? value : null;
 }
 
-function readMetadataRevocationMode(metadata: Record<string, unknown> | undefined): UtilityConnectorRevocationMode | null {
+function readMetadataRevocationMode(
+  metadata: Record<string, unknown> | undefined,
+): UtilityConnectorRevocationMode | null {
   const value = readMetadataString(metadata, 'revocation_mode');
   return value === 'api' || value === 'portal_redirect' ? value : null;
 }

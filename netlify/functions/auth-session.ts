@@ -5,7 +5,7 @@
  * Endpoints:
  *   POST /api/auth/login   — Sets httpOnly cookie with token, returns user data
  *   POST /api/auth/logout  — Clears the cookie
- *   GET  /api/auth/session  — Returns current session (reads cookie, returns token to caller)
+ *   GET  /api/auth/session  — Returns whether a server-held session exists
  */
 
 import type { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
@@ -111,7 +111,7 @@ const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) =
     };
   }
 
-  // GET /session — return token from cookie (only accessible server-side or same-origin)
+  // GET /session — never return the server-held token to browser JavaScript.
   if (event.httpMethod === 'GET' && (path === '/session' || path === '')) {
     const cookies = parseCookies(event.headers['cookie']);
     const token = cookies[COOKIE_NAME];
@@ -127,7 +127,7 @@ const handler: Handler = async (event: HandlerEvent, _context: HandlerContext) =
     return {
       statusCode: 200,
       headers: { ...cors, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ authenticated: true, token }),
+      body: JSON.stringify({ authenticated: true }),
     };
   }
 

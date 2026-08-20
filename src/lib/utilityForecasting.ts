@@ -68,6 +68,7 @@ export type {
   UtilityReliabilityProxy,
   UtilityHostingCapacityWarning,
   UtilityInputProvenanceSummary,
+  UtilitySourceTrustContext,
   UtilityRegulatoryExports,
   PublicSourceManifest,
   ForecastEvidenceSplit,
@@ -122,6 +123,7 @@ import type {
   UtilityReliabilityProxy,
   UtilityHostingCapacityWarning,
   UtilityInputProvenanceSummary,
+  UtilitySourceTrustContext,
   UtilityRegulatoryExports,
   PublicSourceManifest,
   ForecastEvidenceSplit,
@@ -164,6 +166,7 @@ function buildSourceManifest(params: {
   sourceKind: UtilityInputSourceKind;
   rows: UtilityHistoricalLoadRow[];
   summary: UtilityDataSummary;
+  fetchedAt?: string | null;
 }): PublicSourceManifest {
   const sampledRows =
     params.rows.length > 6000
@@ -204,7 +207,7 @@ function buildSourceManifest(params: {
     sourceFile: isPublicSystemSample
       ? ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_file
       : params.sourceLabel,
-    fetchedAt: params.summary.date_range.end,
+    fetchedAt: params.fetchedAt ?? params.summary.date_range.end,
     hash: stableHash(hashInput),
     transformVersion: isPublicSystemSample
       ? PUBLIC_SOURCE_TRANSFORM_VERSION
@@ -225,6 +228,7 @@ export function buildUtilityForecastPackage(params: {
   isSampleData?: boolean;
   sourceKind?: UtilityInputSourceKind;
   liveSurfaces?: LiveSurfaceContract[];
+  sourceTrust?: UtilitySourceTrustContext;
 }): UtilityForecastPackage {
   const rows = prepareRows(sortRows(params.rows));
   const qualityAssessment = assessInputQuality(rows);
@@ -248,6 +252,24 @@ export function buildUtilityForecastPackage(params: {
   const sourceKind =
     params.sourceKind ?? (params.isSampleData ? 'fallback_starter' : 'uploaded_historical');
   const isPublicSystemSample = sourceKind === 'public_system_sample';
+
+  if (sourceKind === 'green_button_cmd') {
+    const fetchedAt = params.sourceTrust?.fetched_at;
+    const observedAt = params.sourceTrust?.observed_at;
+    const hasValidFetchedAt = Boolean(fetchedAt && !Number.isNaN(new Date(fetchedAt).getTime()));
+    const hasValidObservedAt = Boolean(observedAt && !Number.isNaN(new Date(observedAt).getTime()));
+    if (
+      params.isSampleData ||
+      params.sourceTrust?.owner_bound !== true ||
+      params.sourceTrust.freshness_status !== 'live' ||
+      !hasValidFetchedAt ||
+      !hasValidObservedAt
+    ) {
+      throw new Error(
+        'Green Button history cannot enter a forecast package without owner-bound live read proof.',
+      );
+    }
+  }
 
   const expectedCase = buildForecastCase({
     label: 'expected',
@@ -378,7 +400,10 @@ export function buildUtilityForecastPackage(params: {
 
   const inputSurface = buildLiveSurfaceContract({
     source: params.sourceLabel,
-    observedAt: summary.date_range.end,
+    observedAt:
+      sourceKind === 'green_button_cmd'
+        ? (params.sourceTrust?.observed_at ?? summary.date_range.end)
+        : summary.date_range.end,
     isFallback: sourceKind === 'fallback_starter' || params.isSampleData,
     qualityFlags: qualityAssessment.qualityCounts
       .filter((entry) => entry.count > 0)
@@ -401,7 +426,7 @@ export function buildUtilityForecastPackage(params: {
         : sourceKind === 'utility_settlement_batch'
           ? 'Settlement or MDM-compatible batch normalized into the utility planning contract.'
           : sourceKind === 'green_button_cmd'
-            ? 'Ontario Green Button Connect My Data interval history normalized into the planning contract.'
+            ? 'Owner-bound Ontario Green Button Connect My Data interval history normalized into the planning contract.'
             : sourceKind === 'public_system_sample'
               ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label}; ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
               : sourceKind === 'telemetry_gateway'
@@ -427,6 +452,7 @@ export function buildUtilityForecastPackage(params: {
     sourceKind,
     rows,
     summary,
+    fetchedAt: sourceKind === 'green_button_cmd' ? params.sourceTrust?.fetched_at : undefined,
   });
   const evidenceReport = buildForecastEvidenceReport({
     aggregated,
@@ -467,7 +493,7 @@ export function buildUtilityForecastPackage(params: {
           : sourceKind === 'utility_settlement_batch'
             ? 'Settlement or MDM-compatible utility export used to build the planning forecast package.'
             : sourceKind === 'green_button_cmd'
-              ? 'Green Button Connect My Data interval history used to build the planning forecast package.'
+              ? 'Owner-bound Green Button Connect My Data interval history used to build the planning forecast package.'
               : sourceKind === 'public_system_sample'
                 ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_derivation_note} ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
                 : sourceKind === 'telemetry_gateway'
