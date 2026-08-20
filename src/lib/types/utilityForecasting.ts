@@ -8,7 +8,10 @@
 
 import type { ForecastMetrics } from '../demandForecaster';
 import type { FreshnessStatus } from '../foundation';
-import type { LiveSurfaceContract, LiveSurfaceSourceKind } from '../liveSurfaceContract';
+import type {
+  LiveSurfaceContract,
+  LiveSurfaceSourceKind,
+} from '../liveSurfaceContract';
 import type { ProvenanceMetadata } from './provenance';
 import type {
   AUC_DSP_DataSchedule_Row,

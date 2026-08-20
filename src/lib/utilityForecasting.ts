@@ -259,15 +259,13 @@ export function buildUtilityForecastPackage(params: {
     const hasValidFetchedAt = Boolean(fetchedAt && !Number.isNaN(new Date(fetchedAt).getTime()));
     const hasValidObservedAt = Boolean(observedAt && !Number.isNaN(new Date(observedAt).getTime()));
     if (
-      params.isSampleData ||
-      params.sourceTrust?.owner_bound !== true ||
-      params.sourceTrust.freshness_status !== 'live' ||
-      !hasValidFetchedAt ||
-      !hasValidObservedAt
+      params.isSampleData
+      || params.sourceTrust?.owner_bound !== true
+      || params.sourceTrust.freshness_status !== 'live'
+      || !hasValidFetchedAt
+      || !hasValidObservedAt
     ) {
-      throw new Error(
-        'Green Button history cannot enter a forecast package without owner-bound live read proof.',
-      );
+      throw new Error('Green Button history cannot enter a forecast package without owner-bound live read proof.');
     }
   }
 
@@ -400,10 +398,9 @@ export function buildUtilityForecastPackage(params: {
 
   const inputSurface = buildLiveSurfaceContract({
     source: params.sourceLabel,
-    observedAt:
-      sourceKind === 'green_button_cmd'
-        ? (params.sourceTrust?.observed_at ?? summary.date_range.end)
-        : summary.date_range.end,
+    observedAt: sourceKind === 'green_button_cmd'
+      ? params.sourceTrust?.observed_at ?? summary.date_range.end
+      : summary.date_range.end,
     isFallback: sourceKind === 'fallback_starter' || params.isSampleData,
     qualityFlags: qualityAssessment.qualityCounts
       .filter((entry) => entry.count > 0)

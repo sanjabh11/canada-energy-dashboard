@@ -49,7 +49,7 @@ interface HistoryPayload {
 
 function responseRecord(value: unknown): HistoryPayload {
   return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as HistoryPayload)
+    ? value as HistoryPayload
     : {};
 }
 
@@ -69,21 +69,16 @@ function parseAccounts(value: unknown): UtilityConnectorAccount[] {
   return value.filter((candidate): candidate is UtilityConnectorAccount => {
     if (!candidate || typeof candidate !== 'object') return false;
     const account = candidate as Partial<UtilityConnectorAccount>;
-    return (
-      typeof account.id === 'string' &&
-      account.connector_kind === 'ontario_green_button_cmd' &&
-      account.source_kind === 'green_button_cmd' &&
-      (account.jurisdiction === 'Ontario' || account.jurisdiction === 'Alberta') &&
-      typeof account.utility_name === 'string' &&
-      typeof account.display_name === 'string'
-    );
+    return typeof account.id === 'string'
+      && account.connector_kind === 'ontario_green_button_cmd'
+      && account.source_kind === 'green_button_cmd'
+      && (account.jurisdiction === 'Ontario' || account.jurisdiction === 'Alberta')
+      && typeof account.utility_name === 'string'
+      && typeof account.display_name === 'string';
   });
 }
 
-function emptyResult(
-  status: UtilityConnectorHistoryReadStatus,
-  error?: string,
-): UtilityConnectorHistoryReadResult {
+function emptyResult(status: UtilityConnectorHistoryReadStatus, error?: string): UtilityConnectorHistoryReadResult {
   return {
     status,
     rows: [],
@@ -115,30 +110,15 @@ export async function fetchUtilityConnectorHistory(
   const url = `/api/utility-connector-history?jurisdiction=${encodeURIComponent(jurisdiction)}`;
   let response: Response;
   try {
-    response = await fetchImpl(url, {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    });
+    response = await fetchImpl(url, { credentials: 'include', headers: { Accept: 'application/json' } });
   } catch {
     return emptyResult('unavailable', 'Utility connector history service is unavailable.');
   }
 
   const payload = await readPayload(response);
-  if (response.status === 401)
-    return emptyResult(
-      'unauthorized',
-      textValue(payload.error) ?? 'Authenticated Whop session required.',
-    );
-  if (response.status === 403)
-    return emptyResult(
-      'owner_unbound',
-      textValue(payload.error) ?? 'Verified owner binding is required.',
-    );
-  if (!response.ok)
-    return emptyResult(
-      'unavailable',
-      textValue(payload.error) ?? 'Utility connector history could not be read.',
-    );
+  if (response.status === 401) return emptyResult('unauthorized', textValue(payload.error) ?? 'Authenticated Whop session required.');
+  if (response.status === 403) return emptyResult('owner_unbound', textValue(payload.error) ?? 'Verified owner binding is required.');
+  if (!response.ok) return emptyResult('unavailable', textValue(payload.error) ?? 'Utility connector history could not be read.');
 
   const ownerBound = payload.owner_bound === true;
   const freshnessStatus = parseFreshness(payload.freshness_status);
@@ -150,8 +130,7 @@ export async function fetchUtilityConnectorHistory(
     ? payload.warnings.filter((warning): warning is string => typeof warning === 'string')
     : [];
 
-  if (!ownerBound)
-    return emptyResult('owner_unbound', 'Owner-bound connector history is required.');
+  if (!ownerBound) return emptyResult('owner_unbound', 'Owner-bound connector history is required.');
   if (payload.source_kind !== 'green_button_cmd') {
     return {
       ...emptyResult('invalid', 'Connector history source kind is invalid.'),
@@ -165,20 +144,16 @@ export async function fetchUtilityConnectorHistory(
     };
   }
 
-  const serverReadStatus =
-    payload.read_status === 'available'
-      ? 'available'
-      : payload.read_status === 'stale'
-        ? 'stale'
-        : payload.read_status === 'empty'
-          ? 'empty'
-          : payload.read_status === 'invalid'
-            ? 'invalid'
-            : 'unknown';
-  if (
-    serverReadStatus === 'empty' &&
-    (!Array.isArray(payload.history) || payload.history.length === 0)
-  ) {
+  const serverReadStatus = payload.read_status === 'available'
+    ? 'available'
+    : payload.read_status === 'stale'
+      ? 'stale'
+      : payload.read_status === 'empty'
+        ? 'empty'
+        : payload.read_status === 'invalid'
+          ? 'invalid'
+          : 'unknown';
+  if (serverReadStatus === 'empty' && (!Array.isArray(payload.history) || payload.history.length === 0)) {
     return {
       status: 'empty',
       rows: [],
@@ -212,23 +187,21 @@ export async function fetchUtilityConnectorHistory(
     };
   }
 
-  const status: UtilityConnectorHistoryReadStatus =
-    serverReadStatus === 'available' &&
-    freshnessStatus === 'live' &&
-    normalization.rows.length > 0 &&
-    Boolean(fetchedAt)
-      ? 'available'
-      : serverReadStatus;
-  const sourceTrust =
-    status === 'available'
-      ? {
-          owner_bound: true,
-          freshness_status: freshnessStatus,
-          fetched_at: fetchedAt,
-          observed_at: sourceObservedAt,
-          ...(accounts.length === 1 ? { connector_account_id: accounts[0]?.id } : {}),
-        }
-      : null;
+  const status: UtilityConnectorHistoryReadStatus = serverReadStatus === 'available'
+    && freshnessStatus === 'live'
+    && normalization.rows.length > 0
+    && Boolean(fetchedAt)
+    ? 'available'
+    : serverReadStatus;
+  const sourceTrust = status === 'available'
+    ? {
+        owner_bound: true,
+        freshness_status: freshnessStatus,
+        fetched_at: fetchedAt,
+        observed_at: sourceObservedAt,
+        ...(accounts.length === 1 ? { connector_account_id: accounts[0]?.id } : {}),
+      }
+    : null;
 
   return {
     status,
@@ -263,12 +236,7 @@ export async function startUtilityConnectorAuthorization(
   }
 
   const payload = responseRecord(await response.json().catch(() => ({})));
-  if (
-    !response.ok ||
-    typeof payload.authorize_url !== 'string' ||
-    typeof payload.state !== 'string' ||
-    typeof payload.connector_id !== 'string'
-  ) {
+  if (!response.ok || typeof payload.authorize_url !== 'string' || typeof payload.state !== 'string' || typeof payload.connector_id !== 'string') {
     throw new Error(textValue(payload.error) ?? 'Green Button authorization could not be started.');
   }
   return {
