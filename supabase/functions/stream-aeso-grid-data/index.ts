@@ -9,6 +9,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { buildDataProvenance } from "../_shared/dataProvenance.ts";
+import {
+  buildObservedGridStatusRow,
+  normalizeAuthoritativeTimestamp,
+  parseFiniteNumber,
+} from "../_shared/energySourceTruth.ts";
 
 // CORS headers for Edge Function responses
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -128,25 +133,33 @@ async function fetchAESOPoolPrice(): Promise<any> {
  * Transform AESO data to grid format
  */
 function transformAESOData(supplyDemand: any, poolPrice: any): any[] {
-  const timestamp = new Date().toISOString();
   const records: any[] = [];
 
   try {
     // Extract current supply/demand data
     if (supplyDemand?.return?.['Current Supply/Demand Summary Report']) {
       const csd = supplyDemand.return['Current Supply/Demand Summary Report'];
+      const timestamp = normalizeAuthoritativeTimestamp(
+        csd.last_updated_datetime
+        ?? csd.last_updated_datetime_mpt
+        ?? csd.timestamp,
+      );
+      const demand = parseFiniteNumber(csd.total_demand ?? csd.demand_mw);
+      const supply = parseFiniteNumber(csd.total_net_generation);
 
-      records.push({
-        region: 'Alberta',
-        demand_mw: parseFloat(csd.total_max_generation) || null,
-        supply_mw: parseFloat(csd.total_net_generation) || null,
-        timestamp,
-        source: 'AESO',
-        metadata: {
-          available_capacity: parseFloat(csd.available_capacity) || null,
-          dispatched_contingency_reserve: parseFloat(csd.dispatched_contingency_reserve) || null,
-        }
-      });
+      if (timestamp && (demand !== null || supply !== null)) {
+        records.push({
+          region: 'Alberta',
+          demand_mw: demand,
+          supply_mw: supply,
+          timestamp,
+          source: 'AESO',
+          metadata: {
+            available_capacity: parseFiniteNumber(csd.available_capacity),
+            dispatched_contingency_reserve: parseFiniteNumber(csd.dispatched_contingency_reserve),
+          }
+        });
+      }
     }
 
     // Extract pool price data
@@ -156,13 +169,17 @@ function transformAESOData(supplyDemand: any, poolPrice: any): any[] {
       if (Array.isArray(prices)) {
         const latestPrice = prices[0];
         if (latestPrice) {
-          records.push({
-            region: 'Alberta',
-            price_cad_mwh: parseFloat(latestPrice.pool_price) || null,
-            timestamp: latestPrice.begin_datetime_mpt || timestamp,
-            source: 'AESO',
-            price_type: 'pool_price'
-          });
+          const timestamp = normalizeAuthoritativeTimestamp(latestPrice.begin_datetime_mpt);
+          const price = parseFiniteNumber(latestPrice.pool_price);
+          if (timestamp && price !== null) {
+            records.push({
+              region: 'Alberta',
+              price_cad_mwh: price,
+              timestamp,
+              source: 'AESO',
+              price_type: 'pool_price'
+            });
+          }
         }
       }
     }
@@ -226,19 +243,13 @@ async function persistGridSnapshots(rows: any[]): Promise<void> {
   if (!supabase || rows.length === 0) return;
 
   try {
-    const upsertRows = rows.map((row: any) => ({
-      region: row.region || 'Alberta',
-      demand_mw: row.demand_mw,
-      supply_mw: row.supply_mw,
-      reserve_margin: row.demand_mw && row.supply_mw && row.demand_mw > 0
-        ? (row.supply_mw - row.demand_mw) / row.demand_mw
-        : null,
-      frequency_hz: 60,
-      voltage_kv: 138,
-      data_source: row.source || 'AESO',
-      status: 'stable',
-      captured_at: row.timestamp || new Date().toISOString()
+    const upsertRows = rows.map((row: any) => buildObservedGridStatusRow(row, {
+      region: 'Alberta',
+      dataSource: 'AESO',
     }));
+    if (upsertRows.some((row) => row === null)) {
+      throw new Error('AESO persistence row lacked an authoritative source timestamp.');
+    }
 
     const { error } = await supabase
       .from('grid_status')
@@ -273,6 +284,17 @@ serve(async (req: Request) => {
     });
   }
 
+  if (!supabase) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Supabase service configuration missing; AESO ingestion was not persisted.',
+      timestamp: new Date().toISOString(),
+    }), {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   const startedAt = Date.now();
 
   try {
@@ -287,12 +309,21 @@ serve(async (req: Request) => {
     const supplyDemand = supplyDemandResult.status === 'fulfilled' ? supplyDemandResult.value : null;
     const poolPrice = poolPriceResult.status === 'fulfilled' ? poolPriceResult.value : null;
 
+    const upstreamErrors = [supplyDemandResult, poolPriceResult]
+      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+      .map((result) => result.reason instanceof Error ? result.reason.message : String(result.reason));
+    if (upstreamErrors.length > 0) {
+      throw new Error(`AESO upstream request failed: ${upstreamErrors.join(' | ')}`);
+    }
+
     // Transform and persist data
     const records = transformAESOData(supplyDemand, poolPrice);
 
-    if (records.length > 0) {
-      await persistGridSnapshots(records);
+    if (records.length === 0) {
+      throw new Error('AESO returned no usable records with authoritative timestamps.');
     }
+
+    await persistGridSnapshots(records);
 
     const duration = Date.now() - startedAt;
     console.log(`AESO data collection completed in ${duration}ms`);
@@ -305,7 +336,10 @@ serve(async (req: Request) => {
     }, startedAt);
     const provenance = buildDataProvenance({
       source: 'AESO API',
-      lastUpdated: records[0]?.timestamp ?? new Date().toISOString(),
+      lastUpdated: records
+        .map((record) => record.timestamp)
+        .sort()
+        .at(-1) ?? null,
       isFallback: false,
       staleAfterHours: 2,
     });

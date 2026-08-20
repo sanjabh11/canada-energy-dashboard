@@ -95,6 +95,11 @@ export {
   generateOntarioPublicUtilitySampleRows,
 } from './utilitySampleData';
 export { buildForecastBenchmarkFailureNotes } from './forecastMetrics';
+export {
+  normalizePersistedUtilityIntervalHistory,
+  type PersistedUtilityIntervalHistoryRow,
+  type UtilityConnectorHistoryNormalizationResult,
+} from './utilityConnectorHistory';
 
 import type {
   UtilityJurisdiction,
@@ -160,22 +165,28 @@ function buildSourceManifest(params: {
   rows: UtilityHistoricalLoadRow[];
   summary: UtilityDataSummary;
 }): PublicSourceManifest {
-  const sampledRows = params.rows.length > 6000
-    ? [
-        ...params.rows.slice(0, 2000),
-        ...params.rows.slice(Math.max(0, Math.floor(params.rows.length / 2) - 1000), Math.floor(params.rows.length / 2) + 1000),
-        ...params.rows.slice(-2000),
-      ]
-    : params.rows;
+  const sampledRows =
+    params.rows.length > 6000
+      ? [
+          ...params.rows.slice(0, 2000),
+          ...params.rows.slice(
+            Math.max(0, Math.floor(params.rows.length / 2) - 1000),
+            Math.floor(params.rows.length / 2) + 1000,
+          ),
+          ...params.rows.slice(-2000),
+        ]
+      : params.rows;
   const serialized = sampledRows
-    .map((row) => [
-      row.timestamp,
-      row.geography_id,
-      row.demand_mw,
-      row.net_load_mw ?? '',
-      row.gross_load_mw ?? '',
-      row.source_system ?? '',
-    ].join('|'))
+    .map((row) =>
+      [
+        row.timestamp,
+        row.geography_id,
+        row.demand_mw,
+        row.net_load_mw ?? '',
+        row.gross_load_mw ?? '',
+        row.source_system ?? '',
+      ].join('|'),
+    )
     .join('\n');
   const hashInput = `${params.rows.length}:${params.summary.date_range.start}:${params.summary.date_range.end}\n${serialized}`;
   const isPublicSystemSample = params.sourceKind === 'public_system_sample';
@@ -195,7 +206,9 @@ function buildSourceManifest(params: {
       : params.sourceLabel,
     fetchedAt: params.summary.date_range.end,
     hash: stableHash(hashInput),
-    transformVersion: isPublicSystemSample ? PUBLIC_SOURCE_TRANSFORM_VERSION : UTILITY_ASSUMPTION_PACK_VERSION,
+    transformVersion: isPublicSystemSample
+      ? PUBLIC_SOURCE_TRANSFORM_VERSION
+      : UTILITY_ASSUMPTION_PACK_VERSION,
     sourceKind: params.sourceKind,
     disclaimer: isPublicSystemSample
       ? ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer
@@ -215,15 +228,25 @@ export function buildUtilityForecastPackage(params: {
 }): UtilityForecastPackage {
   const rows = prepareRows(sortRows(params.rows));
   const qualityAssessment = assessInputQuality(rows);
-  const highlightedYears = uniqueSortedYears(params.scenario.planning_horizon_years ?? DEFAULT_PLANNING_YEARS);
+  const highlightedYears = uniqueSortedYears(
+    params.scenario.planning_horizon_years ?? DEFAULT_PLANNING_YEARS,
+  );
   const summary = summarizeRows(rows);
   const aggregated = aggregateIntervals(rows);
   const benchmarkResult = buildBenchmarkMetricsWithFallback(aggregated, summary.granularity);
   const benchmark = benchmarkResult.metrics;
-  const weatherFactor = estimateWeatherFactor(aggregated, params.scenario.weather_case, params.scenario.stress_test_mode ?? 'none');
+  const weatherFactor = estimateWeatherFactor(
+    aggregated,
+    params.scenario.weather_case,
+    params.scenario.stress_test_mode ?? 'none',
+  );
   const maxYear = Math.max(...highlightedYears, 10);
-  const capacityMw = round(summary.baseline_peak_mw * (1 + params.scenario.capacity_buffer_pct / 100), 2);
-  const sourceKind = params.sourceKind ?? (params.isSampleData ? 'fallback_starter' : 'uploaded_historical');
+  const capacityMw = round(
+    summary.baseline_peak_mw * (1 + params.scenario.capacity_buffer_pct / 100),
+    2,
+  );
+  const sourceKind =
+    params.sourceKind ?? (params.isSampleData ? 'fallback_starter' : 'uploaded_historical');
   const isPublicSystemSample = sourceKind === 'public_system_sample';
 
   const expectedCase = buildForecastCase({
@@ -280,7 +303,12 @@ export function buildUtilityForecastPackage(params: {
   const oebRows = buildOebRows(params.scenario.jurisdiction, expectedCase, capacityMw);
   const reliabilityRows = buildReliabilityRows(reliabilityProxy);
   const scenarioMatrixRows = buildScenarioMatrixRows(scenarioMatrix, reliabilityProxy);
-  const albertaDspRows = buildAucDspRows(expectedCase, geographyAllocations, params.scenario, reliabilityProxy);
+  const albertaDspRows = buildAucDspRows(
+    expectedCase,
+    geographyAllocations,
+    params.scenario,
+    reliabilityProxy,
+  );
   const hostingCapacityWarnings = buildHostingCapacityWarnings(
     geographyAllocations,
     params.scenario,
@@ -296,22 +324,30 @@ export function buildUtilityForecastPackage(params: {
   const warnings: string[] = [...benchmarkResult.warnings];
 
   if (summary.granularity === 'monthly') {
-    warnings.push('Monthly input runs on a planning-timescale model; 8,760-hour profiles are synthesized from seasonal shape assumptions.');
+    warnings.push(
+      'Monthly input runs on a planning-timescale model; 8,760-hour profiles are synthesized from seasonal shape assumptions.',
+    );
   }
   if (summary.interval_count < 12) {
     warnings.push('Forecast confidence is limited because fewer than 12 intervals are available.');
   }
   if (params.isSampleData) {
-    warnings.push('Starter data is illustrative and should be replaced with utility history for production use.');
+    warnings.push(
+      'Starter data is illustrative and should be replaced with utility history for production use.',
+    );
   }
   if (isPublicSystemSample) {
-    warnings.push('Public-derived Ontario system sample is workflow proof only; it is not customer LDC history or production utility telemetry.');
+    warnings.push(
+      'Public-derived Ontario system sample is workflow proof only; it is not customer LDC history or production utility telemetry.',
+    );
   }
   if (qualityAssessment.warnings.length > 0) {
     warnings.push(...qualityAssessment.warnings);
   }
   if (hostingCapacityWarnings.length > 0) {
-    warnings.push(`Hosting capacity review required for ${hostingCapacityWarnings.length} projected feeder scenario(s).`);
+    warnings.push(
+      `Hosting capacity review required for ${hostingCapacityWarnings.length} projected feeder scenario(s).`,
+    );
   }
 
   const assumptions = [
@@ -325,44 +361,54 @@ export function buildUtilityForecastPackage(params: {
     `Live-surface contract version ${UTILITY_ASSUMPTION_PACK_VERSION} captures source, observed_at, freshness_status, is_fallback, quality_flags, and assumption pack version.`,
   ];
   if (isPublicSystemSample) {
-    assumptions.push(`Ontario public sample manifest ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id} links to ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_url} and must remain labeled as not customer LDC history.`);
+    assumptions.push(
+      `Ontario public sample manifest ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id} links to ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_url} and must remain labeled as not customer LDC history.`,
+    );
   }
   if ((params.scenario.large_point_loads?.length ?? 0) > 0) {
-    assumptions.push(`Large point-load overlay adds ${(params.scenario.large_point_loads ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW of named non-organic demand.`);
+    assumptions.push(
+      `Large point-load overlay adds ${(params.scenario.large_point_loads ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW of named non-organic demand.`,
+    );
   }
   if ((params.scenario.industrial_opt_outs?.length ?? 0) > 0) {
-    assumptions.push(`Industrial opt-out overlay removes ${(params.scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW from the grid-served planning case.`);
+    assumptions.push(
+      `Industrial opt-out overlay removes ${(params.scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW from the grid-served planning case.`,
+    );
   }
 
   const inputSurface = buildLiveSurfaceContract({
     source: params.sourceLabel,
     observedAt: summary.date_range.end,
     isFallback: sourceKind === 'fallback_starter' || params.isSampleData,
-    qualityFlags: qualityAssessment.qualityCounts.filter((entry) => entry.count > 0).map((entry) => entry.flag),
+    qualityFlags: qualityAssessment.qualityCounts
+      .filter((entry) => entry.count > 0)
+      .map((entry) => entry.flag),
     sourceKind,
     assumptionPackVersion: UTILITY_ASSUMPTION_PACK_VERSION,
-    staleAfterHours: sourceKind === 'telemetry_gateway'
-      ? 24
-      : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch'
-        ? 24 * 7
-        : sourceKind === 'green_button_cmd'
-          ? 24 * 2
-          : sourceKind === 'public_system_sample'
-            ? 24 * 365
-          : 24 * 30,
-    notes: sourceKind === 'utility_system_batch'
-      ? 'Normalized batch snapshot from utility operational systems.'
-      : sourceKind === 'utility_settlement_batch'
-        ? 'Settlement or MDM-compatible batch normalized into the utility planning contract.'
-        : sourceKind === 'green_button_cmd'
-          ? 'Ontario Green Button Connect My Data interval history normalized into the planning contract.'
-          : sourceKind === 'public_system_sample'
-            ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label}; ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
-          : sourceKind === 'telemetry_gateway'
-            ? 'Northbound telemetry gateway snapshot from external SCADA or edge integration.'
-            : sourceKind === 'uploaded_historical'
-              ? 'User-provided historical utility dataset.'
-              : 'Starter dataset for workflow validation.',
+    staleAfterHours:
+      sourceKind === 'telemetry_gateway'
+        ? 24
+        : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch'
+          ? 24 * 7
+          : sourceKind === 'green_button_cmd'
+            ? 24 * 2
+            : sourceKind === 'public_system_sample'
+              ? 24 * 365
+              : 24 * 30,
+    notes:
+      sourceKind === 'utility_system_batch'
+        ? 'Normalized batch snapshot from utility operational systems.'
+        : sourceKind === 'utility_settlement_batch'
+          ? 'Settlement or MDM-compatible batch normalized into the utility planning contract.'
+          : sourceKind === 'green_button_cmd'
+            ? 'Ontario Green Button Connect My Data interval history normalized into the planning contract.'
+            : sourceKind === 'public_system_sample'
+              ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label}; ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
+              : sourceKind === 'telemetry_gateway'
+                ? 'Northbound telemetry gateway snapshot from external SCADA or edge integration.'
+                : sourceKind === 'uploaded_historical'
+                  ? 'User-provided historical utility dataset.'
+                  : 'Starter dataset for workflow validation.',
   });
   const liveSurfaces = [inputSurface, ...(params.liveSurfaces ?? [])];
   const inputProvenanceSummary: UtilityInputProvenanceSummary = {
@@ -371,7 +417,9 @@ export function buildUtilityForecastPackage(params: {
     live_surfaces: liveSurfaces,
     quality_counts: qualityAssessment.qualityCounts,
     gross_reconstitution_applied: qualityAssessment.grossReconstitutionApplied,
-    source_systems: Array.from(new Set(rows.map((row) => row.source_system).filter(Boolean) as string[])).sort(),
+    source_systems: Array.from(
+      new Set(rows.map((row) => row.source_system).filter(Boolean) as string[]),
+    ).sort(),
     total_quality_flags: qualityAssessment.totalFlags,
   };
   const sourceManifest = buildSourceManifest({
@@ -391,11 +439,13 @@ export function buildUtilityForecastPackage(params: {
   const provenance = createProvenance(
     params.isSampleData
       ? 'mock'
-      : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch' || sourceKind === 'green_button_cmd'
+      : sourceKind === 'utility_system_batch' ||
+          sourceKind === 'utility_settlement_batch' ||
+          sourceKind === 'green_button_cmd'
         ? 'calibrated'
         : sourceKind === 'public_system_sample'
           ? 'historical_archive'
-        : 'historical_archive',
+          : 'historical_archive',
     params.sourceLabel,
     params.isSampleData
       ? 0.58
@@ -405,9 +455,9 @@ export function buildUtilityForecastPackage(params: {
           ? 0.88
           : sourceKind === 'public_system_sample'
             ? 0.72
-          : sourceKind === 'telemetry_gateway'
-            ? 0.84
-            : 0.87,
+            : sourceKind === 'telemetry_gateway'
+              ? 0.84
+              : 0.87,
     {
       completeness: 1,
       notes: params.isSampleData
@@ -420,9 +470,9 @@ export function buildUtilityForecastPackage(params: {
               ? 'Green Button Connect My Data interval history used to build the planning forecast package.'
               : sourceKind === 'public_system_sample'
                 ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_derivation_note} ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
-              : sourceKind === 'telemetry_gateway'
-                ? 'Telemetry gateway snapshot blended into the planning truth contract for live utility context.'
-                : 'Uploaded utility historical load data used to build the planning forecast package.',
+                : sourceKind === 'telemetry_gateway'
+                  ? 'Telemetry gateway snapshot blended into the planning truth contract for live utility context.'
+                  : 'Uploaded utility historical load data used to build the planning forecast package.',
     },
   );
 
@@ -496,11 +546,16 @@ function prepareRows(rows: UtilityHistoricalLoadRow[]): UtilityHistoricalLoadRow
     const effectiveGross = Number.isFinite(inputRow.gross_load_mw ?? Number.NaN)
       ? Number(inputRow.gross_load_mw)
       : null;
-    const useGross = effectiveGross !== null && effectiveGross > 0 && effectiveGross >= inputRow.demand_mw;
+    const useGross =
+      effectiveGross !== null && effectiveGross > 0 && effectiveGross >= inputRow.demand_mw;
     const preparedRow: UtilityHistoricalLoadRow = {
       ...inputRow,
-      demand_mw: useGross ? round(effectiveGross ?? inputRow.demand_mw, 3) : round(inputRow.demand_mw, 3),
-      gross_reconstituted_mw: useGross ? round(effectiveGross ?? inputRow.demand_mw, 3) : inputRow.gross_reconstituted_mw ?? null,
+      demand_mw: useGross
+        ? round(effectiveGross ?? inputRow.demand_mw, 3)
+        : round(inputRow.demand_mw, 3),
+      gross_reconstituted_mw: useGross
+        ? round(effectiveGross ?? inputRow.demand_mw, 3)
+        : (inputRow.gross_reconstituted_mw ?? null),
       quality_flags: Array.from(
         useGross ? normalizedFlags.add('gross_reconstituted') : normalizedFlags,
       ),
@@ -521,17 +576,38 @@ function prepareRows(rows: UtilityHistoricalLoadRow[]): UtilityHistoricalLoadRow
     ]);
     merged.set(key, {
       ...existing,
-      demand_mw: round((existing.demand_mw * existing._count + preparedRow.demand_mw) / nextCount, 3),
-      net_load_mw: averageOptional(existing.net_load_mw, preparedRow.net_load_mw, existing._count, nextCount),
-      gross_load_mw: averageOptional(existing.gross_load_mw, preparedRow.gross_load_mw, existing._count, nextCount),
+      demand_mw: round(
+        (existing.demand_mw * existing._count + preparedRow.demand_mw) / nextCount,
+        3,
+      ),
+      net_load_mw: averageOptional(
+        existing.net_load_mw,
+        preparedRow.net_load_mw,
+        existing._count,
+        nextCount,
+      ),
+      gross_load_mw: averageOptional(
+        existing.gross_load_mw,
+        preparedRow.gross_load_mw,
+        existing._count,
+        nextCount,
+      ),
       gross_reconstituted_mw: averageOptional(
         existing.gross_reconstituted_mw,
         preparedRow.gross_reconstituted_mw,
         existing._count,
         nextCount,
       ),
-      temperature_c: averageOptional(existing.temperature_c, preparedRow.temperature_c, existing._count, nextCount),
-      customer_count: Math.max(Number(existing.customer_count ?? 0), Number(preparedRow.customer_count ?? 0)),
+      temperature_c: averageOptional(
+        existing.temperature_c,
+        preparedRow.temperature_c,
+        existing._count,
+        nextCount,
+      ),
+      customer_count: Math.max(
+        Number(existing.customer_count ?? 0),
+        Number(preparedRow.customer_count ?? 0),
+      ),
       source_system: existing.source_system ?? preparedRow.source_system,
       feeder_id: existing.feeder_id ?? preparedRow.feeder_id,
       substation_id: existing.substation_id ?? preparedRow.substation_id,
@@ -569,7 +645,9 @@ function assessInputQuality(rows: UtilityHistoricalLoadRow[]): UtilityQualityAss
       const currentDemand = current.gross_reconstituted_mw ?? current.demand_mw;
       const ratio = previousDemand > 0 ? currentDemand / previousDemand : 1;
       const absoluteDelta = Math.abs(currentDemand - previousDemand);
-      const temperatureDelta = Math.abs((current.temperature_c ?? 0) - (previous.temperature_c ?? 0));
+      const temperatureDelta = Math.abs(
+        (current.temperature_c ?? 0) - (previous.temperature_c ?? 0),
+      );
       const priorCustomers = Number(previous.customer_count ?? 0);
       const currentCustomers = Number(current.customer_count ?? 0);
 
@@ -582,26 +660,37 @@ function assessInputQuality(rows: UtilityHistoricalLoadRow[]): UtilityQualityAss
         increment('flatline_segment');
       }
 
-      if (previousDemand > 0 && absoluteDelta > Math.max(6, previousDemand * 0.55) && (ratio > 1.75 || ratio < 0.35)) {
+      if (
+        previousDemand > 0 &&
+        absoluteDelta > Math.max(6, previousDemand * 0.55) &&
+        (ratio > 1.75 || ratio < 0.35)
+      ) {
         increment('impossible_spike');
       }
-      if (previousDemand > 0 && absoluteDelta > Math.max(4, previousDemand * 0.28) && temperatureDelta < 3 && Math.abs(currentCustomers - priorCustomers) < Math.max(25, priorCustomers * 0.02)) {
+      if (
+        previousDemand > 0 &&
+        absoluteDelta > Math.max(4, previousDemand * 0.28) &&
+        temperatureDelta < 3 &&
+        Math.abs(currentCustomers - priorCustomers) < Math.max(25, priorCustomers * 0.02)
+      ) {
         increment('load_transfer_jump');
       }
     }
   });
 
-  const qualityCounts = ([
-    'duplicate_interval',
-    'negative_load',
-    'flatline_segment',
-    'impossible_spike',
-    'load_transfer_jump',
-    'customer_count_missing',
-    'missing_temperature',
-    'net_exceeds_gross',
-    'gross_reconstituted',
-  ] as UtilityQualityFlag[]).map((flag) => ({ flag, count: counts.get(flag) ?? 0 }));
+  const qualityCounts = (
+    [
+      'duplicate_interval',
+      'negative_load',
+      'flatline_segment',
+      'impossible_spike',
+      'load_transfer_jump',
+      'customer_count_missing',
+      'missing_temperature',
+      'net_exceeds_gross',
+      'gross_reconstituted',
+    ] as UtilityQualityFlag[]
+  ).map((flag) => ({ flag, count: counts.get(flag) ?? 0 }));
 
   const warnings = qualityCounts
     .filter((entry) => entry.count > 0)
@@ -638,7 +727,10 @@ function reconcileGeographyAllocations(
   hostingCapacityLimitMw: number,
 ): UtilityGeographyAllocation[] {
   const recentRows = rows.slice(-Math.min(rows.length, 24 * 14 * 6));
-  const shares = new Map<string, { peak: number; geography_level: UtilityGeographyLevel; customer_class: string }>();
+  const shares = new Map<
+    string,
+    { peak: number; geography_level: UtilityGeographyLevel; customer_class: string }
+  >();
   let totalPeak = 0;
 
   for (const row of recentRows) {
@@ -665,10 +757,16 @@ function reconcileGeographyAllocations(
       const share = value.peak / totalPeak;
       const [, geographyId, customerClass] = key.split('|');
       const pointLoadMw = (scenario.large_point_loads ?? [])
-        .filter((item) => item.geography_id === geographyId && item.geography_level === value.geography_level)
+        .filter(
+          (item) =>
+            item.geography_id === geographyId && item.geography_level === value.geography_level,
+        )
         .reduce((sum, item) => sum + item.mw, 0);
       const industrialOptOutMw = (scenario.industrial_opt_outs ?? [])
-        .filter((item) => item.geography_id === geographyId && item.geography_level === value.geography_level)
+        .filter(
+          (item) =>
+            item.geography_id === geographyId && item.geography_level === value.geography_level,
+        )
         .reduce((sum, item) => sum + item.mw, 0);
       const projectedDerMw = Math.max(0, scenario.der_offset_mw * share);
 
@@ -678,17 +776,20 @@ function reconcileGeographyAllocations(
         customerClass,
         sharePct: round(share * 100, 2),
         rawPeakMw: target.peak_demand_mw * share + pointLoadMw - industrialOptOutMw,
-        constrained: projectedDerMw > hostingCapacityLimitMw || pointLoadMw > hostingCapacityLimitMw * 3,
+        constrained:
+          projectedDerMw > hostingCapacityLimitMw || pointLoadMw > hostingCapacityLimitMw * 3,
       };
     });
 
     const rawTotal = rawAllocations.reduce((sum, entry) => sum + Math.max(0, entry.rawPeakMw), 0);
     let allocatedMw = 0;
     rawAllocations.forEach((entry, index) => {
-      const normalizedPeak = rawTotal > 0 ? target.peak_demand_mw * (Math.max(0, entry.rawPeakMw) / rawTotal) : 0;
-      const peakMw = index === rawAllocations.length - 1
-        ? round(target.peak_demand_mw - allocatedMw, 3)
-        : round(normalizedPeak, 3);
+      const normalizedPeak =
+        rawTotal > 0 ? target.peak_demand_mw * (Math.max(0, entry.rawPeakMw) / rawTotal) : 0;
+      const peakMw =
+        index === rawAllocations.length - 1
+          ? round(target.peak_demand_mw - allocatedMw, 3)
+          : round(normalizedPeak, 3);
       allocatedMw += peakMw;
       allocations.push({
         horizon_year: horizonYear,
@@ -719,46 +820,57 @@ function buildForecastCase(params: {
     (sum, item) => sum + item.mw * Math.max(0.25, item.load_factor_pct / 100),
     0,
   );
-  const industrialOptOutMw = (params.scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0);
+  const industrialOptOutMw = (params.scenario.industrial_opt_outs ?? []).reduce(
+    (sum, item) => sum + item.mw,
+    0,
+  );
   const touPeakShiftMw = (params.scenario.tou_shift_rules ?? []).reduce((sum, rule) => {
     const fromHours = Math.max(1, rule.from_hour_end - rule.from_hour_start + 1);
     const toHours = Math.max(1, rule.to_hour_end - rule.to_hour_start + 1);
     const shiftableMw = params.scenario.ev_growth_mw * (rule.shift_pct / 100);
     return sum + Math.max(0, shiftableMw * (1 / fromHours - 0.35 / toHours));
   }, 0);
-  const additiveMwPerYear = (
-    params.scenario.committed_load_mw
-    + params.scenario.ev_growth_mw
-    + params.scenario.heat_pump_growth_mw
-    + pointLoadMw
-    - params.scenario.der_offset_mw
-    - params.scenario.demand_response_reduction_mw
-    - industrialOptOutMw
-    - touPeakShiftMw
-  ) / Math.max(params.maxYear, 1);
+  const additiveMwPerYear =
+    (params.scenario.committed_load_mw +
+      params.scenario.ev_growth_mw +
+      params.scenario.heat_pump_growth_mw +
+      pointLoadMw -
+      params.scenario.der_offset_mw -
+      params.scenario.demand_response_reduction_mw -
+      industrialOptOutMw -
+      touPeakShiftMw) /
+    Math.max(params.maxYear, 1);
   const customerGrowthFactor = 1 + params.annualGrowthPct * 0.004;
-  const drShiftAdjustment = 1 - (params.scenario.demand_response_shift_pct / 400 + touPeakShiftMw / Math.max(params.summary.baseline_peak_mw, 1));
-  const weatherStressAdder = params.scenario.stress_test_mode === 'polar_vortex'
-    ? 0.035
-    : params.scenario.stress_test_mode === 'heat_wave'
-      ? 0.02
-      : params.scenario.stress_test_mode === 'ice_storm'
-        ? 0.025
-        : 0;
+  const drShiftAdjustment =
+    1 -
+    (params.scenario.demand_response_shift_pct / 400 +
+      touPeakShiftMw / Math.max(params.summary.baseline_peak_mw, 1));
+  const weatherStressAdder =
+    params.scenario.stress_test_mode === 'polar_vortex'
+      ? 0.035
+      : params.scenario.stress_test_mode === 'heat_wave'
+        ? 0.02
+        : params.scenario.stress_test_mode === 'ice_storm'
+          ? 0.025
+          : 0;
 
   const yearly: UtilityForecastYear[] = [];
   for (let year = 1; year <= params.maxYear; year += 1) {
     const growthMultiplier = Math.pow(1 + params.annualGrowthPct / 100, year);
     const additiveMw = additiveMwPerYear * year;
     const peakDemand = round(
-      params.summary.baseline_peak_mw * growthMultiplier * (params.weatherFactor + weatherStressAdder) * Math.max(0.76, drShiftAdjustment) + additiveMw,
+      params.summary.baseline_peak_mw *
+        growthMultiplier *
+        (params.weatherFactor + weatherStressAdder) *
+        Math.max(0.76, drShiftAdjustment) +
+        additiveMw,
       2,
     );
     const annualEnergy = round(
-      params.summary.baseline_energy_gwh * Math.pow(1 + params.annualGrowthPct / 100, year)
-        + additiveMw * 8.76 * 0.44
-        + pointLoadMw * 8.76 * 0.52
-        - industrialOptOutMw * 8.76 * 0.38,
+      params.summary.baseline_energy_gwh * Math.pow(1 + params.annualGrowthPct / 100, year) +
+        additiveMw * 8.76 * 0.44 +
+        pointLoadMw * 8.76 * 0.52 -
+        industrialOptOutMw * 8.76 * 0.38,
       2,
     );
     const customerCount = round(
@@ -767,7 +879,8 @@ function buildForecastCase(params: {
         : 0,
       0,
     );
-    const utilization = params.capacityMw > 0 ? round((peakDemand / params.capacityMw) * 100, 1) : 0;
+    const utilization =
+      params.capacityMw > 0 ? round((peakDemand / params.capacityMw) * 100, 1) : 0;
 
     yearly.push({
       year,
@@ -795,20 +908,30 @@ function estimateWeatherFactor(
 ): number {
   if (weatherCase === 'median' && stressTestMode === 'none') return 1;
 
-  const withTemperature = aggregated.filter((point) => Number.isFinite(point.temperature_c ?? Number.NaN));
+  const withTemperature = aggregated.filter((point) =>
+    Number.isFinite(point.temperature_c ?? Number.NaN),
+  );
   if (withTemperature.length < 24) {
-    return round(1.01 + (weatherCase === 'extreme' ? 0.03 : 0) + stressModeAdder(stressTestMode), 4);
+    return round(
+      1.01 + (weatherCase === 'extreme' ? 0.03 : 0) + stressModeAdder(stressTestMode),
+      4,
+    );
   }
 
-  const meanDemand = withTemperature.reduce((sum, point) => sum + point.demand_mw, 0) / withTemperature.length;
-  const weatherDriven = withTemperature.reduce((sum, point) => {
-    const delta = Math.abs((point.temperature_c ?? 18) - 18);
-    return sum + delta * point.demand_mw;
-  }, 0) / withTemperature.length;
+  const meanDemand =
+    withTemperature.reduce((sum, point) => sum + point.demand_mw, 0) / withTemperature.length;
+  const weatherDriven =
+    withTemperature.reduce((sum, point) => {
+      const delta = Math.abs((point.temperature_c ?? 18) - 18);
+      return sum + delta * point.demand_mw;
+    }, 0) / withTemperature.length;
 
   const normalizedStress = meanDemand > 0 ? weatherDriven / meanDemand : 0.04;
   const caseAdder = weatherCase === 'extreme' ? 0.018 : 0;
-  return round(1 + Math.min(0.09, normalizedStress * 0.0035) + caseAdder + stressModeAdder(stressTestMode), 4);
+  return round(
+    1 + Math.min(0.09, normalizedStress * 0.0035) + caseAdder + stressModeAdder(stressTestMode),
+    4,
+  );
 }
 
 function summarizeRows(rows: UtilityHistoricalLoadRow[]): UtilityDataSummary {
@@ -823,7 +946,10 @@ function summarizeRows(rows: UtilityHistoricalLoadRow[]): UtilityDataSummary {
   const latestCustomerCount = aggregated.at(-1)?.customer_count ?? 0;
   const granularity = detectGranularity(aggregated);
   const hoursPerInterval = granularity === 'monthly' ? 730 : 1;
-  const totalEnergyMwh = aggregated.reduce((sum, point) => sum + point.demand_mw * hoursPerInterval, 0);
+  const totalEnergyMwh = aggregated.reduce(
+    (sum, point) => sum + point.demand_mw * hoursPerInterval,
+    0,
+  );
 
   return {
     row_count: rows.length,
@@ -839,7 +965,9 @@ function summarizeRows(rows: UtilityHistoricalLoadRow[]): UtilityDataSummary {
     latest_customer_count: round(latestCustomerCount, 0),
     baseline_peak_mw: round(Math.max(...demandValues), 2),
     baseline_energy_gwh: round(totalEnergyMwh / 1000, 2),
-    weather_zones: Array.from(new Set(rows.map((row) => row.weather_zone).filter(Boolean) as string[])).sort(),
+    weather_zones: Array.from(
+      new Set(rows.map((row) => row.weather_zone).filter(Boolean) as string[]),
+    ).sort(),
   };
 }
 
@@ -864,13 +992,15 @@ function aggregateIntervals(rows: UtilityHistoricalLoadRow[]): AggregatedInterva
     if (existing.temperature_c === null && Number.isFinite(row.temperature_c ?? Number.NaN)) {
       existing.temperature_c = row.temperature_c ?? null;
     }
-    existing.quality_flags = Array.from(new Set([...existing.quality_flags, ...(row.quality_flags ?? [])]));
+    existing.quality_flags = Array.from(
+      new Set([...existing.quality_flags, ...(row.quality_flags ?? [])]),
+    );
 
     points.set(key, existing);
   }
 
-  return Array.from(points.values()).sort((left, right) =>
-    new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
+  return Array.from(points.values()).sort(
+    (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
   );
 }
 
@@ -879,7 +1009,9 @@ function buildBaseHourlyShape(
   summary: UtilityDataSummary,
 ): number[] {
   if (summary.granularity === 'hourly' && aggregated.length > 0) {
-    const trimmed = aggregated.slice(0, Math.min(aggregated.length, 8760)).map((point) => point.demand_mw);
+    const trimmed = aggregated
+      .slice(0, Math.min(aggregated.length, 8760))
+      .map((point) => point.demand_mw);
     if (trimmed.length >= 24) return trimmed;
   }
 
@@ -891,7 +1023,14 @@ function buildBaseHourlyShape(
       const morningShoulder = Math.max(0, Math.sin(((hour - 6) / 24) * Math.PI) * 0.2);
       const eveningPeak = Math.max(0, Math.sin(((hour - 15) / 24) * Math.PI) * 0.26);
       const overnightFloor = 0.68;
-      series.push(round(summary.baseline_peak_mw * seasonalByMonth[month] * (overnightFloor + morningShoulder + eveningPeak), 3));
+      series.push(
+        round(
+          summary.baseline_peak_mw *
+            seasonalByMonth[month] *
+            (overnightFloor + morningShoulder + eveningPeak),
+          3,
+        ),
+      );
     }
   }
   return series;
@@ -920,14 +1059,20 @@ function buildReliabilityProxy(
   const horizonScores = expectedCase.yearly.map((year) => {
     const reserveHeadroomMw = round(capacityMw - year.peak_demand_mw, 2);
     const utilizationPenalty = Math.max(0, year.utilization_pct - 72) * 0.85;
-    const score = clamp(round(91 - utilizationPenalty - qualityPenalty - stressPenalty - Math.max(0, (weatherFactor - 1) * 85), 1), 30, 96);
-    const band: UtilityReliabilityHorizon['band'] = score >= 82
-      ? 'stable'
-      : score >= 68
-        ? 'watch'
-        : score >= 52
-          ? 'strained'
-          : 'critical';
+    const score = clamp(
+      round(
+        91 -
+          utilizationPenalty -
+          qualityPenalty -
+          stressPenalty -
+          Math.max(0, (weatherFactor - 1) * 85),
+        1,
+      ),
+      30,
+      96,
+    );
+    const band: UtilityReliabilityHorizon['band'] =
+      score >= 82 ? 'stable' : score >= 68 ? 'watch' : score >= 52 ? 'strained' : 'critical';
 
     return {
       horizon_year: year.year,
@@ -947,14 +1092,17 @@ function buildReliabilityProxy(
   };
 }
 
-function buildReliabilityRows(reliabilityProxy: UtilityReliabilityProxy): OEB_DSP_Reliability_Row[] {
+function buildReliabilityRows(
+  reliabilityProxy: UtilityReliabilityProxy,
+): OEB_DSP_Reliability_Row[] {
   const first = reliabilityProxy.horizon_scores[0];
   const last = reliabilityProxy.horizon_scores.at(-1);
-  const trend: OEB_DSP_Reliability_Row['trend'] = (last?.score ?? 0) >= (first?.score ?? 0)
-    ? 'stable'
-    : (last?.score ?? 0) >= (first?.score ?? 0) - 6
-      ? 'declining'
-      : 'declining';
+  const trend: OEB_DSP_Reliability_Row['trend'] =
+    (last?.score ?? 0) >= (first?.score ?? 0)
+      ? 'stable'
+      : (last?.score ?? 0) >= (first?.score ?? 0) - 6
+        ? 'declining'
+        : 'declining';
 
   return [
     {
@@ -1000,7 +1148,13 @@ function buildScenarioMatrixRows(
   const exportedYears = uniqueSortedYears(
     scenarioMatrix.base.yearly
       .map((row) => row.year)
-      .filter((year) => year === 1 || year === 5 || year === 10 || year === scenarioMatrix.base.yearly.at(-1)?.year),
+      .filter(
+        (year) =>
+          year === 1 ||
+          year === 5 ||
+          year === 10 ||
+          year === scenarioMatrix.base.yearly.at(-1)?.year,
+      ),
   );
   const cases: Array<{ key: 'low' | 'base' | 'high'; forecast: UtilityForecastCase }> = [
     { key: 'low', forecast: scenarioMatrix.low },
@@ -1010,7 +1164,9 @@ function buildScenarioMatrixRows(
 
   return exportedYears.flatMap((horizonYear) => {
     const baseYear = scenarioMatrix.base.yearly.find((row) => row.year === horizonYear);
-    const reliability = reliabilityProxy.horizon_scores.find((row) => row.horizon_year === horizonYear);
+    const reliability = reliabilityProxy.horizon_scores.find(
+      (row) => row.horizon_year === horizonYear,
+    );
 
     return cases.map(({ key, forecast }) => {
       const scenarioYear = forecast.yearly.find((row) => row.year === horizonYear);
@@ -1019,13 +1175,17 @@ function buildScenarioMatrixRows(
         scenario: key,
         peak_demand_mw: scenarioYear?.peak_demand_mw ?? 0,
         annual_energy_gwh: scenarioYear?.annual_energy_gwh ?? 0,
-        delta_vs_base_mw: round((scenarioYear?.peak_demand_mw ?? 0) - (baseYear?.peak_demand_mw ?? 0), 2),
+        delta_vs_base_mw: round(
+          (scenarioYear?.peak_demand_mw ?? 0) - (baseYear?.peak_demand_mw ?? 0),
+          2,
+        ),
         reliability_proxy_score: reliability?.score ?? reliabilityProxy.current_score,
-        notes: key === 'base'
-          ? 'Primary planning case.'
-          : key === 'high'
-            ? 'High-electrification / stress planning case.'
-            : 'Conservative downside planning case.',
+        notes:
+          key === 'base'
+            ? 'Primary planning case.'
+            : key === 'high'
+              ? 'High-electrification / stress planning case.'
+              : 'Conservative downside planning case.',
       };
     });
   });
@@ -1039,13 +1199,23 @@ function buildAucDspRows(
 ): AUC_DSP_DataSchedule_Row[] {
   return allocations.map((allocation) => {
     const year = expectedCase.yearly.find((entry) => entry.year === allocation.horizon_year);
-    const reliability = reliabilityProxy.horizon_scores.find((entry) => entry.horizon_year === allocation.horizon_year);
+    const reliability = reliabilityProxy.horizon_scores.find(
+      (entry) => entry.horizon_year === allocation.horizon_year,
+    );
     const share = allocation.share_pct / 100;
     const largePointLoadMw = (scenario.large_point_loads ?? [])
-      .filter((item) => item.geography_id === allocation.geography_id && item.geography_level === allocation.geography_level)
+      .filter(
+        (item) =>
+          item.geography_id === allocation.geography_id &&
+          item.geography_level === allocation.geography_level,
+      )
       .reduce((sum, item) => sum + item.mw, 0);
     const industrialOptOutMw = (scenario.industrial_opt_outs ?? [])
-      .filter((item) => item.geography_id === allocation.geography_id && item.geography_level === allocation.geography_level)
+      .filter(
+        (item) =>
+          item.geography_id === allocation.geography_id &&
+          item.geography_level === allocation.geography_level,
+      )
       .reduce((sum, item) => sum + item.mw, 0);
     const deferredPeakLoadMw = round(computeDeferredPeakLoad(scenario) * share, 2);
 
@@ -1062,7 +1232,10 @@ function buildAucDspRows(
       der_offset_mw: round(scenario.der_offset_mw * share, 2),
       deferred_peak_load_mw: deferredPeakLoadMw,
       reliability_proxy_score: reliability?.score ?? reliabilityProxy.current_score,
-      hosting_capacity_limit_mw: round(scenario.hosting_capacity_limit_mw ?? DEFAULT_HOSTING_CAPACITY_LIMIT_MW, 2),
+      hosting_capacity_limit_mw: round(
+        scenario.hosting_capacity_limit_mw ?? DEFAULT_HOSTING_CAPACITY_LIMIT_MW,
+        2,
+      ),
       notes: allocation.constrained
         ? 'Review local constraints before filing the DSP schedule.'
         : 'Allocation reconciled from utility-wide planning case.',
@@ -1089,9 +1262,10 @@ function buildHostingCapacityWarnings(
         projected_der_mw: projectedDerMw,
         limit_mw: round(limit, 2),
         severity,
-        message: projectedDerMw > limit
-          ? `Projected DER of ${projectedDerMw.toFixed(2)} MW exceeds the planning hosting-capacity limit of ${limit.toFixed(2)} MW.`
-          : '',
+        message:
+          projectedDerMw > limit
+            ? `Projected DER of ${projectedDerMw.toFixed(2)} MW exceeds the planning hosting-capacity limit of ${limit.toFixed(2)} MW.`
+            : '',
       };
     })
     .filter((warning) => warning.projected_der_mw > warning.limit_mw);
@@ -1120,23 +1294,38 @@ function build8760Profiles(
         (sum, item) => sum + item.mw * Math.max(0.25, item.load_factor_pct / 100),
         0,
       );
-      const industrialOptOutMw = (scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0);
+      const industrialOptOutMw = (scenario.industrial_opt_outs ?? []).reduce(
+        (sum, item) => sum + item.mw,
+        0,
+      );
       const points: Utility8760ProfilePoint[] = [];
 
       for (let hourIndex = 0; hourIndex < profileHours; hourIndex += 1) {
         const baseMw = baseSeries[hourIndex % baseSeries.length] * scale;
         const timestamp = new Date(yearStartMs + hourIndex * 3600_000).toISOString();
         const hour = hourIndex % 24;
-        const demandResponseMw = hour >= 16 && hour <= 20 ? scenario.demand_response_reduction_mw : 0;
-        const derOffsetMw = hour >= 10 && hour <= 16 ? scenario.der_offset_mw * 0.72 : scenario.der_offset_mw * 0.08;
+        const demandResponseMw =
+          hour >= 16 && hour <= 20 ? scenario.demand_response_reduction_mw : 0;
+        const derOffsetMw =
+          hour >= 10 && hour <= 16 ? scenario.der_offset_mw * 0.72 : scenario.der_offset_mw * 0.08;
         const touShiftDeltaMw = (scenario.tou_shift_rules ?? []).reduce((sum, rule) => {
           const shiftMw = scenario.ev_growth_mw * (rule.shift_pct / 100);
-          if (hour >= rule.from_hour_start && hour <= rule.from_hour_end) return sum - shiftMw / Math.max(1, rule.from_hour_end - rule.from_hour_start + 1);
-          if (hour >= rule.to_hour_start && hour <= rule.to_hour_end) return sum + shiftMw / Math.max(1, rule.to_hour_end - rule.to_hour_start + 1);
+          if (hour >= rule.from_hour_start && hour <= rule.from_hour_end)
+            return sum - shiftMw / Math.max(1, rule.from_hour_end - rule.from_hour_start + 1);
+          if (hour >= rule.to_hour_start && hour <= rule.to_hour_end)
+            return sum + shiftMw / Math.max(1, rule.to_hour_end - rule.to_hour_start + 1);
           return sum;
         }, 0);
         const forecastMw = round(
-          Math.max(0, baseMw + pointLoadMw - industrialOptOutMw - derOffsetMw - demandResponseMw + touShiftDeltaMw),
+          Math.max(
+            0,
+            baseMw +
+              pointLoadMw -
+              industrialOptOutMw -
+              derOffsetMw -
+              demandResponseMw +
+              touShiftDeltaMw,
+          ),
           3,
         );
 
@@ -1181,9 +1370,10 @@ function buildBenchmarkMetricsWithFallback(
       warnings: [],
     };
   } catch (error) {
-    const reason = error instanceof Error && error.message.trim()
-      ? error.message.trim()
-      : 'unknown benchmark failure';
+    const reason =
+      error instanceof Error && error.message.trim()
+        ? error.message.trim()
+        : 'unknown benchmark failure';
     return {
       metrics: buildSimpleSeriesMetrics(aggregated, granularity),
       warnings: [`Benchmark backtest fallback applied: ${reason}.`],
@@ -1216,12 +1406,19 @@ function buildRollingEvidenceSplit(
   const maxTrainRows = granularity === 'monthly' ? 60 : 24 * 90;
   const validationTrain = train.slice(-maxTrainRows);
   const trainValues = validationTrain.map((point) => point.demand_mw);
-  const { slope, intercept } = linearRegression(trainValues.map((_, index) => index), trainValues);
+  const { slope, intercept } = linearRegression(
+    trainValues.map((_, index) => index),
+    trainValues,
+  );
   const seasonal = buildSeasonalProfile(validationTrain, granularity);
-  const predictions = test.map((point, index) => round(
-    intercept + slope * (validationTrain.length + index) + lookupSeasonalComponent(point.timestamp, seasonal, granularity),
-    2,
-  ));
+  const predictions = test.map((point, index) =>
+    round(
+      intercept +
+        slope * (validationTrain.length + index) +
+        lookupSeasonalComponent(point.timestamp, seasonal, granularity),
+      2,
+    ),
+  );
   const actuals = test.map((point) => point.demand_mw);
   const persistenceMetrics = calculatePersistenceBaseline([...trainValues, ...actuals], 1);
   const seasonalMetrics = calculateSeasonalNaiveBaseline(
@@ -1232,14 +1429,18 @@ function buildRollingEvidenceSplit(
   const metrics = computeMetrics(actuals, predictions, persistenceMetrics, seasonalMetrics);
   const errors = actuals.map((actual, index) => Math.abs(actual - predictions[index]));
   const conformalWidth = quantile(errors, 0.9);
-  const covered = conformalWidth > 0
-    ? actuals.filter((actual, index) => Math.abs(actual - predictions[index]) <= conformalWidth).length
-    : actuals.length;
-  const meanIntervalScore = actuals.length > 0
-    ? actuals.reduce((sum, actual, index) => (
-        sum + intervalScore(actual, predictions[index], conformalWidth)
-      ), 0) / actuals.length
-    : 0;
+  const covered =
+    conformalWidth > 0
+      ? actuals.filter((actual, index) => Math.abs(actual - predictions[index]) <= conformalWidth)
+          .length
+      : actuals.length;
+  const meanIntervalScore =
+    actuals.length > 0
+      ? actuals.reduce(
+          (sum, actual, index) => sum + intervalScore(actual, predictions[index], conformalWidth),
+          0,
+        ) / actuals.length
+      : 0;
 
   return {
     split_id: splitId,
@@ -1268,7 +1469,10 @@ function buildRollingOriginSplits(
   if (aggregated.length < minTrain + testSize) return [];
 
   const maxSplits = 3;
-  const availableSplits = Math.min(maxSplits, Math.floor((aggregated.length - minTrain) / testSize));
+  const availableSplits = Math.min(
+    maxSplits,
+    Math.floor((aggregated.length - minTrain) / testSize),
+  );
   const splits: ForecastEvidenceSplit[] = [];
   for (let index = 0; index < availableSplits; index += 1) {
     const trainEnd = aggregated.length - (availableSplits - index) * testSize;
@@ -1276,13 +1480,17 @@ function buildRollingOriginSplits(
     const train = aggregated.slice(0, trainEnd);
     const test = aggregated.slice(trainEnd, testEnd);
     if (train.length >= minTrain && test.length > 0) {
-      splits.push(buildRollingEvidenceSplit(`rolling-origin-${index + 1}`, train, test, granularity));
+      splits.push(
+        buildRollingEvidenceSplit(`rolling-origin-${index + 1}`, train, test, granularity),
+      );
     }
   }
   return splits;
 }
 
-function buildHierarchyReconciliation(rows: UtilityHistoricalLoadRow[]): ForecastEvidenceReport['hierarchy_reconciliation'] {
+function buildHierarchyReconciliation(
+  rows: UtilityHistoricalLoadRow[],
+): ForecastEvidenceReport['hierarchy_reconciliation'] {
   const geographyCount = new Set(rows.map((row) => row.geography_id)).size;
   if (geographyCount <= 1) {
     return {
@@ -1292,9 +1500,17 @@ function buildHierarchyReconciliation(rows: UtilityHistoricalLoadRow[]): Forecas
     };
   }
 
-  const byTimestamp = new Map<string, { system: number; child: number; hasSystem: boolean; hasChild: boolean }>();
+  const byTimestamp = new Map<
+    string,
+    { system: number; child: number; hasSystem: boolean; hasChild: boolean }
+  >();
   rows.forEach((row) => {
-    const current = byTimestamp.get(row.timestamp) ?? { system: 0, child: 0, hasSystem: false, hasChild: false };
+    const current = byTimestamp.get(row.timestamp) ?? {
+      system: 0,
+      child: 0,
+      hasSystem: false,
+      hasChild: false,
+    };
     if (row.geography_level === 'system') {
       current.system += row.demand_mw;
       current.hasSystem = true;
@@ -1305,7 +1521,9 @@ function buildHierarchyReconciliation(rows: UtilityHistoricalLoadRow[]): Forecas
     byTimestamp.set(row.timestamp, current);
   });
 
-  const comparable = Array.from(byTimestamp.values()).filter((entry) => entry.hasSystem && entry.hasChild);
+  const comparable = Array.from(byTimestamp.values()).filter(
+    (entry) => entry.hasSystem && entry.hasChild,
+  );
   if (comparable.length === 0) {
     return {
       status: 'needs_review',
@@ -1330,22 +1548,31 @@ function buildForecastEvidenceReport(params: {
   warnings: string[];
 }): ForecastEvidenceReport {
   const rollingSplits = buildRollingOriginSplits(params.aggregated, params.granularity);
-  const averageCoverage = rollingSplits.length > 0
-    ? rollingSplits.reduce((sum, split) => sum + split.interval_coverage_pct, 0) / rollingSplits.length
-    : 0;
-  const conformalWidth = rollingSplits.length > 0
-    ? quantile(rollingSplits.map((split) => split.rmse), 0.9)
-    : params.benchmark.rmse;
-  const challenger = params.benchmark.persistence_mae <= params.benchmark.seasonal_naive_mae
-    ? 'persistence'
-    : 'seasonal_naive';
-  const challengerMae = challenger === 'persistence'
-    ? params.benchmark.persistence_mae
-    : params.benchmark.seasonal_naive_mae;
+  const averageCoverage =
+    rollingSplits.length > 0
+      ? rollingSplits.reduce((sum, split) => sum + split.interval_coverage_pct, 0) /
+        rollingSplits.length
+      : 0;
+  const conformalWidth =
+    rollingSplits.length > 0
+      ? quantile(
+          rollingSplits.map((split) => split.rmse),
+          0.9,
+        )
+      : params.benchmark.rmse;
+  const challenger =
+    params.benchmark.persistence_mae <= params.benchmark.seasonal_naive_mae
+      ? 'persistence'
+      : 'seasonal_naive';
+  const challengerMae =
+    challenger === 'persistence'
+      ? params.benchmark.persistence_mae
+      : params.benchmark.seasonal_naive_mae;
   const benchmarkFailureNotes = buildForecastBenchmarkFailureNotes(params.benchmark);
-  const decisionReason = params.benchmark.mae > 0 && challengerMae > 0 && params.benchmark.mae <= challengerMae
-    ? 'Transparent trend-seasonal model is the current champion because its holdout MAE is no worse than the strongest naive challenger.'
-    : 'Transparent trend-seasonal model remains the champion for explainability, but the challenger gap must be reviewed before making accuracy claims.';
+  const decisionReason =
+    params.benchmark.mae > 0 && challengerMae > 0 && params.benchmark.mae <= challengerMae
+      ? 'Transparent trend-seasonal model is the current champion because its holdout MAE is no worse than the strongest naive challenger.'
+      : 'Transparent trend-seasonal model remains the champion for explainability, but the challenger gap must be reviewed before making accuracy claims.';
 
   return {
     model_version: UTILITY_FORECAST_MODEL_VERSION,
@@ -1363,7 +1590,11 @@ function buildForecastEvidenceReport(params: {
     warnings: [
       ...params.warnings,
       ...benchmarkFailureNotes,
-      ...(rollingSplits.length < 3 ? ['Fewer than three rolling-origin splits are available; treat interval coverage as pilot evidence only.'] : []),
+      ...(rollingSplits.length < 3
+        ? [
+            'Fewer than three rolling-origin splits are available; treat interval coverage as pilot evidence only.',
+          ]
+        : []),
     ],
   };
 }
@@ -1387,7 +1618,10 @@ function buildSimpleSeriesMetrics(
   const test = aggregated.slice(aggregated.length - testSize);
   const trainValues = train.map((point) => point.demand_mw);
 
-  const { slope, intercept } = linearRegression(trainValues.map((_, index) => index), trainValues);
+  const { slope, intercept } = linearRegression(
+    trainValues.map((_, index) => index),
+    trainValues,
+  );
   const seasonal = buildSeasonalProfile(train, granularity);
   const modelPredictions = test.map((point, index) => {
     const trend = intercept + slope * (train.length + index);
@@ -1397,12 +1631,7 @@ function buildSimpleSeriesMetrics(
   const persistenceMetrics = calculatePersistenceBaseline(series, 1);
   const seasonalMetrics = calculateSeasonalNaiveBaseline(series, 1, seasonalPeriod);
 
-  return computeMetrics(
-    actuals,
-    modelPredictions,
-    persistenceMetrics,
-    seasonalMetrics,
-  );
+  return computeMetrics(actuals, modelPredictions, persistenceMetrics, seasonalMetrics);
 }
 
 function buildSeasonalProfile(
@@ -1438,12 +1667,17 @@ function detectGranularity(aggregated: AggregatedIntervalPoint[]): UtilityInputG
 
   const deltasHours: number[] = [];
   for (let index = 1; index < aggregated.length; index += 1) {
-    const hours = (new Date(aggregated[index].timestamp).getTime() - new Date(aggregated[index - 1].timestamp).getTime()) / 3600_000;
+    const hours =
+      (new Date(aggregated[index].timestamp).getTime() -
+        new Date(aggregated[index - 1].timestamp).getTime()) /
+      3600_000;
     if (hours > 0) deltasHours.push(hours);
   }
 
   if (deltasHours.length === 0) return 'hourly';
-  const median = deltasHours.sort((left, right) => left - right)[Math.floor(deltasHours.length / 2)];
+  const median = deltasHours.sort((left, right) => left - right)[
+    Math.floor(deltasHours.length / 2)
+  ];
   return median >= 24 * 20 ? 'monthly' : 'hourly';
 }
 
