@@ -190,7 +190,7 @@ export const CreditBankingDashboard: React.FC = () => {
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
                 TIER follow-on workflow
               </div>
-              <h1 className="mt-2 text-3xl font-bold text-white">Credit Banking Dashboard</h1>
+              <h1 className="mt-2 text-3xl font-bold text-slate-50">Credit Banking Dashboard</h1>
               <p className="mt-2 max-w-3xl text-lg text-slate-300">
                 Import holdings and compliance liabilities, calculate a draft allocation schedule,
                 and export the supplied ledger details. Current market value and savings are
@@ -227,15 +227,15 @@ export const CreditBankingDashboard: React.FC = () => {
           className="mb-6"
         />
 
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="min-w-0 space-y-6">
             <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-lg font-semibold text-slate-50">
                     1. Import ledger and liabilities
                   </h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-slate-300">
                     Replace the starter lots with the buyer&apos;s registry holdings and
                     compliance-year liability files.
                   </p>
@@ -243,7 +243,7 @@ export const CreditBankingDashboard: React.FC = () => {
                 <Upload className="h-5 w-5 text-cyan-300" />
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <UploadCard
                   title="Import holdings ledger CSV"
                   description="Required: id, type, vintage, quantity, purchase_price, purchase_date, expiry_year, status."
@@ -272,7 +272,7 @@ export const CreditBankingDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={resetStarters}
-                    className="rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                    className="rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                   >
                     Reload starter ledger
                   </button>
@@ -286,14 +286,21 @@ export const CreditBankingDashboard: React.FC = () => {
               testId="credit-banking-constructed-scenario"
             />
 
-            <ProofPackPanel
-              title={proofBundle.title}
-              summary={proofBundle.summary}
-              artifacts={proofActions}
-            />
+            <div
+              className="min-w-0 overflow-x-auto"
+              role="region"
+              aria-label="Credit banking proof pack"
+              tabIndex={0}
+            >
+              <ProofPackPanel
+                title={proofBundle.title}
+                summary={proofBundle.summary}
+                artifacts={proofActions}
+              />
+            </div>
           </section>
 
-          <section className="space-y-6">
+          <section className="min-w-0 space-y-6">
             <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
               <div
                 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"
@@ -306,21 +313,21 @@ export const CreditBankingDashboard: React.FC = () => {
                     ? 'Constructed industrial ledger active'
                     : 'Uploaded ledger active'}
               </div>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <MetricCard
-                  icon={<Wallet className="h-5 w-5 text-slate-400" />}
+                  icon={<Wallet className="h-5 w-5 text-slate-300" />}
                   label="Active credits"
                   value={`${portfolio.totalCredits.toLocaleString()} t`}
                   sub="Available for banking"
                 />
                 <MetricCard
-                  icon={<Calendar className="h-5 w-5 text-slate-400" />}
+                  icon={<Calendar className="h-5 w-5 text-slate-300" />}
                   label="Coverage ratio"
                   value={`${portfolio.coverageRatio.toFixed(0)}%`}
                   sub="2025-2027 liabilities covered"
                 />
                 <MetricCard
-                  icon={<TrendingUp className="h-5 w-5 text-slate-400" />}
+                  icon={<TrendingUp className="h-5 w-5 text-slate-300" />}
                   label="Current market value"
                   value="Unavailable"
                   sub="A dated, verified buyer quote is required"
@@ -336,7 +343,7 @@ export const CreditBankingDashboard: React.FC = () => {
             </div>
 
             <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
-              <h2 className="text-lg font-semibold text-white">2. Compliance-year allocation</h2>
+              <h2 className="text-lg font-semibold text-slate-50">2. Compliance-year allocation</h2>
               <div className="mt-4 space-y-3">
                 {allocations.map((row) => (
                   <div
@@ -344,8 +351,8 @@ export const CreditBankingDashboard: React.FC = () => {
                     className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="font-medium text-white">{row.year}</div>
-                      <div className="text-sm text-slate-400">
+                      <div className="font-medium text-slate-50">{row.year}</div>
+                      <div className="text-sm text-slate-300">
                         {row.allocated.toLocaleString()} / {row.liability.toLocaleString()} t
                       </div>
                     </div>
@@ -357,11 +364,11 @@ export const CreditBankingDashboard: React.FC = () => {
                         }}
                       />
                     </div>
-                    <div className="mt-2 text-xs text-slate-400">
+                    <div className="mt-2 text-xs text-slate-300">
                       Remaining: {row.remaining.toLocaleString()} t • Market cost: unavailable
                       without a current verified quote
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
+                    <div className="mt-2 text-xs text-slate-300">
                       Lots used:{' '}
                       {row.allocatedLots.length > 0
                         ? row.allocatedLots
@@ -380,7 +387,7 @@ export const CreditBankingDashboard: React.FC = () => {
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-300" />
             <div>
-              <div className="font-medium text-white">Pricing and procurement boundary</div>
+              <div className="font-medium text-slate-50">Pricing and procurement boundary</div>
               <p className="mt-2 text-sm text-amber-100">
                 This draft calculates allocations from supplied quantities only. It does not
                 establish TIER eligibility, market value, savings, registry status, or a recommended
@@ -406,10 +413,10 @@ function UploadCard({
   return (
     <label className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5 text-center">
       <FileSpreadsheet className="mx-auto h-8 w-8 text-cyan-300" />
-      <div className="mt-3 font-medium text-white">{title}</div>
-      <div className="mt-1 text-xs text-slate-400">{description}</div>
+      <div className="mt-3 font-medium text-slate-50">{title}</div>
+      <div className="mt-1 text-xs text-slate-300">{description}</div>
       <input type="file" accept=".csv,text/csv" className="hidden" onChange={onChange} />
-      <span className="mt-4 inline-flex rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">
+      <span className="mt-4 inline-flex rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-950">
         Select CSV
       </span>
     </label>
@@ -438,12 +445,12 @@ function MetricCard({
 
   return (
     <div className={`rounded-2xl border p-4 ${toneClasses}`}>
-      <div className="flex items-center gap-2 text-sm text-slate-400">
+      <div className="flex items-center gap-2 text-sm text-slate-300">
         {icon}
         {label}
       </div>
-      <div className="mt-2 text-2xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-xs text-slate-500">{sub}</div>
+      <div className="mt-2 text-2xl font-bold text-slate-50">{value}</div>
+      <div className="mt-1 text-xs text-slate-300">{sub}</div>
     </div>
   );
 }

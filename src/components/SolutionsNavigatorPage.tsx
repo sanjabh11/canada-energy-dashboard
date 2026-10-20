@@ -40,7 +40,7 @@ export function SolutionsNavigatorPage() {
 
   return (
     <div
-      className="min-h-screen bg-slate-950 text-white"
+      className="min-h-screen bg-slate-950 text-slate-50"
       style={{ fontFamily: '"Space Grotesk", "Avenir Next", "Segoe UI", sans-serif' }}
     >
       <SEOHead
@@ -80,13 +80,13 @@ export function SolutionsNavigatorPage() {
               <nav className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
                 <Link
                   to="/"
-                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-white"
+                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-slate-50"
                 >
                   Home
                 </Link>
                 <Link
                   to="/dashboard"
-                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-white"
+                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/30 hover:text-slate-50"
                 >
                   Dashboard
                 </Link>
@@ -102,7 +102,7 @@ export function SolutionsNavigatorPage() {
             <div className="py-16">
               <div className="max-w-4xl">
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">Page two</div>
-                <h1 className="mt-4 text-4xl font-semibold leading-tight text-white md:text-6xl">
+                <h1 className="mt-4 text-4xl font-semibold leading-tight text-slate-50 md:text-6xl">
                   Each wedge now explains who buys it, why they pay, what proof they need, and how
                   little CEIP has to build first.
                 </h1>
@@ -121,7 +121,7 @@ export function SolutionsNavigatorPage() {
                     className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                       activeSegment === segment
                         ? 'bg-cyan-300 text-slate-950'
-                        : 'border border-white/10 bg-white/5 text-slate-300 hover:border-cyan-300/30 hover:text-white'
+                        : 'border border-white/10 bg-white/5 text-slate-300 hover:border-cyan-300/30 hover:text-slate-50'
                     }`}
                   >
                     {segment}
@@ -138,7 +138,9 @@ export function SolutionsNavigatorPage() {
                   <div className="text-xs uppercase tracking-[0.22em] text-emerald-200/80">
                     Industrial compliance / CFO — focused pilot
                   </div>
-                  <div className="mt-2 text-sm font-medium text-white">TIER ROI calculator →</div>
+                  <div className="mt-2 text-sm font-medium text-slate-50">
+                    TIER ROI calculator →
+                  </div>
                 </Link>
                 <Link
                   to="/utility-demand-forecast"
@@ -147,7 +149,7 @@ export function SolutionsNavigatorPage() {
                   <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
                     Utility planner
                   </div>
-                  <div className="mt-2 text-sm font-medium text-white">
+                  <div className="mt-2 text-sm font-medium text-slate-50">
                     Demand forecast planning pack →
                   </div>
                 </Link>
@@ -158,7 +160,7 @@ export function SolutionsNavigatorPage() {
                   <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
                     Regulator / reviewer
                   </div>
-                  <div className="mt-2 text-sm font-medium text-white">
+                  <div className="mt-2 text-sm font-medium text-slate-50">
                     Regulatory filing evidence →
                   </div>
                 </Link>
@@ -169,7 +171,7 @@ export function SolutionsNavigatorPage() {
                   <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
                     Consultant / API user
                   </div>
-                  <div className="mt-2 text-sm font-medium text-white">
+                  <div className="mt-2 text-sm font-medium text-slate-50">
                     Benchmark + export packs →
                   </div>
                 </Link>
@@ -180,7 +182,7 @@ export function SolutionsNavigatorPage() {
                   <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
                     Municipal / public sector
                   </div>
-                  <div className="mt-2 text-sm font-medium text-white">
+                  <div className="mt-2 text-sm font-medium text-slate-50">
                     Municipal climate tools →
                   </div>
                 </Link>
@@ -191,7 +193,7 @@ export function SolutionsNavigatorPage() {
                   <div className="text-xs uppercase tracking-[0.22em] text-amber-200/80">
                     Indigenous / co-design
                   </div>
-                  <div className="mt-2 text-sm font-medium text-white">
+                  <div className="mt-2 text-sm font-medium text-slate-50">
                     Funder reporting + co-design →
                   </div>
                 </Link>
@@ -207,7 +209,9 @@ export function SolutionsNavigatorPage() {
                 <Building2 className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.22em]">Current segment</span>
               </div>
-              <h2 className="mt-4 text-3xl font-semibold text-white">{activeNarrative.headline}</h2>
+              <h2 className="mt-4 text-3xl font-semibold text-slate-50">
+                {activeNarrative.headline}
+              </h2>
               <p className="mt-4 max-w-4xl text-base leading-7 text-slate-200">
                 {activeNarrative.summary}
               </p>
@@ -222,13 +226,13 @@ export function SolutionsNavigatorPage() {
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">
                   Top 10 proof packs
                 </div>
-                <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
+                <h2 className="mt-3 text-3xl font-semibold text-slate-50 md:text-4xl">
                   Use cases optimized for fast buyer comprehension and first pilots
                 </h2>
               </div>
               <Link
                 to="/enterprise"
-                className="hidden rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/30 hover:bg-white/5 md:inline-flex"
+                className="hidden rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-50 transition hover:border-cyan-300/30 hover:bg-white/5 md:inline-flex"
               >
                 Start the conversation
               </Link>
@@ -251,7 +255,7 @@ export function SolutionsNavigatorPage() {
                         </div>
                       </div>
 
-                      <h3 className="mt-4 text-3xl font-semibold text-white">{wedge.title}</h3>
+                      <h3 className="mt-4 text-3xl font-semibold text-slate-50">{wedge.title}</h3>
                       <p className="mt-4 text-base leading-7 text-slate-300">{wedge.pain}</p>
 
                       <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -289,7 +293,7 @@ export function SolutionsNavigatorPage() {
                           <FileSearch className="h-4 w-4" />
                           Proof artifact
                         </div>
-                        <div className="mt-3 text-lg font-semibold text-white">
+                        <div className="mt-3 text-lg font-semibold text-slate-50">
                           {wedge.proofLabel}
                         </div>
                         <div className="mt-2 text-sm text-slate-200">
@@ -306,7 +310,7 @@ export function SolutionsNavigatorPage() {
                         </Link>
                         <Link
                           to="/pilot-readiness"
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-cyan-300/30 hover:bg-white/5"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-slate-50 transition hover:border-cyan-300/30 hover:bg-white/5"
                         >
                           Check readiness
                         </Link>
@@ -324,7 +328,7 @@ export function SolutionsNavigatorPage() {
             <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/75">
               Supporting proof
             </div>
-            <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
+            <h2 className="mt-3 text-3xl font-semibold text-slate-50 md:text-4xl">
               These routes stay visible, but they no longer lead the commercial story.
             </h2>
 
@@ -339,7 +343,7 @@ export function SolutionsNavigatorPage() {
                     <ShieldCheck className="h-4 w-4" />
                     Proof lane
                   </div>
-                  <h3 className="mt-3 text-xl font-semibold text-white">{surface.title}</h3>
+                  <h3 className="mt-3 text-xl font-semibold text-slate-50">{surface.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-300">{surface.role}</p>
                 </Link>
               ))}
@@ -353,7 +357,7 @@ export function SolutionsNavigatorPage() {
             <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/75">
               Product bundles
             </div>
-            <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">
+            <h2 className="mt-3 text-3xl font-semibold text-slate-50 md:text-4xl">
               Four product spines connect proof packs into buyer-ready workflows.
             </h2>
             <div className="mt-10 grid gap-4 md:grid-cols-2">
@@ -366,14 +370,14 @@ export function SolutionsNavigatorPage() {
                     <Building2 className="h-4 w-4" />
                     {spine.buyerSegment}
                   </div>
-                  <h3 className="mt-3 text-xl font-semibold text-white">{spine.label}</h3>
+                  <h3 className="mt-3 text-xl font-semibold text-slate-50">{spine.label}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-300">{spine.description}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {spine.routes.map((route) => (
                       <Link
                         key={route}
                         to={route}
-                        className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:border-emerald-300/30 hover:text-white"
+                        className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:border-emerald-300/30 hover:text-slate-50"
                       >
                         {route}
                       </Link>
@@ -393,7 +397,7 @@ export function SolutionsNavigatorPage() {
                 <ShieldCheck className="h-4 w-4" />
                 Co-design pathway
               </div>
-              <h2 className="mt-3 text-2xl font-semibold text-white">
+              <h2 className="mt-3 text-2xl font-semibold text-slate-50">
                 {indigenousCoDesignPathway.label}
               </h2>
               <p className="mt-4 text-base leading-7 text-slate-200">
@@ -404,7 +408,7 @@ export function SolutionsNavigatorPage() {
               </div>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 <div>
-                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-300">
                     Capabilities
                   </div>
                   <ul className="mt-3 space-y-2 text-sm text-slate-200">
@@ -417,7 +421,7 @@ export function SolutionsNavigatorPage() {
                   </ul>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-300">
                     Explicit non-claims
                   </div>
                   <ul className="mt-3 space-y-2 text-sm text-slate-300">
@@ -447,10 +451,10 @@ export function SolutionsNavigatorPage() {
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
               <div className="rounded-[1.8rem] border border-white/10 bg-white/[0.04] p-8">
-                <div className="text-sm uppercase tracking-[0.24em] text-slate-400">
+                <div className="text-sm uppercase tracking-[0.24em] text-slate-300">
                   Reserve lanes
                 </div>
-                <h2 className="mt-3 text-2xl font-semibold text-white">
+                <h2 className="mt-3 text-2xl font-semibold text-slate-50">
                   Follow-on wedges after the first five
                 </h2>
                 <div className="mt-6 space-y-4">
@@ -458,9 +462,9 @@ export function SolutionsNavigatorPage() {
                     <Link
                       key={wedge.id}
                       to={wedge.href}
-                      className="block rounded-[1.2rem] border border-white/10 bg-black/10 p-4 transition hover:border-white/20"
+                      className="block rounded-[1.2rem] border border-white/10 bg-slate-950/50 p-4 transition hover:border-white/20"
                     >
-                      <div className="text-base font-semibold text-white">{wedge.title}</div>
+                      <div className="text-base font-semibold text-slate-50">{wedge.title}</div>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{wedge.currentState}</p>
                     </Link>
                   ))}
@@ -471,7 +475,7 @@ export function SolutionsNavigatorPage() {
                 <div className="text-sm uppercase tracking-[0.24em] text-emerald-100/75">
                   Execution bias
                 </div>
-                <h2 className="mt-3 text-2xl font-semibold text-white">
+                <h2 className="mt-3 text-2xl font-semibold text-slate-50">
                   Build 25% to 40% first, then sell.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-slate-200">
@@ -489,7 +493,7 @@ export function SolutionsNavigatorPage() {
                   </Link>
                   <Link
                     to="/"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-emerald-300/30 hover:bg-white/5"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-slate-50 transition hover:border-emerald-300/30 hover:bg-white/5"
                   >
                     Return home
                   </Link>
@@ -513,8 +517,8 @@ function DetailCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[1.2rem] border border-white/10 bg-black/10 p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-400">
+    <div className="rounded-[1.2rem] border border-white/10 bg-slate-950/50 p-4">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-300">
         {icon}
         {label}
       </div>
@@ -526,7 +530,7 @@ function DetailCard({
 function Panel({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-[1.4rem] border border-white/10 bg-slate-950/50 p-5">
-      <div className="text-xs uppercase tracking-[0.22em] text-slate-400">{title}</div>
+      <div className="text-xs uppercase tracking-[0.22em] text-slate-300">{title}</div>
       <div className="mt-3 text-sm leading-6 text-slate-200">{body}</div>
     </div>
   );

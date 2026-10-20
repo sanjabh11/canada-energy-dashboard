@@ -950,7 +950,7 @@ const UtilityDemandForecastPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-slate-950">
       <SEOHead
         title="Utility Demand Forecasting | Distribution Planning Lane"
         description="Utility-focused demand forecasting for Ontario LDCs and Alberta utilities. Upload historical load data, benchmark against persistence and seasonal-naive baselines, and export filing-ready planning packs."
@@ -969,10 +969,10 @@ const UtilityDemandForecastPage: React.FC = () => {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-white/20 p-3">
-                <Building2 className="h-8 w-8 text-white" />
+                <Building2 className="h-8 w-8 text-slate-50" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white md:text-3xl">
+                <h1 className="text-2xl font-bold text-slate-50 md:text-3xl">
                   Utility Demand Forecasting Lane
                 </h1>
                 <p className="text-sm text-cyan-100 md:text-base">
@@ -992,7 +992,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                 />
                 <button
                   onClick={exportPlanningPack}
-                  className="flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/30"
+                  className="flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-slate-50 transition-colors hover:bg-white/30"
                 >
                   <Download className="h-4 w-4" />
                   Export Planning Pack
@@ -1058,7 +1058,12 @@ const UtilityDemandForecastPage: React.FC = () => {
         )}
 
         {proofBundle && forecastState.forecastPackage && (
-          <div className="mb-6">
+          <div
+            className="mb-6 min-w-0 overflow-x-auto"
+            role="region"
+            aria-label="Utility planning proof pack"
+            tabIndex={0}
+          >
             <ProofPackPanel
               title={proofBundle.title}
               summary={proofBundle.summary}
@@ -1073,8 +1078,8 @@ const UtilityDemandForecastPage: React.FC = () => {
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Guided utility pilot pack</h2>
-              <p className="mt-1 text-sm text-slate-400">
+              <h2 className="text-lg font-semibold text-slate-50">Guided utility pilot pack</h2>
+              <p className="mt-1 text-sm text-slate-300">
                 Buyers should be able to finish the planning path without touching secondary
                 onboarding surfaces.
               </p>
@@ -1084,7 +1089,7 @@ const UtilityDemandForecastPage: React.FC = () => {
             </div>
             <FileText className="h-5 w-5 text-emerald-300" />
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-5">
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
             {[
               '1. Choose jurisdiction',
               '2. Load starter or upload history',
@@ -1102,7 +1107,7 @@ const UtilityDemandForecastPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mb-6 grid gap-4 xl:grid-cols-2">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
           {UTILITY_CONSTRUCTED_SCENARIOS.map((scenario) => (
             <ConstructedScenarioPanel
               key={scenario.id}
@@ -1113,16 +1118,16 @@ const UtilityDemandForecastPage: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_1.45fr]">
-          <section className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1.45fr]">
+          <section className="min-w-0 space-y-6">
             <div
               className="rounded-xl border border-slate-700 bg-slate-800/70 p-5"
               data-testid="utility-connection-panel"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">1. Choose utility profile</h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <h2 className="text-lg font-semibold text-slate-50">1. Choose utility profile</h2>
+                  <p className="mt-1 text-sm text-slate-300">
                     Keep the broader platform intact and run the utility-specific planning workflow
                     here.
                   </p>
@@ -1137,12 +1142,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                     onClick={() => handleJurisdictionChange(option)}
                     className={`rounded-lg border px-4 py-3 text-left transition-colors ${
                       jurisdiction === option
-                        ? 'border-cyan-400 bg-cyan-500/10 text-white'
-                        : 'border-slate-600 bg-slate-900 text-slate-300 hover:border-cyan-500/40'
+                        ? 'border-cyan-400 bg-cyan-500/10 text-slate-50'
+                        : 'border-slate-600 bg-slate-900/80 text-slate-300 hover:border-cyan-500/40'
                     }`}
                   >
                     <div className="font-medium">{option}</div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-slate-300">
                       {option === 'Ontario'
                         ? 'OEB Chapter 5 aligned language'
                         : 'AUC / Alberta utility planning aligned language'}
@@ -1183,7 +1188,7 @@ const UtilityDemandForecastPage: React.FC = () => {
               <summary className="cursor-pointer list-none text-sm font-semibold text-cyan-200">
                 Secondary connector, onboarding, and submission readiness
               </summary>
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-slate-300">
                 Use the planning flow first. Expand this section only when you need connector truth,
                 Ontario onboarding, or submission-readiness detail.
               </p>
@@ -1196,10 +1201,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white">
+                        <h2 className="text-lg font-semibold text-slate-50">
                           Secondary Ontario onboarding readiness
                         </h2>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <p className="mt-1 text-sm text-slate-300">
                           Utility-specific registration metadata and demo steps for the first real
                           CMD submissions.
                         </p>
@@ -1207,7 +1212,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <Shield className="h-5 w-5 text-emerald-300" />
                     </div>
 
-                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                    <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                       {ontarioOnboardingPacks.map((pack) => (
                         <div
                           key={pack.utility_name}
@@ -1215,8 +1220,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <div className="font-medium text-white">{pack.utility_name}</div>
-                              <div className="mt-1 text-xs text-slate-400">
+                              <div className="font-medium text-slate-50">{pack.utility_name}</div>
+                              <div className="mt-1 text-xs text-slate-300">
                                 Registration categories `
                                 {pack.registration_form_categories.join(', ')}` with utility-owned
                                 authorization and revocation.
@@ -1226,7 +1231,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               href={pack.registration_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="rounded-lg bg-slate-800 px-3 py-1 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
+                              className="rounded-lg bg-slate-800/80 px-3 py-1 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
                             >
                               Registration
                             </a>
@@ -1246,7 +1251,7 @@ const UtilityDemandForecastPage: React.FC = () => {
 
                           <div className="mt-4 space-y-3 text-sm text-slate-300">
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Redirect URI
                               </div>
                               <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
@@ -1254,7 +1259,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Application login URL
                               </div>
                               <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
@@ -1262,7 +1267,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Bridge base URL
                               </div>
                               <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
@@ -1270,7 +1275,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Requested data categories
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1278,7 +1283,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 OAuth / ESPI scope
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1286,7 +1291,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Revocation mode
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1294,7 +1299,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Manage connections URL
                               </div>
                               <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
@@ -1302,7 +1307,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Revocation behavior
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1310,7 +1315,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Data retention answer
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1318,7 +1323,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Privacy / terms mapping
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1326,7 +1331,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Callback forward target
                               </div>
                               <div className="mt-1 break-all rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200">
@@ -1334,7 +1339,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Replayable demo script
                               </div>
                               <ol className="mt-1 space-y-1 text-xs text-slate-300">
@@ -1344,7 +1349,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </ol>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Bridge runtime contract
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-slate-300">
@@ -1364,7 +1369,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                             >
                               View utility terms
                             </a>
-                            <span className="text-slate-500">
+                            <span className="text-slate-300">
                               Submit only after the custom app host, custom bridge host, and local
                               mock auth/callback/sync harness are all passing.
                             </span>
@@ -1386,10 +1391,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white">
+                        <h2 className="text-lg font-semibold text-slate-50">
                           Secondary London Hydro-first submission sprint
                         </h2>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <p className="mt-1 text-sm text-slate-300">
                           Keep London Hydro production submission blocked while moving staging
                           infrastructure onto burner internet hosts, then keep every claim bounded
                           to repo-backed behavior.
@@ -1408,7 +1413,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </div>
 
                     <div
-                      className="mt-4 grid gap-3 xl:grid-cols-2"
+                      className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2"
                       data-testid="utility-readiness-tracks"
                     >
                       {ontarioSubmissionBundle.readiness_tracks.map((track) => (
@@ -1418,8 +1423,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <div className="font-medium text-white">{track.label}</div>
-                              <div className="mt-1 text-xs text-slate-400">{track.summary}</div>
+                              <div className="font-medium text-slate-50">{track.label}</div>
+                              <div className="mt-1 text-xs text-slate-300">{track.summary}</div>
                             </div>
                             <span
                               className={`rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide ${
@@ -1435,7 +1440,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                           </div>
                           {track.blockers.length > 0 && (
                             <div className="mt-3">
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Active blockers
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-slate-300">
@@ -1463,7 +1468,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                    <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                       {ontarioSubmissionBundle.packets.map((packet) => (
                         <div
                           key={packet.slug}
@@ -1472,8 +1477,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <div className="font-medium text-white">{packet.utility_name}</div>
-                              <div className="mt-1 text-xs text-slate-400">
+                              <div className="font-medium text-slate-50">{packet.utility_name}</div>
+                              <div className="mt-1 text-xs text-slate-300">
                                 {packet.target_outcome}
                               </div>
                             </div>
@@ -1494,7 +1499,7 @@ const UtilityDemandForecastPage: React.FC = () => {
 
                           <div className="mt-4 space-y-3 text-sm text-slate-300">
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Packet status
                               </div>
                               <div className="mt-1 text-xs text-slate-300">
@@ -1502,7 +1507,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Supported claims
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-slate-300">
@@ -1512,7 +1517,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </ul>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Claims to avoid
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-red-200">
@@ -1522,7 +1527,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </ul>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Owner-supplied items
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-slate-300">
@@ -1532,12 +1537,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </ul>
                             </div>
                             <div>
-                              <div className="text-xs uppercase tracking-wide text-slate-500">
+                              <div className="text-xs uppercase tracking-wide text-slate-300">
                                 Field-mapped packet
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-slate-300">
                                 {packet.field_mappings.map((field) => (
-                                  <li key={`${packet.slug}-${field.label}`}>
+                                  <li key={`${packet.slug}-${field.label}`} className="break-words">
                                     <span className="text-slate-100">{field.label}:</span>{' '}
                                     {field.value}
                                     <span
@@ -1552,7 +1557,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                                         : 'owner-supplied'}
                                     </span>
                                     {field.note && (
-                                      <div className="mt-1 text-[11px] text-slate-500">
+                                      <div className="mt-1 text-[11px] text-slate-300">
                                         {field.note}
                                       </div>
                                     )}
@@ -1587,10 +1592,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <h3 className="text-sm font-semibold text-white">
+                          <h3 className="text-sm font-semibold text-slate-50">
                             Submission gate checklist
                           </h3>
-                          <p className="mt-1 text-xs text-slate-400">
+                          <p className="mt-1 text-xs text-slate-300">
                             Repo-backed items can move onto burner staging hosts first, but London
                             Hydro submission still requires canonical corporate hosts and the
                             operator-owned evidence pack.
@@ -1604,7 +1609,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                         {ontarioSubmissionBundle.submission_gate.map((item) => (
                           <div
                             key={item.label}
@@ -1620,13 +1625,13 @@ const UtilityDemandForecastPage: React.FC = () => {
                                       : 'text-amber-300'
                                 }`}
                               />
-                              <div className="text-sm font-medium text-white">{item.label}</div>
+                              <div className="text-sm font-medium text-slate-50">{item.label}</div>
                             </div>
-                            <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
+                            <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-300">
                               {item.owner === 'repo' ? 'Repo-backed' : 'Owner-supplied'} •{' '}
                               {item.status.replace(/_/g, ' ')}
                             </div>
-                            <div className="mt-2 text-xs text-slate-400">{item.evidence}</div>
+                            <div className="mt-2 text-xs text-slate-300">{item.evidence}</div>
                           </div>
                         ))}
                       </div>
@@ -1637,10 +1642,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-lg font-semibold text-white">
+                      <h2 className="text-lg font-semibold text-slate-50">
                         Secondary data connections
                       </h2>
-                      <p className="mt-1 text-sm text-slate-400">
+                      <p className="mt-1 text-sm text-slate-300">
                         Expose which data path is active now and which connector paths are staged
                         for live utility integration.
                       </p>
@@ -1670,13 +1675,13 @@ const UtilityDemandForecastPage: React.FC = () => {
                     >
                       {isLiveConnected ? 'Live-connected' : 'Upload-first / staged connectors'}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-300">
                       Connector-backed status only becomes live when a non-fallback connector path
                       has produced persisted normalized data.
                     </span>
                   </div>
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {connectionCards.map((card) => (
                       <div
                         key={card.id}
@@ -1685,8 +1690,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <div className="font-medium text-white">{card.title}</div>
-                            <div className="mt-1 text-xs text-slate-400">{card.description}</div>
+                            <div className="font-medium text-slate-50">{card.title}</div>
+                            <div className="mt-1 text-xs text-slate-300">{card.description}</div>
                             {card.utility_name && (
                               <div className="mt-1 text-[11px] uppercase tracking-wide text-cyan-300">
                                 {card.utility_name}
@@ -1707,11 +1712,11 @@ const UtilityDemandForecastPage: React.FC = () => {
                             {card.status.replace(/_/g, ' ')}
                           </span>
                         </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                          <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase tracking-wide">
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
+                          <span className="rounded-full bg-slate-800/80 px-2 py-0.5 uppercase tracking-wide">
                             {card.source_kind.replace(/_/g, ' ')}
                           </span>
-                          <span className="rounded-full bg-slate-800 px-2 py-0.5 uppercase tracking-wide">
+                          <span className="rounded-full bg-slate-800/80 px-2 py-0.5 uppercase tracking-wide">
                             {card.freshness_status}
                           </span>
                           {card.is_fallback && (
@@ -1720,18 +1725,18 @@ const UtilityDemandForecastPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <div className="mt-3 text-xs text-slate-500">
+                        <div className="mt-3 text-xs text-slate-300">
                           Last sync: {card.last_synced_at ?? 'none'}
                         </div>
                         {card.requested_data_categories &&
                           card.requested_data_categories.length > 0 && (
-                            <div className="mt-2 text-xs text-slate-400">
+                            <div className="mt-2 text-xs text-slate-300">
                               Requested categories: {card.requested_data_categories.join(', ')}
                               {card.oauth_espi_scope ? ` • scope ${card.oauth_espi_scope}` : ''}
                             </div>
                           )}
                         {card.notes && (
-                          <div className="mt-2 text-xs text-slate-400">{card.notes}</div>
+                          <div className="mt-2 text-xs text-slate-300">{card.notes}</div>
                         )}
                         {card.error_message && (
                           <div className="mt-2 text-xs text-red-200">{card.error_message}</div>
@@ -1750,7 +1755,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                                   href={card.manage_connections_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
+                                  className="rounded-lg bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-slate-700"
                                 >
                                   Manage connections
                                 </a>
@@ -1796,10 +1801,10 @@ const UtilityDemandForecastPage: React.FC = () => {
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-lg font-semibold text-slate-50">
                     2. Import utility load history
                   </h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-slate-300">
                     Local-first CSV import for feeder, substation, or system load history.
                   </p>
                 </div>
@@ -1810,8 +1815,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <label className="flex cursor-pointer flex-col items-center gap-3 text-center">
                   <Upload className="h-8 w-8 text-cyan-300" />
                   <div>
-                    <div className="font-medium text-white">Upload historical load CSV</div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="font-medium text-slate-50">Upload historical load CSV</div>
+                    <div className="mt-1 text-xs text-slate-300">
                       Required: timestamp and demand. Optional: geography, customer class, weather
                       zone, temperature, net/gross load, source system, feeder, and substation
                       identifiers.
@@ -1823,7 +1828,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     className="hidden"
                     onChange={handleFileUpload}
                   />
-                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">
+                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-950">
                     Select CSV
                   </span>
                 </label>
@@ -1840,22 +1845,22 @@ const UtilityDemandForecastPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   onClick={() => exportStarterTemplate('hourly')}
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-500/50"
+                  className="rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-500/50"
                 >
                   <div className="font-medium">Download hourly starter CSV</div>
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs text-slate-300">
                     For interval-level feeder or substation history
                   </div>
                 </button>
                 <button
                   onClick={() => exportStarterTemplate('monthly')}
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-500/50"
+                  className="rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-cyan-500/50"
                 >
                   <div className="font-medium">Download monthly starter CSV</div>
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs text-slate-300">
                     For planning-timescale utility history
                   </div>
                 </button>
@@ -1870,10 +1875,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                 </button>
                 <button
                   onClick={exportOntarioPublicSampleManifest}
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-blue-500/50"
+                  className="rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-blue-500/50"
                 >
                   <div className="font-medium">Download public sample manifest</div>
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs text-slate-300">
                     Source URL, generated date, scope, and disclaimer
                   </div>
                 </button>
@@ -1883,8 +1888,8 @@ const UtilityDemandForecastPage: React.FC = () => {
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">3. Live public context</h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <h2 className="text-lg font-semibold text-slate-50">3. Live public context</h2>
+                  <p className="mt-1 text-sm text-slate-300">
                     Promote this route beyond upload-only planning with weather and market context
                     plus explicit freshness and fallback labels.
                   </p>
@@ -1899,32 +1904,32 @@ const UtilityDemandForecastPage: React.FC = () => {
                 >
                   {isLoadingContext ? 'Refreshing context...' : 'Refresh public context'}
                 </button>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-300">
                   Weather source, market context, and fallback honesty are carried into the forecast
                   package.
                 </span>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">
+                  <div className="text-xs uppercase tracking-wide text-slate-300">
                     Weather context
                   </div>
-                  <div className="mt-2 text-sm text-white">
+                  <div className="mt-2 text-sm text-slate-50">
                     {publicContext?.weather_observation
                       ? `${publicContext.weather_observation.temperature_c?.toFixed(1) ?? 'NA'}°C from ${publicContext.weather_observation.source}`
                       : 'Weather context unavailable in the current environment'}
                   </div>
-                  <div className="mt-1 text-xs text-slate-400">
+                  <div className="mt-1 text-xs text-slate-300">
                     {publicContext?.weather_observation?.observed_at ??
                       'No observed weather timestamp'}
                   </div>
                 </div>
                 <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">
+                  <div className="text-xs uppercase tracking-wide text-slate-300">
                     {jurisdiction === 'Alberta' ? 'AESO market context' : 'IESO context pathway'}
                   </div>
-                  <div className="mt-2 text-sm text-white">
+                  <div className="mt-2 text-sm text-slate-50">
                     {jurisdiction === 'Alberta'
                       ? publicContext?.alberta_pool_price_cad_per_mwh !== null &&
                         publicContext?.alberta_pool_price_cad_per_mwh !== undefined
@@ -1932,7 +1937,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                         : 'AESO pool price unavailable'
                       : 'Ontario context currently uses the public-context fallback contract'}
                   </div>
-                  <div className="mt-1 text-xs text-slate-400">
+                  <div className="mt-1 text-xs text-slate-300">
                     {publicContext?.live_surfaces.find(
                       (surface) => surface.source_kind === 'public_enrichment',
                     )?.freshness_status ?? 'unknown'}{' '}
@@ -1947,12 +1952,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                     key={`${surface.source}-${surface.observed_at ?? 'none'}`}
                     className="rounded-lg border border-slate-700 bg-slate-900/50 p-3"
                   >
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-white">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-slate-50">
                       <span>{surface.source}</span>
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                      <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
                         {surface.freshness_status}
                       </span>
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                      <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
                         {surface.source_kind.replace(/_/g, ' ')}
                       </span>
                       {surface.is_fallback && (
@@ -1967,7 +1972,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </div>
                     )}
                     {surface.notes && (
-                      <div className="mt-1 text-xs text-slate-400">{surface.notes}</div>
+                      <div className="mt-1 text-xs text-slate-300">{surface.notes}</div>
                     )}
                   </div>
                 ))}
@@ -1977,8 +1982,10 @@ const UtilityDemandForecastPage: React.FC = () => {
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">4. Set future expectations</h2>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <h2 className="text-lg font-semibold text-slate-50">
+                    4. Set future expectations
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-300">
                     Build low, base, and high planning cases using committed load, electrification,
                     DER, demand response, BYOP, and stress overlays.
                   </p>
@@ -1986,7 +1993,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <TrendingUp className="h-5 w-5 text-sky-300" />
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label="Weather case">
                   <select
                     value={draftScenario.weather_case}
@@ -1996,7 +2003,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                         event.target.value as UtilityPlanningScenario['weather_case'],
                       )
                     }
-                    className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-50"
                   >
                     <option value="median">Median weather</option>
                     <option value="extreme">Extreme weather</option>
@@ -2011,7 +2018,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                         event.target.value as UtilityPlanningScenario['stress_test_mode'],
                       )
                     }
-                    className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-50"
                   >
                     <option value="none">No stress test</option>
                     <option value="polar_vortex">Polar vortex</option>
@@ -2078,7 +2085,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     type="text"
                     value={draftScenario.large_point_loads?.[0]?.geography_id ?? ''}
                     onChange={(event) => updatePointLoad('geography_id', event.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-50"
                   />
                 </Field>
                 <Field label="Large point-load (MW)">
@@ -2098,7 +2105,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     type="text"
                     value={draftScenario.industrial_opt_outs?.[0]?.geography_id ?? ''}
                     onChange={(event) => updateIndustrialOptOut('geography_id', event.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-50"
                   />
                 </Field>
                 <Field label="Industrial opt-out (MW)">
@@ -2141,7 +2148,7 @@ const UtilityDemandForecastPage: React.FC = () => {
 
               <button
                 onClick={handleRunForecast}
-                className="mt-5 flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-400"
+                className="mt-5 flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-emerald-400"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Run utility forecast pack
@@ -2149,10 +2156,10 @@ const UtilityDemandForecastPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="space-y-6">
+          <section className="min-w-0 space-y-6">
             {forecastState.forecastPackage && (
               <>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                   <MetricCard
                     label="Intervals"
                     value={forecastState.forecastPackage.summary.interval_count.toLocaleString()}
@@ -2191,8 +2198,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-lg font-semibold text-white">Benchmark proof pack</h2>
-                      <p className="mt-1 text-sm text-slate-400">
+                      <h2 className="text-lg font-semibold text-slate-50">Benchmark proof pack</h2>
+                      <p className="mt-1 text-sm text-slate-300">
                         Every utility run shows the baseline comparison, provenance, live-surface
                         truth contract, and assumption pack.
                       </p>
@@ -2203,13 +2210,13 @@ const UtilityDemandForecastPage: React.FC = () => {
                         source={forecastState.forecastPackage.source_label}
                         compact
                       />
-                      <span className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
+                      <span className="rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-300">
                         Weather: {forecastState.forecastPackage.scenario.weather_case}
                       </span>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <BenchmarkStat
                       label="MAE"
                       value={forecastState.forecastPackage.benchmark.mae}
@@ -2276,7 +2283,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
 
                   <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
-                    <div className="font-medium text-white">Assumption pack</div>
+                    <div className="font-medium text-slate-50">Assumption pack</div>
                     <ul className="mt-3 space-y-2 text-sm text-slate-300">
                       {forecastState.forecastPackage.assumptions.map((assumption) => (
                         <li key={assumption} className="flex gap-2">
@@ -2287,10 +2294,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </ul>
                   </div>
 
-                  <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                      <div className="font-medium text-white">Live surface truth contract</div>
-                      <div className="mt-2 text-xs text-slate-400">
+                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                      <div className="font-medium text-slate-50">Live surface truth contract</div>
+                      <div className="mt-2 text-xs text-slate-300">
                         Assumption pack version:{' '}
                         {
                           forecastState.forecastPackage.input_provenance_summary
@@ -2304,19 +2311,19 @@ const UtilityDemandForecastPage: React.FC = () => {
                               key={`${surface.source}-${surface.observed_at ?? 'none'}`}
                               className="rounded-lg border border-slate-700 bg-slate-950/60 p-3"
                             >
-                              <div className="flex flex-wrap items-center gap-2 text-sm text-white">
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-50">
                                 <span>{surface.source}</span>
-                                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                                <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
                                   {surface.freshness_status}
                                 </span>
-                                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                                <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
                                   {surface.source_kind.replace(/_/g, ' ')}
                                 </span>
                               </div>
-                              <div className="mt-1 text-xs text-slate-400">
+                              <div className="mt-1 text-xs text-slate-300">
                                 observed_at: {surface.observed_at ?? 'none'}
                               </div>
-                              <div className="mt-1 text-xs text-slate-400">
+                              <div className="mt-1 text-xs text-slate-300">
                                 Fallback: {surface.is_fallback ? 'yes' : 'no'}
                               </div>
                               {surface.quality_flags.length > 0 && (
@@ -2330,8 +2337,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-                      <div className="font-medium text-white">Input quality summary</div>
+                    <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                      <div className="font-medium text-slate-50">Input quality summary</div>
                       <div className="mt-3 space-y-2 text-sm text-slate-300">
                         <div className="flex items-center justify-between">
                           <span>Source kind</span>
@@ -2382,7 +2389,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="mt-3 space-y-2 text-xs text-slate-400">
+                      <div className="mt-3 space-y-2 text-xs text-slate-300">
                         {forecastState.forecastPackage.input_provenance_summary.quality_counts
                           .filter((entry) => entry.count > 0)
                           .map((entry) => (
@@ -2406,8 +2413,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                 <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-lg font-semibold text-white">Scenario matrix</h2>
-                      <p className="mt-1 text-sm text-slate-400">
+                      <h2 className="text-lg font-semibold text-slate-50">Scenario matrix</h2>
+                      <p className="mt-1 text-sm text-slate-300">
                         Low, base, and high cases share one statistical engine and export as a
                         single planning matrix for regulators.
                       </p>
@@ -2450,9 +2457,14 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </ResponsiveContainer>
                   </div>
 
-                  <div className="mt-4 overflow-x-auto">
+                  <div
+                    className="mt-4 overflow-x-auto"
+                    role="region"
+                    aria-label="Scrollable data table"
+                    tabIndex={0}
+                  >
                     <table className="min-w-full divide-y divide-slate-700 text-sm">
-                      <thead className="bg-slate-900/60 text-slate-400">
+                      <thead className="bg-slate-900/60 text-slate-300">
                         <tr>
                           <th className="px-3 py-2 text-left">Horizon</th>
                           <th className="px-3 py-2 text-right">Low MW</th>
@@ -2488,12 +2500,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-                  <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+                  <div className="min-w-0 rounded-xl border border-slate-700 bg-slate-800/70 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white">Reliability proxy</h2>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <h2 className="text-lg font-semibold text-slate-50">Reliability proxy</h2>
+                        <p className="mt-1 text-sm text-slate-300">
                           OEB-style reliability and capacity-strain indicators tied directly to the
                           current planning horizon.
                         </p>
@@ -2501,7 +2513,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <Shield className="h-5 w-5 text-violet-300" />
                     </div>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                       <BenchmarkStat
                         label="Current score"
                         value={forecastState.forecastPackage.reliability_proxy.current_score}
@@ -2528,9 +2540,14 @@ const UtilityDemandForecastPage: React.FC = () => {
                       />
                     </div>
 
-                    <div className="mt-4 overflow-x-auto">
+                    <div
+                      className="mt-4 overflow-x-auto"
+                      role="region"
+                      aria-label="Scrollable data table"
+                      tabIndex={0}
+                    >
                       <table className="min-w-full divide-y divide-slate-700 text-sm">
-                        <thead className="bg-slate-900/60 text-slate-400">
+                        <thead className="bg-slate-900/60 text-slate-300">
                           <tr>
                             <th className="px-3 py-2 text-left">Horizon</th>
                             <th className="px-3 py-2 text-right">Score</th>
@@ -2564,11 +2581,13 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
+                  <div className="min-w-0 rounded-xl border border-slate-700 bg-slate-800/70 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white">8,760 profile preview</h2>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <h2 className="text-lg font-semibold text-slate-50">
+                          8,760 profile preview
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-300">
                           The selected expected-case horizon is expanded into an hourly planning
                           profile with DER, DR, ToU, and BYOP overlays.
                         </p>
@@ -2611,7 +2630,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </ResponsiveContainer>
                     </div>
 
-                    <div className="mt-4 text-xs text-slate-400">
+                    <div className="mt-4 text-xs text-slate-300">
                       Deferred peak load:{' '}
                       {forecastState.forecastPackage.deferred_peak_load_mw.toFixed(2)} MW. Exported
                       profiles remain transparent statistical constructions, not opaque ML traces.
@@ -2619,27 +2638,27 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                  <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="text-lg font-semibold text-white">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                  <div className="min-w-0 rounded-xl border border-slate-700 bg-slate-800/70 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-semibold text-slate-50">
                           Geography reconciliation
                         </h2>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <p className="mt-1 text-sm text-slate-300">
                           Recent geography shares are reconciled to the utility-wide forecast so
                           local issues stay visible.
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {forecastState.forecastPackage.highlighted_years.map((year) => (
                           <button
                             key={year}
                             onClick={() => setSelectedHorizon(year)}
                             className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
                               selectedHorizon === year
-                                ? 'bg-cyan-500 text-white'
-                                : 'bg-slate-900 text-slate-300 hover:bg-slate-700'
+                                ? 'bg-cyan-500 text-slate-950'
+                                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-700'
                             }`}
                           >
                             {year}Y
@@ -2662,9 +2681,14 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </ResponsiveContainer>
                     </div>
 
-                    <div className="mt-4 overflow-x-auto">
+                    <div
+                      className="mt-4 overflow-x-auto"
+                      role="region"
+                      aria-label="Scrollable data table"
+                      tabIndex={0}
+                    >
                       <table className="min-w-full divide-y divide-slate-700 text-sm">
-                        <thead className="bg-slate-900/60 text-slate-400">
+                        <thead className="bg-slate-900/60 text-slate-300">
                           <tr>
                             <th className="px-3 py-2 text-left">Geography</th>
                             <th className="px-3 py-2 text-left">Class</th>
@@ -2705,15 +2729,15 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
 
                   <div
-                    className="rounded-xl border border-slate-700 bg-slate-800/70 p-5"
+                    className="min-w-0 rounded-xl border border-slate-700 bg-slate-800/70 p-5"
                     data-testid="utility-forecast-export-card"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white">
+                        <h2 className="text-lg font-semibold text-slate-50">
                           5. Export planning pack
                         </h2>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <p className="mt-1 text-sm text-slate-300">
                           Lead with the draft planning narrative, then attach benchmark and schedule
                           exports for review.
                         </p>
@@ -2756,33 +2780,33 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </button>
                       <button
                         onClick={exportBenchmarkAppendix}
-                        className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                       >
                         <div className="font-medium">Export benchmark appendix</div>
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="mt-1 text-xs text-slate-300">
                           Attach benchmark skill, source labeling, and scenario assumptions to the
                           main planning pack.
                         </div>
                       </button>
                       <button
                         onClick={exportGenericPack}
-                        className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                       >
                         <div className="font-medium">Export utility forecast package</div>
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="mt-1 text-xs text-slate-300">
                           Low / expected / high cases with assumptions and benchmark proof
                         </div>
                       </button>
                       <button
                         onClick={exportJurisdictionPack}
-                        className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                       >
                         <div className="font-medium">
                           {jurisdiction === 'Ontario'
                             ? 'Export OEB scenario matrix'
                             : 'Export AUC DSP data schedule'}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="mt-1 text-xs text-slate-300">
                           {jurisdiction === 'Ontario'
                             ? 'Low/base/high scenario rows with reliability proxy for Chapter 5 planning'
                             : 'Exact Alberta data-schedule style rows for utility and REA DSP workflows'}
@@ -2790,10 +2814,10 @@ const UtilityDemandForecastPage: React.FC = () => {
                       </button>
                       <button
                         onClick={exportSecurityReviewPack}
-                        className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                       >
                         <div className="font-medium">Download utility security review pack</div>
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="mt-1 text-xs text-slate-300">
                           Forecast-pilot attachment for privacy, procurement, and review responses
                           with repo-backed versus owner-supplied boundaries.
                         </div>
@@ -2801,11 +2825,11 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </div>
 
                     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
-                      <div className="font-medium text-white">Current source and warnings</div>
-                      <div className="mt-2 text-xs text-slate-400">
+                      <div className="font-medium text-slate-50">Current source and warnings</div>
+                      <div className="mt-2 text-xs text-slate-300">
                         {forecastState.forecastPackage.source_label}
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-300">
                         <span>
                           Claim label: {proofBundle?.artifacts[0]?.claimLabel ?? 'estimated'}
                         </span>
@@ -2830,7 +2854,7 @@ const UtilityDemandForecastPage: React.FC = () => {
 
                     {forecastState.forecastPackage.hosting_capacity_warnings.length > 0 && (
                       <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-sm text-amber-100">
-                        <div className="font-medium text-white">Hosting-capacity warnings</div>
+                        <div className="font-medium text-slate-50">Hosting-capacity warnings</div>
                         <ul className="mt-3 space-y-2 text-xs">
                           {forecastState.forecastPackage.hosting_capacity_warnings
                             .slice(0, 5)
@@ -2853,44 +2877,44 @@ const UtilityDemandForecastPage: React.FC = () => {
           </section>
         </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-4">
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
           <Link
             to="/demand-forecast"
-            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+            className="rounded-xl border border-slate-700 bg-slate-800/80 p-4 transition-colors hover:border-cyan-500/50"
           >
             <TrendingUp className="mb-2 h-5 w-5 text-cyan-300" />
-            <h3 className="text-sm font-medium text-white">Advanced demand lab</h3>
-            <p className="mt-1 text-xs text-slate-500">
+            <h3 className="text-sm font-medium text-slate-50">Advanced demand lab</h3>
+            <p className="mt-1 text-xs text-slate-300">
               Keep the broader advanced forecasting route intact.
             </p>
           </Link>
           <Link
             to="/forecast-benchmarking"
-            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+            className="rounded-xl border border-slate-700 bg-slate-800/80 p-4 transition-colors hover:border-cyan-500/50"
           >
             <BarChart3 className="mb-2 h-5 w-5 text-indigo-300" />
-            <h3 className="text-sm font-medium text-white">Benchmarking trust layer</h3>
-            <p className="mt-1 text-xs text-slate-500">
+            <h3 className="text-sm font-medium text-slate-50">Benchmarking trust layer</h3>
+            <p className="mt-1 text-xs text-slate-300">
               Compare forecast discipline against standard baselines.
             </p>
           </Link>
           <Link
             to="/regulatory-filing"
-            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+            className="rounded-xl border border-slate-700 bg-slate-800/80 p-4 transition-colors hover:border-cyan-500/50"
           >
             <FileText className="mb-2 h-5 w-5 text-amber-300" />
-            <h3 className="text-sm font-medium text-white">Regulatory filing exports</h3>
-            <p className="mt-1 text-xs text-slate-500">
+            <h3 className="text-sm font-medium text-slate-50">Regulatory filing exports</h3>
+            <p className="mt-1 text-xs text-slate-300">
               Reuse the existing filing templates without leaving the utility workflow.
             </p>
           </Link>
           <Link
             to="/asset-health"
-            className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-cyan-500/50"
+            className="rounded-xl border border-slate-700 bg-slate-800/80 p-4 transition-colors hover:border-cyan-500/50"
           >
             <Shield className="mb-2 h-5 w-5 text-emerald-300" />
-            <h3 className="text-sm font-medium text-white">Asset health planning</h3>
-            <p className="mt-1 text-xs text-slate-500">
+            <h3 className="text-sm font-medium text-slate-50">Asset health planning</h3>
+            <p className="mt-1 text-xs text-slate-300">
               Pair load growth with adjacent utility asset decisions.
             </p>
           </Link>
@@ -2945,7 +2969,7 @@ function buildGreenButtonStarterXml(): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-400">
+      <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-300">
         {label}
       </span>
       {children}
@@ -2960,7 +2984,7 @@ function NumberInput({ value, onChange }: { value: number; onChange: (value: num
       value={value}
       step="0.1"
       onChange={(event) => onChange(Number(event.target.value))}
-      className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+      className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-50"
     />
   );
 }
@@ -2980,9 +3004,9 @@ function MetricCard({
     <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-          <div className="mt-1 text-xl font-semibold text-white">{value}</div>
-          <div className="mt-1 text-xs text-slate-400">{sub}</div>
+          <div className="text-xs uppercase tracking-wide text-slate-300">{label}</div>
+          <div className="mt-1 text-xl font-semibold text-slate-50">{value}</div>
+          <div className="mt-1 text-xs text-slate-300">{sub}</div>
         </div>
         <div>{icon}</div>
       </div>
@@ -3010,9 +3034,9 @@ function BenchmarkStat({
     : (input: number) => `${input.toFixed(2)}${suffix}`;
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-white">{formatter(value)}</div>
-      <div className="mt-1 text-xs text-slate-400">
+      <div className="text-xs uppercase tracking-wide text-slate-300">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-slate-50">{formatter(value)}</div>
+      <div className="mt-1 text-xs text-slate-300">
         {baselineLabel}: {formatter(baseline)}
       </div>
     </div>

@@ -524,11 +524,18 @@ export const TIERROICalculator: React.FC = () => {
             Pair this memo with the credit banking audit pack <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <ProofPackPanel
-          title={proofBundle.title}
-          summary={proofBundle.summary}
-          artifacts={proofActions}
-        />
+        <div
+          className="min-w-0 overflow-x-auto"
+          role="region"
+          aria-label="TIER scenario proof pack"
+          tabIndex={0}
+        >
+          <ProofPackPanel
+            title={proofBundle.title}
+            summary={proofBundle.summary}
+            artifacts={proofActions}
+          />
+        </div>
       </section>
 
       <section className="max-w-5xl mx-auto px-6 pb-12">
@@ -546,7 +553,7 @@ export const TIERROICalculator: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Inputs */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
@@ -690,7 +697,7 @@ export const TIERROICalculator: React.FC = () => {
                       : `CAD ${ARBITRAGE_SPREAD}/tonne scenario spread under current inputs`}
                   </span>
                 </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
                     <div className="text-xs uppercase tracking-wide text-slate-300">
                       Fund price provenance
@@ -764,9 +771,9 @@ export const TIERROICalculator: React.FC = () => {
 
                 {/* Direct Investment pathway — bounded, undetermined pending Standard */}
                 <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                  <div className="flex justify-between items-start gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm text-blue-400">Direct Investment Pathway</span>
                         <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300">
                           Undetermined — current Standard status unverified
@@ -1026,14 +1033,14 @@ export const TIERROICalculator: React.FC = () => {
           ) : isLeadIntakeEnabled() ? (
             <>
               <PrivacyCollectionNotice className="mb-4 text-left" />
-              <div className="flex gap-3 max-w-md mx-auto">
+              <div className="flex flex-wrap gap-3 max-w-md mx-auto">
                 <input
                   type="email"
                   aria-label="Work email"
                   value={emailCapture}
                   onChange={(e) => setEmailCapture(e.target.value)}
                   placeholder="your@company.ca"
-                  className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="min-w-0 flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 />
                 <button
                   onClick={handleEmailSubmit}

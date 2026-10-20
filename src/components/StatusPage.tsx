@@ -1,9 +1,9 @@
 /**
  * Status Page
- * 
+ *
  * Public operational status dashboard for CEIP platform.
  * Displays system health, uptime metrics, and data freshness.
- * 
+ *
  * Features:
  * - Overall system health status
  * - OpsHealthPanel integration (30s auto-refresh)
@@ -11,24 +11,24 @@
  * - API endpoint status
  * - Recent incidents placeholder
  * - Uptime history
- * 
+ *
  * @public - Accessible at /status
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Activity, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle, 
-  Clock, 
+import {
+  Activity,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Clock,
   Database,
   Globe,
   Server,
   TrendingUp,
   ExternalLink,
   RefreshCw,
-  Shield
+  Shield,
 } from 'lucide-react';
 import { OpsHealthPanel } from './OpsHealthPanel';
 import { SEOHead } from './SEOHead';
@@ -67,9 +67,15 @@ const StatusPage: React.FC = () => {
     intervalMinutes: monitor.intervalMinutes,
   }));
 
-  const hasNonLiveHighRiskSources = HIGH_RISK_SOURCE_REGISTRY.some((item) => item.meta.freshnessStatus !== 'live');
-  const liveHighRiskSourceCount = HIGH_RISK_SOURCE_REGISTRY.filter((item) => item.meta.freshnessStatus === 'live').length;
-  const statusBannerTitle = hasNonLiveHighRiskSources ? 'Operational status overview' : 'All Systems Operational';
+  const hasNonLiveHighRiskSources = HIGH_RISK_SOURCE_REGISTRY.some(
+    (item) => item.meta.freshnessStatus !== 'live',
+  );
+  const liveHighRiskSourceCount = HIGH_RISK_SOURCE_REGISTRY.filter(
+    (item) => item.meta.freshnessStatus === 'live',
+  ).length;
+  const statusBannerTitle = hasNonLiveHighRiskSources
+    ? 'Operational status overview'
+    : 'All Systems Operational';
   const statusBannerCopy = hasNonLiveHighRiskSources
     ? 'System health is tracked below with explicit live, stale, and demo labels. Some high-risk sources are not live, so the page avoids claiming full operational parity.'
     : 'All monitored systems are running normally.';
@@ -102,7 +108,7 @@ const StatusPage: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const baseClasses = "px-2 py-1 rounded text-xs font-medium";
+    const baseClasses = 'px-2 py-1 rounded text-xs font-medium';
     switch (status) {
       case 'healthy':
       case 'fresh':
@@ -151,9 +157,11 @@ const StatusPage: React.FC = () => {
     }
   };
 
-  const getReleaseHealthBadge = (status: ReleaseHealthEvidenceItem['status']) => getPostureBadge(status);
+  const getReleaseHealthBadge = (status: ReleaseHealthEvidenceItem['status']) =>
+    getPostureBadge(status);
 
-  const getReleaseHealthIcon = (status: ReleaseHealthEvidenceItem['status']) => getPostureIcon(status);
+  const getReleaseHealthIcon = (status: ReleaseHealthEvidenceItem['status']) =>
+    getPostureIcon(status);
 
   const getPublicStatusBadge = (status: PublicReleaseStatus) => getPostureBadge(status);
 
@@ -217,7 +225,7 @@ const StatusPage: React.FC = () => {
                 <div className="text-xs text-slate-400">Last Updated</div>
                 <div className="text-sm font-medium">{lastRefresh.toLocaleTimeString()}</div>
               </div>
-              <button 
+              <button
                 onClick={() => setLastRefresh(new Date())}
                 className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
                 title="Refresh now"
@@ -241,8 +249,10 @@ const StatusPage: React.FC = () => {
               <p className="text-emerald-700">{statusBannerCopy}</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-emerald-600">{liveHighRiskSourceCount}/{HIGH_RISK_SOURCE_REGISTRY.length}</div>
-              <div className="text-sm text-emerald-600">Live high-risk sources</div>
+              <div className="text-3xl font-bold text-emerald-700">
+                {liveHighRiskSourceCount}/{HIGH_RISK_SOURCE_REGISTRY.length}
+              </div>
+              <div className="text-sm text-emerald-700">Live high-risk sources</div>
             </div>
           </div>
         </div>
@@ -279,8 +289,10 @@ const StatusPage: React.FC = () => {
               {PUBLIC_RELEASE_STATUS_MANIFEST.decisionBoundary}
             </div>
             <div className="border-b border-slate-200 p-4">
-              <h3 className="text-sm font-semibold text-slate-900">Required release refresh sequence</h3>
-              <div className="mt-3 grid gap-2 lg:grid-cols-2">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Required release refresh sequence
+              </h3>
+              <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2">
                 {PUBLIC_RELEASE_STATUS_MANIFEST.refreshCommands.map((command, index) => (
                   <div
                     key={command}
@@ -296,7 +308,7 @@ const StatusPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div className="grid gap-4 p-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
               {PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => (
                 <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -309,36 +321,47 @@ const StatusPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <span className={getPublicStatusBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span className={getPublicStatusBadge(item.status)}>
+                      {item.status.replace(/_/g, ' ').toUpperCase()}
+                    </span>
                   </div>
                   <p className="mt-4 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
-                  {(item.sourceManifestPath || item.sourceProofType || item.sourceProofTypes?.length) ? (
+                  {item.sourceManifestPath ||
+                  item.sourceProofType ||
+                  item.sourceProofTypes?.length ? (
                     <div className="mt-4 break-words rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
                       <span className="font-semibold text-slate-900">Manifest lineage:</span>{' '}
                       {item.sourceManifestPath ? (
-                        <code className="break-words font-mono text-slate-800">{item.sourceManifestPath}</code>
+                        <code className="break-words font-mono text-slate-800">
+                          {item.sourceManifestPath}
+                        </code>
                       ) : null}
                       {item.sourceProofType ? (
                         <>
                           {' '}
                           <span className="text-slate-400">/</span>{' '}
-                          <code className="break-words font-mono text-slate-800">{item.sourceProofType}</code>
+                          <code className="break-words font-mono text-slate-800">
+                            {item.sourceProofType}
+                          </code>
                         </>
                       ) : null}
                       {item.sourceProofTypes?.length ? (
                         <>
                           {' '}
                           <span className="text-slate-400">/</span>{' '}
-                          <code className="break-words font-mono text-slate-800">{item.sourceProofTypes.join(', ')}</code>
+                          <code className="break-words font-mono text-slate-800">
+                            {item.sourceProofTypes.join(', ')}
+                          </code>
                         </>
                       ) : null}
                     </div>
                   ) : null}
-                  <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs leading-5 text-slate-100">
+                  <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono break-all text-xs leading-5 text-slate-100">
                     {item.command}
                   </div>
                   <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
-                    <span className="font-medium text-slate-900">Next action:</span> {item.nextAction}
+                    <span className="font-medium text-slate-900">Next action:</span>{' '}
+                    {item.nextAction}
                   </div>
                 </article>
               ))}
@@ -377,7 +400,7 @@ const StatusPage: React.FC = () => {
                 <ExternalLink className="h-4 w-4" />
               </a>
             </div>
-            <div className="grid gap-4 p-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
               {SUPABASE_ADVISOR_STATUS_CARD.checks.map((check) => (
                 <article
                   key={check.id}
@@ -394,17 +417,20 @@ const StatusPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <span className={getPostureBadge(check.status)}>{check.status.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span className={getPostureBadge(check.status)}>
+                      {check.status.replace(/_/g, ' ').toUpperCase()}
+                    </span>
                   </div>
                   <p className="mt-4 text-sm leading-6 text-slate-600">
                     <span className="font-medium text-slate-900">Source:</span> {check.source}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{check.evidenceBoundary}</p>
-                  <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs leading-5 text-slate-100">
+                  <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono break-all text-xs leading-5 text-slate-100">
                     {check.command}
                   </div>
                   <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
-                    <span className="font-medium text-slate-900">Next action:</span> {check.nextAction}
+                    <span className="font-medium text-slate-900">Next action:</span>{' '}
+                    {check.nextAction}
                   </div>
                 </article>
               ))}
@@ -419,7 +445,9 @@ const StatusPage: React.FC = () => {
           </h2>
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm text-slate-700">
-              Public-safe evidence handles for the current source, deployed artifact, buyer-evidence gate, and Supabase review status. These records do not create buyer proof or production approval.
+              Public-safe evidence handles for the current source, deployed artifact, buyer-evidence
+              gate, and Supabase review status. These records do not create buyer proof or
+              production approval.
             </div>
             <div className="divide-y divide-slate-200">
               {RELEASE_HEALTH_EVIDENCE.map((item) => (
@@ -429,12 +457,16 @@ const StatusPage: React.FC = () => {
                       {getReleaseHealthIcon(item.status)}
                       <div>
                         <h3 className="font-semibold text-slate-900">{item.label}</h3>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          {item.evidenceBoundary}
+                        </p>
                       </div>
                     </div>
-                    <span className={getReleaseHealthBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span className={getReleaseHealthBadge(item.status)}>
+                      {item.status.replace(/_/g, ' ').toUpperCase()}
+                    </span>
                   </div>
-                  <div className="mt-3 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100">
+                  <div className="mt-3 rounded-lg bg-slate-950 px-3 py-2 font-mono break-all text-xs text-slate-100">
                     {item.command}
                   </div>
                   {item.publicReference ? (
@@ -461,7 +493,8 @@ const StatusPage: React.FC = () => {
           </h2>
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm text-slate-700">
-              This checklist shows the production release evidence path. It is not production approval and does not claim buyer-proven market confidence.
+              This checklist shows the production release evidence path. It is not production
+              approval and does not claim buyer-proven market confidence.
             </div>
             <div className="divide-y divide-slate-200">
               {DEPLOYMENT_APPROVAL_CHECKLIST.map((item) => (
@@ -471,12 +504,16 @@ const StatusPage: React.FC = () => {
                       {getApprovalIcon(item.status)}
                       <div>
                         <h3 className="font-semibold text-slate-900">{item.gate}</h3>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          {item.evidenceBoundary}
+                        </p>
                       </div>
                     </div>
-                    <span className={getApprovalBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span className={getApprovalBadge(item.status)}>
+                      {item.status.replace(/_/g, ' ').toUpperCase()}
+                    </span>
                   </div>
-                  <div className="mt-3 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100">
+                  <div className="mt-3 rounded-lg bg-slate-950 px-3 py-2 font-mono break-all text-xs text-slate-100">
                     {item.command}
                   </div>
                 </article>
@@ -490,7 +527,7 @@ const StatusPage: React.FC = () => {
             <Shield className="h-5 w-5 text-slate-500" />
             Release and evidence posture
           </h2>
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {RELEASE_POSTURE.map((item) => (
               <article key={item.title} className="bg-white border border-slate-200 rounded-xl p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -498,10 +535,14 @@ const StatusPage: React.FC = () => {
                     {getPostureIcon(item.status)}
                     <div>
                       <h3 className="font-semibold text-slate-900">{item.title}</h3>
-                      <div className="mt-1 text-sm text-slate-500">Readiness rating: {item.rating}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        Readiness rating: {item.rating}
+                      </div>
                     </div>
                   </div>
-                  <span className={getPostureBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                  <span className={getPostureBadge(item.status)}>
+                    {item.status.replace(/_/g, ' ').toUpperCase()}
+                  </span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-slate-600">{item.evidence}</p>
                 <div className="mt-4 rounded-lg bg-slate-50 border border-slate-200 p-3 text-sm text-slate-700">
@@ -513,9 +554,9 @@ const StatusPage: React.FC = () => {
         </section>
 
         {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Main Status */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="min-w-0 lg:col-span-2 space-y-8">
             {/* Ops Health Panel */}
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
@@ -534,13 +575,24 @@ const StatusPage: React.FC = () => {
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <div className="divide-y divide-slate-200">
                   {HIGH_RISK_SOURCE_REGISTRY.map((item) => (
-                    <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                    <div
+                      key={item.id}
+                      className="p-4 flex items-center justify-between hover:bg-slate-50"
+                    >
                       <div className="flex items-center gap-3">
-                        {getStatusIcon(item.meta.freshnessStatus === 'live' ? 'fresh' : item.meta.freshnessStatus === 'stale' ? 'stale' : 'unknown')}
+                        {getStatusIcon(
+                          item.meta.freshnessStatus === 'live'
+                            ? 'fresh'
+                            : item.meta.freshnessStatus === 'stale'
+                              ? 'stale'
+                              : 'unknown',
+                        )}
                         <div>
                           <div className="font-medium text-slate-900">{item.label}</div>
                           <div className="text-sm text-slate-500">Source: {item.meta.source}</div>
-                          {item.meta.note ? <div className="text-xs text-slate-500">{item.meta.note}</div> : null}
+                          {item.meta.note ? (
+                            <div className="text-xs text-slate-500">{item.meta.note}</div>
+                          ) : null}
                         </div>
                       </div>
                       <div className="text-right">
@@ -616,11 +668,14 @@ const StatusPage: React.FC = () => {
                           <span className="font-medium text-slate-900">{endpoint.name}</span>
                         </div>
                         <span className={getStatusBadge(endpoint.status)}>
-                          {endpoint.status === 'reference' ? 'REFERENCE' : endpoint.status.toUpperCase()}
+                          {endpoint.status === 'reference'
+                            ? 'REFERENCE'
+                            : endpoint.status.toUpperCase()}
                         </span>
                       </div>
                       <div className="text-xs text-slate-500 ml-7">
-                        Expected status: {endpoint.expectedStatus} • Every {endpoint.intervalMinutes} min
+                        Expected status: {endpoint.expectedStatus} • Every{' '}
+                        {endpoint.intervalMinutes} min
                       </div>
                     </div>
                   ))}
@@ -636,20 +691,23 @@ const StatusPage: React.FC = () => {
               </h2>
               <div className="bg-white border border-slate-200 rounded-xl p-4">
                 <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                  Persisted uptime history is not wired into this page yet. Until live monitor history is connected, treat uptime as unknown here and rely on the source freshness registry plus ops-health panel above.
+                  Persisted uptime history is not wired into this page yet. Until live monitor
+                  history is connected, treat uptime as unknown here and rely on the source
+                  freshness registry plus ops-health panel above.
                 </div>
               </div>
             </section>
 
             {/* Contact / Report Issue */}
             <section>
-              <div className="bg-slate-900 text-white rounded-xl p-6">
-                <h3 className="font-semibold mb-2">Experiencing Issues?</h3>
-                <p className="text-slate-400 text-sm mb-4">
-                  If you're experiencing problems not reflected on this status page, please report them.
+              <div className="bg-slate-950 text-slate-50 rounded-xl p-6">
+                <h3 className="font-semibold mb-2 text-slate-50">Experiencing Issues?</h3>
+                <p className="text-slate-300 text-sm mb-4">
+                  If you're experiencing problems not reflected on this status page, please report
+                  them.
                 </p>
-                <a 
-                  href="mailto:support@ceip.io" 
+                <a
+                  href="mailto:support@ceip.io"
                   className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   Contact Support
@@ -664,11 +722,15 @@ const StatusPage: React.FC = () => {
         <footer className="mt-12 pt-8 border-t border-slate-200">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
             <p>
-              Status page auto-refreshes every 30 seconds. 
-              <a href="/" className="text-emerald-600 hover:text-emerald-700 ml-1">← Back to CEIP</a>
+              Status page auto-refreshes every 30 seconds.
+              <a href="/" className="text-emerald-700 hover:text-emerald-800 ml-1">
+                ← Back to CEIP
+              </a>
             </p>
             <p>
-              <a href="/status" className="text-emerald-600 hover:text-emerald-700">System Status</a>
+              <a href="/status" className="text-emerald-700 hover:text-emerald-800">
+                System Status
+              </a>
               {' • '}
               Powered by CEIP Operations Monitoring
             </p>

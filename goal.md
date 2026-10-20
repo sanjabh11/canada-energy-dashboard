@@ -46,7 +46,7 @@ owner approval or buyer validation.
 | P4 — Whop and claims | in progress | local tests | dirty tree | claims swept from `whop-mini/`; Top20/COMMERCIAL_STATUS qualified; checker 430 files | repo | deployed copy + membership-route integration test | deployed copy unverified |
 | P5 — Outreach readiness | in progress | local tests | dirty tree | canonical `SUPPRESSION_REGISTRY_LIVE.csv` required by all tools (this pass); cross-dir opt-out test | repo → human | CASL owner sign-off | 0/11 experiments |
 | P6 — Product quality and governance | in progress | local tests | dirty tree | content-hash parity; server-path critical coverage floors in CI | repo | WCAG 2.2 AA + perf audit; 29-dim evidence links | shallow dimensions remain |
-| P7 — Full-suite and exact-tree verification | in progress | committed CI | `aeae26a` | 1186/1186 local; CI run `39425067455` all jobs green — Phase 0/6/wedge across all 5 projects + WCAG spec in CI + tree-bound `ci-evidence-manifest.json` uploaded | repo → CI | staging run | committed-tree CI bound; staging owner-gated |
+| P7 — Full-suite and exact-tree verification | in progress | committed CI | `e34d265` | 1276/1276 local; CI run `39443266834` all jobs green — Phase 0/6/wedge + WCAG 2.2 AA across all 5 projects; manifest records merge SHA + `CEIP_PR_HEAD_SHA` + per-file sha256 | repo → CI | staging run | committed-tree CI bound; staging owner-gated |
 | P8 — Owner-run staging | blocked | — | — | — | owner | INC-001 + named approvals | all hosted evidence absent |
 | P9 — Human buyer experiments | blocked | — | — | `.positioning-audit/experiments.json` (0/11; WTP fields now declared) | owner | business decision | commercial readiness unverifiable |
 
