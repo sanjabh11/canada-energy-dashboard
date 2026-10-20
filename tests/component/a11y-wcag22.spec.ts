@@ -73,17 +73,33 @@ test.describe('WCAG 2.2 AA — axe audit', () => {
   for (const vp of VIEWPORTS) {
     test(`mobile reflow — no horizontal scroll at ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
+      const failures: string[] = [];
       for (const route of ROUTES) {
         await page.goto(route.path, { waitUntil: 'domcontentloaded' });
         await expect(page.locator('h1, h2').first()).toBeVisible();
-        const scrollWidth = await page.evaluate(
-          () => document.documentElement.scrollWidth,
-        );
-        expect(
-          scrollWidth,
-          `${route.path} overflows at ${vp.width}px (scrollWidth=${scrollWidth})`,
-        ).toBeLessThanOrEqual(vp.width + 1);
+        const { scrollWidth, offenders } = await page.evaluate((limit) => {
+          const wide = [...document.querySelectorAll('*')]
+            .filter((el) => {
+              const rect = (el as HTMLElement).getBoundingClientRect();
+              return rect.width > limit && !(el as HTMLElement).closest('[data-scroll-ok]');
+            })
+            .slice(0, 4)
+            .map(
+              (el) =>
+                `${el.tagName.toLowerCase()}.${[...(el as HTMLElement).classList]
+                  .slice(0, 3)
+                  .join('.')} w=${Math.round((el as HTMLElement).getBoundingClientRect().width)}`,
+            );
+          return { scrollWidth: document.documentElement.scrollWidth, offenders: wide };
+        }, vp.width);
+        if (scrollWidth > vp.width + 1) {
+          failures.push(
+            `${route.path} overflows at ${vp.width}px (scrollWidth=${scrollWidth}) — ` +
+              `widest: ${offenders.join(' | ') || 'none found'}`,
+          );
+        }
       }
+      expect(failures, failures.join('\n')).toEqual([]);
     });
   }
 });
