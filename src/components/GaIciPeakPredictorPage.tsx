@@ -251,7 +251,7 @@ export function GaIciPeakPredictorPage() {
 
         <section className="border-b border-white/10 bg-slate-900/45">
           <div className="mx-auto grid max-w-7xl gap-8 px-6 py-14 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-3 text-amber-100">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">Proof boundary</span>
@@ -270,13 +270,13 @@ export function GaIciPeakPredictorPage() {
               </ul>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-3 text-cyan-100">
                 <FileText className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">Markdown proof artifact</span>
               </div>
               <pre
-                className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-black/35 p-5 text-xs leading-6 text-slate-200"
+                className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-slate-950 p-5 text-xs leading-6 text-slate-200"
                 tabIndex={0}
                 aria-label="Markdown proof artifact"
               >

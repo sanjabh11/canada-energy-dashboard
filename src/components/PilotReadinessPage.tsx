@@ -371,7 +371,7 @@ export function PilotReadinessPage() {
               {pilotOperatorCommands.map((item, index) => (
                 <article
                   key={item.id}
-                  className="min-w-0 rounded-2xl border border-white/10 bg-black/25 p-5"
+                  className="min-w-0 rounded-2xl border border-white/10 bg-slate-950 p-5"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
@@ -1134,7 +1134,7 @@ export function PilotReadinessPage() {
                   pilot wins are not enough.
                 </p>
                 <div
-                  className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-black/30 p-4"
+                  className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-slate-950 p-4"
                   role="region"
                   aria-label="95 percent market gate command"
                   tabIndex={0}
@@ -1223,7 +1223,7 @@ export function PilotReadinessPage() {
 
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="min-w-0 rounded-[1.4rem] border border-white/10 bg-black/20 p-5">
+    <div className="min-w-0 rounded-[1.4rem] border border-white/10 bg-slate-950 p-5">
       <div className="text-3xl font-semibold text-slate-50">{value}</div>
       <div className="mt-2 text-sm text-slate-300">{label}</div>
     </div>
@@ -1250,7 +1250,7 @@ function RoutePlanInfo({ label, value }: { label: string; value: string }) {
 
 function CommandBlock({ label, command }: { label: string; command: string }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-emerald-200/15 bg-black/30 p-5">
+    <div className="min-w-0 rounded-2xl border border-emerald-200/15 bg-slate-950 p-5">
       <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</div>
       <div
         className="mt-3 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3"

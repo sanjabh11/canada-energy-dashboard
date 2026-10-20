@@ -23,6 +23,11 @@ const VIEWPORTS = [
 ];
 
 test.describe('WCAG 2.2 AA — axe audit', () => {
+  // axe-core's analysis is engine-dependent in cost — gecko (Firefox) is
+  // roughly 3-4x slower than Blink/WebKit on these pages. This is a
+  // tool-runtime budget, not a gate relaxation: violations still fail.
+  test.describe.configure({ timeout: 120_000 });
+
   for (const route of WEDGE_ROUTES) {
     test(`${route} — no serious/critical axe violations (desktop)`, async ({ page }) => {
       await page.goto(route, { waitUntil: 'domcontentloaded' });

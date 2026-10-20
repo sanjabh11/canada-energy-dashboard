@@ -12,10 +12,12 @@
  *   - GitHub Actions identity vars (GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT,
  *     GITHUB_SHA, GITHUB_WORKFLOW, GITHUB_JOB) when present — `ci` is null
  *     outside Actions so the script runs locally unchanged
- *   - sha256 + byte size for every evidence file matching:
- *       playwright-report*\/index.html   (phase0 / phase6 / wedge / default dirs)
+ *   - sha256 + byte size for EVERY uploaded artifact file, recursively:
+ *       playwright-report*/**          (phase0 / phase6 / wedge / a11y dirs)
  *       playwright-results-*.json
  *       coverage/lcov.info
+ *   - CEIP_PR_HEAD_SHA env (pull_request head sha) so branch SHA and merge
+ *     SHA are recorded separately — PR checkouts test a merge commit.
  *
  * Usage: node scripts/report-ci-evidence-manifest.mjs
  * Exits non-zero if git identity or the tree fingerprint cannot be computed;
@@ -80,8 +82,11 @@ const CI_ENV_VARS = [
   'GITHUB_RUN_ID',
   'GITHUB_RUN_ATTEMPT',
   'GITHUB_SHA',
+  'GITHUB_REF',
+  'GITHUB_EVENT_NAME',
   'GITHUB_WORKFLOW',
   'GITHUB_JOB',
+  'CEIP_PR_HEAD_SHA',
 ];
 const ciEnv = {};
 for (const name of CI_ENV_VARS) {
@@ -91,14 +96,27 @@ for (const name of CI_ENV_VARS) {
 }
 const ci = Object.keys(ciEnv).length > 0 ? ciEnv : null;
 
-// Evidence file set: playwright-report*/index.html, playwright-results-*.json,
+// Evidence file set: EVERY file under each playwright-report*/ directory
+// (recursively — not only index.html), playwright-results-*.json, and
 // coverage/lcov.info — whatever exists at run time.
+const collectFilesRecursively = (dir, prefix) => {
+  const collected = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      collected.push(...collectFilesRecursively(path.join(dir, entry.name), rel));
+    } else if (entry.isFile()) {
+      collected.push(rel);
+    }
+  }
+  return collected;
+};
+
 const targets = new Set();
 for (const entry of readdirSync(repoRoot, { withFileTypes: true })) {
   if (entry.isDirectory() && entry.name.startsWith('playwright-report')) {
-    const indexHtml = `${entry.name}/index.html`;
-    if (existsSync(path.join(repoRoot, indexHtml))) {
-      targets.add(indexHtml);
+    for (const rel of collectFilesRecursively(path.join(repoRoot, entry.name), entry.name)) {
+      targets.add(rel);
     }
   } else if (entry.isFile() && /^playwright-results-.*\.json$/.test(entry.name)) {
     targets.add(entry.name);

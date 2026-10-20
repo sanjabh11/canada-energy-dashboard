@@ -280,7 +280,7 @@ export function ByoCsvProofPage() {
                   aria-label="CSV text"
                   value={csvText}
                   onChange={(event) => setCsvText(event.target.value)}
-                  className="min-h-72 rounded-lg border border-white/10 bg-black/35 p-4 font-mono text-sm leading-6 text-slate-100 outline-none transition focus:border-emerald-300/50"
+                  className="min-h-72 rounded-lg border border-white/10 bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-100 outline-none transition focus:border-emerald-300/50"
                 />
                 <div className="flex flex-wrap gap-3">
                   <button
@@ -397,7 +397,7 @@ export function ByoCsvProofPage() {
               </button>
             </div>
             <pre
-              className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-black/35 p-5 text-xs leading-6 text-slate-200"
+              className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-slate-950 p-5 text-xs leading-6 text-slate-200"
               data-testid="byo-csv-markdown"
               tabIndex={0}
               aria-label="Markdown proof report"

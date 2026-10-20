@@ -1,8 +1,9 @@
 # CEIP audit addendum — 2026-10-08 (second pass, evidence reconciliation)
 
 Sixth audit pass — focused on evidence binding rather than new remediation.
-Note: `mission_prepare.md` referenced in the handoff does not exist in the
-repo; `goal.md` + this addendum chain carry the contract.
+Note: at the time of this pass `mission_prepare.md` was missing from the
+handoff's references; it has since been created (see "Self-audit residuals"
+below) and now carries the decision contract alongside `goal.md`.
 
 ## Tree identity
 

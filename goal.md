@@ -12,12 +12,14 @@
 > Never infer closure from code presence or an unrun test; tie every status
 > to its required evidence layer.
 >
-> **Immediate milestone (2026-10-08 audit):** close the remaining
-> repository-owned Whop authorization, billing-disable, suppression,
-> secret-handling documentation, and evidence-binding defects. Require a
-> committed-tree CI run and a demonstrated existing-member journey before
-> requesting owner-run staging. All hosted and buyer gates stay blocked while
-> INC-001 is open and the Supabase project is paused.
+> **Milestone status (2026-10-20):** committed-tree CI is now bound — run
+> `39431650307` green on `043231e` (PR #50) with all five browser projects,
+> the WCAG 2.2 AA audit, and a recursively-hashed evidence manifest. Next:
+> a demonstrated existing-member Whop journey + owner-run staging once
+> INC-001 is invalidated and the Supabase project resumes. All hosted and
+> buyer gates stay blocked meanwhile. (Historical baselines — `2cdc44b`,
+> 1186-test and 80-browser claims — refer to pre-commit trees; treat them as
+> superseded by the bound run.)
 
 ## Proof-layer definitions
 
