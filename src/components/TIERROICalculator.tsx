@@ -436,7 +436,7 @@ export const TIERROICalculator: React.FC = () => {
   }, [appendixMarkdown, memoDescriptor, proofBundle.artifacts, sourceCurrencyMarkdown]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-50">
       <SEOHead
         title="Alberta TIER Scenario Planning Calculator"
         description={`Build draft Alberta TIER scenarios for human review. Compare a planning fund-price basis, market-credit inputs, and an undetermined Direct Investment pathway.`}
@@ -456,11 +456,11 @@ export const TIERROICalculator: React.FC = () => {
           <Link to="/" className="flex items-center gap-2">
             <Calculator className="h-5 w-5 text-emerald-400" />
             <span className="font-bold">CEIP</span>
-            <span className="text-slate-400 text-sm">TIER Calculator</span>
+            <span className="text-slate-300 text-sm">TIER Calculator</span>
           </Link>
           <Link
             to="/enterprise"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium text-slate-950 transition-colors"
           >
             Talk to Sales
           </Link>
@@ -470,7 +470,7 @@ export const TIERROICalculator: React.FC = () => {
       {/* What is TIER? — SEO Explainer */}
       <section className="max-w-5xl mx-auto px-6 pt-10 pb-6">
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h1 className="text-2xl font-bold mb-3 flex items-center gap-2">
+          <h1 className="text-2xl font-bold mb-3 flex items-center gap-2 text-slate-50">
             <HelpCircle className="h-6 w-6 text-emerald-400" />
             What is TIER? Alberta's Carbon Compliance System
           </h1>
@@ -488,7 +488,7 @@ export const TIERROICalculator: React.FC = () => {
             eligibility remain unverified. Cost figures are planning scenarios; the pricing evidence
             gate below controls whether pathway ranking and savings can be shown.
           </p>
-          <div className="flex gap-4 mt-3 text-xs text-slate-500">
+          <div className="flex gap-4 mt-3 text-xs text-slate-300">
             <a
               href="https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation"
               target="_blank"
@@ -516,7 +516,7 @@ export const TIERROICalculator: React.FC = () => {
           <div className="font-semibold">
             TIER pricing freshness gate: {pricingFreshnessGate.status}
           </div>
-          <p className="mt-1">{pricingFreshnessGate.message}</p>
+          <p className="mt-1 text-inherit">{pricingFreshnessGate.message}</p>
           <Link
             to="/credit-banking"
             className="mt-3 inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200"
@@ -539,16 +539,18 @@ export const TIERROICalculator: React.FC = () => {
               <Calculator className="h-8 w-8 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">TIER Compliance Scenario Calculator</h2>
-              <p className="text-slate-400">Compare three pathways under explicit evidence gates</p>
+              <h2 className="text-2xl font-bold text-slate-50">
+                TIER Compliance Scenario Calculator
+              </h2>
+              <p className="text-slate-300">Compare three pathways under explicit evidence gates</p>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Inputs */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <span className="bg-emerald-600 text-white text-sm px-2 py-0.5 rounded">1</span>
+              <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
+                <span className="bg-emerald-600 text-slate-950 text-sm px-2 py-0.5 rounded">1</span>
                 Your Facility Data
               </h3>
 
@@ -559,7 +561,7 @@ export const TIERROICalculator: React.FC = () => {
                       <div className="text-sm font-medium text-emerald-300">
                         Sample Alberta facility preset
                       </div>
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-xs text-slate-300">
                         Preload one realistic industrial scenario to generate a CFO memo without
                         manual setup.
                       </div>
@@ -570,7 +572,7 @@ export const TIERROICalculator: React.FC = () => {
                         setBenchmarkExceedance(sampleFacilityPreset.benchmarkExceedance);
                         setDirectInvestCapex(sampleFacilityPreset.directInvestCapex);
                       }}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-emerald-500"
                     >
                       Load preset
                     </button>
@@ -578,7 +580,7 @@ export const TIERROICalculator: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800/40 px-3 py-2 text-xs">
-                  <span className="text-slate-400">
+                  <span className="text-slate-300">
                     {scenarioSaved
                       ? 'Scenario saved locally in this browser.'
                       : 'Inputs auto-save locally in this browser.'}
@@ -592,43 +594,55 @@ export const TIERROICalculator: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label
+                    htmlFor="tier-annual-emissions"
+                    className="block text-sm text-slate-300 mb-2"
+                  >
                     Annual Emissions (tonnes CO₂e)
                   </label>
                   <input
+                    id="tier-annual-emissions"
                     type="number"
                     value={annualEmissions}
                     onChange={(e) => setAnnualEmissions(Number(e.target.value))}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-slate-600 rounded-lg text-slate-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label
+                    htmlFor="tier-benchmark-exceedance"
+                    className="block text-sm text-slate-300 mb-2"
+                  >
                     Benchmark Exceedance (tonnes above limit)
                   </label>
                   <input
+                    id="tier-benchmark-exceedance"
                     type="number"
                     value={benchmarkExceedance}
                     onChange={(e) => setBenchmarkExceedance(Number(e.target.value))}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-slate-600 rounded-lg text-slate-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-slate-300 mt-1">
                     Your compliance liability = {benchmarkExceedance.toLocaleString()} tonnes
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label
+                    htmlFor="tier-direct-invest-capex"
+                    className="block text-sm text-slate-300 mb-2"
+                  >
                     Direct Investment Capex (CAD planned efficiency spend)
                   </label>
                   <input
+                    id="tier-direct-invest-capex"
                     type="number"
                     value={directInvestCapex}
                     onChange={(e) => setDirectInvestCapex(Number(e.target.value))}
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-slate-600 rounded-lg text-slate-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-slate-300 mt-1">
                     Planned on-site efficiency spend. Credit treatment remains undetermined until
                     the current publication status of Alberta&apos;s Direct Investment Standard is
                     verified.
@@ -638,7 +652,7 @@ export const TIERROICalculator: React.FC = () => {
 
               <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium text-slate-400">
+                  <h4 className="text-sm font-medium text-slate-300">
                     Current planning price basis
                   </h4>
                   <div
@@ -658,11 +672,11 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="text-sm text-red-400">TIER Fund Price</div>
                     <div className="text-2xl font-bold text-red-500">CAD {FUND_PRICE}/t</div>
                   </div>
-                  <div className="text-slate-500">vs</div>
+                  <div className="text-slate-300">vs</div>
                   <div className="text-right">
                     <div className="text-sm text-emerald-400">Market Credit Price</div>
                     <div className="text-2xl font-bold text-emerald-400">CAD {MARKET_PRICE}/t</div>
-                    <div className="text-xs text-slate-500 mt-1">
+                    <div className="text-xs text-slate-300 mt-1">
                       {liveTierMarketRateSource
                         ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
                         : `Illustrative planning input only—not a current market quote · snapshot dated ${tierPricing.lastVerifiedAt}`}
@@ -678,29 +692,29 @@ export const TIERROICalculator: React.FC = () => {
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                    <div className="text-xs uppercase tracking-wide text-slate-300">
                       Fund price provenance
                     </div>
-                    <div className="mt-2 text-sm text-white">{tierPricing.source}</div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-2 text-sm text-slate-50">{tierPricing.source}</div>
+                    <div className="mt-1 text-xs text-slate-300">
                       Effective {tierPricing.effectiveDate} • verified {tierPricing.lastVerifiedAt}
                     </div>
                   </div>
                   <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                    <div className="text-xs uppercase tracking-wide text-slate-300">
                       Market price provenance
                     </div>
-                    <div className="mt-2 text-sm text-white">
+                    <div className="mt-2 text-sm text-slate-50">
                       {liveTierMarketRateSource?.sourceName ?? tierPricing.marketPriceSource}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1 text-xs text-slate-300">
                       {liveTierMarketRateSource
                         ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} • ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
                         : `${tierPricing.marketPriceDisclosure} Reviewed ${tierPricing.lastVerifiedAt}.`}
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-slate-500">
+                <div className="mt-3 text-xs text-slate-300">
                   Simulator: {simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via{' '}
                   {simulatorSource === 'edge' ? 'Supabase Edge' : 'local fallback'}.
                   {simulatorResult?.meta.staleness_status === 'stale'
@@ -712,8 +726,8 @@ export const TIERROICalculator: React.FC = () => {
 
             {/* Results */}
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <span className="bg-emerald-600 text-white text-sm px-2 py-0.5 rounded">2</span>
+              <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
+                <span className="bg-emerald-600 text-slate-950 text-sm px-2 py-0.5 rounded">2</span>
                 Pathway costs and gated savings
               </h3>
 
@@ -723,7 +737,7 @@ export const TIERROICalculator: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-sm text-red-400">Fund Payment Pathway</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-300">
                         {benchmarkExceedance.toLocaleString()} t × {formatCad(FUND_PRICE)}/t
                       </div>
                     </div>
@@ -738,7 +752,7 @@ export const TIERROICalculator: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="text-sm text-emerald-400">Market Credits Pathway</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-300">
                         {benchmarkExceedance.toLocaleString()} t × {formatCad(MARKET_PRICE)}/t
                       </div>
                     </div>
@@ -758,7 +772,7 @@ export const TIERROICalculator: React.FC = () => {
                           Undetermined — current Standard status unverified
                         </span>
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-slate-300 mt-1">
                         {formatCad(results.pathways.directInvestment.capexCad)} planned capex;
                         eligible capital capped at{' '}
                         {formatCad(results.pathways.directInvestment.eligibleCapitalCapCad)} (50%)
@@ -770,7 +784,7 @@ export const TIERROICalculator: React.FC = () => {
                         {formatCad(results.pathways.directInvestment.costRangeCad.low)} –{' '}
                         {formatCad(results.pathways.directInvestment.costRangeCad.high)}
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-slate-300">
                         illustrative range, unverified
                       </div>
                     </div>
@@ -781,8 +795,8 @@ export const TIERROICalculator: React.FC = () => {
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="text-sm text-slate-400">CEIP Platform Fee (USD)</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-sm text-slate-300">CEIP Platform Fee (USD)</div>
+                      <div className="text-xs text-slate-300">
                         {formatUsd(results.fees.baseUsd)} annual base + {SUCCESS_FEE_RATE * 100}%
                         success fee on modeled savings
                       </div>
@@ -792,7 +806,7 @@ export const TIERROICalculator: React.FC = () => {
                         {results.fees.totalUsd !== null ? formatUsd(results.fees.totalUsd) : '—'}
                       </div>
                       {results.fees.totalCadEquivalent !== null && (
-                        <div className="text-[10px] text-slate-500">
+                        <div className="text-[10px] text-slate-300">
                           ≈ {formatCad(results.fees.totalCadEquivalent)} using the supplied USD→CAD
                           rate
                         </div>
@@ -812,10 +826,10 @@ export const TIERROICalculator: React.FC = () => {
                 ) : results.ratesStale ? (
                   <div role="status">
                     <div className="text-sm text-amber-300">Stale or unprovenanced rate inputs</div>
-                    <div className="text-xl font-semibold text-white">
+                    <div className="text-xl font-semibold text-slate-50">
                       Savings, ranking, and ROI are withheld
                     </div>
-                    <p className="mt-2 text-sm text-slate-400">
+                    <p className="mt-2 text-sm text-slate-300">
                       The fund or market-credit price input is outside its freshness window or lacks
                       dated source provenance. Refresh dated rate evidence before relying on pathway
                       economics.
@@ -824,10 +838,10 @@ export const TIERROICalculator: React.FC = () => {
                 ) : pricingFreshnessGate.blocksStrongSavingsClaim ? (
                   <div role="status">
                     <div className="text-sm text-amber-300">Planning scenario only</div>
-                    <div className="text-xl font-semibold text-white">
+                    <div className="text-xl font-semibold text-slate-50">
                       Savings and pathway ranking are withheld
                     </div>
-                    <p className="mt-2 text-sm text-slate-400">
+                    <p className="mt-2 text-sm text-slate-300">
                       The current market-price source is missing, stale, or not validated. Refresh
                       source evidence and provide dated FX before using net-savings figures.
                     </p>
@@ -835,10 +849,10 @@ export const TIERROICalculator: React.FC = () => {
                 ) : results.status === 'no_savings' ? (
                   <div>
                     <div className="text-sm text-emerald-400">Your Net Savings</div>
-                    <div className="text-xl font-semibold text-white">
+                    <div className="text-xl font-semibold text-slate-50">
                       No savings identified at these inputs
                     </div>
-                    <p className="mt-2 text-sm text-slate-400">
+                    <p className="mt-2 text-sm text-slate-300">
                       At the current price basis, purchasing market credits does not cost less than
                       the fund payment. Revisit when live pricing is refreshed.
                     </p>
@@ -846,7 +860,7 @@ export const TIERROICalculator: React.FC = () => {
                 ) : results.netSavingsCad === null ? (
                   <div role="status">
                     <div className="text-sm text-amber-300">CAD-equivalent result unavailable</div>
-                    <p className="mt-2 text-sm text-slate-400">
+                    <p className="mt-2 text-sm text-slate-300">
                       Provide current, sourced USD/CAD evidence before calculating net savings or
                       ROI.
                     </p>
@@ -856,7 +870,7 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <div className="text-sm text-emerald-400">Your Net Savings (CAD)</div>
-                        <div className="text-4xl font-bold text-white">
+                        <div className="text-4xl font-bold text-slate-50">
                           {formatCad(results.netSavingsCad)}
                         </div>
                       </div>
@@ -889,7 +903,7 @@ export const TIERROICalculator: React.FC = () => {
 
               {/* Recommendation Badge — determined pathways only, never DI */}
               <div className="bg-slate-700/50 rounded-lg p-3 text-center">
-                <span className="text-xs text-slate-400">Lowest-cost determined pathway: </span>
+                <span className="text-xs text-slate-300">Lowest-cost determined pathway: </span>
                 <span className="text-sm font-semibold text-emerald-400">
                   {pricingFreshnessGate.blocksStrongSavingsClaim || results.ratesStale
                     ? 'No ranking — refresh current source pricing and dated FX'
@@ -902,11 +916,13 @@ export const TIERROICalculator: React.FC = () => {
               </div>
 
               {/* Uncertainty / eligibility boundary note (plain language) */}
-              <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-4 text-xs text-slate-400 space-y-1">
+              <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-4 text-xs text-slate-300 space-y-1">
                 {results.notes.map((note) => (
-                  <p key={note}>{note}</p>
+                  <p key={note} className="text-inherit">
+                    {note}
+                  </p>
                 ))}
-                <p>
+                <p className="text-inherit">
                   See{' '}
                   <a
                     href={TIER_REGULATION_URL}
@@ -927,7 +943,7 @@ export const TIERROICalculator: React.FC = () => {
               isLeadIntakeEnabled() ? (
                 <Link
                   to="/enterprise?tier=industrial&artifact=tier-cfo-memo"
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-slate-950 transition-all flex items-center justify-center gap-2"
                 >
                   Request a human scenario review
                   <ArrowRight className="h-5 w-5" />
@@ -935,7 +951,7 @@ export const TIERROICalculator: React.FC = () => {
               ) : (
                 <p
                   role="status"
-                  className="rounded-lg border border-slate-700 p-3 text-sm text-slate-400"
+                  className="rounded-lg border border-slate-700 p-3 text-sm text-slate-300"
                 >
                   Buyer follow-up is unavailable until current pricing, sourced FX, and privacy
                   collection gates pass.
@@ -948,17 +964,17 @@ export const TIERROICalculator: React.FC = () => {
           <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-500" />
-              <span className="text-sm text-slate-400">
+              <span className="text-sm text-slate-300">
                 Published fund schedule + market scenario input
               </span>
             </div>
             <div className="flex flex-col items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-500" />
-              <span className="text-sm text-slate-400">3-Pathway Compliance Modeling</span>
+              <span className="text-sm text-slate-300">3-Pathway Compliance Modeling</span>
             </div>
             <div className="flex flex-col items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-500" />
-              <span className="text-sm text-slate-400">Draft Scenario Exports</span>
+              <span className="text-sm text-slate-300">Draft Scenario Exports</span>
             </div>
           </div>
         </div>
@@ -984,15 +1000,17 @@ export const TIERROICalculator: React.FC = () => {
         )}
 
         {/* Lead Capture */}
-        <div className="mt-8 bg-slate-800 border border-slate-700 rounded-xl p-6 text-center">
+        <div className="mt-8 bg-slate-800/80 border border-slate-700 rounded-xl p-6 text-center">
           <Mail className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold mb-2">Request TIER Scenario Follow-up</h3>
-          <p className="text-sm text-slate-400 mb-4">
+          <h3 className="text-lg font-semibold mb-2 text-slate-50">
+            Request TIER Scenario Follow-up
+          </h3>
+          <p className="text-sm text-slate-300 mb-4">
             The draft memo and scenario appendix are generated on this page — download them from the
             export panel above. Contact requests are available only when the privacy notice is
             approved.
           </p>
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-slate-300 mb-4">
             Changed scenario inputs are saved in this browser&apos;s local storage. Use Reset to
             remove the saved scenario from this device. Inputs are not submitted unless you
             explicitly request a pilot and submit while collection is enabled.
@@ -1011,14 +1029,15 @@ export const TIERROICalculator: React.FC = () => {
               <div className="flex gap-3 max-w-md mx-auto">
                 <input
                   type="email"
+                  aria-label="Work email"
                   value={emailCapture}
                   onChange={(e) => setEmailCapture(e.target.value)}
                   placeholder="your@company.ca"
-                  className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="flex-1 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 />
                 <button
                   onClick={handleEmailSubmit}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition-colors"
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-slate-950 transition-colors"
                 >
                   Request follow-up
                 </button>
@@ -1031,30 +1050,39 @@ export const TIERROICalculator: React.FC = () => {
                   {showPilotRequest ? '− Hide pilot request' : '+ Request a TIER pilot'}
                 </button>
               ) : (
-                <p className="mt-3 text-xs text-slate-500">
+                <p className="mt-3 text-xs text-slate-300">
                   Pilot requests stay unavailable until current source pricing, positive modeled net
                   savings, and dated FX are verified.
                 </p>
               )}
               {showPilotRequest && pilotRequestAllowed && (
                 <div className="mt-4 max-w-md mx-auto text-left">
-                  <label className="block text-sm text-slate-400 mb-1">Your Name (optional)</label>
+                  <label htmlFor="tier-contact-name" className="block text-sm text-slate-300 mb-1">
+                    Your Name (optional)
+                  </label>
                   <input
+                    id="tier-contact-name"
                     type="text"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="John Smith"
-                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3"
                   />
-                  <label className="block text-sm text-slate-400 mb-1">Compliance Year</label>
+                  <label
+                    htmlFor="tier-compliance-year"
+                    className="block text-sm text-slate-300 mb-1"
+                  >
+                    Compliance Year
+                  </label>
                   <input
+                    id="tier-compliance-year"
                     type="text"
                     value={complianceYear}
                     onChange={(e) => setComplianceYear(e.target.value)}
                     placeholder="e.g. 2026"
-                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3"
                   />
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-300">
                     Your facility emissions ({annualEmissions.toLocaleString()} tCO₂e) and benchmark
                     exceedance ({benchmarkExceedance.toLocaleString()} tCO₂e) will be included in
                     the pilot request.
@@ -1069,12 +1097,12 @@ export const TIERROICalculator: React.FC = () => {
         </div>
 
         {/* Data Sources */}
-        <div className="mt-6 text-xs text-slate-500 text-center space-y-1">
-          <p>
+        <div className="mt-6 text-xs text-slate-300 text-center space-y-1">
+          <p className="text-inherit">
             Data sources: Government of Alberta TIER materials plus route-level market pricing
             provenance when available.
           </p>
-          <p>
+          <p className="text-inherit">
             Fund price basis: CAD {FUND_PRICE}/t ({tierPricing.source}, effective{' '}
             {tierPricing.effectiveDate}). Market credit price:{' '}
             {liveTierMarketRateSource

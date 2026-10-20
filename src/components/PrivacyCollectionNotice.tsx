@@ -11,16 +11,16 @@ import { getLeadIntakeDisclosure } from '../lib/leadIntake';
 export const PrivacyCollectionNotice: React.FC<{ className?: string }> = ({ className = '' }) => {
   const disclosure = getLeadIntakeDisclosure();
   return disclosure ? (
-    <p className={`text-xs text-slate-500 ${className}`.trim()}>
+    <p className={`text-xs text-slate-300 ${className}`.trim()}>
       We collect your work contact details to respond to your inquiry and, if you request it, to
       scope a pilot. Facility figures are collected only when you explicitly submit a pilot request.
       Processing locations: {disclosure.processingLocations}. Retention:{' '}
       {disclosure.retentionSummary}. Questions: {disclosure.contactName},{' '}
-      <a href={`mailto:${disclosure.contactEmail}`} className="underline hover:text-slate-300">
+      <a href={`mailto:${disclosure.contactEmail}`} className="underline hover:text-slate-100">
         {disclosure.contactEmail}
       </a>{' '}
       . Read our{' '}
-      <a href={disclosure.policiesUrl} className="underline hover:text-slate-300">
+      <a href={disclosure.policiesUrl} className="underline hover:text-slate-100">
         privacy policies and practices
       </a>
       .

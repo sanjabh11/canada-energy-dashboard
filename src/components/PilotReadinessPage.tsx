@@ -441,7 +441,12 @@ export function PilotReadinessPage() {
                             {step.status}
                           </span>
                         </div>
-                        <div className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
+                        <div
+                          className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3"
+                          role="region"
+                          aria-label={`Step ${index + 1} command: ${step.label}`}
+                          tabIndex={0}
+                        >
                           <code className="whitespace-nowrap text-xs leading-6 text-cyan-100">
                             {step.command}
                           </code>
@@ -725,7 +730,12 @@ export function PilotReadinessPage() {
                     intentionally narrower than the canonical CLI; the final gate remains the
                     validator command below with an evidence-root directory.
                   </p>
-                  <div className="mt-5 overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4">
+                  <div
+                    className="mt-5 overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4"
+                    role="region"
+                    aria-label="95 percent evidence gate command"
+                    tabIndex={0}
+                  >
                     <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">
                       {pilotNinetyFiveGateCommand}
                     </code>
@@ -742,7 +752,11 @@ export function PilotReadinessPage() {
                       Run this non-mutating report first when the question is what still blocks
                       Phase F, not whether the hard 95% gate can already pass.
                     </p>
-                    <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
+                    <code
+                      className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
+                      tabIndex={0}
+                      aria-label="Buyer evidence readiness report command"
+                    >
                       {pilotBuyerEvidenceReadinessCommand}
                     </code>
                     <CopyButton
@@ -946,7 +960,11 @@ export function PilotReadinessPage() {
                         <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">
                           Canonical validator command
                         </div>
-                        <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
+                        <code
+                          className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
+                          tabIndex={0}
+                          aria-label="Canonical validator command"
+                        >
                           {registerPreview.cliCommand}
                         </code>
                         <CopyButton
@@ -1115,7 +1133,12 @@ export function PilotReadinessPage() {
                   market-confidence language. Public samples, constructed cases, and single-route
                   pilot wins are not enough.
                 </p>
-                <div className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-black/30 p-4">
+                <div
+                  className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-black/30 p-4"
+                  role="region"
+                  aria-label="95 percent market gate command"
+                  tabIndex={0}
+                >
                   <code className="whitespace-nowrap text-sm text-cyan-100">
                     {pilotNinetyFiveGateCommand}
                   </code>
@@ -1229,7 +1252,12 @@ function CommandBlock({ label, command }: { label: string; command: string }) {
   return (
     <div className="min-w-0 rounded-2xl border border-emerald-200/15 bg-black/30 p-5">
       <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</div>
-      <div className="mt-3 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
+      <div
+        className="mt-3 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3"
+        role="region"
+        aria-label={`${label} command`}
+        tabIndex={0}
+      >
         <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{command}</code>
       </div>
     </div>
@@ -1281,7 +1309,11 @@ function RetainedArtifactManager({
           Use this only after the retained artifact is final and the SHA-256 reference has been
           generated from the final text.
         </p>
-        <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
+        <code
+          className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
+          tabIndex={0}
+          aria-label="Register-ready update command"
+        >
           {preview.updateCommand}
         </code>
         <CopyButton label="Copy update command" onClick={onCopyCommand} />

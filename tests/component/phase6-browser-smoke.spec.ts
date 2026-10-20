@@ -29,6 +29,7 @@ const EXPECTED_CONSOLE_ERROR_PATTERNS: Record<string, RegExp[]> = {
   // These routes intentionally exercise local Edge fallback under Playwright's mocked Edge env.
   '/forecast-benchmarking': [/Failed to load resource.*404/i],
   '/ai-datacentres': [/Failed to load resource.*404/i],
+  '/utility-demand-forecast': [/Failed to load resource.*404/i],
 };
 
 function isAllowedConsoleError(path: string, text: string): boolean {
@@ -39,6 +40,17 @@ async function expectStableRoute(page: Page, routeCheck: RouteCheck) {
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
   const documentFailures: string[] = [];
+
+  // The hosted Supabase project may be paused/unreachable in smoke runs.
+  // Intercept all Supabase traffic and fulfill with the app's documented
+  // empty-data fallback so paused-backend transport noise (CORS/DNS errors)
+  // does not masquerade as a page defect. The app already treats empty
+  // responses as "no rates / no data" and degrades gracefully.
+  await page.route(/supabase\.co\//, async (route) => {
+    const url = route.request().url();
+    const body = url.includes('/rest/v1/') ? '[]' : '{}';
+    await route.fulfill({ status: 200, contentType: 'application/json', body });
+  });
 
   const onPageError = (error: Error) => {
     pageErrors.push(error.message);
@@ -69,8 +81,15 @@ async function expectStableRoute(page: Page, routeCheck: RouteCheck) {
     await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
     await expect(page.getByText(routeCheck.marker, { exact: true }).first()).toBeVisible({ timeout: 15000 });
 
-    if (routeCheck.path === '/' || routeCheck.path === '/solutions') {
+    if (routeCheck.path === '/') {
       await expect(page.getByText(/Desk-research confidence — unvalidated: \d\.\d\/5/).first()).toBeVisible();
+      await expect(page.getByText(/Demand \d\.\d\/5/)).toHaveCount(0);
+    }
+    if (routeCheck.path === '/solutions') {
+      // SolutionsNavigatorPage uses the same wedge score with its own honest
+      // copy ("Rank N • Sellability X.X/5") — assert that badge, not the
+      // landing-page wording.
+      await expect(page.getByText(/Rank \d+ • Sellability \d\.\d\/5/).first()).toBeVisible();
       await expect(page.getByText(/Demand \d\.\d\/5/)).toHaveCount(0);
     }
 

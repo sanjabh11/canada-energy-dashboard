@@ -114,7 +114,7 @@ export function ByoCsvProofPage() {
 
   return (
     <div
-      className="min-h-screen bg-slate-950 text-white"
+      className="min-h-screen bg-slate-950 text-slate-50"
       style={{ fontFamily: '"Space Grotesk", "Avenir Next", "Segoe UI", sans-serif' }}
       data-testid="byo-csv-proof-page"
     >
@@ -152,13 +152,13 @@ export function ByoCsvProofPage() {
               <nav className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
                 <Link
                   to="/ga-ici-5cp"
-                  className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-white"
+                  className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-slate-100"
                 >
                   GA/ICI 5CP
                 </Link>
                 <Link
                   to="/pilot-readiness"
-                  className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-white"
+                  className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-slate-100"
                 >
                   Pilot gate
                 </Link>
@@ -177,7 +177,7 @@ export function ByoCsvProofPage() {
                 <div className="text-sm uppercase tracking-[0.24em] text-emerald-200/80">
                   Buyer evidence intake
                 </div>
-                <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
+                <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight text-slate-50 md:text-6xl">
                   BYO-CSV Privacy Proof Generator
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
@@ -259,7 +259,7 @@ export function ByoCsvProofPage() {
                   <input
                     value={sourceLabel}
                     onChange={(event) => setSourceLabel(event.target.value)}
-                    className="rounded-lg border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-emerald-300/50"
+                    className="rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-300/50"
                   />
                 </label>
                 <label className="grid gap-2 text-sm text-slate-300">
@@ -267,7 +267,7 @@ export function ByoCsvProofPage() {
                   <select
                     value={route}
                     onChange={(event) => setRoute(event.target.value)}
-                    className="rounded-lg border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-emerald-300/50"
+                    className="rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-300/50"
                   >
                     <option value="/utility-demand-forecast">/utility-demand-forecast</option>
                     <option value="/byo-csv-proof">/byo-csv-proof</option>
@@ -337,7 +337,12 @@ export function ByoCsvProofPage() {
                 <TableProperties className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">Column profile</span>
               </div>
-              <div className="mt-5 overflow-x-auto rounded-lg border border-white/10">
+              <div
+                className="mt-5 overflow-x-auto rounded-lg border border-white/10"
+                role="region"
+                aria-label="CSV column profile"
+                tabIndex={0}
+              >
                 <table className="min-w-full divide-y divide-white/10 text-left text-sm">
                   <thead className="bg-white/[0.04] text-xs uppercase tracking-[0.16em] text-slate-300">
                     <tr>
@@ -394,6 +399,8 @@ export function ByoCsvProofPage() {
             <pre
               className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-black/35 p-5 text-xs leading-6 text-slate-200"
               data-testid="byo-csv-markdown"
+              tabIndex={0}
+              aria-label="Markdown proof report"
             >
               {markdown}
             </pre>
@@ -407,8 +414,8 @@ export function ByoCsvProofPage() {
 function SummaryMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-      <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
+      <div className="text-xs uppercase tracking-[0.18em] text-slate-300">{label}</div>
+      <div className="mt-2 text-2xl font-semibold text-slate-50">{value}</div>
     </div>
   );
 }
@@ -416,7 +423,7 @@ function SummaryMetric({ label, value }: { label: string; value: string }) {
 function ColumnProfileRow({ profile }: { profile: ByoCsvColumnProfile }) {
   return (
     <tr>
-      <td className="px-4 py-3 font-semibold text-white">{profile.column}</td>
+      <td className="px-4 py-3 font-semibold text-slate-50">{profile.column}</td>
       <td className="px-4 py-3 capitalize">{profile.inferred_type}</td>
       <td className="px-4 py-3">{profile.non_empty_count}</td>
       <td className="px-4 py-3">{profile.empty_count}</td>
