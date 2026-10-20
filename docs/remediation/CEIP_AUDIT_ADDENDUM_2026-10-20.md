@@ -7,19 +7,19 @@ fixed and bound to a green committed-tree CI run.
 ## Exact tree and merge identity
 
 - Branch: `codex/green-button-truth-spine` → PR #50
-- **Branch SHA:** `043231e991660fa2415fc83464bd86a75369b64b`
-- **Merge SHA (CI checkout):** `e688e2406f24b5d009b6fc3ac2a21e7bbda37790`
-  — PR checkouts test a merge commit; both are recorded separately.
-  `CEIP_PR_HEAD_SHA` is now passed to the manifest step so future runs
-  record branch SHA explicitly too.
-- Tree fingerprint (final committed tree):
+- **Branch SHA:** `48c90605daff970f5d84b4d600346f1c7902b9cc`
+- **Merge SHA (CI checkout):** `370a9b3a082ef394a24296d2cf4ef24e5ae34a58`
+  — PR checkouts test a merge commit; the manifest now records both:
+  `git.head_sha` = merge SHA, `ci.CEIP_PR_HEAD_SHA` = branch SHA,
+  `ci.GITHUB_REF` = `refs/pull/50/merge`.
+- Tree fingerprint (final committed tree, local capture):
   `c13200f7d27394b4116e429c1b0d509d3fbf9d6de8777dc652a401bf4088aff7`
   (1668 files, contents-hashed, `.env*` excluded)
 - Dirty-tree status at write time: clean — all remediation committed.
 
 ## CI evidence
 
-- **Green run:** `39431650307` — all three jobs green on `043231e`:
+- **Green run:** `39441457141` — all three jobs green on `48c9060`:
   - `lint-typecheck`: tsc, eslint + warning baseline, semgrep, dep audit,
     migrations, secret scan incl. history, client-env incl. history,
     hygiene, claim boundaries, commercial docs, repo/public metadata,
@@ -28,16 +28,20 @@ fixed and bound to a green committed-tree CI run.
   - `build-and-smoke`: build, bundle budgets, **Phase 0 / Phase 6 / wedge
     across all five Playwright projects**, **WCAG 2.2 AA audit**,
     `ci-evidence-manifest` recorded + all artifacts uploaded `if: always()`.
-- **Artifact:** id `12269560674`, name `ci-evidence-e688e240…`,
-  digest `sha256:40aa360b2781d55367e0e17cbfbc7ecfeef9b68cf0da621e0f02e2940fa4e346`,
-  1,975,797 bytes; contains manifest + 4 report dirs + 4 result JSONs + lcov.
-- **Manifest** (inside artifact): `head_sha` = merge SHA `e688e240…`,
-  `GITHUB_RUN_ID`/`ATTEMPT`/`WORKFLOW`/`JOB`, tree fingerprint, per-file
-  sha256. Recursive hashing of every uploaded artifact file (not only
-  `index.html`) was added in `043231e` per this audit's P7.4 — binds from
-  the next run onward.
-- **Failed predecessor** `39417475061` — recorded, not claimed: 249/248
-  inventory mismatch, 2 positioning tests, 19 Phase 6 browser failures.
+- **Artifact:** id `12273783056`, name `ci-evidence-370a9b3a…`,
+  digest `sha256:bafaaa485ea31790a269d060193817088abec655aeb06107b099302a53f0aaf5`;
+  contains manifest + 4 report dirs + 4 result JSONs + lcov.
+- **Manifest** (inside artifact, verified): `git.head_sha` = merge SHA
+  `370a9b3a…`, `ci.CEIP_PR_HEAD_SHA` = branch SHA `48c9060…`,
+  `ci.GITHUB_REF` = `refs/pull/50/merge`, tree fingerprint, and sha256 for
+  every uploaded artifact file (recursive hashing added per this audit's
+  P7.4 — `file_count` is 9 because each Playwright HTML report is a
+  single self-contained `index.html`).
+- **Failed predecessors** `39417475061`, `39437798713` — recorded, not
+  claimed: 249/248 inventory mismatch; positioning tests; Phase 6 browser
+  failures; a JSDoc self-termination in the manifest script (`*/` inside
+  `playwright-report*/**` text) that broke the ESLint parse and the
+  manifest step itself.
 
 ## Proof layers
 
