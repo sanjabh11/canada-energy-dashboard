@@ -23,7 +23,7 @@ import {
 } from '../lib/commercialPositioning';
 
 export function CommercialLandingPage() {
-  const [activeSegment, setActiveSegment] = useState<BuyerSegment>('Utility');
+  const [activeSegment, setActiveSegment] = useState<BuyerSegment>('Industrial');
 
   useEffect(() => {
     trackEvent('tier_hero_view', { source: 'homepage' });
@@ -46,7 +46,7 @@ export function CommercialLandingPage() {
     >
       <SEOHead
         title="CEIP | Alberta-First Energy Workflows for Utilities, Industrials, and Indigenous Projects"
-        description="Commercial landing page for CEIP's top ten sellable Canadian utility and energy proof packs: forecasts, benchmark trust reports, filings, Ontario GA/ICI 5CP decision support, BYO-CSV privacy proof, TIER, credit banking, asset triage, security review, and billing checks."
+        description="CEIP is testing desk-research hypotheses for Alberta TIER scenario workflows, with utility forecasting as a documented fallback. Buyer outcomes, pricing, savings, and pilot timing remain unvalidated."
         path="/"
         keywords={[
           'Alberta energy software',
@@ -107,7 +107,7 @@ export function CommercialLandingPage() {
                   to="/enterprise"
                   className="rounded-full bg-emerald-400 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-300"
                 >
-                  Start a Pilot
+                  Check pilot evidence
                 </Link>
               </nav>
             </header>
@@ -116,19 +116,17 @@ export function CommercialLandingPage() {
               <div>
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100">
                   <Sparkles className="h-4 w-4" />
-                  Alberta-first. Canada-expandable. Built for 30 to 60 day pilots.
+                  Desk-research hypotheses • buyer validation pending
                 </div>
                 <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                  Sell the energy workflow that owns a budget, not the prediction demo that gets
-                  admired and parked.
+                  Test a focused TIER scenario workflow and a utility forecasting fallback.
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-                  CEIP now leads with ten proof packs that buyers can understand in under ninety
-                  seconds: utility planning, forecast trust reports, regulatory filing, Ontario
-                  GA/ICI peak-risk support, BYO-CSV privacy proof, TIER decisions, credit banking,
-                  asset triage, security review, and billing checks. Prediction stays central, but
-                  only where it changes a filing, decision-support memo, capital plan, security
-                  review, or invoice proof.
+                  CEIP groups ten proposed energy-workflow proof-pack concepts for review. TIER is
+                  the current desk-research pilot hypothesis; utility forecasting is the documented
+                  fallback. Buyer demand, delivery time, pricing, savings, and procurement fit have
+                  not been validated. These concepts are not a sale or a commitment to deliver a
+                  pilot.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -136,7 +134,7 @@ export function CommercialLandingPage() {
                     to="/solutions"
                     className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
                   >
-                    View the top 10 proof packs
+                    Review proposed workflows
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
@@ -149,9 +147,9 @@ export function CommercialLandingPage() {
                 </div>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-3">
-                  <MetricCard value="10" label="Sellable proof packs" />
-                  <MetricCard value="30-60d" label="Target pilot path" />
-                  <MetricCard value="Utility-first" label="Go-to-market sequence" />
+                  <MetricCard value="10" label="Proposed workflow concepts" />
+                  <MetricCard value="0 / 11" label="Buyer experiments completed" />
+                  <MetricCard value="TIER hypothesis" label="Utility forecasting fallback" />
                 </div>
               </div>
 
@@ -165,7 +163,7 @@ export function CommercialLandingPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/70">
-                          Rank {wedge.rank} • Sellability {wedge.score.toFixed(1)}/5
+                          Desk-research confidence — unvalidated: {wedge.score.toFixed(1)}/5
                         </div>
                         <h2 className="mt-2 text-xl font-semibold text-white">{wedge.title}</h2>
                         <p className="mt-2 text-sm leading-6 text-slate-300">{wedge.pain}</p>
@@ -175,7 +173,7 @@ export function CommercialLandingPage() {
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between text-sm text-slate-300">
-                      <span>{wedge.timelineToValue}</span>
+                      <span>Buyer value and delivery time are unvalidated.</span>
                       <span className="inline-flex items-center gap-1 text-cyan-200 transition group-hover:translate-x-0.5">
                         Open wedge
                         <ArrowRight className="h-4 w-4" />
@@ -199,7 +197,7 @@ export function CommercialLandingPage() {
                   3-Pathway CFO Memo — Fund vs Credits vs Direct Investment
                 </h2>
                 <p className="mt-1 text-sm text-slate-300">
-                  Source-dated provenance, board-ready export. Not a spreadsheet printout.
+                  Source-dated provenance and a draft scenario export for review.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -302,8 +300,11 @@ export function CommercialLandingPage() {
                     </div>
                     <p className="mt-4 text-sm leading-6 text-slate-300">{wedge.outcome}</p>
                     <div className="mt-5 grid gap-3 md:grid-cols-2">
-                      <InfoCell label="Why now" value={wedge.whyNow} />
-                      <InfoCell label="Minimum pilot" value={wedge.pilotScope} />
+                      <InfoCell label="Research rationale" value={wedge.whyNow} />
+                      <InfoCell
+                        label="Candidate review scope — unvalidated"
+                        value={wedge.pilotScope}
+                      />
                     </div>
                   </div>
                 ))}
@@ -358,8 +359,8 @@ export function CommercialLandingPage() {
                     Stronger first impression, stricter truth model.
                   </h2>
                   <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200">
-                    Page one now explains what CEIP sells before it asks for attention. It
-                    foregrounds budget-owned workflows, acknowledges where proof is strong, and
+                    Page one now explains which workflow hypotheses CEIP is testing. It foregrounds
+                    the current desk-research focus, acknowledges where evidence is missing, and
                     keeps demo-heavy or fallback-heavy surfaces out of the primary conversion path.
                   </p>
                 </div>
@@ -377,8 +378,8 @@ export function CommercialLandingPage() {
                   />
                   <TrustCell
                     icon={<LineChart className="h-4 w-4 text-emerald-200" />}
-                    title="Primary CTA is commercial"
-                    body="The route structure now drives buyers toward the top ten proof packs and a pilot conversation before any broad dashboard exploration."
+                    title="Primary CTA is evidence review"
+                    body="The route structure points readers to proposed workflow hypotheses and readiness evidence; it does not claim that a pilot is available or validated."
                   />
                 </div>
               </div>

@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -32,7 +34,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Security audit
-        run: pnpm audit --audit-level moderate
+        # Fails on any moderate+ advisory except documented, unexpired
+        # exceptions in docs/security/DEPENDENCY_EXCEPTIONS.md.
+        run: node scripts/check-dep-audit.mjs
 
       - name: Semgrep SAST scan
         uses: returntocorp/semgrep-action@v1
@@ -49,17 +53,29 @@ jobs:
       - name: Type check
         run: pnpm exec tsc -b
 
+      - name: ESLint
+        run: pnpm run lint
+
+      - name: Enforce lint warning baseline
+        run: pnpm run check:lint-baseline
+
       - name: Claim-boundary guardrails
         run: pnpm run check:claim-boundaries
 
       - name: Commercial source-of-truth guardrails
         run: pnpm run check:commercial-source
 
+      - name: Secret-exposure scan
+        # Read-only scanner: credential-shaped literals in tracked +
+        # untracked files, plus a history scan reconciled against
+        # docs/security/SECRET_EXPOSURE_INCIDENTS.md.
+        run: pnpm run check:secret-scan
+
       - name: Repository hygiene guardrails
         run: pnpm run check:repo-hygiene
 
       - name: Client environment safety guardrails
-        run: pnpm run check:client-env-safety
+        run: pnpm run check:client-env-safety -- --history
 
       - name: GitHub repository metadata guardrails
         env:
@@ -102,7 +118,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Unit tests with coverage
-        run: pnpm exec vitest run --coverage
+        # Governance-script spawn tests (report-*/check-*) take 30-60s each at
+        # full CPU and 150-220s under parallel worker contention — exceeding
+        # the 120s testTimeout. Serial execution is the repo's own convention
+        # (see test:strategy-audit-slice) and is deterministic on CI runners.
+        run: pnpm exec vitest run --coverage --no-file-parallelism
+
+      - name: Critical-path coverage floors
+        # Per-file floors on auth/intake/billing/TIER paths; the 26% global
+        # line floor alone would let security-critical files sit at 0%.
+        run: node scripts/check-critical-coverage.mjs
 
   build-and-smoke:
     runs-on: ubuntu-latest
@@ -139,17 +164,59 @@ jobs:
       - name: Pilot evidence register sample validation
         run: pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright browsers (all five projects)
+        run: pnpm exec playwright install --with-deps
 
-      - name: Phase 0 smoke tests
-        run: pnpm exec playwright test tests/component/foundation-phase0.spec.ts --project=chromium
-
-      - name: Phase 6 proof-pack browser smoke tests
+      - name: Phase 0 smoke tests — all five browser projects
+        # Generic DOM smoke spec with no Chromium-specific behavior; playwright.config.ts
+        # requires full-matrix evidence in CI. Named output dirs so the artifacts match
+        # the playwright-report-*/ and playwright-results-*.json upload globs.
         env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-phase0
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-phase0.json
+        run: pnpm exec playwright test tests/component/foundation-phase0.spec.ts
+
+      - name: Phase 6 proof-pack browser smoke tests — all five browser projects
+        # Same full-matrix rationale as Phase 0. CI bypasses the
+        # test:browser:phase6 script (documented as a local Chromium-only slice)
+        # and invokes Playwright directly; the VITE_* edge-mock vars that script
+        # injects are repeated here.
+        env:
+          VITE_ENABLE_EDGE_FETCH: 'false'
+          VITE_ALLOW_LOCAL_EDGE_FETCH: 'false'
+          VITE_SUPABASE_EDGE_BASE: ''
           PLAYWRIGHT_PHASE6_PORT: 4199
           TEST_BASE_URL: http://127.0.0.1:4199
           PLAYWRIGHT_WEBSERVER_COMMAND: pnpm exec vite preview --host 127.0.0.1 --port 4199 --strictPort
           PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-phase6
           PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-phase6.json
-        run: pnpm run test:browser:phase6
+        run: pnpm exec playwright test --config=playwright.config.ts tests/component/phase6-browser-smoke.spec.ts
+
+      - name: Wedge routes — all five browser projects
+        env:
+          VITE_ENABLE_EDGE_FETCH: 'false'
+          VITE_ALLOW_LOCAL_EDGE_FETCH: 'false'
+          VITE_SUPABASE_EDGE_BASE: ''
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-wedge
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-wedge.json
+        run: pnpm exec playwright test --config=playwright.config.ts tests/component/wedge-prototype-routes.spec.ts
+
+      - name: Record CI evidence manifest
+        # Binds the uploaded evidence to the tree/commit: HEAD sha, dirty-tree
+        # count, working-tree fingerprint, run identity vars, and a sha256 of
+        # every collected report/result/coverage file. Runs even when a
+        # Playwright step failed so partial evidence is still identifiable.
+        if: always()
+        run: node scripts/report-ci-evidence-manifest.mjs
+
+      - name: Upload browser + coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-evidence-${{ github.sha }}
+          path: |
+            playwright-report-*/
+            playwright-results-*.json
+            coverage/lcov.info
+            ci-evidence-manifest.json
+          if-no-files-found: warn

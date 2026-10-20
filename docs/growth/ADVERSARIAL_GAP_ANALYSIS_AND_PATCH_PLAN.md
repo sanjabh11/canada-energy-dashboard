@@ -1,5 +1,7 @@
 # CEIP Adversarial GTM Analysis and Patch Plan (March 3, 2026)
 
+> **Superseded historical planning artifact.** Its Whop-led acquisition objective and recommendations are retired. Do not execute those steps; current channel policy limits Whop to existing-customer access and billing support.
+
 ## Objective Under Test
 Hit the 90-day monetization target (2+ paid logos) by running Hybrid GTM (Whop wedge + direct B2B closes) using the current CEIP product and codebase.
 

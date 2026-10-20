@@ -17,7 +17,6 @@ import ProofPackPanel from './ProofPackPanel';
 import ConstructedScenarioPanel from './ConstructedScenarioPanel';
 import { CREDIT_BANKING_CONSTRUCTED_SCENARIO } from '../lib/commercialScenarioBundles';
 import {
-  calculateSavingsPercentage,
   getPricingDataQualityWarning,
   getTIERPricingProvenance,
   useTIERPricing,
@@ -39,27 +38,32 @@ import {
   buildCreditPositionDescriptor,
   type CreditBankingSourceMode,
 } from '../lib/creditBankingProofPack';
-import {
-  downloadTextArtifact,
-  renderHtmlProofDocument,
-} from '../lib/proofPack';
+import { downloadTextArtifact, renderHtmlProofDocument } from '../lib/proofPack';
 
 export const CreditBankingDashboard: React.FC = () => {
   const tierPricing = useTIERPricing();
   const pricingWarning = getPricingDataQualityWarning(tierPricing);
   const pricingProvenance = getTIERPricingProvenance(tierPricing);
   const [holdings, setHoldings] = useState<CreditHolding[]>(() => buildStarterCreditHoldings());
-  const [liabilities, setLiabilities] = useState<ComplianceYear[]>(() => buildStarterComplianceYears());
+  const [liabilities, setLiabilities] = useState<ComplianceYear[]>(() =>
+    buildStarterComplianceYears(),
+  );
   const [sourceMode, setSourceMode] = useState<CreditBankingSourceMode>('starter_ledger');
   const [holdingsError, setHoldingsError] = useState<string | null>(null);
   const [liabilityError, setLiabilityError] = useState<string | null>(null);
 
-  const allocations = useMemo(() => allocateCreditsToLiabilities(holdings, liabilities), [holdings, liabilities]);
-  const portfolio = useMemo(
-    () => summarizeCreditPortfolio(holdings, liabilities, tierPricing.marketCreditPrice, tierPricing.fundPrice),
-    [holdings, liabilities, tierPricing.fundPrice, tierPricing.marketCreditPrice],
+  const allocations = useMemo(
+    () => allocateCreditsToLiabilities(holdings, liabilities),
+    [holdings, liabilities],
   );
-  const proofBundle = useMemo(() => buildCreditBankingProofBundle(sourceMode, tierPricing), [sourceMode, tierPricing]);
+  const portfolio = useMemo(
+    () => summarizeCreditPortfolio(holdings, liabilities),
+    [holdings, liabilities],
+  );
+  const proofBundle = useMemo(
+    () => buildCreditBankingProofBundle(sourceMode, tierPricing),
+    [sourceMode, tierPricing],
+  );
   const proofActions = useMemo(() => {
     const descriptor = buildCreditPositionDescriptor({
       sourceMode,
@@ -73,30 +77,29 @@ export const CreditBankingDashboard: React.FC = () => {
       if (artifact.id === 'credit-position-memo') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
-            'text/html;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+              'text/html;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'credit-allocation-schedule') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            buildCreditAllocationCsv(allocations, tierPricing.marketCreditPrice),
-            'text/csv;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              buildCreditAllocationCsv(allocations),
+              'text/csv;charset=utf-8;',
+            ),
         };
       }
       return {
         ...artifact,
-        onDownload: () => downloadTextArtifact(
-          artifact,
-          buildExpiryRiskCsv(holdings),
-          'text/csv;charset=utf-8;',
-        ),
+        onDownload: () =>
+          downloadTextArtifact(artifact, buildExpiryRiskCsv(holdings), 'text/csv;charset=utf-8;'),
       };
     });
   }, [allocations, holdings, portfolio, proofBundle.artifacts, sourceMode, tierPricing]);
@@ -110,7 +113,9 @@ export const CreditBankingDashboard: React.FC = () => {
       setSourceMode('uploaded_ledger');
       setHoldingsError(null);
     } catch (error) {
-      setHoldingsError(error instanceof Error ? error.message : 'Unable to parse the holdings ledger.');
+      setHoldingsError(
+        error instanceof Error ? error.message : 'Unable to parse the holdings ledger.',
+      );
     } finally {
       event.target.value = '';
     }
@@ -125,18 +130,12 @@ export const CreditBankingDashboard: React.FC = () => {
       setSourceMode('uploaded_ledger');
       setLiabilityError(null);
     } catch (error) {
-      setLiabilityError(error instanceof Error ? error.message : 'Unable to parse the compliance liability file.');
+      setLiabilityError(
+        error instanceof Error ? error.message : 'Unable to parse the compliance liability file.',
+      );
     } finally {
       event.target.value = '';
     }
-  }
-
-  function formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      maximumFractionDigits: 0,
-    }).format(value);
   }
 
   function resetStarters() {
@@ -148,8 +147,12 @@ export const CreditBankingDashboard: React.FC = () => {
   }
 
   function loadConstructedScenario() {
-    const holdingsFile = CREDIT_BANKING_CONSTRUCTED_SCENARIO.downloads.find((file) => file.id === 'credit-holdings-csv');
-    const liabilitiesFile = CREDIT_BANKING_CONSTRUCTED_SCENARIO.downloads.find((file) => file.id === 'credit-liabilities-csv');
+    const holdingsFile = CREDIT_BANKING_CONSTRUCTED_SCENARIO.downloads.find(
+      (file) => file.id === 'credit-holdings-csv',
+    );
+    const liabilitiesFile = CREDIT_BANKING_CONSTRUCTED_SCENARIO.downloads.find(
+      (file) => file.id === 'credit-liabilities-csv',
+    );
     if (!holdingsFile || !liabilitiesFile) return;
 
     setHoldings(parseCreditHoldingsCsv(holdingsFile.content));
@@ -184,10 +187,14 @@ export const CreditBankingDashboard: React.FC = () => {
               <PiggyBank className="h-10 w-10 text-cyan-400" />
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">TIER follow-on workflow</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                TIER follow-on workflow
+              </div>
               <h1 className="mt-2 text-3xl font-bold text-white">Credit Banking Dashboard</h1>
               <p className="mt-2 max-w-3xl text-lg text-slate-300">
-                Import holdings and compliance liabilities, allocate credits by compliance year, and export an audit-ready banking pack tied to the current TIER price disclosure.
+                Import holdings and compliance liabilities, calculate a draft allocation schedule,
+                and export the supplied ledger details. Current market value and savings are
+                withheld without verified pricing evidence.
               </p>
             </div>
           </div>
@@ -197,7 +204,7 @@ export const CreditBankingDashboard: React.FC = () => {
             className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-400"
           >
             <TrendingUp className="h-4 w-4" />
-            Open TIER savings calculator
+            Open scenario calculator
           </Link>
         </div>
 
@@ -225,9 +232,12 @@ export const CreditBankingDashboard: React.FC = () => {
             <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">1. Import ledger and liabilities</h2>
+                  <h2 className="text-lg font-semibold text-white">
+                    1. Import ledger and liabilities
+                  </h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Replace the starter lots with the buyer&apos;s registry holdings and compliance-year liability files.
+                    Replace the starter lots with the buyer&apos;s registry holdings and
+                    compliance-year liability files.
                   </p>
                 </div>
                 <Upload className="h-5 w-5 text-cyan-300" />
@@ -285,7 +295,10 @@ export const CreditBankingDashboard: React.FC = () => {
 
           <section className="space-y-6">
             <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300" data-testid="credit-banking-source-mode">
+              <div
+                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"
+                data-testid="credit-banking-source-mode"
+              >
                 <Shield className="h-4 w-4" />
                 {sourceMode === 'starter_ledger'
                   ? 'Starter ledger active'
@@ -294,10 +307,31 @@ export const CreditBankingDashboard: React.FC = () => {
                     : 'Uploaded ledger active'}
               </div>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <MetricCard icon={<Wallet className="h-5 w-5 text-slate-400" />} label="Active credits" value={`${portfolio.totalCredits.toLocaleString()} t`} sub="Available for banking" />
-                <MetricCard icon={<Calendar className="h-5 w-5 text-slate-400" />} label="Coverage ratio" value={`${portfolio.coverageRatio.toFixed(0)}%`} sub="2025-2027 liabilities covered" />
-                <MetricCard icon={<TrendingUp className="h-5 w-5 text-emerald-400" />} label="Current value" value={formatCurrency(portfolio.currentValue)} sub={`${calculateSavingsPercentage(tierPricing).toFixed(0)}% below fund price`} tone="emerald" />
-                <MetricCard icon={<AlertTriangle className="h-5 w-5 text-amber-300" />} label="Expiring soon" value={`${portfolio.expiringSoonCredits.toLocaleString()} t`} sub="Within four years" tone="amber" />
+                <MetricCard
+                  icon={<Wallet className="h-5 w-5 text-slate-400" />}
+                  label="Active credits"
+                  value={`${portfolio.totalCredits.toLocaleString()} t`}
+                  sub="Available for banking"
+                />
+                <MetricCard
+                  icon={<Calendar className="h-5 w-5 text-slate-400" />}
+                  label="Coverage ratio"
+                  value={`${portfolio.coverageRatio.toFixed(0)}%`}
+                  sub="2025-2027 liabilities covered"
+                />
+                <MetricCard
+                  icon={<TrendingUp className="h-5 w-5 text-slate-400" />}
+                  label="Current market value"
+                  value="Unavailable"
+                  sub="A dated, verified buyer quote is required"
+                />
+                <MetricCard
+                  icon={<AlertTriangle className="h-5 w-5 text-amber-300" />}
+                  label="Expiring soon"
+                  value={`${portfolio.expiringSoonCredits.toLocaleString()} t`}
+                  sub="Within four years"
+                  tone="amber"
+                />
               </div>
             </div>
 
@@ -305,22 +339,35 @@ export const CreditBankingDashboard: React.FC = () => {
               <h2 className="text-lg font-semibold text-white">2. Compliance-year allocation</h2>
               <div className="mt-4 space-y-3">
                 {allocations.map((row) => (
-                  <div key={row.year} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+                  <div
+                    key={row.year}
+                    className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="font-medium text-white">{row.year}</div>
-                      <div className="text-sm text-slate-400">{row.allocated.toLocaleString()} / {row.liability.toLocaleString()} t</div>
+                      <div className="text-sm text-slate-400">
+                        {row.allocated.toLocaleString()} / {row.liability.toLocaleString()} t
+                      </div>
                     </div>
                     <div className="mt-3 h-2 rounded-full bg-slate-700">
                       <div
                         className={`h-2 rounded-full ${row.remaining === 0 ? 'bg-emerald-500' : row.allocated > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
-                        style={{ width: `${row.liability > 0 ? (row.allocated / row.liability) * 100 : 0}%` }}
+                        style={{
+                          width: `${row.liability > 0 ? (row.allocated / row.liability) * 100 : 0}%`,
+                        }}
                       />
                     </div>
                     <div className="mt-2 text-xs text-slate-400">
-                      Remaining: {row.remaining.toLocaleString()} t • Estimated market cost: {formatCurrency(row.remaining * tierPricing.marketCreditPrice)}
+                      Remaining: {row.remaining.toLocaleString()} t • Market cost: unavailable
+                      without a current verified quote
                     </div>
                     <div className="mt-2 text-xs text-slate-500">
-                      Lots used: {row.allocatedLots.length > 0 ? row.allocatedLots.map((lot) => `${lot.quantity}t ${lot.type} v${lot.vintage}`).join(' • ') : 'none allocated'}
+                      Lots used:{' '}
+                      {row.allocatedLots.length > 0
+                        ? row.allocatedLots
+                            .map((lot) => `${lot.quantity}t ${lot.type} v${lot.vintage}`)
+                            .join(' • ')
+                        : 'none allocated'}
                     </div>
                   </div>
                 ))}
@@ -335,7 +382,9 @@ export const CreditBankingDashboard: React.FC = () => {
             <div>
               <div className="font-medium text-white">Pricing and procurement boundary</div>
               <p className="mt-2 text-sm text-amber-100">
-                This workflow creates an audit-ready allocation story, not a broker execution surface. Keep it positioned as a TIER follow-on proof asset until the buyer validates a live market quote and registry process.
+                This draft calculates allocations from supplied quantities only. It does not
+                establish TIER eligibility, market value, savings, registry status, or a recommended
+                trade.
               </p>
             </div>
           </div>
@@ -360,7 +409,9 @@ function UploadCard({
       <div className="mt-3 font-medium text-white">{title}</div>
       <div className="mt-1 text-xs text-slate-400">{description}</div>
       <input type="file" accept=".csv,text/csv" className="hidden" onChange={onChange} />
-      <span className="mt-4 inline-flex rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">Select CSV</span>
+      <span className="mt-4 inline-flex rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">
+        Select CSV
+      </span>
     </label>
   );
 }
@@ -378,15 +429,19 @@ function MetricCard({
   sub: string;
   tone?: 'default' | 'emerald' | 'amber';
 }) {
-  const toneClasses = tone === 'emerald'
-    ? 'border-emerald-500/30 bg-emerald-900/20'
-    : tone === 'amber'
-      ? 'border-amber-500/30 bg-amber-900/20'
-      : 'border-slate-700 bg-slate-900/70';
+  const toneClasses =
+    tone === 'emerald'
+      ? 'border-emerald-500/30 bg-emerald-900/20'
+      : tone === 'amber'
+        ? 'border-amber-500/30 bg-amber-900/20'
+        : 'border-slate-700 bg-slate-900/70';
 
   return (
     <div className={`rounded-2xl border p-4 ${toneClasses}`}>
-      <div className="flex items-center gap-2 text-sm text-slate-400">{icon}{label}</div>
+      <div className="flex items-center gap-2 text-sm text-slate-400">
+        {icon}
+        {label}
+      </div>
       <div className="mt-2 text-2xl font-bold text-white">{value}</div>
       <div className="mt-1 text-xs text-slate-500">{sub}</div>
     </div>

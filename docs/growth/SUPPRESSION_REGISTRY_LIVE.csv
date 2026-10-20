@@ -1,0 +1,13 @@
+# Canonical live suppression registry for all CEIP outreach campaigns.
+# Consumed by scripts/validate-outreach-response-log.mjs,
+# scripts/append-outreach-response-log-row.mjs, and
+# scripts/create-outreach-intake-packets.mjs, which resolve this file by default
+# (override with --suppression-file or CEIP_SUPPRESSION_REGISTRY) and fail closed
+# when it is absent or unreadable. docs/growth/SUPPRESSION_REGISTRY.csv is a
+# non-authoritative template with this same schema.
+# Identity matching: `email` holds the suppressed identity — a real address kept
+# only in this registry for CASL honouring, or the same anonymized target_label
+# handle used in the repo outreach response log. Matching is normalized
+# case-insensitive exact match against a target's label/email. `domain` records
+# domain-wide suppressions honoured by the sending surface outside repo tooling.
+email,domain,reason,source,suppressed_at,suppressed_by

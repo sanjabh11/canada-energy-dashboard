@@ -70,7 +70,7 @@ async function expectStableRoute(page: Page, routeCheck: RouteCheck) {
     await expect(page.getByText(routeCheck.marker, { exact: true }).first()).toBeVisible({ timeout: 15000 });
 
     if (routeCheck.path === '/' || routeCheck.path === '/solutions') {
-      await expect(page.getByText(/Sellability \d\.\d\/5/).first()).toBeVisible();
+      await expect(page.getByText(/Desk-research confidence — unvalidated: \d\.\d\/5/).first()).toBeVisible();
       await expect(page.getByText(/Demand \d\.\d\/5/)).toHaveCount(0);
     }
 

@@ -1,9 +1,9 @@
 /**
  * TIER (Technology Innovation and Emissions Reduction) Pricing Configuration
- * 
+ *
  * Single source of truth for Alberta TIER compliance pricing data.
  * Provides provenance metadata for transparency and auditability.
- * 
+ *
  * Data Sources:
  * - Alberta TIER Regulation: https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation
  * - Canada-Alberta Implementation Agreement, May 15 2026:
@@ -12,28 +12,145 @@
  * - ICAP Carbon Action (market data)
  */
 
+/**
+ * Provenance attached to a single rate constant (fund price or market-credit
+ * price). `asOfDate` is the date the rate was last verified against `source`;
+ * `maxAgeDays` is the freshness window after which the rate must be treated as
+ * stale and downstream savings/ranking outputs suppressed.
+ */
+export interface TierRateProvenance {
+  /** ISO 8601 date (or datetime) the rate was last verified against its source. */
+  asOfDate: string;
+  /** Human-readable authority or source name. Required and non-empty. */
+  source: string;
+  /** Optional HTTPS URL to the source document. */
+  sourceUrl?: string;
+  /** Maximum age in days before the rate is treated as stale. Must be > 0. */
+  maxAgeDays: number;
+}
+
+/** Why a rate failed its freshness check. */
+export type TierRateStaleReason = 'missing_provenance' | 'invalid_as_of' | 'future_dated' | 'stale';
+
+export interface TierRateFreshness {
+  /** True when the rate is stale or lacks usable provenance. */
+  stale: boolean;
+  reason: TierRateStaleReason | null;
+  asOfDate: string | null;
+  maxAgeDays: number | null;
+  /** Whole-fraction days between the rate's asOfDate and the evaluation date. */
+  ageDays: number | null;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Freshness check for a provenance-carrying rate. `asOf` is injected so tests
+ * and exports can pin the evaluation date; the default `new Date()` is a
+ * *planning* date only — it is not an authoritative pricing timestamp.
+ *
+ * A rate with missing provenance, an unparseable or future-dated asOfDate, or
+ * an age beyond its own `maxAgeDays` is stale. Stale rates must suppress
+ * positive-savings, ranking, and CTA outputs downstream rather than produce
+ * optimistic numbers.
+ */
+export function checkRateFreshness(
+  rate: TierRateProvenance | null | undefined,
+  asOf: Date = new Date(),
+): TierRateFreshness {
+  const asOfMs = asOf.getTime();
+  const missing: TierRateFreshness = {
+    stale: true,
+    reason: 'missing_provenance',
+    asOfDate: null,
+    maxAgeDays: null,
+    ageDays: null,
+  };
+  if (!rate) return missing;
+  if (
+    typeof rate.asOfDate !== 'string' ||
+    rate.asOfDate.trim() === '' ||
+    typeof rate.source !== 'string' ||
+    rate.source.trim() === '' ||
+    !Number.isFinite(rate.maxAgeDays) ||
+    rate.maxAgeDays <= 0
+  ) {
+    return missing;
+  }
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(rate.asOfDate)
+    ? Date.parse(`${rate.asOfDate}T00:00:00Z`)
+    : Date.parse(rate.asOfDate);
+  if (!Number.isFinite(parsed)) {
+    return {
+      stale: true,
+      reason: 'invalid_as_of',
+      asOfDate: rate.asOfDate,
+      maxAgeDays: rate.maxAgeDays,
+      ageDays: null,
+    };
+  }
+  const ageDays = (asOfMs - parsed) / DAY_MS;
+  if (parsed > asOfMs + 5 * 60 * 1000) {
+    return {
+      stale: true,
+      reason: 'future_dated',
+      asOfDate: rate.asOfDate,
+      maxAgeDays: rate.maxAgeDays,
+      ageDays,
+    };
+  }
+  if (ageDays > rate.maxAgeDays) {
+    return {
+      stale: true,
+      reason: 'stale',
+      asOfDate: rate.asOfDate,
+      maxAgeDays: rate.maxAgeDays,
+      ageDays,
+    };
+  }
+  return {
+    stale: false,
+    reason: null,
+    asOfDate: rate.asOfDate,
+    maxAgeDays: rate.maxAgeDays,
+    ageDays,
+  };
+}
+
+/** Fund-rate freshness window: quarterly source review cadence. */
+export const TIER_FUND_RATE_MAX_AGE_DAYS = 90;
+
+/** Market-credit rate freshness window: matches the 30-day market evidence gate. */
+export const TIER_MARKET_RATE_MAX_AGE_DAYS = 30;
+
 export interface TIERPricingConfig {
   /** TIER fund price in $/tonne (compliance payment to Alberta government) */
   fundPrice: number;
-  
+
   /** EPC/Offset market credit price in $/tonne (purchase from market) */
   marketCreditPrice: number;
-  
+
+  /** Provenance for the fund-price rate constant (asOfDate/source/maxAgeDays). */
+  fundPriceProvenance: TierRateProvenance;
+
+  /** Provenance for the market-credit price rate constant (asOfDate/source/maxAgeDays). */
+  marketCreditProvenance: TierRateProvenance;
+
   /** ISO date when these prices took effect */
   effectiveDate: string;
-  
+
   /** Authority source for fund price (e.g., "Alberta.ca TIER Regulation") */
   source: string;
-  
+
   /** URL to official source documentation */
   sourceUrl: string;
-  
+
   /** ISO date when CEIP last verified these prices */
   lastVerifiedAt: string;
-  
+
   /** Whether fund price is currently frozen by regulation */
   isFrozen: boolean;
-  
+
   /** Quarter/period label for display (e.g., "Q4 2025") */
   periodLabel: string;
 
@@ -65,7 +182,7 @@ export interface TIERPricingProvenance {
 
 /**
  * Default TIER pricing configuration
- * 
+ *
  * Fund price uses the 2026 TIER headline-price basis published in the
  * Canada-Alberta implementation agreement on May 15, 2026. Market credits remain
  * a CEIP fallback planning snapshot until the buyer replaces them with a live
@@ -74,14 +191,28 @@ export interface TIERPricingProvenance {
 export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
   fundPrice: 95,
   marketCreditPrice: 25,
+  fundPriceProvenance: {
+    asOfDate: '2026-06-02',
+    source: 'Canada-Alberta Implementation Agreement TIER headline price',
+    sourceUrl:
+      'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
+    maxAgeDays: TIER_FUND_RATE_MAX_AGE_DAYS,
+  },
+  marketCreditProvenance: {
+    asOfDate: '2026-06-02',
+    source: 'CEIP fallback secondary-market planning snapshot',
+    maxAgeDays: TIER_MARKET_RATE_MAX_AGE_DAYS,
+  },
   effectiveDate: '2026-01-01',
   source: 'Canada-Alberta Implementation Agreement TIER headline price',
-  sourceUrl: 'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
+  sourceUrl:
+    'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
   lastVerifiedAt: '2026-06-02',
   isFrozen: true,
   periodLabel: '2026 headline price reviewed May 2026',
   marketPriceSource: 'CEIP fallback secondary-market planning snapshot',
-  marketPriceDisclosure: 'Fallback only. Replace with a live quote or registry-backed market data before buyer approval.',
+  marketPriceDisclosure:
+    'Fallback only. Replace with a live quote or registry-backed market data before buyer approval.',
   headlinePriceSchedule: [
     { year: 2026, priceCadPerTonne: 95 },
     { year: 2027, priceCadPerTonne: 100 },
@@ -133,7 +264,9 @@ export function calculateArbitrageSpread(config: TIERPricingConfig = DEFAULT_TIE
  * Calculate percentage savings vs fund price
  * @returns Percentage (0-100) of cost reduction
  */
-export function calculateSavingsPercentage(config: TIERPricingConfig = DEFAULT_TIER_PRICING): number {
+export function calculateSavingsPercentage(
+  config: TIERPricingConfig = DEFAULT_TIER_PRICING,
+): number {
   return ((config.fundPrice - config.marketCreditPrice) / config.fundPrice) * 100;
 }
 
@@ -141,15 +274,15 @@ export function calculateSavingsPercentage(config: TIERPricingConfig = DEFAULT_T
  * Format pricing for display with provenance context
  */
 export function formatPricingWithProvenance(
-  config: TIERPricingConfig = DEFAULT_TIER_PRICING
+  config: TIERPricingConfig = DEFAULT_TIER_PRICING,
 ): string {
   const frozenLabel = config.isFrozen ? ' frozen' : '';
-  return `Fund: $${config.fundPrice}/t${frozenLabel} (${config.source}) | Market: $${config.marketCreditPrice}/t fallback (${config.periodLabel})`;
+  return `Fund: CAD ${config.fundPrice}/t${frozenLabel} (${config.source}) | Market: CAD ${config.marketCreditPrice}/t fallback (${config.periodLabel})`;
 }
 
 /**
  * Get TIER pricing configuration
- * 
+ *
  * Checks for environment variable overrides (for testing/emergency updates),
  * falls back to DEFAULT_TIER_PRICING.
  */
@@ -157,23 +290,37 @@ export function getTIERPricing(): TIERPricingConfig {
   // Check for environment overrides
   const envFundPrice = import.meta.env?.VITE_TIER_FUND_PRICE;
   const envMarketPrice = import.meta.env?.VITE_TIER_MARKET_PRICE;
-  
+
   if (envFundPrice || envMarketPrice) {
     return {
       ...DEFAULT_TIER_PRICING,
       fundPrice: envFundPrice ? parseFloat(envFundPrice) : DEFAULT_TIER_PRICING.fundPrice,
-      marketCreditPrice: envMarketPrice ? parseFloat(envMarketPrice) : DEFAULT_TIER_PRICING.marketCreditPrice,
+      marketCreditPrice: envMarketPrice
+        ? parseFloat(envMarketPrice)
+        : DEFAULT_TIER_PRICING.marketCreditPrice,
+      // An environment override is an unverified planning input. Never advance
+      // its evidence date just because the app was built or restarted; the
+      // provenance keeps the original asOfDate so staleness still trips.
+      fundPriceProvenance: {
+        ...DEFAULT_TIER_PRICING.fundPriceProvenance,
+        source: `${DEFAULT_TIER_PRICING.fundPriceProvenance.source} (ENV OVERRIDE)`,
+      },
+      marketCreditProvenance: {
+        ...DEFAULT_TIER_PRICING.marketCreditProvenance,
+        source: `${DEFAULT_TIER_PRICING.marketCreditProvenance.source} (ENV OVERRIDE)`,
+      },
       source: `${DEFAULT_TIER_PRICING.source} (ENV OVERRIDE)`,
-      lastVerifiedAt: new Date().toISOString().split('T')[0]
+      marketPriceDisclosure:
+        'Unverified environment override. Do not use for buyer-approved savings or pricing decisions.',
     };
   }
-  
+
   return DEFAULT_TIER_PRICING;
 }
 
 /**
  * React hook for accessing TIER pricing (convenience wrapper)
- * 
+ *
  * Note: Pricing is static config, but hook pattern allows future
  * dynamic fetching if needed.
  */
@@ -184,8 +331,16 @@ export function useTIERPricing(): TIERPricingConfig {
 /**
  * Check if pricing data is stale (>90 days since verification)
  */
-export function isPricingStale(config: TIERPricingConfig = DEFAULT_TIER_PRICING, now: Date = new Date()): boolean {
-  const verifiedAt = new Date(config.lastVerifiedAt);
+export function isPricingStale(
+  config: TIERPricingConfig = DEFAULT_TIER_PRICING,
+  now: Date = new Date(),
+): boolean {
+  const verifiedAt = new Date(`${config.lastVerifiedAt}T00:00:00.000Z`);
+  if (
+    !Number.isFinite(verifiedAt.getTime()) ||
+    verifiedAt.getTime() > now.getTime() + 5 * 60 * 1000
+  )
+    return true;
   const daysSinceVerification = (now.getTime() - verifiedAt.getTime()) / (1000 * 60 * 60 * 24);
   return daysSinceVerification > 90;
 }
@@ -193,19 +348,28 @@ export function isPricingStale(config: TIERPricingConfig = DEFAULT_TIER_PRICING,
 /**
  * Get data quality warning if pricing is stale
  */
-export function getPricingDataQualityWarning(config: TIERPricingConfig = DEFAULT_TIER_PRICING): string | null {
+export function getPricingDataQualityWarning(
+  config: TIERPricingConfig = DEFAULT_TIER_PRICING,
+): string | null {
+  if (config.source.includes('(ENV OVERRIDE)')) {
+    return 'TIER pricing includes an unverified environment override. Treat affected values as planning inputs only.';
+  }
   if (isPricingStale(config)) {
     return `TIER pricing data is stale (last verified ${config.lastVerifiedAt}). Please verify current rates.`;
   }
   return null;
 }
 
-export function getTIERPricingProvenance(config: TIERPricingConfig = DEFAULT_TIER_PRICING): TIERPricingProvenance {
+export function getTIERPricingProvenance(
+  config: TIERPricingConfig = DEFAULT_TIER_PRICING,
+): TIERPricingProvenance {
   return {
-    source: config.source,
+    source: `${config.source}; ${config.marketPriceSource}`,
     sourceUrl: config.sourceUrl,
     lastUpdated: config.lastVerifiedAt,
-    isFallback: false,
+    isFallback:
+      config.source.includes('(ENV OVERRIDE)') ||
+      config.marketPriceDisclosure.toLowerCase().includes('fallback'),
   };
 }
 
@@ -221,17 +385,17 @@ export interface CompliancePathwayCosts {
 
 export function calculateComplianceCosts(
   benchmarkExceedanceTonnes: number,
-  config: TIERPricingConfig = DEFAULT_TIER_PRICING
+  config: TIERPricingConfig = DEFAULT_TIER_PRICING,
 ): CompliancePathwayCosts {
   const fundPayment = benchmarkExceedanceTonnes * config.fundPrice;
   const marketCredits = benchmarkExceedanceTonnes * config.marketCreditPrice;
   const arbitrageSavings = fundPayment - marketCredits;
   const savingsPercentage = (arbitrageSavings / fundPayment) * 100;
-  
+
   return {
     fundPayment,
     marketCredits,
     arbitrageSavings,
-    savingsPercentage
+    savingsPercentage,
   };
 }

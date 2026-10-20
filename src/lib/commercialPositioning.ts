@@ -6,8 +6,8 @@ export interface CommercialWedge {
   rank: number;
   title: string;
   /**
-   * Current sellability-confidence rating from the active strategy audit.
-   * Keep this conservative until buyer evidence passes the 95% pilot gate.
+   * Desk-research confidence rating from the strategy audit. It is not buyer
+   * validation, willingness-to-pay evidence, or proof that a pack is sellable.
    */
   score: number;
   href: string;
@@ -48,7 +48,7 @@ export const buyerSegments: BuyerSegment[] = [
 const activeCommercialWedges: CommercialWedge[] = [
   {
     id: 'utility-demand-forecast',
-    rank: 1,
+    rank: 3,
     title: 'Utility Demand Forecasting Lane',
     score: 4.5,
     href: '/utility-demand-forecast',
@@ -70,7 +70,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'regulatory-filing',
-    rank: 3,
+    rank: 5,
     title: 'OEB/AUC Regulatory Filing Packs',
     score: 4.3,
     href: '/regulatory-filing',
@@ -92,7 +92,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'forecast-benchmarking',
-    rank: 2,
+    rank: 4,
     title: 'Forecast Benchmarking and Provenance Layer',
     score: 4.6,
     href: '/forecast-benchmarking',
@@ -111,7 +111,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'ga-ici-5cp',
-    rank: 4,
+    rank: 6,
     title: 'Ontario GA/ICI 5CP Decision-Support Pack',
     score: 4.2,
     href: '/ga-ici-5cp',
@@ -133,7 +133,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'byo-csv-proof',
-    rank: 5,
+    rank: 7,
     title: 'Privacy-Preserving BYO-CSV Proof Generator',
     score: 4.1,
     href: '/byo-csv-proof',
@@ -174,8 +174,8 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'tier-compliance',
-    rank: 6,
-    title: 'TIER Compliance Savings Pack',
+    rank: 1,
+    title: 'TIER Compliance Scenario Pack',
     score: 4,
     href: '/roi-calculator',
     proofHref: '/credit-banking',
@@ -184,18 +184,19 @@ const activeCommercialWedges: CommercialWedge[] = [
     buyerSegment: 'Industrial',
     pain: 'Facilities need to choose the cheapest compliance pathway across fund contributions, market credits, offsets, and direct investment.',
     outcome:
-      'Moves carbon compliance from spreadsheet guesswork to a source-dated CFO decision memo.',
+      'Drafts a source-dated scenario memo for review; buyer-specific savings and compliance outcomes are not verified.',
     whyNow:
       'Alberta TIER remains a recurring annual budget event with visible cash consequences and volatile credit assumptions.',
     timelineToValue:
-      '1 to 2 weeks for a paid pilot with facility inputs and executive review output.',
-    pilotScope: 'One facility, one compliance year, one board-ready savings memo.',
+      'Pilot delivery timing is unvalidated and must be determined through buyer discovery.',
+    pilotScope:
+      'Proposed review scope only: one facility, one compliance year, one draft scenario.',
     currentState:
-      'Implemented and commercially legible; now includes a pricing freshness gate, direct-investment sensitivity, and credit-banking workflow link.',
+      'Implemented scenario code; pricing freshness gate, direct-investment sensitivity, and credit-banking workflow are present. Buyer acceptance is unvalidated.',
   },
   {
     id: 'tier-credit-banking',
-    rank: 7,
+    rank: 2,
     title: 'TIER Credit Banking Audit Pack',
     score: 3.9,
     href: '/credit-banking',
@@ -206,7 +207,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     buyerSegment: 'Industrial',
     pain: 'Facilities with credits need to know what expires, what covers current liability, and what still needs market purchase approval.',
     outcome:
-      'Turns credit holdings into an audit-ready allocation pack without implying broker execution or registry certification.',
+      'Creates a draft allocation schedule from supplied credit-holding data; market value and compliance status are not verified.',
     whyNow:
       'TIER credit decisions are cash-sensitive and require evidence before finance approves purchases or direct-investment alternatives.',
     timelineToValue: '1 to 2 weeks with a ledger upload and one compliance-year liability file.',
@@ -352,7 +353,7 @@ export const reserveWedges: CommercialWedge[] = [
     title: 'Retailer Hedging and Rate Watchdog Tools',
     score: 2,
     href: '/hedging',
-    proofHref: '/rate-watchdog',
+    proofHref: '/pricing',
     proofLabel: 'Retail price and hedging follow-up proof',
     primaryBuyer: 'Retailers, commercial energy advisors, SME operators',
     buyerSegment: 'Municipal/Public Sector',

@@ -166,7 +166,10 @@ describe('focused launch readiness report suite', () => {
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);
   });
 
-  it('routes retained proof paths only to proof-aware child checks', { timeout: 300_000 }, () => {
+  // Proof-routed run measured ~9min on a quiet machine (children regenerate
+  // the launch-evidence manifest per distinct proof signature). Cache collapses
+  // identical signatures; residual cost is inherent — timeout sized to reality.
+  it('routes retained proof paths only to proof-aware child checks', { timeout: 900_000 }, () => {
     const tempRoot = makeTempRoot();
     const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
     const stdout = execFileSync(process.execPath, [
@@ -181,7 +184,9 @@ describe('focused launch readiness report suite', () => {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
-      timeout,
+      // Each distinct proof signature regenerates the manifest once (~60-90s);
+      // the shared 300s child cap cannot cover 12 children. Measured ~9min.
+      timeout: 900_000,
     });
     const payload = JSON.parse(stdout);
     const checksById = new Map(payload.checks.map((item: { id: string }) => [item.id, item]));

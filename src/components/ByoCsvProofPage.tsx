@@ -1,5 +1,14 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, Download, FileText, LockKeyhole, ShieldCheck, TableProperties, Upload } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Download,
+  FileText,
+  LockKeyhole,
+  ShieldCheck,
+  TableProperties,
+  Upload,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
 import {
@@ -48,12 +57,16 @@ export function ByoCsvProofPage() {
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const report = useMemo(() => buildByoCsvProofReport({
-    csvText,
-    sourceLabel,
-    route,
-    generatedAt: '2026-05-31T00:00:00.000Z',
-  }), [csvText, route, sourceLabel]);
+  const report = useMemo(
+    () =>
+      buildByoCsvProofReport({
+        csvText,
+        sourceLabel,
+        route,
+        generatedAt: '2026-05-31T00:00:00.000Z',
+      }),
+    [csvText, route, sourceLabel],
+  );
 
   const markdown = useMemo(() => byoCsvProofReportToMarkdown(report), [report]);
 
@@ -63,7 +76,9 @@ export function ByoCsvProofPage() {
 
     setFileError(null);
     if (file.size > MAX_LOCAL_CSV_BYTES) {
-      setFileError(`Local CSV is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_LOCAL_CSV_BYTES)} for browser-only review.`);
+      setFileError(
+        `Local CSV is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_LOCAL_CSV_BYTES)} for browser-only review.`,
+      );
       setFileStatus('File rejected before parsing');
       event.target.value = '';
       return;
@@ -103,8 +118,8 @@ export function ByoCsvProofPage() {
       style={{ fontFamily: '"Space Grotesk", "Avenir Next", "Segoe UI", sans-serif' }}
       data-testid="byo-csv-proof-page"
     >
-        <SEOHead
-          title="BYO-CSV Proof Generator | CEIP"
+      <SEOHead
+        title="BYO-CSV Proof Generator | CEIP"
         description="A bounded BYO-CSV proof-pack route for schema, completeness, direct-identifier screening, spreadsheet formula checks, and linkage warnings without retaining raw values in the generated report."
         path="/byo-csv-proof"
         keywords={[
@@ -125,19 +140,32 @@ export function ByoCsvProofPage() {
                   <LockKeyhole className="h-5 w-5 text-emerald-100" />
                 </div>
                 <div>
-                  <div className="text-sm uppercase tracking-[0.24em] text-emerald-100/80">BYO-CSV proof</div>
-                  <div className="text-sm text-slate-300">Schema and direct-identifier screening</div>
+                  <div className="text-sm uppercase tracking-[0.24em] text-emerald-100/80">
+                    BYO-CSV proof
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    Schema and direct-identifier screening
+                  </div>
                 </div>
               </Link>
 
               <nav className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-                <Link to="/ga-ici-5cp" className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-white">
+                <Link
+                  to="/ga-ici-5cp"
+                  className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-white"
+                >
                   GA/ICI 5CP
                 </Link>
-                <Link to="/pilot-readiness" className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-white">
+                <Link
+                  to="/pilot-readiness"
+                  className="rounded-lg border border-white/10 px-4 py-2 transition hover:border-emerald-300/40 hover:text-white"
+                >
                   Pilot gate
                 </Link>
-                <Link to="/utility-demand-forecast" className="inline-flex items-center gap-2 rounded-lg bg-emerald-300 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-200">
+                <Link
+                  to="/utility-demand-forecast"
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-300 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-200"
+                >
                   Forecast route
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -146,25 +174,44 @@ export function ByoCsvProofPage() {
 
             <div className="grid gap-10 py-14 lg:grid-cols-[1.12fr_0.88fr] lg:py-20">
               <div>
-                <div className="text-sm uppercase tracking-[0.24em] text-emerald-200/80">Buyer evidence intake</div>
+                <div className="text-sm uppercase tracking-[0.24em] text-emerald-200/80">
+                  Buyer evidence intake
+                </div>
                 <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
                   BYO-CSV Privacy Proof Generator
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-                  Select or paste a redacted CSV sample to generate a reviewable report covering headers, row count,
-                  completeness, inferred column type, direct-identifier findings, spreadsheet formula risks, and linkage warnings. Browser-selected files stay in
-                  this page session; the generated report does not retain raw values or certify privacy status.
+                  Select or paste a redacted CSV sample to generate a reviewable report covering
+                  headers, row count, completeness, inferred column type, direct-identifier
+                  findings, spreadsheet formula risks, and linkage warnings. Browser-selected files
+                  stay in this page session; the generated report does not retain raw values or
+                  certify privacy status.
                 </p>
               </div>
 
-              <div className="grid gap-3 self-start" data-testid="byo-csv-proof-report">
+              <div className="grid gap-3 self-start min-w-0" data-testid="byo-csv-proof-report">
                 <SummaryMetric label="Rows" value={String(report.row_count)} />
                 <SummaryMetric label="Columns" value={String(report.column_count)} />
-                <SummaryMetric label="Retained raw values" value={formatBoolean(report.retained_raw_values)} />
-                <SummaryMetric label="Direct identifier findings" value={String(report.direct_identifier_findings.length)} />
-                <SummaryMetric label="Formula risk findings" value={String(report.spreadsheet_formula_findings.length)} />
-                <SummaryMetric label="Linkage warnings" value={String(report.quasi_identifier_findings.length)} />
-                <SummaryMetric label="Confidence gate ready" value={formatBoolean(report.confidence_gate_ready)} />
+                <SummaryMetric
+                  label="Retained raw values"
+                  value={formatBoolean(report.retained_raw_values)}
+                />
+                <SummaryMetric
+                  label="Direct identifier findings"
+                  value={String(report.direct_identifier_findings.length)}
+                />
+                <SummaryMetric
+                  label="Formula risk findings"
+                  value={String(report.spreadsheet_formula_findings.length)}
+                />
+                <SummaryMetric
+                  label="Linkage warnings"
+                  value={String(report.quasi_identifier_findings.length)}
+                />
+                <SummaryMetric
+                  label="Confidence gate ready"
+                  value={formatBoolean(report.confidence_gate_ready)}
+                />
               </div>
             </div>
           </div>
@@ -172,7 +219,7 @@ export function ByoCsvProofPage() {
 
         <section className="border-b border-white/10 bg-slate-950">
           <div className="mx-auto grid max-w-7xl gap-8 px-6 py-14 lg:grid-cols-[0.92fr_1.08fr]">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-3 text-emerald-100">
                 <Upload className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">CSV sample</span>
@@ -190,13 +237,19 @@ export function ByoCsvProofPage() {
                       data-testid="byo-csv-local-file-input"
                     />
                   </label>
-                  <div className="mt-3 grid gap-1 text-sm text-slate-200" data-testid="byo-csv-local-file-status">
+                  <div
+                    className="mt-3 grid gap-1 text-sm text-slate-200"
+                    data-testid="byo-csv-local-file-status"
+                  >
                     <span>Local file status: {fileStatus}</span>
                     <span>Local-only boundary: no upload request is made by this route.</span>
                     <span>Max file size: {formatBytes(MAX_LOCAL_CSV_BYTES)}</span>
                   </div>
                   {fileError ? (
-                    <div className="mt-3 rounded-md border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm text-amber-100" role="alert">
+                    <div
+                      className="mt-3 rounded-md border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm text-amber-100"
+                      role="alert"
+                    >
                       {fileError}
                     </div>
                   ) : null}
@@ -279,7 +332,7 @@ export function ByoCsvProofPage() {
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-3 text-emerald-100">
                 <TableProperties className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">Column profile</span>
@@ -371,7 +424,11 @@ function ColumnProfileRow({ profile }: { profile: ByoCsvColumnProfile }) {
       <td className="px-4 py-3">{formatBoolean(profile.spreadsheet_formula_risk)}</td>
       <td className="px-4 py-3">{formatBoolean(profile.quasi_identifier_risk)}</td>
       <td className="px-4 py-3">
-        {[...profile.risk_labels, ...profile.spreadsheet_formula_labels, ...profile.quasi_identifier_labels].join(', ') || 'none'}
+        {[
+          ...profile.risk_labels,
+          ...profile.spreadsheet_formula_labels,
+          ...profile.quasi_identifier_labels,
+        ].join(', ') || 'none'}
       </td>
     </tr>
   );

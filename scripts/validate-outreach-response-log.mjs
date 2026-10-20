@@ -7,6 +7,19 @@ import {
   proofPackIdsByRoute,
   proofPackRoutes,
 } from './lib/proof-pack-routes.mjs';
+import {
+  CASL_CONSENT_BASES,
+  CASL_CONTROL_STATUSES,
+  CASL_OWNER_APPROVAL_STATUSES,
+  OUTBOUND_REPLY_STATUSES,
+  OUTREACH_RESPONSE_LOG_COLUMNS,
+  UNSUBSCRIBE_STATUSES,
+  parseCsv,
+} from './lib/outreach-response-log-schema.mjs';
+import {
+  loadSuppressionRegistry,
+  resolveSuppressionRegistryPath,
+} from './lib/suppression-registry.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -14,11 +27,17 @@ const failures = [];
 let allowTemplate = false;
 let report = false;
 let actionPlan = false;
+let help = false;
 let fileArg = null;
+let suppressionFileArg = null;
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
   if (arg === '--') continue;
+  if (arg === '--help' || arg === '-h') {
+    help = true;
+    continue;
+  }
   if (arg === '--allow-template') {
     allowTemplate = true;
     continue;
@@ -29,6 +48,19 @@ for (let index = 0; index < args.length; index += 1) {
   }
   if (arg === '--action-plan') {
     actionPlan = true;
+    continue;
+  }
+  if (arg === '--suppression-file') {
+    if (suppressionFileArg) {
+      failures.push('--suppression-file may be provided only once.');
+      continue;
+    }
+    suppressionFileArg = args[index + 1] ?? '';
+    index += 1;
+    if (!suppressionFileArg || suppressionFileArg.startsWith('--')) {
+      failures.push('--suppression-file requires a CSV path.');
+      suppressionFileArg = null;
+    }
     continue;
   }
   if (arg.startsWith('--')) {
@@ -42,32 +74,33 @@ for (let index = 0; index < args.length; index += 1) {
   fileArg = arg;
 }
 
+if (help) {
+  console.log(`Usage:
+  node scripts/validate-outreach-response-log.mjs [log.csv] [--suppression-file <csv>] [--report] [--action-plan] [--allow-template]
+
+Options:
+  --suppression-file <csv>  Shared suppression registry. Defaults to the
+                            CEIP_SUPPRESSION_REGISTRY env var, then the canonical
+                            docs/growth/SUPPRESSION_REGISTRY_LIVE.csv. The registry
+                            is required and must exist; there is no campaign-local
+                            fallback. Accepts the live schema
+                            (email,domain,reason,source,suppressed_at,suppressed_by)
+                            or the legacy schema (target_label,suppression_date,source_row,reason).
+  --report                  Print aggregate counts by proof pack and reply status.
+  --action-plan             Print next evidence commands for actionable rows.
+  --allow-template          Accept the placeholder template row.
+  --help                    Print this help and exit.
+`);
+  process.exit(0);
+}
+
 const logPath = fileArg
   ? path.resolve(repoRoot, fileArg)
   : path.join(repoRoot, 'docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv');
 const relativeLogPath = path.relative(repoRoot, logPath).split(path.sep).join('/');
+const suppressionRegistryPath = resolveSuppressionRegistryPath(repoRoot, suppressionFileArg);
 
-const requiredColumns = [
-  'activity_date',
-  'channel',
-  'target_label',
-  'buyer_lane',
-  'proof_pack_id',
-  'route',
-  'rating',
-  'variant_id',
-  'caveat_used',
-  'artifact_promised',
-  'reply_status',
-  'response_summary',
-  'pain_signal',
-  'requested_input',
-  'reviewer_role',
-  'commercial_commitment_status',
-  'next_action',
-  'pilot_evidence_register_action',
-  'notes',
-];
+const requiredColumns = OUTREACH_RESPONSE_LOG_COLUMNS;
 
 const forbiddenColumns = new Set([
   'target',
@@ -209,50 +242,6 @@ const directIdentifierPatterns = [
     pattern: /\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Road|Rd|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Crescent|Cres)\b/i,
   },
 ];
-
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let value = '';
-  let inQuotes = false;
-
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-    const next = text[index + 1];
-
-    if (char === '"' && inQuotes && next === '"') {
-      value += '"';
-      index += 1;
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (char === ',' && !inQuotes) {
-      row.push(value);
-      value = '';
-      continue;
-    }
-
-    if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && next === '\n') index += 1;
-      row.push(value);
-      if (row.some((cell) => cell.trim().length > 0)) rows.push(row);
-      row = [];
-      value = '';
-      continue;
-    }
-
-    value += char;
-  }
-
-  row.push(value);
-  if (row.some((cell) => cell.trim().length > 0)) rows.push(row);
-  return rows;
-}
 
 function normalizeText(value) {
   return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -564,6 +553,29 @@ if (!existsSync(logPath)) {
 const csvText = readFileSync(logPath, 'utf8');
 const rows = parseCsv(csvText);
 const responseRows = [];
+// The suppression registry is required for every run — outbound or not — so a
+// missing or unreadable registry fails closed instead of silently allowing
+// sends to opted-out targets.
+const suppressionRegistry = loadSuppressionRegistry(repoRoot, suppressionRegistryPath);
+failures.push(...suppressionRegistry.failures);
+const suppressionDatesByTarget = suppressionRegistry.suppressionDatesByTarget;
+
+if (rows.length > 0) {
+  const logHeaders = rows[0].map((header) => header.trim());
+  const labelIndex = logHeaders.indexOf('target_label');
+  const activityIndex = logHeaders.indexOf('activity_date');
+  const statusIndex = logHeaders.indexOf('unsubscribe_status');
+  rows.slice(1).forEach((cells) => {
+    const targetLabel = (cells[labelIndex] ?? '').trim();
+    const status = normalizeText(cells[statusIndex]);
+    const activityDate = (cells[activityIndex] ?? '').trim();
+    if (targetLabel && status !== 'none' && isValidIsoDate(activityDate)) {
+      const targetKey = targetLabel.toLowerCase();
+      const previousDate = suppressionDatesByTarget.get(targetKey);
+      if (!previousDate || activityDate < previousDate) suppressionDatesByTarget.set(targetKey, activityDate);
+    }
+  });
+}
 
 if (rows.length < 1) {
   failures.push('Outreach response log must include a header row.');
@@ -634,6 +646,67 @@ if (rows.length < 1) {
     const replyStatus = normalizeText(row.reply_status);
     const evidenceAction = normalizeText(row.pilot_evidence_register_action);
     const commercialCommitmentStatus = normalizeText(row.commercial_commitment_status);
+
+    if (!/^[a-z0-9][a-z0-9_-]{2,63}$/i.test(row.target_label ?? '')) {
+      failures.push(`Row ${rowNumber}: target_label must be an anonymized handle containing only letters, numbers, underscores, or hyphens.`);
+    }
+
+    const consentBasis = normalizeText(row.consent_basis);
+    const senderStatus = normalizeText(row.sender_identification_status);
+    const unsubscribeMechanismStatus = normalizeText(row.unsubscribe_mechanism_status);
+    const ownerApproval = normalizeText(row.casl_owner_approval);
+    const unsubscribeStatus = normalizeText(row.unsubscribe_status);
+
+    if (!CASL_CONSENT_BASES.has(consentBasis)) {
+      failures.push(`Row ${rowNumber}: consent_basis must be one of ${Array.from(CASL_CONSENT_BASES).join(', ')}.`);
+    }
+    if (!CASL_CONTROL_STATUSES.has(senderStatus)) {
+      failures.push(`Row ${rowNumber}: sender_identification_status must be one of ${Array.from(CASL_CONTROL_STATUSES).join(', ')}.`);
+    }
+    if (!CASL_CONTROL_STATUSES.has(unsubscribeMechanismStatus)) {
+      failures.push(`Row ${rowNumber}: unsubscribe_mechanism_status must be one of ${Array.from(CASL_CONTROL_STATUSES).join(', ')}.`);
+    }
+    if (!CASL_OWNER_APPROVAL_STATUSES.has(ownerApproval)) {
+      failures.push(`Row ${rowNumber}: casl_owner_approval must be one of ${Array.from(CASL_OWNER_APPROVAL_STATUSES).join(', ')}.`);
+    }
+    if (!UNSUBSCRIBE_STATUSES.has(unsubscribeStatus)) {
+      failures.push(`Row ${rowNumber}: unsubscribe_status must be one of ${Array.from(UNSUBSCRIBE_STATUSES).join(', ')}.`);
+    }
+
+    if (consentBasis === 'none') {
+      if (normalizeText(row.consent_source) !== 'none' || normalizeText(row.consent_date) !== 'none') {
+        failures.push(`Row ${rowNumber}: consent_source and consent_date must be none when consent_basis is none.`);
+      }
+    } else if (!isValidIsoDate(row.consent_date ?? '') || isBlank(row.consent_source) || normalizeText(row.consent_source) === 'none') {
+      failures.push(`Row ${rowNumber}: a documented consent basis requires consent_source and a valid consent_date.`);
+    }
+
+    if (replyStatus === 'unsubscribe' && !['opted_out', 'suppressed'].includes(unsubscribeStatus)) {
+      failures.push(`Row ${rowNumber}: an unsubscribe reply must set unsubscribe_status to opted_out or suppressed.`);
+    }
+
+    if (OUTBOUND_REPLY_STATUSES.has(replyStatus)) {
+      if (consentBasis === 'none' || !isValidIsoDate(row.consent_date ?? '') || row.consent_date > row.activity_date) {
+        failures.push(`Row ${rowNumber}: outbound CEM activity requires a dated consent basis established on or before activity_date.`);
+      }
+      if (senderStatus !== 'verified') {
+        failures.push(`Row ${rowNumber}: outbound CEM activity requires verified sender identification.`);
+      }
+      if (unsubscribeMechanismStatus !== 'verified') {
+        failures.push(`Row ${rowNumber}: outbound CEM activity requires a verified working unsubscribe mechanism.`);
+      }
+      if (ownerApproval !== 'approved'
+        || !isValidIsoDate(row.casl_approval_date ?? '')
+        || row.casl_approval_date > row.activity_date
+        || isBlank(row.casl_approval_reference)
+        || normalizeText(row.casl_approval_reference) === 'none') {
+        failures.push(`Row ${rowNumber}: outbound CEM activity requires dated CASL-owner approval and an external review reference before activity_date.`);
+      }
+      const suppressionDate = suppressionDatesByTarget.get(row.target_label.toLowerCase());
+      if (suppressionDate && row.activity_date >= suppressionDate) {
+        failures.push(`Row ${rowNumber}: target_label is suppressed on or before this outbound activity; do not contact it.`);
+      }
+    }
 
     if (evidenceAction !== 'none' && noEvidenceActionReplyStatuses.has(replyStatus)) {
       failures.push(`Row ${rowNumber}: ${row.reply_status} replies cannot set pilot_evidence_register_action to ${row.pilot_evidence_register_action}; keep evidence action as none until a buyer asks for information, offers data, books a meeting, or records a commercial signal.`);

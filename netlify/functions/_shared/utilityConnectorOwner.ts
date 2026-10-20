@@ -9,6 +9,8 @@ export interface WhopSessionVerification {
   valid: boolean;
   identity?: VerifiedWhopIdentity;
   error?: string;
+  httpStatus?: number;
+  retryable?: boolean;
 }
 
 export interface OwnerDataClient {
@@ -22,6 +24,11 @@ export interface WhopOwner {
   userId: string;
   providerId: string;
   email: string | null;
+}
+
+export interface WhopEntitlement {
+  tier: 'free' | 'basic' | 'pro' | 'team';
+  expiryDate: string | null;
 }
 
 export interface GreenButtonAuthRequest {
@@ -102,12 +109,55 @@ function decodeSimulatedToken(token: string): WhopSessionVerification {
 }
 
 /**
+ * Whop identity verification targets — honest documentation status
+ * (Codex audit, 2026-10):
+ *
+ * - GET /users/{id}: CONFIRMED in official Whop docs for user OAuth tokens,
+ *   but unusable as a bootstrap target — the user id is exactly what this
+ *   verifier is trying to derive, so it cannot be queried first.
+ * - GET /oauth/userinfo: CONFIRMED in official Whop docs for OAuth user
+ *   tokens (verified 2026-10-08 against docs.whop.com authentication guide)
+ *   — this is the documented PRIMARY verification target and is always
+ *   tried first. x-whop-user-token is the documented same-origin iframe
+ *   header for the embedded-app journey; /oauth/userinfo is the documented
+ *   web OAuth path.
+ * - GET /v5/me: LAST-RESORT legacy compatibility fallback — an endpoint
+ *   this application has used historically; UNVERIFIED against official
+ *   Whop docs and requires owner confirmation before hosted deploy AND
+ *   before removal. It is deliberately ordered LAST so the documented
+ *   primary target wins whenever it responds.
+ *
+ * The multi-target fallback chain is kept intentionally (do NOT remove it
+ * silently): a target only counts when Whop returns a successful response
+ * carrying a subject/id, so the chain never fabricates identity.
+ */
+export const WHOP_VERIFICATION_TARGETS: ReadonlyArray<{
+  url: string;
+  verificationSource: VerifiedWhopIdentity['verificationSource'];
+  docsStatus: string;
+}> = [
+  {
+    url: 'https://api.whop.com/oauth/userinfo',
+    verificationSource: 'oauth_userinfo',
+    docsStatus: 'confirmed_in_official_whop_docs_for_oauth_user_tokens',
+  },
+  {
+    // Ordered LAST deliberately: /oauth/userinfo (above) is the documented
+    // primary target; /v5/me is last-resort legacy compatibility only.
+    url: 'https://api.whop.com/v5/me',
+    verificationSource: 'legacy_me',
+    docsStatus: 'last_resort_legacy_compatibility_unverified_against_official_whop_docs_requires_owner_confirmation_before_hosted_deploy_and_before_removal',
+  },
+];
+
+/**
  * Verify the server-held Whop credential. The browser cache and the cookie
  * value itself are never treated as identity proof.
  *
- * OAuth userinfo is the current Whop contract. The /v5/me fallback is kept
- * only for the existing application's legacy token flow and still requires a
- * successful Whop response.
+ * Identity is derived exclusively from a successful Whop API response; see
+ * WHOP_VERIFICATION_TARGETS for the per-target documentation status. The
+ * /v5/me fallback is kept only for the existing application's legacy token
+ * flow and still requires a successful Whop response.
  */
 export async function verifyWhopSessionToken(
   token: string,
@@ -121,15 +171,10 @@ export async function verifyWhopSessionToken(
   if (mode === 'simulated') return decodeSimulatedToken(normalizedToken);
 
   const fetchImpl = options.fetchImpl ?? fetch;
-  const verificationTargets: Array<{
-    url: string;
-    verificationSource: VerifiedWhopIdentity['verificationSource'];
-  }> = [
-    { url: 'https://api.whop.com/oauth/userinfo', verificationSource: 'oauth_userinfo' },
-    { url: 'https://api.whop.com/v5/me', verificationSource: 'legacy_me' },
-  ];
+  const verificationTargets = WHOP_VERIFICATION_TARGETS;
 
-  let lastStatus = 0;
+  let lastStatus: number | undefined;
+  let retryable = false;
   for (const target of verificationTargets) {
     try {
       const response = await fetchImpl(target.url, {
@@ -137,6 +182,7 @@ export async function verifyWhopSessionToken(
           Authorization: `Bearer ${normalizedToken}`,
           Accept: 'application/json',
         },
+        signal: AbortSignal.timeout(8_000),
       });
       lastStatus = response.status;
       if (!response.ok) continue;
@@ -155,13 +201,16 @@ export async function verifyWhopSessionToken(
         },
       };
     } catch {
+      retryable = true;
       // Try the compatibility target without exposing verification details.
     }
   }
 
   return {
     valid: false,
-    error: lastStatus > 0 ? `Whop session verification failed with status ${lastStatus}.` : 'Whop session verification failed.',
+    error: 'Whop session verification failed.',
+    ...(lastStatus === undefined ? {} : { httpStatus: lastStatus }),
+    retryable: retryable || lastStatus === undefined || lastStatus >= 500 || lastStatus === 408 || lastStatus === 429,
   };
 }
 
@@ -315,6 +364,55 @@ export async function resolveOrProvisionWhopOwner(
   }
 
   return { userId, providerId: identity.providerId, email: identity.email ?? null };
+}
+
+/**
+ * Return the strongest currently valid Whop entitlement recorded by the
+ * server. Unknown tiers, expired rows, and inactive rows never grant access.
+ */
+export async function getCurrentWhopEntitlement(
+  client: OwnerDataClient,
+  whopUserId: string,
+  now = new Date(),
+): Promise<WhopEntitlement> {
+  const rows = await selectRows<{
+    tier: string;
+    status: string;
+    start_date: string | null;
+    expiry_date: string | null;
+  }>(client, 'entitlements', {
+    select: 'tier,status,start_date,expiry_date',
+    provider: 'eq.whop',
+    whop_user_id: `eq.${whopUserId}`,
+    status: 'in.(active,trialing)',
+    order: 'updated_at.desc',
+    limit: '100',
+  });
+
+  const tierRank: Record<WhopEntitlement['tier'], number> = {
+    free: 0,
+    basic: 1,
+    pro: 2,
+    team: 3,
+  };
+  let best: WhopEntitlement = { tier: 'free', expiryDate: null };
+
+  for (const row of rows) {
+    if (!['active', 'trialing'].includes(row.status)) continue;
+    const start = row.start_date ? Date.parse(row.start_date) : Number.NEGATIVE_INFINITY;
+    const expiry = row.expiry_date ? Date.parse(row.expiry_date) : Number.POSITIVE_INFINITY;
+    if (!Number.isFinite(start) && start !== Number.NEGATIVE_INFINITY) continue;
+    if (!Number.isFinite(expiry) && expiry !== Number.POSITIVE_INFINITY) continue;
+    if (start > now.getTime() || expiry <= now.getTime()) continue;
+    if (!Object.prototype.hasOwnProperty.call(tierRank, row.tier)) continue;
+
+    const tier = row.tier as WhopEntitlement['tier'];
+    if (tierRank[tier] > tierRank[best.tier]) {
+      best = { tier, expiryDate: row.expiry_date };
+    }
+  }
+
+  return best;
 }
 
 export async function createGreenButtonAuthRequest(

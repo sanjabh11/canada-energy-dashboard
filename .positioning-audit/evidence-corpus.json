@@ -74,7 +74,7 @@
       "source": "src/App.tsx",
       "source_tier": "primary",
       "content_summary": "140 unique routes (with aliases), 70 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments",
-      "claim": "140 unique routes (with aliases), 70 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments",
+      "claim": "140 unique routes (with aliases), 68 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments. Component files: 208; lib files: 220; documentation files: 245.",
       "timestamp": "2026-07-15T00:00:00Z",
       "date_collected": "2026-07-15",
       "freshness": "fresh",
@@ -241,22 +241,160 @@
       "confidence": 0.3,
       "provenance": "Code-level pricing definition only",
       "is_customer_commercial": false
+    },
+    {
+      "evidence_id": "EV-W21-001",
+      "id": "EV-W21-001",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/lib/tierPricing.ts",
+      "source_tier": "primary",
+      "content_summary": "TIER pricing config updated with Canada-Alberta Implementation Agreement (May 15, 2026) headline price schedule 2026-2040 and minimum transfer-price floor 2030-2040. Fund price $95/t frozen, market credit $25/t fallback with disclosure.",
+      "claim": "TIER pricing config with Implementation Agreement provenance, headline schedule to 2040, and floor schedule from 2030.",
+      "timestamp": "2026-07-21T00:00:00Z",
+      "date_collected": "2026-07-21",
+      "freshness": "fresh",
+      "confidence": 0.9,
+      "provenance": "Direct code reading of tierPricing.ts DEFAULT_TIER_PRICING",
+      "is_customer_commercial": false
+    },
+    {
+      "evidence_id": "EV-W21-002",
+      "id": "EV-W21-002",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/lib/pricingCatalog.ts",
+      "source_tier": "primary",
+      "content_summary": "Pricing source of truth confirms industrial_tier $1,500/mo and professional $149/mo with USD currency. Direct plan codes: free, consumer_watchdog, professional, industrial_tier, municipal, sovereign.",
+      "claim": "Pricing catalog confirms industrial_tier $1,500/mo and professional $149/mo as source of truth.",
+      "timestamp": "2026-07-21T00:00:00Z",
+      "date_collected": "2026-07-21",
+      "freshness": "fresh",
+      "confidence": 0.9,
+      "provenance": "Direct code reading of pricingCatalog.ts CEIP_PRICING and PLAN_PRICES",
+      "is_customer_commercial": false
+    },
+    {
+      "evidence_id": "EV-W21-003",
+      "id": "EV-W21-003",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "src/components/TIERComplianceLandingPage.tsx",
+      "source_tier": "primary",
+      "content_summary": "TIER compliance landing page with 3-pathway comparison (fund, market, DI), lead capture form persisting to leadIntake, SEO configuration, and trackEvent analytics.",
+      "claim": "TIER compliance landing page with 3-pathway comparison, lead capture, and SEO.",
+      "timestamp": "2026-07-21T00:00:00Z",
+      "date_collected": "2026-07-21",
+      "freshness": "fresh",
+      "confidence": 0.9,
+      "provenance": "Direct code reading of TIERComplianceLandingPage.tsx",
+      "is_customer_commercial": false
+    },
+    {
+      "evidence_id": "EV-W21-004",
+      "id": "EV-W21-004",
+      "type": "product_promise",
+      "grade": "MEDIUM",
+      "source": "docs/COMMERCIAL_SOURCE_OF_TRUTH.md",
+      "source_tier": "secondary",
+      "content_summary": "Commercial source of truth confirms TIER compliance savings pack rated 4.0/5 sellability with approved positioning language and claim translation table.",
+      "claim": "TIER compliance savings pack rated 4.0/5 with approved wording and claim boundaries.",
+      "timestamp": "2026-07-21T00:00:00Z",
+      "date_collected": "2026-07-21",
+      "freshness": "fresh",
+      "confidence": 0.6,
+      "provenance": "Active commercial source of truth document",
+      "is_customer_commercial": false
+    },
+    {
+      "evidence_id": "EV-W21-005",
+      "id": "EV-W21-005",
+      "type": "codebase_evidence",
+      "grade": "HIGH",
+      "source": "docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md",
+      "source_tier": "primary",
+      "content_summary": "Pilot evidence intake schema for TIER facility assumptions: facility_id, compliance_year, annual_emissions_tonnes, benchmark_exceedance_tonnes, direct_investment_capex_cad, approval_owner. 14-day pilot acceptance plan with day-by-day activities.",
+      "claim": "TIER facility assumptions intake schema and 14-day pilot acceptance plan defined.",
+      "timestamp": "2026-07-21T00:00:00Z",
+      "date_collected": "2026-07-21",
+      "freshness": "fresh",
+      "confidence": 0.9,
+      "provenance": "Direct reading of PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md",
+      "is_customer_commercial": false
     }
   ],
   "evidence_type_summary": {
-    "product_promise": { "count": 4, "grades": ["MEDIUM", "MEDIUM", "MEDIUM", "MEDIUM"] },
-    "codebase_evidence": { "count": 7, "grades": ["HIGH", "HIGH", "HIGH", "HIGH", "HIGH", "HIGH", "HIGH"] },
-    "competitor_intel": { "count": 1, "grades": ["MEDIUM"] },
-    "stakeholder_input": { "count": 2, "grades": ["MEDIUM", "MEDIUM"] },
-    "pricing_signal": { "count": 1, "grades": ["LOW"] },
-    "customer_outcome": { "count": 0, "grades": [] },
-    "user_quote": { "count": 0, "grades": [] },
-    "behavioral_observation": { "count": 0, "grades": [] },
-    "support_ticket": { "count": 0, "grades": [] },
-    "analytics_data": { "count": 0, "grades": [] },
-    "sales_data": { "count": 0, "grades": [] }
+    "product_promise": {
+      "count": 5,
+      "grades": [
+        "MEDIUM",
+        "MEDIUM",
+        "MEDIUM",
+        "MEDIUM",
+        "MEDIUM"
+      ]
+    },
+    "codebase_evidence": {
+      "count": 11,
+      "grades": [
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH",
+        "HIGH"
+      ]
+    },
+    "competitor_intel": {
+      "count": 1,
+      "grades": [
+        "MEDIUM"
+      ]
+    },
+    "stakeholder_input": {
+      "count": 2,
+      "grades": [
+        "MEDIUM",
+        "MEDIUM"
+      ]
+    },
+    "pricing_signal": {
+      "count": 1,
+      "grades": [
+        "LOW"
+      ]
+    },
+    "customer_outcome": {
+      "count": 0,
+      "grades": []
+    },
+    "user_quote": {
+      "count": 0,
+      "grades": []
+    },
+    "behavioral_observation": {
+      "count": 0,
+      "grades": []
+    },
+    "support_ticket": {
+      "count": 0,
+      "grades": []
+    },
+    "analytics_data": {
+      "count": 0,
+      "grades": []
+    },
+    "sales_data": {
+      "count": 0,
+      "grades": []
+    }
   },
-  "total_items": 15,
+  "total_items": 20,
   "types_present": 5,
   "types_missing": 6,
   "evidence_limited_mode": true

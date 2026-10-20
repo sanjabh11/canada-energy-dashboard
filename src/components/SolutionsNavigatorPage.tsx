@@ -23,7 +23,9 @@ import {
 } from '../lib/commercialPositioning';
 
 export function SolutionsNavigatorPage() {
-  const [activeSegment, setActiveSegment] = useState<BuyerSegment>('Utility');
+  // TIER focused pilot: Industrial is the default segment so the TIER compliance
+  // wedge (rank 1) leads the displayed proof-pack list.
+  const [activeSegment, setActiveSegment] = useState<BuyerSegment>('Industrial');
 
   const filteredWedges = useMemo(() => {
     return topCommercialWedges.filter(
@@ -127,8 +129,17 @@ export function SolutionsNavigatorPage() {
                 ))}
               </div>
 
-              {/* Role-based quick navigation */}
+              {/* Role-based quick navigation (TIER focused-pilot leads) */}
               <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Link
+                  to="/roi-calculator"
+                  className="rounded-xl border border-emerald-300/30 bg-emerald-300/[0.08] p-4 transition hover:border-emerald-300/50 hover:bg-emerald-300/[0.12]"
+                >
+                  <div className="text-xs uppercase tracking-[0.22em] text-emerald-200/80">
+                    Industrial compliance / CFO — focused pilot
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-white">TIER ROI calculator →</div>
+                </Link>
                 <Link
                   to="/utility-demand-forecast"
                   className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
@@ -139,15 +150,6 @@ export function SolutionsNavigatorPage() {
                   <div className="mt-2 text-sm font-medium text-white">
                     Demand forecast planning pack →
                   </div>
-                </Link>
-                <Link
-                  to="/roi-calculator"
-                  className="rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-300/30 hover:bg-white/[0.08]"
-                >
-                  <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
-                    Industrial compliance / CFO
-                  </div>
-                  <div className="mt-2 text-sm font-medium text-white">TIER ROI calculator →</div>
                 </Link>
                 <Link
                   to="/regulatory-filing"

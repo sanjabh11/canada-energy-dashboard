@@ -114,32 +114,32 @@ describe('pricingCatalog', () => {
   });
 
   describe('formatUsd', () => {
-    it('formats 0 as $0', () => {
-      expect(formatUsd(0)).toBe('$0');
+    it('labels values as USD', () => {
+      expect(formatUsd(0)).toBe('USD 0');
     });
 
-    it('formats 9 as $9', () => {
-      expect(formatUsd(9)).toBe('$9');
+    it('formats 9 as USD 9', () => {
+      expect(formatUsd(9)).toBe('USD 9');
     });
 
-    it('formats 149 as $149', () => {
-      expect(formatUsd(149)).toBe('$149');
+    it('formats 149 as USD 149', () => {
+      expect(formatUsd(149)).toBe('USD 149');
     });
 
     it('formats 1500 with locale separators', () => {
-      expect(formatUsd(1500)).toBe('$1,500');
+      expect(formatUsd(1500)).toBe('USD 1,500');
     });
 
     it('formats 5900 with locale separators', () => {
-      expect(formatUsd(5900)).toBe('$5,900');
+      expect(formatUsd(5900)).toBe('USD 5,900');
     });
 
     it('formats 2500 with locale separators', () => {
-      expect(formatUsd(2500)).toBe('$2,500');
+      expect(formatUsd(2500)).toBe('USD 2,500');
     });
 
-    it('formats 299 as $299', () => {
-      expect(formatUsd(299)).toBe('$299');
+    it('formats 299 as USD 299', () => {
+      expect(formatUsd(299)).toBe('USD 299');
     });
   });
 });

@@ -1,4 +1,9 @@
-import { buildUtilityForecastPackage, type UtilityForecastPackage, type UtilityHistoricalLoadRow, type UtilityPlanningScenario } from './utilityForecasting';
+import {
+  buildUtilityForecastPackage,
+  type UtilityForecastPackage,
+  type UtilityHistoricalLoadRow,
+  type UtilityPlanningScenario,
+} from './utilityForecasting';
 import { upsampleToQuarterHour } from './intervalUpsampler';
 import { parseGreenButtonXml } from './utilityLiveData';
 
@@ -139,27 +144,33 @@ export function createUtilityApiDemoScenario(): UtilityPlanningScenario {
     capacity_buffer_pct: 18,
     stress_test_mode: 'none',
     hosting_capacity_limit_mw: 3.5,
-    large_point_loads: [{
-      name: 'Committed large point-load',
-      geography_id: 'ON-GREEN-BUTTON-77',
-      geography_level: 'feeder',
-      mw: 0,
-      load_factor_pct: 72,
-    }],
-    industrial_opt_outs: [{
-      name: 'Industrial self-supply',
-      geography_id: 'ON-GREEN-BUTTON-77',
-      geography_level: 'feeder',
-      mw: 0,
-    }],
-    tou_shift_rules: [{
-      name: 'Evening EV shift',
-      from_hour_start: 17,
-      from_hour_end: 21,
-      to_hour_start: 0,
-      to_hour_end: 5,
-      shift_pct: 0,
-    }],
+    large_point_loads: [
+      {
+        name: 'Committed large point-load',
+        geography_id: 'ON-GREEN-BUTTON-77',
+        geography_level: 'feeder',
+        mw: 0,
+        load_factor_pct: 72,
+      },
+    ],
+    industrial_opt_outs: [
+      {
+        name: 'Industrial self-supply',
+        geography_id: 'ON-GREEN-BUTTON-77',
+        geography_level: 'feeder',
+        mw: 0,
+      },
+    ],
+    tou_shift_rules: [
+      {
+        name: 'Evening EV shift',
+        from_hour_start: 17,
+        from_hour_end: 21,
+        to_hour_start: 0,
+        to_hour_end: 5,
+        shift_pct: 0,
+      },
+    ],
   };
 }
 
@@ -232,18 +243,23 @@ export function buildUtilityApiDemoSessionFromXml(params: {
     );
   }
 
-  const sourceLabel = params.mode === 'fixture'
-    ? 'Bundled UtilityAPI Green Button XML fixture'
-    : 'UtilityAPI DEMO Green Button XML';
-  const forecastPackage = rows.length > 0
-    ? buildUtilityForecastPackage({
-        rows,
-        scenario: createUtilityApiDemoScenario(),
-        sourceLabel,
-        isSampleData: params.mode === 'fixture',
-        sourceKind: 'green_button_cmd',
-      })
-    : null;
+  const sourceLabel =
+    params.mode === 'fixture'
+      ? 'Bundled UtilityAPI Green Button XML fixture'
+      : 'UtilityAPI DEMO Green Button XML';
+  const forecastPackage =
+    rows.length > 0
+      ? buildUtilityForecastPackage({
+          rows,
+          scenario: createUtilityApiDemoScenario(),
+          sourceLabel,
+          // Fixture replay is sample data; mode 'live' carries a real
+          // owner-bound Green Button read and must keep its provenance so the
+          // forecasting guardrail can require live-read proof fields.
+          isSampleData: params.mode === 'fixture',
+          sourceKind: params.mode === 'fixture' ? 'public_system_sample' : 'green_button_cmd',
+        })
+      : null;
 
   return {
     sessionId: params.sessionId,
@@ -258,7 +274,12 @@ export function buildUtilityApiDemoSessionFromXml(params: {
     rawXml: params.rawXml,
     parsedRows: rows,
     forecastPackage,
-    summary: buildUtilityApiDemoSummary(rows, forecastPackage, parseResult.warnings, params.meterUids?.length ?? params.meterStates?.length ?? 1),
+    summary: buildUtilityApiDemoSummary(
+      rows,
+      forecastPackage,
+      parseResult.warnings,
+      params.meterUids?.length ?? params.meterStates?.length ?? 1,
+    ),
     revoked: params.revoked ?? false,
     lastError: null,
     collectionDurationMonths: params.collectionDurationMonths ?? null,
@@ -289,14 +310,18 @@ export function buildUtilityApiDemoSummary(
     coverageStart: rows[0]?.timestamp ?? null,
     coverageEnd: rows.at(-1)?.timestamp ?? null,
     peakDemandMw: demandValues.length > 0 ? Math.max(...demandValues) : null,
-    averageDemandMw: demandValues.length > 0 ? Number((totalDemand / demandValues.length).toFixed(4)) : null,
+    averageDemandMw:
+      demandValues.length > 0 ? Number((totalDemand / demandValues.length).toFixed(4)) : null,
     latestObservedAt: rows.at(-1)?.timestamp ?? null,
     warningCount: warnings.length + forecastWarnings.length,
     warnings: [...warnings, ...forecastWarnings],
   };
 }
 
-export function deriveUtilityApiDemoStatus(payload: UtilityApiDemoEdgePayload, currentStatus: UtilityApiDemoStatus): UtilityApiDemoStatus {
+export function deriveUtilityApiDemoStatus(
+  payload: UtilityApiDemoEdgePayload,
+  currentStatus: UtilityApiDemoStatus,
+): UtilityApiDemoStatus {
   if (payload.revoked) return 'revoked';
   if (payload.error) return 'error';
   if (payload.stage === 'authorization_pending') return 'auth_pending';
