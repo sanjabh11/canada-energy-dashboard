@@ -78,18 +78,32 @@ test.describe('WCAG 2.2 AA — axe audit', () => {
         await page.goto(route.path, { waitUntil: 'domcontentloaded' });
         await expect(page.locator('h1, h2').first()).toBeVisible();
         const { scrollWidth, offenders } = await page.evaluate((limit) => {
-          const wide = [...document.querySelectorAll('*')]
+          // Elements that actually extend the document: their box crosses the
+          // right viewport edge AND no ancestor clips that overflow. Clipped
+          // scroll-region content is expected and excluded.
+          const isClipped = (el: Element): boolean => {
+            let node: Element | null = el.parentElement;
+            while (node) {
+              const ox = getComputedStyle(node).overflowX;
+              if (ox === 'auto' || ox === 'scroll' || ox === 'hidden' || ox === 'clip') {
+                return true;
+              }
+              node = node.parentElement;
+            }
+            return false;
+          };
+          const wide = [...document.querySelectorAll('body *')]
             .filter((el) => {
-              const rect = (el as HTMLElement).getBoundingClientRect();
-              return rect.width > limit && !(el as HTMLElement).closest('[data-scroll-ok]');
+              const rect = el.getBoundingClientRect();
+              return rect.right > limit + 1 && rect.width > 0 && !isClipped(el);
             })
+            .sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)
             .slice(0, 4)
-            .map(
-              (el) =>
-                `${el.tagName.toLowerCase()}.${[...(el as HTMLElement).classList]
-                  .slice(0, 3)
-                  .join('.')} w=${Math.round((el as HTMLElement).getBoundingClientRect().width)}`,
-            );
+            .map((el) => {
+              const rect = el.getBoundingClientRect();
+              const cls = [...(el as HTMLElement).classList].slice(0, 3).join('.');
+              return `${el.tagName.toLowerCase()}${cls ? '.' + cls : ''} right=${Math.round(rect.right)}`;
+            });
           return { scrollWidth: document.documentElement.scrollWidth, offenders: wide };
         }, vp.width);
         if (scrollWidth > vp.width + 1) {
