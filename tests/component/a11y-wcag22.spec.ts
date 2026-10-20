@@ -40,13 +40,11 @@ test.describe('WCAG 2.2 AA — axe audit', () => {
       const serious = results.violations.filter(
         (v) => v.impact === 'serious' || v.impact === 'critical',
       );
-      // eslint-disable-next-line no-console
       console.log(
         `[axe ${route}] violations=${results.violations.length} serious+=${serious.length} ` +
           `passes=${results.passes.length} incomplete=${results.incomplete.length}`,
       );
       for (const v of serious) {
-        // eslint-disable-next-line no-console
         console.log(`  ${v.impact}: ${v.id} — ${v.help} (${v.nodes.length} nodes)`);
       }
       expect(serious).toEqual([]);

@@ -13,7 +13,8 @@
  *     GITHUB_SHA, GITHUB_WORKFLOW, GITHUB_JOB) when present — `ci` is null
  *     outside Actions so the script runs locally unchanged
  *   - sha256 + byte size for EVERY uploaded artifact file, recursively:
- *       playwright-report*/**          (phase0 / phase6 / wedge / a11y dirs)
+ *       playwright-report-[name] and all files beneath it
+ *       (phase0 / phase6 / wedge / a11y dirs)
  *       playwright-results-*.json
  *       coverage/lcov.info
  *   - CEIP_PR_HEAD_SHA env (pull_request head sha) so branch SHA and merge
