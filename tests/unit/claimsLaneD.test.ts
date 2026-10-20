@@ -82,7 +82,10 @@ describe('Lane D — claims reconciliation (G13/G16)', () => {
   });
 
   it('pricing copy carries the canonical positioning sentence', () => {
-    expect(read('src/components/PricingPage.tsx')).toContain(CANONICAL_POSITIONING);
+    // Prettier reflows JSX text across lines — normalize whitespace so the
+    // canonical sentence is matched on content, not literal line breaks.
+    const squashed = read('src/components/PricingPage.tsx').replace(/\s+/g, ' ');
+    expect(squashed).toContain(CANONICAL_POSITIONING);
   });
 
   it.each(['README.md', 'docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md', 'docs/marketing/MESSAGING_HIERARCHY.md'])(

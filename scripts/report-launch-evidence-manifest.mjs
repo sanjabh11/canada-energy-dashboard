@@ -5408,8 +5408,12 @@ function gitStatusSummary() {
     : '';
   const dirtyLines = short.split(/\r?\n/).filter(Boolean);
   const dirtyDetails = dirtyLines.slice(0, 40).map(classifyDirtyPath);
+  const branch = gitText(['branch', '--show-current'], '')
+    || process.env.GITHUB_HEAD_REF
+    || process.env.GITHUB_REF_NAME
+    || `detached-${gitText(['rev-parse', '--short', 'HEAD'], 'unknown')}`;
   return {
-    branch: gitText(['branch', '--show-current'], 'unknown'),
+    branch,
     commit: gitText(['rev-parse', '--short', 'HEAD'], 'unknown'),
     dirtyLines,
     dirtyDetails,

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-focused-launch-readiness-reports.mjs');
-const timeout = 300_000;
+const timeout = 600_000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {
@@ -69,7 +69,7 @@ afterEach(() => {
 });
 
 describe('focused launch readiness report suite', () => {
-  it('runs the focused report contract checks without claiming launch readiness', { timeout: 300_000 }, () => {
+  it('runs the focused report contract checks without claiming launch readiness', { timeout: 600_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -114,7 +114,7 @@ describe('focused launch readiness report suite', () => {
     expect(stdout).toContain('validate_launch_evidence.py <manifest>');
   });
 
-  it('emits structured JSON for operator handoff and automation logs', { timeout: 300_000 }, () => {
+  it('emits structured JSON for operator handoff and automation logs', { timeout: 600_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',

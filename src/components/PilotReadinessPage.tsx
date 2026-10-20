@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, ClipboardCheck, FileSearch, LockKeyhole, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowRight,
+  ClipboardCheck,
+  FileSearch,
+  LockKeyhole,
+  ShieldCheck,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
 import {
@@ -36,30 +43,38 @@ export function PilotReadinessPage() {
   const [selectedRoute, setSelectedRoute] = useState(pilotIntakeRoutePlans[0]?.route ?? '');
   const [artifactFileName, setArtifactFileName] = useState('retained-artifact.md');
   const [artifactText, setArtifactText] = useState('');
-  const [artifactHashResult, setArtifactHashResult] = useState<RetainedArtifactHashResult | null>(null);
+  const [artifactHashResult, setArtifactHashResult] = useState<RetainedArtifactHashResult | null>(
+    null,
+  );
   const [artifactHashError, setArtifactHashError] = useState('');
   const [artifactHashPending, setArtifactHashPending] = useState(false);
-  const [artifactSupportPreview, setArtifactSupportPreview] = useState<RetainedArtifactSupportPreview | null>(null);
+  const [artifactSupportPreview, setArtifactSupportPreview] =
+    useState<RetainedArtifactSupportPreview | null>(null);
   const [artifactSupportPreviewError, setArtifactSupportPreviewError] = useState('');
   const [registerText, setRegisterText] = useState('');
   const [registerFileStatus, setRegisterFileStatus] = useState('');
   const [registerFileError, setRegisterFileError] = useState('');
   const [copyStatus, setCopyStatus] = useState('');
   const selectedPlan = useMemo(
-    () => pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ?? pilotIntakeRoutePlans[0],
+    () =>
+      pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ??
+      pilotIntakeRoutePlans[0],
     [selectedRoute],
   );
   const phaseFIntakeSteps = useMemo(() => {
     if (!selectedPlan) return [];
 
-    const commandById = new Map(pilotOperatorCommands.map((command) => [command.id, command.command]));
+    const commandById = new Map(
+      pilotOperatorCommands.map((command) => [command.id, command.command]),
+    );
     return [
       {
         id: 'workspace',
         label: 'Start evidence workspace',
         status: 'Scaffold',
         command: commandById.get('create-workspace') ?? '',
-        evidence: 'Creates outreach, starter-register, retained-artifact, and report folders with confidence_delta=0.',
+        evidence:
+          'Creates outreach, starter-register, retained-artifact, and report folders with confidence_delta=0.',
         gate: 'Not buyer proof; use only as the collection workspace.',
       },
       {
@@ -99,7 +114,8 @@ export function PilotReadinessPage() {
         label: 'Report workspace blockers',
         status: 'Read-only',
         command: commandById.get('report-workspace') ?? '',
-        evidence: 'Summarizes which Phase F lane, hash, reviewer, fast-delivery, and commercial-signal gates remain blocked.',
+        evidence:
+          'Summarizes which Phase F lane, hash, reviewer, fast-delivery, and commercial-signal gates remain blocked.',
         gate: 'Report output does not create buyer evidence.',
       },
       {
@@ -107,7 +123,8 @@ export function PilotReadinessPage() {
         label: 'Run hard 95% gate',
         status: 'Approval gate',
         command: commandById.get('hard-gate') ?? pilotNinetyFiveGateCommand,
-        evidence: 'Requires all three minimum lanes, retained hashes, reviewer acceptance, day-14 proceed, and a real commercial signal.',
+        evidence:
+          'Requires all three minimum lanes, retained hashes, reviewer acceptance, day-14 proceed, and a real commercial signal.',
         gate: 'Passing this gate is required before stronger market-confidence language; failing it keeps launch blocked.',
       },
     ];
@@ -130,18 +147,22 @@ export function PilotReadinessPage() {
     void import('../lib/retainedArtifactSupportPreview')
       .then(({ previewRetainedArtifactSupport }) => {
         if (!active) return;
-        setArtifactSupportPreview(previewRetainedArtifactSupport({
-          fileName: artifactFileName,
-          text: artifactText,
-          route: selectedPlan.route,
-          proofPackId: selectedPlan.proofPackId,
-          artifactReference: artifactHashResult?.reference,
-        }));
+        setArtifactSupportPreview(
+          previewRetainedArtifactSupport({
+            fileName: artifactFileName,
+            text: artifactText,
+            route: selectedPlan.route,
+            proofPackId: selectedPlan.proofPackId,
+            artifactReference: artifactHashResult?.reference,
+          }),
+        );
       })
       .catch(() => {
         if (!active) return;
         setArtifactSupportPreview(null);
-        setArtifactSupportPreviewError('Unable to load retained-artifact support checks. Generate the SHA-256 reference, then run the CLI validator before updating a register row.');
+        setArtifactSupportPreviewError(
+          'Unable to load retained-artifact support checks. Generate the SHA-256 reference, then run the CLI validator before updating a register row.',
+        );
       });
 
     return () => {
@@ -162,7 +183,9 @@ export function PilotReadinessPage() {
       setArtifactHashResult(result);
     } catch (error) {
       setArtifactHashResult(null);
-      setArtifactHashError(error instanceof Error ? error.message : 'Unable to compute retained artifact hash.');
+      setArtifactHashError(
+        error instanceof Error ? error.message : 'Unable to compute retained artifact hash.',
+      );
     } finally {
       setArtifactHashPending(false);
     }
@@ -175,7 +198,9 @@ export function PilotReadinessPage() {
 
     if (!file) return;
     if (file.size > MAX_REGISTER_PREVIEW_BYTES) {
-      setRegisterFileError(`Register file is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_REGISTER_PREVIEW_BYTES)} for browser-only preview.`);
+      setRegisterFileError(
+        `Register file is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_REGISTER_PREVIEW_BYTES)} for browser-only preview.`,
+      );
       event.target.value = '';
       return;
     }
@@ -198,7 +223,7 @@ export function PilotReadinessPage() {
 
   return (
     <div
-      className="min-h-screen bg-slate-950 text-white"
+      className="min-h-screen bg-slate-950 text-slate-50"
       style={{ fontFamily: '"Space Grotesk", "Avenir Next", "Segoe UI", sans-serif' }}
     >
       <SEOHead
@@ -223,19 +248,32 @@ export function PilotReadinessPage() {
                   <ClipboardCheck className="h-5 w-5 text-emerald-100" />
                 </div>
                 <div>
-                  <div className="text-sm uppercase tracking-[0.28em] text-emerald-100/80">Pilot readiness</div>
-                  <div className="text-sm text-slate-300">Evidence gates before stronger market claims</div>
+                  <div className="text-sm uppercase tracking-[0.28em] text-emerald-100/80">
+                    Pilot readiness
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    Evidence gates before stronger market claims
+                  </div>
                 </div>
               </Link>
 
               <nav className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-                <Link to="/solutions" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/35 hover:text-white">
+                <Link
+                  to="/solutions"
+                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/35 hover:text-slate-100"
+                >
                   Solutions
                 </Link>
-                <Link to="/utility-demand-forecast" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/35 hover:text-white">
+                <Link
+                  to="/utility-demand-forecast"
+                  className="rounded-full border border-white/10 px-4 py-2 transition hover:border-emerald-300/35 hover:text-slate-100"
+                >
                   Utility forecast
                 </Link>
-                <Link to="/enterprise" className="rounded-full bg-emerald-300 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-200">
+                <Link
+                  to="/enterprise"
+                  className="rounded-full bg-emerald-300 px-4 py-2 font-semibold text-slate-950 transition hover:bg-emerald-200"
+                >
                   Start a pilot
                 </Link>
               </nav>
@@ -243,14 +281,18 @@ export function PilotReadinessPage() {
 
             <div className="grid gap-10 py-16 lg:grid-cols-[1.2fr_0.8fr] lg:py-20">
               <div>
-                <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">Confidence gate</div>
-                <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                  CEIP has a 95/100 desk-research strategy direction. Buyer evidence is what moves market confidence.
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">
+                  Confidence gate
+                </div>
+                <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight text-slate-50 md:text-6xl">
+                  CEIP has a 95/100 desk-research strategy direction. Buyer evidence is what moves
+                  market confidence.
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-                  This page shows the exact inputs needed before CEIP can honestly move from public-system,
-                  starter, or constructed proof into buyer-specific claims. It keeps pilots fast while blocking
-                  production utility, trading, engineering, certification, and real-customer-data overclaims.
+                  This page shows the exact inputs needed before CEIP can honestly move from
+                  public-system, starter, or constructed proof into buyer-specific claims. It keeps
+                  pilots fast while blocking production utility, trading, engineering,
+                  certification, and real-customer-data overclaims.
                 </p>
               </div>
 
@@ -273,37 +315,50 @@ export function PilotReadinessPage() {
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">Operator runbook</div>
-                <h2 className="mt-4 text-3xl font-semibold text-white md:text-4xl">
-                  The practical next step is a three-lane buyer-evidence workspace, not another demo.
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">
+                  Operator runbook
+                </div>
+                <h2 className="mt-4 text-3xl font-semibold text-slate-50 md:text-4xl">
+                  The practical next step is a three-lane buyer-evidence workspace, not another
+                  demo.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-slate-300">
-                  Use this sequence with real anonymized buyer activity only. It creates the collection workspace,
-                  records route-specific outreach, attaches retained text-inspectable artifacts, and keeps the hard
-                  95% gate blocked until the evidence is actually present.
+                  Use this sequence with real anonymized buyer activity only. It creates the
+                  collection workspace, records route-specific outreach, attaches retained
+                  text-inspectable artifacts, and keeps the hard 95% gate blocked until the evidence
+                  is actually present.
                 </p>
               </div>
 
               <div className="grid gap-4">
                 {pilotMinimumEvidenceLanes.map((lane) => (
-                  <article key={lane.id} className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5">
+                  <article
+                    key={lane.id}
+                    className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5"
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h3 className="text-lg font-semibold text-white">{lane.label}</h3>
+                      <h3 className="text-lg font-semibold text-slate-50">{lane.label}</h3>
                       <div className="text-xs uppercase tracking-[0.18em] text-cyan-100">
                         {lane.routeOptions.join(' or ')}
                       </div>
                     </div>
                     <dl className="mt-4 grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-2">
                       <div>
-                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-400">Proof pack</dt>
+                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-300">
+                          Proof pack
+                        </dt>
                         <dd className="mt-1">{lane.proofPackOptions.join(' or ')}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-400">Manual input</dt>
+                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-300">
+                          Manual input
+                        </dt>
                         <dd className="mt-1">{lane.requiredManualInput}</dd>
                       </div>
                       <div className="md:col-span-2">
-                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-400">Acceptance signal</dt>
+                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-300">
+                          Acceptance signal
+                        </dt>
                         <dd className="mt-1">{lane.acceptanceSignal}</dd>
                       </div>
                     </dl>
@@ -314,17 +369,27 @@ export function PilotReadinessPage() {
 
             <div className="mt-10 grid gap-4">
               {pilotOperatorCommands.map((item, index) => (
-                <article key={item.id} className="min-w-0 rounded-2xl border border-white/10 bg-black/25 p-5">
+                <article
+                  key={item.id}
+                  className="min-w-0 rounded-2xl border border-white/10 bg-black/25 p-5"
+                >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
                         Step {index + 1}
                       </div>
-                      <h3 className="mt-2 text-lg font-semibold text-white">{item.label}</h3>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-50">{item.label}</h3>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{item.whenToUse}</p>
                     </div>
-                    <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-emerald-200/15 bg-slate-950 p-3 lg:max-w-2xl">
-                      <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{item.command}</code>
+                    <div
+                      className="w-full min-w-0 overflow-x-auto rounded-xl border border-emerald-200/15 bg-slate-950 p-3 lg:max-w-2xl"
+                      role="region"
+                      aria-label={`${item.label} command`}
+                      tabIndex={0}
+                    >
+                      <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">
+                        {item.command}
+                      </code>
                     </div>
                   </div>
                 </article>
@@ -332,7 +397,10 @@ export function PilotReadinessPage() {
             </div>
 
             {selectedPlan && (
-              <div data-testid="phase-f-intake-wizard" className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
+              <div
+                data-testid="phase-f-intake-wizard"
+                className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6"
+              >
                 <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
                   <div className="min-w-0">
                     <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">
@@ -342,25 +410,31 @@ export function PilotReadinessPage() {
                       Follow the buyer-evidence path without turning scaffolding into proof.
                     </h2>
                     <p className="mt-4 text-sm leading-6 text-slate-300">
-                      This sequence keeps {selectedPlan.label} tied to the minimum Phase F lane map. It separates
-                      collection setup, real buyer reply evidence, retained artifact hashing, register update, workspace
-                      reporting, and the hard 95% gate.
+                      This sequence keeps {selectedPlan.label} tied to the minimum Phase F lane map.
+                      It separates collection setup, real buyer reply evidence, retained artifact
+                      hashing, register update, workspace reporting, and the hard 95% gate.
                     </p>
                     <div className="mt-5 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 text-sm leading-6 text-amber-50">
-                      None of these steps raises market confidence until the filled register and retained artifacts pass
-                      the canonical validator with real buyer-supplied evidence.
+                      None of these steps raises market confidence until the filled register and
+                      retained artifacts pass the canonical validator with real buyer-supplied
+                      evidence.
                     </div>
                   </div>
 
                   <div className="grid min-w-0 gap-4">
                     {phaseFIntakeSteps.map((step, index) => (
-                      <article key={step.id} className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                      <article
+                        key={step.id}
+                        className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5"
+                      >
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div className="min-w-0">
                             <div className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">
                               Step {index + 1}
                             </div>
-                            <h3 className="mt-2 text-lg font-semibold text-slate-50">{step.label}</h3>
+                            <h3 className="mt-2 text-lg font-semibold text-slate-50">
+                              {step.label}
+                            </h3>
                             <p className="mt-2 text-sm leading-6 text-slate-300">{step.evidence}</p>
                           </div>
                           <span className="inline-flex shrink-0 items-center justify-center rounded-full border border-cyan-200/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
@@ -368,7 +442,9 @@ export function PilotReadinessPage() {
                           </span>
                         </div>
                         <div className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
-                          <code className="whitespace-nowrap text-xs leading-6 text-cyan-100">{step.command}</code>
+                          <code className="whitespace-nowrap text-xs leading-6 text-cyan-100">
+                            {step.command}
+                          </code>
                         </div>
                         <div className="mt-3 rounded-xl border border-amber-200/10 bg-amber-300/[0.07] p-3 text-sm leading-6 text-amber-50">
                           {step.gate}
@@ -391,23 +467,27 @@ export function PilotReadinessPage() {
                     <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">
                       Route-aware intake planner
                     </div>
-                    <h2 className="mt-4 text-2xl font-semibold text-white md:text-3xl">
+                    <h2 className="mt-4 text-2xl font-semibold text-slate-50 md:text-3xl">
                       Pick the proof-pack lane before running a real outreach or intake command.
                     </h2>
                     <p className="mt-4 text-sm leading-6 text-slate-300">
-                      The selector keeps the route, proof_pack_id, buyer lane, manual input, and do-not-claim boundary
-                      together. It still creates collection records only; confidence movement stays blocked until retained
-                      buyer artifacts, reviewer acceptance, day-14 proceed, and commercial evidence are attached.
+                      The selector keeps the route, proof_pack_id, buyer lane, manual input, and
+                      do-not-claim boundary together. It still creates collection records only;
+                      confidence movement stays blocked until retained buyer artifacts, reviewer
+                      acceptance, day-14 proceed, and commercial evidence are attached.
                     </p>
 
-                    <label htmlFor="pilot-intake-route" className="mt-6 block text-sm font-semibold text-emerald-100">
+                    <label
+                      htmlFor="pilot-intake-route"
+                      className="mt-6 block text-sm font-semibold text-emerald-100"
+                    >
                       Buyer proof-pack route
                     </label>
                     <select
                       id="pilot-intake-route"
                       value={selectedRoute}
                       onChange={(event) => setSelectedRoute(event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-emerald-200/25 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
+                      className="mt-2 w-full rounded-2xl border border-emerald-200/25 bg-slate-950 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
                     >
                       {pilotIntakeRoutePlans.map((plan) => (
                         <option key={plan.route} value={plan.route}>
@@ -419,27 +499,50 @@ export function PilotReadinessPage() {
                     <dl className="mt-5 grid gap-3 text-sm leading-6 text-slate-200">
                       <RoutePlanInfo label="Buyer lane" value={selectedPlan.buyerLane} />
                       <RoutePlanInfo label="Proof pack ID" value={selectedPlan.proofPackId} />
-                      <RoutePlanInfo label="Current rating" value={`${selectedPlan.rating}/5 before buyer evidence`} />
-                      <RoutePlanInfo label="Required manual input" value={selectedPlan.requiredInput} />
+                      <RoutePlanInfo
+                        label="Current rating"
+                        value={`${selectedPlan.rating}/5 before buyer evidence`}
+                      />
+                      <RoutePlanInfo
+                        label="Required manual input"
+                        value={selectedPlan.requiredInput}
+                      />
                     </dl>
                   </div>
 
                   <div className="grid min-w-0 gap-4">
                     <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Claim boundary</div>
-                      <div className="mt-2 text-sm leading-6 text-slate-200">{selectedPlan.claimBoundary}</div>
-                      <div className="mt-3 text-xs uppercase tracking-[0.2em] text-amber-100">Do not claim</div>
-                      <div className="mt-2 text-sm leading-6 text-slate-200">{selectedPlan.doNotClaim}</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-300">
+                        Claim boundary
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-slate-200">
+                        {selectedPlan.claimBoundary}
+                      </div>
+                      <div className="mt-3 text-xs uppercase tracking-[0.2em] text-amber-100">
+                        Do not claim
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-slate-200">
+                        {selectedPlan.doNotClaim}
+                      </div>
                     </div>
 
-                    <CommandBlock label="Append outreach row" command={selectedPlan.outreachCommand} />
-                    <CommandBlock label="Create intake packet" command={selectedPlan.intakePacketCommand} />
-                    <CommandBlock label="Attach retained artifact" command={selectedPlan.registerUpdateCommand} />
+                    <CommandBlock
+                      label="Append outreach row"
+                      command={selectedPlan.outreachCommand}
+                    />
+                    <CommandBlock
+                      label="Create intake packet"
+                      command={selectedPlan.intakePacketCommand}
+                    />
+                    <CommandBlock
+                      label="Attach retained artifact"
+                      command={selectedPlan.registerUpdateCommand}
+                    />
 
                     <div className="rounded-2xl border border-cyan-200/15 bg-cyan-300/10 p-5 text-sm leading-6 text-slate-200">
-                      Run the 95% retained-evidence gate only after all three minimum lanes have accepted buyer artifacts,
-                      matching SHA-256 references, complete reviewer feedback, day_14_decision=proceed, and a real
-                      commercial signal.
+                      Run the 95% retained-evidence gate only after all three minimum lanes have
+                      accepted buyer artifacts, matching SHA-256 references, complete reviewer
+                      feedback, day_14_decision=proceed, and a real commercial signal.
                     </div>
                   </div>
                 </div>
@@ -451,24 +554,34 @@ export function PilotReadinessPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 text-cyan-100">
                     <FileSearch className="h-5 w-5" />
-                    <span className="text-sm uppercase tracking-[0.26em]">Retained artifact hash helper</span>
+                    <span className="text-sm uppercase tracking-[0.26em]">
+                      Retained artifact hash helper
+                    </span>
                   </div>
-                  <h2 className="mt-4 text-2xl font-semibold text-white md:text-3xl">
+                  <h2 className="mt-4 text-2xl font-semibold text-slate-50 md:text-3xl">
                     Hash the redacted retained extract before updating the evidence register.
                   </h2>
                   <p className="mt-4 text-sm leading-6 text-slate-300">
-                    Use this only after the original buyer file has been reduced to a text-inspectable retained artifact.
-                    The browser computes a SHA-256 reference locally from the pasted retained text. Do not paste raw buyer
-                    files, account numbers, meter identifiers, secrets, or unapproved personal data.
+                    Use this only after the original buyer file has been reduced to a
+                    text-inspectable retained artifact. The browser computes a SHA-256 reference
+                    locally from the pasted retained text. Do not paste raw buyer files, account
+                    numbers, meter identifiers, secrets, or unapproved personal data.
                   </p>
                   <div className="mt-5 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 text-sm leading-6 text-amber-50">
-                    This helper creates a hash reference only. It does not prove reviewer acceptance, commercial commitment,
-                    day_14_decision=proceed, or confidence_delta movement.
+                    This helper creates a hash reference only. It does not prove reviewer
+                    acceptance, commercial commitment, day_14_decision=proceed, or confidence_delta
+                    movement.
                   </div>
                 </div>
 
-                <form onSubmit={handleRetainedArtifactHash} className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-                  <label htmlFor="retained-artifact-file-name" className="block text-sm font-semibold text-cyan-100">
+                <form
+                  onSubmit={handleRetainedArtifactHash}
+                  className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5"
+                >
+                  <label
+                    htmlFor="retained-artifact-file-name"
+                    className="block text-sm font-semibold text-cyan-100"
+                  >
                     Retained artifact filename
                   </label>
                   <input
@@ -478,11 +591,14 @@ export function PilotReadinessPage() {
                       setArtifactFileName(event.target.value);
                       setArtifactHashResult(null);
                     }}
-                    className="mt-2 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
+                    className="mt-2 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
                     placeholder="redacted-utility-forecast-retained.md"
                   />
 
-                  <label htmlFor="retained-artifact-text" className="mt-5 block text-sm font-semibold text-cyan-100">
+                  <label
+                    htmlFor="retained-artifact-text"
+                    className="mt-5 block text-sm font-semibold text-cyan-100"
+                  >
                     Redacted retained artifact text
                   </label>
                   <textarea
@@ -492,14 +608,19 @@ export function PilotReadinessPage() {
                       setArtifactText(event.target.value);
                       setArtifactHashResult(null);
                     }}
-                    className="mt-2 min-h-44 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
+                    className="mt-2 min-h-44 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-slate-50 outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
                     placeholder="Paste only the retained extract: schema, completeness, reviewer notes, source labels, and no raw buyer values."
                   />
 
                   {artifactSupportPreview && (
                     <RetainedArtifactManager
                       preview={artifactSupportPreview}
-                      onCopyCommand={() => handleCopy(artifactSupportPreview.updateCommand, 'Retained artifact update command')}
+                      onCopyCommand={() =>
+                        handleCopy(
+                          artifactSupportPreview.updateCommand,
+                          'Retained artifact update command',
+                        )
+                      }
                     />
                   )}
 
@@ -527,25 +648,40 @@ export function PilotReadinessPage() {
                   {artifactHashResult && (
                     <div className="mt-5 space-y-4 rounded-2xl border border-emerald-200/15 bg-emerald-300/10 p-4">
                       <div>
-                        <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Evidence reference</div>
+                        <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
+                          Evidence reference
+                        </div>
                         <code className="mt-2 block break-all rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-emerald-100">
                           {artifactHashResult.reference}
                         </code>
                         <CopyButton
                           label="Copy evidence reference"
-                          onClick={() => handleCopy(artifactHashResult.reference, 'Evidence reference')}
+                          onClick={() =>
+                            handleCopy(artifactHashResult.reference, 'Evidence reference')
+                          }
                         />
                       </div>
 
                       <dl className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-3">
-                        <RoutePlanInfo label="Normalized file" value={artifactHashResult.fileName} />
-                        <RoutePlanInfo label="Bytes hashed" value={`${artifactHashResult.byteLength}`} />
-                        <RoutePlanInfo label="Line count" value={`${artifactHashResult.lineCount}`} />
+                        <RoutePlanInfo
+                          label="Normalized file"
+                          value={artifactHashResult.fileName}
+                        />
+                        <RoutePlanInfo
+                          label="Bytes hashed"
+                          value={`${artifactHashResult.byteLength}`}
+                        />
+                        <RoutePlanInfo
+                          label="Line count"
+                          value={`${artifactHashResult.lineCount}`}
+                        />
                       </dl>
 
                       {artifactHashResult.warnings.length > 0 ? (
                         <div className="rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">
-                          <div className="text-xs uppercase tracking-[0.2em] text-amber-100">Review warnings</div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-amber-100">
+                            Review warnings
+                          </div>
                           <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-50">
                             {artifactHashResult.warnings.map((warning) => (
                               <li key={warning} className="flex gap-2">
@@ -557,8 +693,8 @@ export function PilotReadinessPage() {
                         </div>
                       ) : (
                         <div className="rounded-2xl border border-emerald-200/15 bg-slate-950/50 p-4 text-sm leading-6 text-emerald-100">
-                          No retained-artifact warnings were detected. Still verify the extract manually before attaching it
-                          to the buyer-evidence register.
+                          No retained-artifact warnings were detected. Still verify the extract
+                          manually before attaching it to the buyer-evidence register.
                         </div>
                       )}
                     </div>
@@ -567,46 +703,62 @@ export function PilotReadinessPage() {
               </div>
             </div>
 
-            <div data-testid="pilot-register-preview" className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+            <div
+              data-testid="pilot-register-preview"
+              className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6"
+            >
               <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 text-emerald-100">
                     <ClipboardCheck className="h-5 w-5" />
-                    <span className="text-sm uppercase tracking-[0.26em]">95% register preview</span>
+                    <span className="text-sm uppercase tracking-[0.26em]">
+                      95% register preview
+                    </span>
                   </div>
-                  <h2 className="mt-4 text-2xl font-semibold text-white md:text-3xl">
-                    Check whether a local buyer-evidence register is even close before running the hard gate.
+                  <h2 className="mt-4 text-2xl font-semibold text-slate-50 md:text-3xl">
+                    Check whether a local buyer-evidence register is even close before running the
+                    hard gate.
                   </h2>
                   <p className="mt-4 text-sm leading-6 text-slate-300">
-                    Paste or select the filled register CSV to preview obvious 95% blockers in the browser. The file is
-                    read locally and is not uploaded. This preview is intentionally narrower than the canonical CLI; the
-                    final gate remains the validator command below with an evidence-root directory.
+                    Paste or select the filled register CSV to preview obvious 95% blockers in the
+                    browser. The file is read locally and is not uploaded. This preview is
+                    intentionally narrower than the canonical CLI; the final gate remains the
+                    validator command below with an evidence-root directory.
                   </p>
                   <div className="mt-5 overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4">
-                    <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{pilotNinetyFiveGateCommand}</code>
+                    <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">
+                      {pilotNinetyFiveGateCommand}
+                    </code>
                   </div>
                   <CopyButton
                     label="Copy 95% gate command"
                     onClick={() => handleCopy(pilotNinetyFiveGateCommand, '95% gate command')}
                   />
                   <div className="mt-5 rounded-2xl border border-cyan-200/15 bg-cyan-300/10 p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Readiness report command</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">
+                      Readiness report command
+                    </div>
                     <p className="mt-2 text-xs leading-5 text-slate-300">
-                      Run this non-mutating report first when the question is what still blocks Phase F, not whether the
-                      hard 95% gate can already pass.
+                      Run this non-mutating report first when the question is what still blocks
+                      Phase F, not whether the hard 95% gate can already pass.
                     </p>
                     <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
                       {pilotBuyerEvidenceReadinessCommand}
                     </code>
                     <CopyButton
                       label="Copy readiness report command"
-                      onClick={() => handleCopy(pilotBuyerEvidenceReadinessCommand, 'Readiness report command')}
+                      onClick={() =>
+                        handleCopy(pilotBuyerEvidenceReadinessCommand, 'Readiness report command')
+                      }
                     />
                   </div>
                 </div>
 
                 <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-                  <label htmlFor="pilot-register-local-file" className="block text-sm font-semibold text-emerald-100">
+                  <label
+                    htmlFor="pilot-register-local-file"
+                    className="block text-sm font-semibold text-emerald-100"
+                  >
                     Local filled register CSV
                   </label>
                   <input
@@ -614,10 +766,11 @@ export function PilotReadinessPage() {
                     type="file"
                     accept=".csv,text/csv"
                     onChange={handleRegisterFileChange}
-                    className="mt-2 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm text-white file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
+                    className="mt-2 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm text-slate-50 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
                   />
-                  <div className="mt-2 text-xs leading-5 text-slate-400">
-                    Max file size: {formatBytes(MAX_REGISTER_PREVIEW_BYTES)}. Use redacted register rows only.
+                  <div className="mt-2 text-xs leading-5 text-slate-300">
+                    Max file size: {formatBytes(MAX_REGISTER_PREVIEW_BYTES)}. Use redacted register
+                    rows only.
                   </div>
 
                   {registerFileStatus && (
@@ -631,7 +784,10 @@ export function PilotReadinessPage() {
                     </div>
                   )}
 
-                  <label htmlFor="pilot-register-csv-text" className="mt-5 block text-sm font-semibold text-emerald-100">
+                  <label
+                    htmlFor="pilot-register-csv-text"
+                    className="mt-5 block text-sm font-semibold text-emerald-100"
+                  >
                     Register CSV text
                   </label>
                   <textarea
@@ -642,7 +798,7 @@ export function PilotReadinessPage() {
                       setRegisterFileStatus('');
                       setRegisterFileError('');
                     }}
-                    className="mt-2 min-h-44 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
+                    className="mt-2 min-h-44 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-slate-50 outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
                     placeholder="Paste the filled 24-column pilot evidence register CSV here."
                   />
 
@@ -651,24 +807,40 @@ export function PilotReadinessPage() {
                       <div className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-4">
                         <RoutePlanInfo label="Rows" value={`${registerPreview.rowCount}`} />
                         <RoutePlanInfo label="Columns" value={`${registerPreview.columnCount}`} />
-                        <RoutePlanInfo label="Accepted rows" value={`${registerPreview.acceptedConfidenceRowCount}`} />
-                        <RoutePlanInfo label="Confidence delta" value={`${registerPreview.totalAcceptedConfidenceDelta}`} />
+                        <RoutePlanInfo
+                          label="Accepted rows"
+                          value={`${registerPreview.acceptedConfidenceRowCount}`}
+                        />
+                        <RoutePlanInfo
+                          label="Confidence delta"
+                          value={`${registerPreview.totalAcceptedConfidenceDelta}`}
+                        />
                       </div>
 
-                      <div data-testid="buyer-evidence-readiness-dashboard" className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-4">
+                      <div
+                        data-testid="buyer-evidence-readiness-dashboard"
+                        className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-4"
+                      >
                         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                           <div>
-                            <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Buyer evidence readiness dashboard</div>
+                            <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">
+                              Buyer evidence readiness dashboard
+                            </div>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
-                              Local browser preview only. This dashboard does not create buyer evidence, production
-                              approval, or confidence movement; the canonical CLI gate below remains final.
+                              Local browser preview only. This dashboard does not create buyer
+                              evidence, production approval, or confidence movement; the canonical
+                              CLI gate below remains final.
                             </p>
                           </div>
                           <GateStatusPill
                             status={
-                              registerPreview.readinessMetrics.some((metric) => metric.status === 'blocked')
+                              registerPreview.readinessMetrics.some(
+                                (metric) => metric.status === 'blocked',
+                              )
                                 ? 'blocked'
-                                : registerPreview.readinessMetrics.some((metric) => metric.status === 'warning')
+                                : registerPreview.readinessMetrics.some(
+                                      (metric) => metric.status === 'warning',
+                                    )
                                   ? 'warning'
                                   : 'pass'
                             }
@@ -682,7 +854,7 @@ export function PilotReadinessPage() {
                         </div>
 
                         <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
-                          <div className="grid gap-3 bg-slate-950/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 md:grid-cols-[0.8fr_0.55fr_1fr_1.2fr]">
+                          <div className="grid gap-3 bg-slate-950/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-300 md:grid-cols-[0.8fr_0.55fr_1fr_1.2fr]">
                             <div>Minimum lane</div>
                             <div>Status</div>
                             <div>Accepted rows</div>
@@ -697,15 +869,17 @@ export function PilotReadinessPage() {
                               >
                                 <div>
                                   <div className="font-semibold text-slate-50">{lane.label}</div>
-                                  <div className="mt-1 text-xs text-slate-400">{lane.evidence}</div>
+                                  <div className="mt-1 text-xs text-slate-300">{lane.evidence}</div>
                                 </div>
                                 <div>
                                   <GateStatusPill status={lane.status} />
                                 </div>
                                 <div>
                                   <div>{lane.acceptedRowCount}</div>
-                                  <div className="mt-1 break-words text-xs text-slate-400">
-                                    {lane.proofPackIds.length > 0 ? lane.proofPackIds.join(', ') : 'No accepted proof pack'}
+                                  <div className="mt-1 break-words text-xs text-slate-300">
+                                    {lane.proofPackIds.length > 0
+                                      ? lane.proofPackIds.join(', ')
+                                      : 'No accepted proof pack'}
                                   </div>
                                 </div>
                                 <div className="text-slate-300">{lane.nextAction}</div>
@@ -715,15 +889,25 @@ export function PilotReadinessPage() {
                         </div>
                       </div>
 
-                      {(registerPreview.warnings.length > 0 || registerPreview.missingRequiredColumns.length > 0 || registerPreview.forbiddenColumnsFound.length > 0) && (
+                      {(registerPreview.warnings.length > 0 ||
+                        registerPreview.missingRequiredColumns.length > 0 ||
+                        registerPreview.forbiddenColumnsFound.length > 0) && (
                         <div className="rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">
-                          <div className="text-xs uppercase tracking-[0.2em] text-amber-100">Preview warnings</div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-amber-100">
+                            Preview warnings
+                          </div>
                           <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-50">
                             {registerPreview.missingRequiredColumns.length > 0 && (
-                              <li>Missing required columns: {registerPreview.missingRequiredColumns.join(', ')}</li>
+                              <li>
+                                Missing required columns:{' '}
+                                {registerPreview.missingRequiredColumns.join(', ')}
+                              </li>
                             )}
                             {registerPreview.forbiddenColumnsFound.length > 0 && (
-                              <li>Forbidden sensitive columns: {registerPreview.forbiddenColumnsFound.join(', ')}</li>
+                              <li>
+                                Forbidden sensitive columns:{' '}
+                                {registerPreview.forbiddenColumnsFound.join(', ')}
+                              </li>
                             )}
                             {registerPreview.warnings.map((warning) => (
                               <li key={warning}>{warning}</li>
@@ -741,10 +925,16 @@ export function PilotReadinessPage() {
                           >
                             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                               <div>
-                                <div className="text-sm font-semibold text-white">{gate.label}</div>
-                                <div className="mt-2 text-sm leading-6 text-slate-300">{gate.evidence}</div>
+                                <div className="text-sm font-semibold text-slate-50">
+                                  {gate.label}
+                                </div>
+                                <div className="mt-2 text-sm leading-6 text-slate-300">
+                                  {gate.evidence}
+                                </div>
                                 {gate.status !== 'pass' && (
-                                  <div className="mt-2 text-sm leading-6 text-amber-100">{gate.nextAction}</div>
+                                  <div className="mt-2 text-sm leading-6 text-amber-100">
+                                    {gate.nextAction}
+                                  </div>
                                 )}
                               </div>
                               <GateStatusPill status={gate.status} />
@@ -753,20 +943,27 @@ export function PilotReadinessPage() {
                         ))}
                       </div>
                       <div className="rounded-2xl border border-cyan-200/15 bg-cyan-300/10 p-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Canonical validator command</div>
+                        <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">
+                          Canonical validator command
+                        </div>
                         <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
                           {registerPreview.cliCommand}
                         </code>
                         <CopyButton
                           label="Copy validator command"
-                          onClick={() => handleCopy(registerPreview.cliCommand, 'Validator command')}
+                          onClick={() =>
+                            handleCopy(registerPreview.cliCommand, 'Validator command')
+                          }
                         />
                       </div>
                     </div>
                   )}
 
                   {copyStatus && (
-                    <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-sm leading-6 text-slate-200" role="status">
+                    <div
+                      className="mt-5 rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-sm leading-6 text-slate-200"
+                      role="status"
+                    >
                       {copyStatus}
                     </div>
                   )}
@@ -782,13 +979,16 @@ export function PilotReadinessPage() {
               <FileSearch className="h-5 w-5" />
               <span className="text-sm uppercase tracking-[0.26em]">Evidence intake</span>
             </div>
-            <h2 className="mt-4 text-3xl font-semibold text-white md:text-4xl">
+            <h2 className="mt-4 text-3xl font-semibold text-slate-50 md:text-4xl">
               What the buyer must supply before stronger claims are allowed
             </h2>
 
             <div className="mt-10 grid gap-5">
               {pilotEvidenceRequirements.map((item) => (
-                <article key={item.id} className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
+                <article
+                  key={item.id}
+                  className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
+                >
                   <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -799,7 +999,7 @@ export function PilotReadinessPage() {
                           {item.requiredFor}
                         </span>
                       </div>
-                      <h3 className="mt-4 text-2xl font-semibold text-white">{item.title}</h3>
+                      <h3 className="mt-4 text-2xl font-semibold text-slate-50">{item.title}</h3>
                       <p className="mt-3 text-sm leading-6 text-slate-300">{item.minimumInput}</p>
                       <Link
                         to={item.route}
@@ -818,10 +1018,14 @@ export function PilotReadinessPage() {
                           <LockKeyhole className="h-4 w-4" />
                           Blocked without evidence
                         </div>
-                        <div className="mt-2 text-sm leading-6 text-slate-100">{item.blockedClaim}</div>
+                        <div className="mt-2 text-sm leading-6 text-slate-100">
+                          {item.blockedClaim}
+                        </div>
                       </div>
                       <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 md:col-span-2">
-                        <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Acceptance checks</div>
+                        <div className="text-xs uppercase tracking-[0.2em] text-slate-300">
+                          Acceptance checks
+                        </div>
                         <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-200">
                           {item.acceptance.map((check) => (
                             <li key={check} className="flex gap-2">
@@ -845,22 +1049,26 @@ export function PilotReadinessPage() {
               <ClipboardCheck className="h-5 w-5" />
               <span className="text-sm uppercase tracking-[0.26em]">Pilot outcome scorecard</span>
             </div>
-            <h2 className="mt-4 text-3xl font-semibold text-white md:text-4xl">
+            <h2 className="mt-4 text-3xl font-semibold text-slate-50 md:text-4xl">
               What must be measured before CEIP can claim stronger market proof
             </h2>
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-              These metrics keep the 14-day pilot focused on evidence that a buyer can review, reuse, and challenge.
-              They do not replace buyer data; they define how buyer data changes confidence.
+              These metrics keep the 14-day pilot focused on evidence that a buyer can review,
+              reuse, and challenge. They do not replace buyer data; they define how buyer data
+              changes confidence.
             </p>
 
             <div className="mt-10 grid gap-4 lg:grid-cols-2">
               {pilotOutcomeMetrics.map((metric) => (
-                <article key={metric.id} className="rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+                <article
+                  key={metric.id}
+                  className="rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-xl font-semibold text-white">{metric.label}</h3>
+                    <h3 className="text-xl font-semibold text-slate-50">{metric.label}</h3>
                     <Link
                       to={metric.route}
-                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100 transition hover:border-emerald-200/50 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100 transition hover:border-emerald-200/50 hover:text-slate-100"
                     >
                       Evidence route
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -868,15 +1076,21 @@ export function PilotReadinessPage() {
                   </div>
                   <dl className="mt-5 space-y-4 border-t border-white/10 pt-5 text-sm leading-6">
                     <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Required evidence</dt>
+                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
+                        Required evidence
+                      </dt>
                       <dd className="mt-1 text-slate-200">{metric.requiredEvidence}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Measurement syntax</dt>
+                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
+                        Measurement syntax
+                      </dt>
                       <dd className="mt-1 text-slate-200">{metric.howToMeasure}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Confidence use</dt>
+                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
+                        Confidence use
+                      </dt>
                       <dd className="mt-1 text-slate-200">{metric.confidenceUse}</dd>
                     </div>
                   </dl>
@@ -890,23 +1104,31 @@ export function PilotReadinessPage() {
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
               <div className="min-w-0">
-                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">95% market gate</div>
-                <h2 className="mt-4 text-3xl font-semibold text-white">
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">
+                  95% market gate
+                </div>
+                <h2 className="mt-4 text-3xl font-semibold text-slate-50">
                   CEIP cannot claim 95% until the filled buyer-evidence register passes this gate.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-slate-300">
-                  This command is the hard stop before moving from strategic readiness to stronger market-confidence language.
-                  Public samples, constructed cases, and single-route pilot wins are not enough.
+                  This command is the hard stop before moving from strategic readiness to stronger
+                  market-confidence language. Public samples, constructed cases, and single-route
+                  pilot wins are not enough.
                 </p>
                 <div className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-black/30 p-4">
-                  <code className="whitespace-nowrap text-sm text-cyan-100">{pilotNinetyFiveGateCommand}</code>
+                  <code className="whitespace-nowrap text-sm text-cyan-100">
+                    {pilotNinetyFiveGateCommand}
+                  </code>
                 </div>
               </div>
 
               <div className="grid min-w-0 gap-3">
                 {pilotNinetyFiveGates.map((gate) => (
-                  <div key={gate.id} className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5">
-                    <div className="text-sm font-semibold text-white">{gate.label}</div>
+                  <div
+                    key={gate.id}
+                    className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5"
+                  >
+                    <div className="text-sm font-semibold text-slate-50">{gate.label}</div>
                     <div className="mt-2 text-sm leading-6 text-slate-300">{gate.evidence}</div>
                   </div>
                 ))}
@@ -919,21 +1141,28 @@ export function PilotReadinessPage() {
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">Confidence rules</div>
-                <h2 className="mt-4 text-3xl font-semibold text-white">
+                <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">
+                  Confidence rules
+                </div>
+                <h2 className="mt-4 text-3xl font-semibold text-slate-50">
                   Evidence changes confidence only when it is buyer-specific and reviewable.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-slate-300">
-                  Constructed samples prove workflow shape, not market outcome. Ratings move only after buyer data,
-                  accepted artifacts, reviewer feedback, or paid pilot evidence.
+                  Constructed samples prove workflow shape, not market outcome. Ratings move only
+                  after buyer data, accepted artifacts, reviewer feedback, or paid pilot evidence.
                 </p>
               </div>
 
               <div className="grid gap-3">
                 {pilotConfidenceRules.map((rule) => (
-                  <div key={rule.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                    <div className="text-sm font-semibold text-white">{rule.evidenceState}</div>
-                    <div className="mt-2 text-sm leading-6 text-slate-300">{rule.confidenceMovement}</div>
+                  <div
+                    key={rule.id}
+                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"
+                  >
+                    <div className="text-sm font-semibold text-slate-50">{rule.evidenceState}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-300">
+                      {rule.confidenceMovement}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -948,12 +1177,15 @@ export function PilotReadinessPage() {
                 <AlertTriangle className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.26em]">Stop conditions</span>
               </div>
-              <h2 className="mt-4 text-3xl font-semibold text-white">
+              <h2 className="mt-4 text-3xl font-semibold text-slate-50">
                 Park the pilot when the requested outcome outruns the proof.
               </h2>
               <div className="mt-6 grid gap-3 md:grid-cols-2">
                 {pilotStopConditions.map((condition) => (
-                  <div key={condition} className="rounded-2xl border border-red-200/10 bg-slate-950/50 p-4 text-sm leading-6 text-slate-200">
+                  <div
+                    key={condition}
+                    className="rounded-2xl border border-red-200/10 bg-slate-950/50 p-4 text-sm leading-6 text-slate-200"
+                  >
                     {condition}
                   </div>
                 ))}
@@ -969,7 +1201,7 @@ export function PilotReadinessPage() {
 function Metric({ value, label }: { value: string; label: string }) {
   return (
     <div className="min-w-0 rounded-[1.4rem] border border-white/10 bg-black/20 p-5">
-      <div className="text-3xl font-semibold text-white">{value}</div>
+      <div className="text-3xl font-semibold text-slate-50">{value}</div>
       <div className="mt-2 text-sm text-slate-300">{label}</div>
     </div>
   );
@@ -978,7 +1210,7 @@ function Metric({ value, label }: { value: string; label: string }) {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</div>
+      <div className="text-xs uppercase tracking-[0.2em] text-slate-300">{label}</div>
       <div className="mt-2 break-words text-sm leading-6 text-slate-200">{value}</div>
     </div>
   );
@@ -1012,26 +1244,42 @@ function RetainedArtifactManager({
   onCopyCommand: () => void;
 }) {
   return (
-    <div data-testid="retained-artifact-manager" className="mt-5 rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-4">
+    <div
+      data-testid="retained-artifact-manager"
+      className="mt-5 rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-4"
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Retained artifact manager</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">
+            Retained artifact manager
+          </div>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            Browser-local preflight only. These checks make the extract easier for the CLI validator to inspect; they do
-            not upload files, approve buyer evidence, or move confidence.
+            Browser-local preflight only. These checks make the extract easier for the CLI validator
+            to inspect; they do not upload files, approve buyer evidence, or move confidence.
           </p>
           <div className="mt-2 text-sm leading-6 text-slate-200">{preview.summary}</div>
         </div>
         <GateStatusPill status={preview.status} />
       </div>
 
-      <RetainedArtifactCheckGrid title="Required support fields" checks={preview.supportChecks} testIdPrefix="retained-artifact-manager-check" />
-      <RetainedArtifactCheckGrid title="Route diagnostics" checks={preview.diagnosticChecks} testIdPrefix="retained-artifact-manager-diagnostic" />
+      <RetainedArtifactCheckGrid
+        title="Required support fields"
+        checks={preview.supportChecks}
+        testIdPrefix="retained-artifact-manager-check"
+      />
+      <RetainedArtifactCheckGrid
+        title="Route diagnostics"
+        checks={preview.diagnosticChecks}
+        testIdPrefix="retained-artifact-manager-diagnostic"
+      />
 
       <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-        <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Register-ready update command</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">
+          Register-ready update command
+        </div>
         <p className="mt-2 text-sm leading-6 text-slate-300">
-          Use this only after the retained artifact is final and the SHA-256 reference has been generated from the final text.
+          Use this only after the retained artifact is final and the SHA-256 reference has been
+          generated from the final text.
         </p>
         <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
           {preview.updateCommand}
@@ -1055,7 +1303,7 @@ function RetainedArtifactCheckGrid({
 
   return (
     <div className="mt-5">
-      <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{title}</div>
+      <div className="text-xs uppercase tracking-[0.18em] text-slate-300">{title}</div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {checks.map((check) => (
           <div
@@ -1080,14 +1328,17 @@ function RetainedArtifactCheckGrid({
 
 function GateStatusPill({ status }: { status: 'pass' | 'blocked' | 'warning' }) {
   const label = status === 'pass' ? 'Pass' : status === 'warning' ? 'Review' : 'Blocked';
-  const className = status === 'pass'
-    ? 'border-emerald-200/30 bg-emerald-300/15 text-emerald-100'
-    : status === 'warning'
-      ? 'border-amber-200/30 bg-amber-300/15 text-amber-100'
-      : 'border-red-200/30 bg-red-500/15 text-red-100';
+  const className =
+    status === 'pass'
+      ? 'border-emerald-200/30 bg-emerald-300/15 text-emerald-100'
+      : status === 'warning'
+        ? 'border-amber-200/30 bg-amber-300/15 text-amber-100'
+        : 'border-red-200/30 bg-red-500/15 text-red-100';
 
   return (
-    <span className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${className}`}>
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${className}`}
+    >
       {label}
     </span>
   );
@@ -1101,7 +1352,7 @@ function ReadinessMetricCard({ metric }: { metric: PilotEvidenceReadinessMetric 
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{metric.label}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-300">{metric.label}</div>
           <div className="mt-2 text-2xl font-semibold text-slate-50">{metric.value}</div>
         </div>
         <GateStatusPill status={metric.status} />
@@ -1121,7 +1372,7 @@ function CopyButton({ label, onClick }: { label: string; onClick: () => void }) 
     <button
       type="button"
       onClick={onClick}
-      className="mt-3 inline-flex items-center justify-center rounded-2xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200 transition hover:border-cyan-200/40 hover:text-white"
+      className="mt-3 inline-flex items-center justify-center rounded-2xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200 transition hover:border-cyan-200/40 hover:text-slate-100"
     >
       {label}
     </button>

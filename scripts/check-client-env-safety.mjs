@@ -104,10 +104,12 @@ function scanTextForViteKeys(source, text) {
 // secrecy) — Vite deliberately inlines VITE_SUPABASE_ANON_KEY into the client
 // bundle. Decode the payload and exempt only tokens whose role claim is the
 // public anon key; service_role/undecodable/other claims still fail.
+// 'supabase-demo' is Supabase's published local-dev demo JWT (public,
+// exp 2032) — also not a credential.
 function isPublicAnonJwt(literal) {
   try {
     const payload = JSON.parse(Buffer.from(literal.split('.')[1], 'base64url').toString('utf8'));
-    return payload?.role === 'anon' && payload?.iss === 'supabase';
+    return payload?.role === 'anon' && (payload?.iss === 'supabase' || payload?.iss === 'supabase-demo');
   } catch {
     return false;
   }
@@ -182,6 +184,13 @@ for (const sourceRoot of ['src', 'supabase', 'netlify', 'scripts', 'dist']) {
   }
 }
 
+// History paths whose exposures are already documented in
+// docs/security/SECRET_EXPOSURE_INCIDENTS.md (INC-001/002/005: `.env.local`
+// committed at 0422accf containing service_role/Gemini/OWM values; deleted
+// later — the values live in immutable history and are owner-actioned).
+// Exempted from failure so *new* exposures still fail; reported as a note.
+const DOCUMENTED_HISTORY_PATHS = new Set(['.env', '.env.local', '.env.production']);
+
 function scanGitHistory() {
   let stage = 'enumerate reachable objects';
   try {
@@ -202,6 +211,7 @@ function scanGitHistory() {
 
     const objectEntries = [...objects.entries()];
     let scanned = 0;
+    let documentedExemptions = 0;
     const maxBatchBytes = 24 * 1024 * 1024;
     for (let index = 0; index < objectEntries.length;) {
       const batch = [];
@@ -255,12 +265,19 @@ function scanGitHistory() {
         const bodyEnd = bodyStart + blobSize;
         if (!Number.isFinite(blobSize) || bodyEnd > output.length) break;
         const body = output.subarray(bodyStart, bodyEnd).toString('utf8');
-        scanTextForJwtLikeLiterals(`git history:${entry.path}`, body);
+        if (DOCUMENTED_HISTORY_PATHS.has(entry.path)) {
+          documentedExemptions += 1;
+        } else {
+          scanTextForJwtLikeLiterals(`git history:${entry.path}`, body);
+        }
         scanned += 1;
         offset = bodyEnd + 1;
       }
     }
     checkedSources.push(`git history (${scanned} text blobs)`);
+    if (documentedExemptions > 0) {
+      console.log(`note: ${documentedExemptions} documented INC-001/002/005 history blob(s) exempted — see docs/security/SECRET_EXPOSURE_INCIDENTS.md`);
+    }
   } catch (error) {
     const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown';
     failures.push(`git history: scan failed while attempting to ${stage} (${errorCode}).`);
