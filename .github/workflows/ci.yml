@@ -207,6 +207,15 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-wedge.json
         run: pnpm exec playwright test --config=playwright.config.ts tests/component/wedge-prototype-routes.spec.ts
 
+      - name: WCAG 2.2 AA accessibility audit — chromium
+        env:
+          VITE_ENABLE_EDGE_FETCH: 'false'
+          VITE_ALLOW_LOCAL_EDGE_FETCH: 'false'
+          VITE_SUPABASE_EDGE_BASE: ''
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-a11y
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-a11y.json
+        run: pnpm exec playwright test --config=playwright.config.ts tests/component/a11y-wcag22.spec.ts --project=chromium
+
       - name: Record CI evidence manifest
         # Binds the uploaded evidence to the tree/commit: HEAD sha, dirty-tree
         # count, working-tree fingerprint, run identity vars, and a sha256 of

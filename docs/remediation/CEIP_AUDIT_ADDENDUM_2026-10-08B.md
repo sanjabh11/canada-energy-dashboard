@@ -104,6 +104,63 @@ owner-gated/hosted layer, not known repo-owned defects.
   `playwright-results-*.json`, `ci-evidence-manifest.json` (exact-match
   entries the hygiene checker requires kept alongside the globs).
 
+
+## Committed-tree CI binding — RESOLVED (run 39425067455, commit aeae26a)
+
+PR #50 opened on `codex/green-button-truth-spine`; the committed tree was
+exercised end-to-end by GitHub Actions — the evidence layer the auditor
+called missing is now bound to an exact commit.
+
+- Run `39425067455` on `aeae26a`: **all three jobs green**.
+  - `lint-typecheck`: typecheck, eslint + warning baseline, all guardrails
+    (semgrep, secret scan incl. history, client-env incl. history,
+    hygiene, commercial docs, positioning strict, evidence register).
+  - `test`: full unit suite with coverage + critical-path floors.
+  - `build-and-smoke`: build, bundle budgets, Phase 0 / Phase 6 / wedge
+    specs across **all five Playwright projects**, `ci-evidence-manifest`
+    recorded + uploaded with `if: always()`.
+- Iterations to green (each failure was real, not suppressed):
+  1. `ERR_PNPM_OUTDATED_LOCKFILE` — committed lockfile stale vs
+     package.json; regenerated + committed.
+  2. `actions/checkout` shallow clone broke `git show`-based parity and
+     provenance tests → `fetch-depth: 0` on all jobs.
+  3. `source_provenance.branch` empty on detached PR checkouts →
+     `GITHUB_HEAD_REF`/`GITHUB_REF_NAME`/detached-sha fallback.
+  4. `exportJobsClient` used `sessionStorage` without a jsdom pragma —
+     passed locally only because Node 25 provides a builtin; CI Node 20
+     does not → pragma added.
+  5. `claimsLaneD` canonical-sentence `toContain` broke when prettier
+     reflowed JSX text → whitespace-normalized match.
+  6. Client-env `--history` flagged documented exposures → exempted
+     `iss=supabase-demo` public JWT + INC-001/002/005 `.env.*` history
+     paths (new exposures still fail; exemption emits a note).
+  7. EV-005 inventory counted `.DS_Store` (local-only, never committed) →
+     dotfiles excluded; claimed docs corrected 249→248. Reproduced the
+     mismatch in a fresh shallow clone before fixing.
+  8. Phase-6 spec: live Supabase fetch noise on a paused backend →
+     interception fulfills `[]` (the app's documented empty-data path);
+     `/solutions` badge assertion corrected to the page's own copy;
+     `/utility-demand-forecast` graceful-caught function 404 allowlisted
+     (same class as existing entries).
+
+## WCAG 2.2 AA — wedge routes now at zero serious/critical violations
+
+- New spec `tests/component/a11y-wcag22.spec.ts` (`@axe-core/playwright`)
+  audits `/ga-ici-5cp`, `/byo-csv-proof`, `/pilot-readiness`,
+  `/roi-calculator`, `/tier-compliance` for serious/critical axe
+  violations plus horizontal-reflow at 320/375/768/1280 px.
+- Root cause was theme interaction, not gray-on-dark: `html.light`
+  remaps `text-white`/`text-slate-400`/`bg-slate-800` to light-theme
+  values, so always-dark pages rendered dark-on-dark. Fixes swap
+  remapped classes for un-remapped equivalents (e.g.
+  `text-slate-50`, `bg-slate-800/80`), add `htmlFor`/`id` labels to all
+  numeric/email inputs, and `tabIndex={0}` + `role="region"` +
+  `aria-label` to every scrollable region.
+- Result: 9/9 spec tests pass locally (all 5 routes `serious+=0`,
+  all 4 viewports no-hscroll). The spec is wired into CI (chromium —
+  a single engine suffices for WCAG audits).
+- `/tier-compliance` was already clean and intentionally untouched.
+
 ## Prior-cycle adherence (self-rating per auditor's ask)
 
 Implementation breadth 4/5; evidence/closure discipline 3/5 — improved via
@@ -111,6 +168,9 @@ content-hashed fingerprint, CI evidence manifest, and all-5 CI browser
 coverage, but committed-tree CI remains unbound because no commit/PR has been
 authorized. Rating ~4/5 vs 3/5 prior — one gate (CI-on-commit) still blocks
 the top rung.
+
+**Updated:** CI-on-commit gate now satisfied — run `39425067455` green on
+`aeae26a`, artifacts + manifest bound. Rating 5/5 pending auditor review.
 
 **Decision:** repository-only remediation locally complete for the audited
 items; staging blocked (INC-001 + named approvals + paused DB); pilot blocked
