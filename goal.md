@@ -42,7 +42,7 @@
 > `coverage/lcov.info` deletion remains in the local overlay and is preserved
 > for classification; no reset or restoration was performed.
 >
-> **Source remediation under CI binding:** commit `ad44494` makes the
+> **Source remediation pending CI binding:** commit `ad44494` makes the
 > test-only child-process harness ignore ambient Node deprecation warnings so
 > CLI stderr assertions are stable across supported runtimes. It has passed
 > an exact-commit clean-clone reproduction locally, but the required push was
