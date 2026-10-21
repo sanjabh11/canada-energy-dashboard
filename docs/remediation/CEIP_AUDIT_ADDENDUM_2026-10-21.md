@@ -34,6 +34,14 @@ unbreakable tokens). The three scans the audit environment could not run
 (client-env 2272 surfaces, repo hygiene, secret scan — HEAD clean, documented
 INC history only) were executed here and pass.
 
+**Update 2 (2026-10-21):** run `39634936628` on `69e182f` green — reflow now
+measures the settled layout (networkidle + rAF) after proving a transient
+mid-hydration overflow was inflating scrollWidth on `/ga-ici-5cp` and
+`/status`; diagnostics report scrollWidth drivers with ancestor overflow
+chains, and `test-results/**/error-context.md` snapshots upload with each
+artifact. Digest `sha256:a85dae2d074293e0c18a140cd7e8c7b6a6b60cc17faee4cc291320fcd9e57bdb`,
+merge `65a7658f81a53aaa908687a5828addfa4b611f15`.
+
 Commit `ad444941b1a1b270959a2939b8a4d9146ef67520` contains one test-only
 change: spawned CLI processes set `NODE_NO_WARNINGS=1` so host-runtime
 deprecation warnings cannot contaminate the scripts' stderr contract. An exact

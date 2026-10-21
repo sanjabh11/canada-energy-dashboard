@@ -10,10 +10,13 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-21):** bound HEAD `947bbfe` — CI run
-> `39628050850` green on pinned `ubuntu-24.04` (merge `758cecc1`, artifact ID
-> `12358059140`, digest
-> `sha256:cbcec7b7598a9310da7f05d3924d3cf2e917670c94a8fe8e93c3c0191ef1dc41`).
+> **Milestone status (2026-10-21):** bound HEAD `69e182f` — CI run
+> `39634936628` green on pinned `ubuntu-24.04` (merge `65a7658f`, artifact
+> `12363351105`, digest
+> `sha256:a85dae2d074293e0c18a140cd7e8c7b6a6b60cc17faee4cc291320fcd9e57bdb`). This run includes
+> the settled-layout reflow measurement and driver-chain diagnostics; the
+> prior bound run was `39628050850` on `947bbfe` (merge `758cecc1`, artifact
+> `12358059140`, digest `845cdcf0…`).
 > This run binds the audit-session overlay commits (`ad444941`…`f12accc`)
 > and the structural WebKit reflow fixes; the audit-3 refutations are closed
 > at the committed CI proof layer (manifest `complete:true`, `missing_files:[]`,
