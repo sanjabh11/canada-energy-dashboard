@@ -1,14 +1,14 @@
 # CEIP audit addendum — 2026-10-21
 
-Final bound tree: HEAD `caadfc5976947f12174a66b59e7e89ff0801579f` · CI run
-`39550773406` (all 3 jobs green) · merge SHA `a458a73f598f08b005fe034ba52066ce7fa97020`
-· artifact digest `sha256:d98ecd01b5809e411a703df3952e943e644bb6640b4c48e4d71021157586908a`
-· manifest `complete:true`, `missing_files:[]`, `.sha256` sidecar
-`shasum -c` verified, branch vs merge SHA both recorded · local fingerprint
-`2811698a334f96a91d301bc7fbff6f9ff30f2bdd861834fe070916f8938ee6b3`.
-
-Pre-fix run `39541079913` on `b1fc0da` was also green but with the refuted
-manifest; superseded. Prior addenda are historical and unchanged.
+Final bound tree: HEAD `e7a5f81dab46cf26eb794d248d8e1f91bda679e7` · CI run
+`39552477642` (all 3 jobs green) · merge SHA
+`ab93d6bfadd246e28dbe73d1feeee347b27382c7` · artifact digest
+`sha256:a701a084653102becc421d7ed1e332dbbc445155ced4887c04aaa09044048c85`.
+Prior bound run `39550773406` on `caadfc5` (code-identical minus docs):
+manifest `complete:true`, `missing_files:[]`, `.sha256` sidecar
+`shasum -c` verified. Pre-fix run `39541079913` on `b1fc0da` was green
+with the refuted manifest — superseded. Any later commit is a
+documentation-only delta; the latest successful branch run is authoritative.
 
 ## Refutation-protocol outcomes (auditor claims 1–14)
 
@@ -27,7 +27,7 @@ manifest; superseded. Prior addenda are historical and unchanged.
 | 11 gate-script correctness | partial — extended | manifest negative fixture + `checkScriptNegativeFixtures.test.ts` covers high-risk gates |
 | 12 Netlify preview | unverifiable | no preview exists for this SHA; deployed behavior is not claimed anywhere |
 | 13 Supabase project identity | partial — recorded | register now documents `qnymb…` vs `cwij…` mismatch; owner must identify the authoritative record |
-| 14 doc-count pin | survived | 249/249 strict |
+| 14 doc-count pin | survived | 251/251 strict (pin drifted twice this pass — caught by the gate both times, working as designed) |
 
 ## Remaining open (owner/hosted, unchanged)
 

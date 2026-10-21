@@ -10,10 +10,14 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-21):** HEAD `caadfc5` — bound CI run
-> `39550773406` green (merge `a458a73f`, artifact
-> `ci-evidence-a458a73f598f08b005fe034ba52066ce7fa97020`, digest
-> `sha256:d98ecd01b5809e411a703df3952e943e644bb6640b4c48e4d71021157586908a`).
+> **Milestone status (2026-10-21):** bound HEAD `e7a5f81` — CI run
+> `39552477642` green (merge `ab93d6bf`, artifact
+> `ci-evidence-ab93d6bfadd246e28dbe73d1feeee347b27382c7`, digest
+> `sha256:a701a084653102becc421d7ed1e332dbbc445155ced4887c04aaa09044048c85`);
+> code-bound run `39550773406` on `caadfc5` also green (digest
+> `d98ecd01…`, manifest `complete:true` verified). Any later commit on
+> this branch is a documentation-only delta; the latest successful run on
+> the branch is the authoritative bound state.
 > The audit-3 refutations are closed in this run: manifest declares
 > `complete:true` with zero `missing_files`, `.sha256` sidecar verifies,
 > the `Verify evidence completeness` gate is hard, clean-clone coverage
