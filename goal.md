@@ -10,18 +10,19 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-21):** HEAD `b1fc0da` — bound CI run
-> `39541079913` green (merge `65a42671`, Git tree `def21810`, artifact
-> digest `4e8bf9804df5d4c6f3aa13fc23593e4570a165460a15b73c659229ac8e0ee4e1`).
-> Audit #3 then refuted evidence packaging (manifest hashed 9/10 files;
-> `always()` upload permits partial artifacts) and flagged unreproduced
-> clean-clone coverage, unproven assertion-inversion/JWT-fuzz assurance,
-> a11y test-design gaps, and a Supabase project-ref discrepancy
-> (`qnymbecjgeaoxsfphrti` in docs vs inactive `cwijcjhdugfqwsjbrdro` in the
-> owner environment). Those are closed or documented below; WCAG evidence
-> claims only automated axe/reflow coverage — manual 2.2 review stays open.
-> (Historical baselines — `2cdc44b`, 1186-test, 80-browser, and prior run
-> IDs — are superseded; see dated addenda.)
+> **Milestone status (2026-10-21):** HEAD `caadfc5` — bound CI run
+> `39550773406` green (merge `a458a73f`, artifact
+> `ci-evidence-a458a73f598f08b005fe034ba52066ce7fa97020`, digest
+> `sha256:d98ecd01b5809e411a703df3952e943e644bb6640b4c48e4d71021157586908a`).
+> The audit-3 refutations are closed in this run: manifest declares
+> `complete:true` with zero `missing_files`, `.sha256` sidecar verifies,
+> the `Verify evidence completeness` gate is hard, clean-clone coverage
+> reproduces via synthetic env, and inversion/JWT-fuzz/a11y-design suites
+> run in CI. WCAG evidence claims automated axe+reflow coverage only —
+> manual 2.2 review stays open. Supabase project-ref discrepancy
+> (`qnymb…` vs `cwij…`) is recorded owner-gated. (Historical baselines —
+> `2cdc44b`, 1186-test, 80-browser, and prior run IDs — are superseded;
+> see dated addenda.)
 
 ## Proof-layer definitions
 

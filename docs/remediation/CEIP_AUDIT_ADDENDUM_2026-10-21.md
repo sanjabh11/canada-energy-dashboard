@@ -1,14 +1,14 @@
 # CEIP audit addendum — 2026-10-21
 
-Audited tree: HEAD `b1fc0dae47e7d766fa39ddf7906d8db5f4420c5e` · CI run
-`39541079913` (green) · merge SHA `65a42671a9227d5a17778c02f8714134d0360676`
-· Git tree `def2181076a9b846261ff53898d54632fc790eda` · artifact digest
-`4e8bf9804df5d4c6f3aa13fc23593e4570a165460a15b73c659229ac8e0ee4e1` ·
-tree fingerprint `bf9894bd4a37563ef675f386e668c29295f3036b9928975c7bd1b472e4168b02`
-(1669 files, 4 secret/dir entries skipped).
+Final bound tree: HEAD `caadfc5976947f12174a66b59e7e89ff0801579f` · CI run
+`39550773406` (all 3 jobs green) · merge SHA `a458a73f598f08b005fe034ba52066ce7fa97020`
+· artifact digest `sha256:d98ecd01b5809e411a703df3952e943e644bb6640b4c48e4d71021157586908a`
+· manifest `complete:true`, `missing_files:[]`, `.sha256` sidecar
+`shasum -c` verified, branch vs merge SHA both recorded · local fingerprint
+`2811698a334f96a91d301bc7fbff6f9ff30f2bdd861834fe070916f8938ee6b3`.
 
-This pass remediates audit #3's refutations. Prior addenda are historical
-and unchanged.
+Pre-fix run `39541079913` on `b1fc0da` was also green but with the refuted
+manifest; superseded. Prior addenda are historical and unchanged.
 
 ## Refutation-protocol outcomes (auditor claims 1–14)
 
