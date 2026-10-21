@@ -10,24 +10,22 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-21):** CI-bound source tree parent `4f0348d` — CI run
-> `39554044008` green (merge `8e81bbe`, artifact ID `12325836686`, digest
-> `sha256:845cdcf0066fbed2ce345b4fd8ac06d6b2479f1edd43693975ca5884a1b2ed27`).
-> The artifact manifest reports `complete:true`, `missing_files:[]`, nine
-> hashed evidence files, and a valid manifest sidecar; job outcomes remain
-> authoritative in the external GitHub run because the manifest records the
-> honest `jobs: not-recorded` sentinel. Prior bound runs `39552477642` and
-> `39550773406` remain historical evidence. The current local checkout has a
-> tracked `coverage/lcov.info` deletion and is therefore not a clean local
-> tree; the latest successful CI run is the bound committed-tree state.
-> The audit-3 refutations are closed at the committed CI proof layer in this
-> run: manifest declares
-> `complete:true` with zero `missing_files`, `.sha256` sidecar verifies,
-> the `Verify evidence completeness` gate is hard, CI exercises the documented
-> synthetic environment, and inversion/JWT-fuzz/a11y-design suites run in CI.
-> Independent clean-clone reproduction for source commit `ad44494` is complete
-> at the local proof layer (177/177 files, 1,329/1,329 tests, 22.55% lines,
-> critical floors pass); fresh CI binding for that commit remains pending.
+> **Milestone status (2026-10-21):** bound HEAD `947bbfe` — CI run
+> `39628050850` green on pinned `ubuntu-24.04` (merge `758cecc1`, artifact ID
+> `12358059140`, digest
+> `sha256:cbcec7b7598a9310da7f05d3924d3cf2e917670c94a8fe8e93c3c0191ef1dc41`).
+> This run binds the audit-session overlay commits (`ad444941`…`f12accc`)
+> and the structural WebKit reflow fixes; the audit-3 refutations are closed
+> at the committed CI proof layer (manifest `complete:true`, `missing_files:[]`,
+> sidecar verified, hard `Verify evidence completeness` gate, synthetic-env
+> coverage reproduction, inversion/JWT-fuzz/a11y-design suites in CI).
+> The scans the audit environment could not run (client-env, hygiene,
+> secret scan) pass locally on this tree. `coverage/lcov.info` remains
+> deleted locally by owner decision. The `ubuntu-latest`→26.04 migration
+> broke the previous run's browser install; the image is now pinned.
+> Prior bound runs (`39554044008`/`4f0348d`, `39552477642`/`e7a5f81`,
+> `39550773406`/`caadfc5`) remain historical evidence. Any later commit is
+> docs-only; the latest successful branch run is authoritative.
 > WCAG evidence claims automated axe+reflow coverage only —
 > manual 2.2 review stays open. Supabase project-ref discrepancy
 > (`qnymb…` vs `cwij…`) is recorded owner-gated. (Historical baselines —

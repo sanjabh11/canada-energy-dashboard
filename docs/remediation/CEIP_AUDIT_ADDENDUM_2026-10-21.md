@@ -21,6 +21,19 @@ described as a run for the overlay. The exact overlay hash is obtained from
 Git rather than copied into this self-referential document. The local `coverage/lcov.info`
 deletion remains intentionally unresolved and was not reset or restored.
 
+**Update (2026-10-21, post-push):** the overlay was pushed and is now bound —
+run `39628050850` on `947bbfe`, all 3 jobs green on pinned `ubuntu-24.04`
+(merge `758cecc148f7bfee0df089c5d46c458e1c399997`, artifact `12358059140`,
+digest `sha256:cbcec7b7598a9310da7f05d3924d3cf2e917670c94a8fe8e93c3c0191ef1dc41`).
+That run caught two real defects missed by every prior run: the
+`ubuntu-latest`→26.04 migration broke Playwright browser install (image now
+pinned), and nine routes had latent WebKit reflow overflow at 320–768px that
+prior runner-image font metrics had masked — fixed structurally (implicit-auto
+grid tracks, scroll-region shrink guards, `hidden`→`sr-only` file inputs,
+unbreakable tokens). The three scans the audit environment could not run
+(client-env 2272 surfaces, repo hygiene, secret scan — HEAD clean, documented
+INC history only) were executed here and pass.
+
 Commit `ad444941b1a1b270959a2939b8a4d9146ef67520` contains one test-only
 change: spawned CLI processes set `NODE_NO_WARNINGS=1` so host-runtime
 deprecation warnings cannot contaminate the scripts' stderr contract. An exact
