@@ -31,9 +31,11 @@
 > `2cdc44b`, 1186-test, 80-browser, and prior run IDs — are superseded;
 > see dated addenda.)
 >
-> **Current checkout overlay:** HEAD `96b9e3c` is a documentation-only commit
-> on top of the CI-bound parent. It has no separate CI run, so the run above
-> must not be represented as proof for `96b9e3c` itself. The tracked
+> **Current checkout overlay:** the checkout contains a documentation-only
+> descendant of the CI-bound parent. It has no separate CI run, so the run
+> above must not be represented as proof for the overlay itself. The exact
+> current overlay hash is obtained from Git rather than copied into its own
+> content, preventing a self-referential stale identity. The tracked
 > `coverage/lcov.info` deletion remains in the local overlay and is preserved
 > for classification; no reset or restoration was performed.
 
@@ -55,14 +57,14 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | HEAD `96b9e3c` / CI parent `4f0348d` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs overlay `96b9e3c`; CI parent `4f0348d` | addendum 2026-10-21; run `39554044008`; merge `8e81bbe`; artifact `12325836686` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; overlay has no new CI run |
+| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay / CI parent `4f0348d` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; CI parent `4f0348d` | addendum 2026-10-21; run `39554044008`; merge `8e81bbe`; artifact `12325836686` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; overlay has no new CI run |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `4f0348d` | inversion + JWT-fuzz suites; secret scan in CI | repo | hosted RLS + contract verification | hosted denial owner-gated |
 | P3 — Stale economics suppressed | partial | local tests + committed CI | `4f0348d` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
 | P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `4f0348d` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
 | P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `4f0348d` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI (parent) + local checks | docs overlay `96b9e3c`; CI parent `4f0348d` | run `39554044008`; manifest complete + self-hash sidecar; 177 files/1329 tests/22.55% lines; local tsc/lint/baseline/client-env/repo-hygiene pass; focused assurance 50/50; isolated coverage probe 17/17 produced lcov outside checkout | repo → CI | independent clean-clone reproduction and local lcov classification | secret scan guard-blocked; full coverage and critical floor cannot run without tracked lcov; overlay has no new CI run |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI (parent) + local checks | docs-only overlay; CI parent `4f0348d` | run `39554044008`; manifest complete + self-hash sidecar; 177 files/1329 tests/22.55% lines; local tsc/lint/baseline/client-env/repo-hygiene pass; focused assurance 50/50; isolated coverage probe 17/17 produced lcov outside checkout | repo → CI | independent clean-clone reproduction and local lcov classification | secret scan guard-blocked; full coverage and critical floor cannot run without tracked lcov; overlay has no new CI run |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 

@@ -14,10 +14,11 @@ and `39541079913` on `b1fc0da` remain historical evidence. The current local
 checkout has a tracked deletion of `coverage/lcov.info`; it is preserved for
 classification and is not represented as a clean local tree.
 
-The current checkout HEAD is `96b9e3c` and is a documentation-only overlay on
-that CI-bound parent. No separate CI run exists for the overlay. The CI run
-above therefore proves the parent source tree and its recorded artifacts; it
-must not be described as a run for `96b9e3c`. The local `coverage/lcov.info`
+The current checkout contains a documentation-only overlay on that CI-bound
+parent. No separate CI run exists for the overlay. The CI run above therefore
+proves the parent source tree and its recorded artifacts; it must not be
+described as a run for the overlay. The exact overlay hash is obtained from
+Git rather than copied into this self-referential document. The local `coverage/lcov.info`
 deletion remains intentionally unresolved and was not reset or restored.
 
 ## Current-tree verification
