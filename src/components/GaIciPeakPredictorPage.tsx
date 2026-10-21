@@ -295,7 +295,7 @@ export function GaIciPeakPredictorPage() {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border border-white/10 bg-white/[0.04] p-5 text-sm leading-6 text-cyan-100 transition hover:border-cyan-300/40 hover:text-slate-100"
+                  className="min-w-0 break-all rounded-lg border border-white/10 bg-white/[0.04] p-5 text-sm leading-6 text-cyan-100 transition hover:border-cyan-300/40 hover:text-slate-100"
                 >
                   {url}
                 </a>

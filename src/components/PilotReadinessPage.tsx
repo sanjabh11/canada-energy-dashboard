@@ -1005,10 +1005,10 @@ export function PilotReadinessPage() {
               {pilotEvidenceRequirements.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
+                  className="min-w-0 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
                 >
                   <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-cyan-100">
                           {item.lane}
@@ -1028,7 +1028,7 @@ export function PilotReadinessPage() {
                       </Link>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid min-w-0 gap-4 md:grid-cols-2">
                       <Info label="Artifact" value={item.artifact} />
                       <Info label="Accepted formats" value={item.acceptedFormats.join(', ')} />
                       <div className="rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 md:col-span-2">
@@ -1080,7 +1080,7 @@ export function PilotReadinessPage() {
               {pilotOutcomeMetrics.map((metric) => (
                 <article
                   key={metric.id}
-                  className="rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6"
+                  className="min-w-0 rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h3 className="text-xl font-semibold text-slate-50">{metric.label}</h3>

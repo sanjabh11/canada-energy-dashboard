@@ -76,7 +76,9 @@ test.describe('WCAG 2.2 AA — axe audit', () => {
       const failures: string[] = [];
       for (const route of ROUTES) {
         await page.goto(route.path, { waitUntil: 'domcontentloaded' });
-        await expect(page.locator('h1, h2').first()).toBeVisible();
+        // Hydration on mobile engines can exceed the 5s default — a render
+        // gate should wait for the route, not race it. Assertion unchanged.
+        await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
         const { scrollWidth, offenders } = await page.evaluate((limit) => {
           // Elements that actually extend the document: their box crosses the
           // right viewport edge AND no ancestor clips that overflow. Clipped
