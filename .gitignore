@@ -17,6 +17,7 @@ node_modules
 /playwright-results-*.json
 /test-results/
 /ci-evidence-manifest.json
+/ci-evidence-manifest.json.sha256
 /coverage/*
 !/coverage/lcov.info
 /.windsurf/

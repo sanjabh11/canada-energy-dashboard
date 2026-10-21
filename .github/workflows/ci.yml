@@ -207,7 +207,7 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-wedge.json
         run: pnpm exec playwright test --config=playwright.config.ts tests/component/wedge-prototype-routes.spec.ts
 
-      - name: WCAG 2.2 AA accessibility audit — all five browser projects
+      - name: Automated WCAG axe + reflow audit — all five browser projects
         env:
           VITE_ENABLE_EDGE_FETCH: 'false'
           VITE_ALLOW_LOCAL_EDGE_FETCH: 'false'
@@ -227,6 +227,17 @@ jobs:
         if: always()
         run: node scripts/report-ci-evidence-manifest.mjs
 
+      - name: Verify evidence completeness
+        # Gate: re-runs the recorder in enforcing mode — fails the job when a
+        # required report dir, results JSON, coverage file, or the manifest
+        # itself is absent, so a green-looking manifest can no longer ship for
+        # a partial run. Deliberately a normal step (no if: always()): the
+        # always-on upload below still publishes partial artifacts for
+        # diagnosis, while this step controls release eligibility.
+        env:
+          CEIP_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/report-ci-evidence-manifest.mjs --require-complete
+
       - name: Upload browser + coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -237,4 +248,5 @@ jobs:
             playwright-results-*.json
             coverage/lcov.info
             ci-evidence-manifest.json
+            ci-evidence-manifest.json.sha256
           if-no-files-found: warn

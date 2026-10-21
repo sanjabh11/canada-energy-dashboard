@@ -17,17 +17,29 @@
  *       (phase0 / phase6 / wedge / a11y dirs)
  *       playwright-results-*.json
  *       coverage/lcov.info
+ *   - required_files / missing_files / complete: the concrete expected set
+ *     derived from the upload-artifact `path:` globs in ci.yml, so a partial
+ *     or failed job can no longer emit a green-looking manifest — the
+ *     manifest itself declares what is absent
+ *   - ci-evidence-manifest.json.sha256 sidecar (`<sha256>  <filename>`),
+ *     uploaded alongside the manifest so its own integrity is verifiable
+ *   - jobs: per-step outcomes when a caller provides them (CEIP_JOB_OUTCOMES
+ *     env, JSON-encoded); Actions does not expose step outcomes to steps via
+ *     env, so the explicit `"not-recorded"` sentinel is recorded otherwise
  *   - CEIP_PR_HEAD_SHA env (pull_request head sha) so branch SHA and merge
  *     SHA are recorded separately — PR checkouts test a merge commit.
  *
- * Usage: node scripts/report-ci-evidence-manifest.mjs
- * Exits non-zero if git identity or the tree fingerprint cannot be computed;
- * missing evidence files are simply absent from the manifest (they may not
- * exist when an earlier Playwright step failed).
+ * Usage: node scripts/report-ci-evidence-manifest.mjs [--require-complete]
+ * Exits non-zero if git identity or the tree fingerprint cannot be computed.
+ * Default invocation is record-only: missing evidence is declared in
+ * missing_files (it may not exist when an earlier Playwright step failed).
+ * --require-complete additionally exits non-zero when missing_files is
+ * non-empty — used by the "Verify evidence completeness" gate step so
+ * diagnostic upload stays always-on while release eligibility is gated.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -97,6 +109,19 @@ for (const name of CI_ENV_VARS) {
 }
 const ci = Object.keys(ciEnv).length > 0 ? ciEnv : null;
 
+// Step/job outcomes are not exposed to a step via environment in GitHub
+// Actions (they live in the github/needs/job contexts). A caller that can
+// provide them — e.g. a JSON-encoded CEIP_JOB_OUTCOMES env — is recorded
+// verbatim; otherwise the sentinel makes the absence explicit.
+let jobs = 'not-recorded';
+if (process.env.CEIP_JOB_OUTCOMES) {
+  try {
+    jobs = JSON.parse(process.env.CEIP_JOB_OUTCOMES);
+  } catch {
+    jobs = process.env.CEIP_JOB_OUTCOMES;
+  }
+}
+
 // Evidence file set: EVERY file under each playwright-report*/ directory
 // (recursively — not only index.html), playwright-results-*.json, and
 // coverage/lcov.info — whatever exists at run time.
@@ -136,6 +161,63 @@ const files = [...targets].sort().map((relativePath) => {
   };
 });
 
+// Required evidence — the concrete expansion of the upload-artifact `path:`
+// list in .github/workflows/ci.yml (build-and-smoke → "Upload browser +
+// coverage artifacts"). The four suite names mirror the
+// PLAYWRIGHT_HTML_OUTPUT_DIR / PLAYWRIGHT_JSON_OUTPUT_FILE env vars on the
+// suite steps. Directory entries (trailing '/') glob-expand to every file
+// beneath them; an absent or empty directory is itself the missing entry.
+// The manifest and its .sha256 sidecar are written by this script, so they
+// are required — keeping required_files equal to the uploaded set — but can
+// never be missing.
+const SELF_GENERATED_FILES = new Set([
+  'ci-evidence-manifest.json',
+  'ci-evidence-manifest.json.sha256',
+]);
+const REQUIRED_ENTRIES = [
+  'playwright-report-phase0/',
+  'playwright-report-phase6/',
+  'playwright-report-wedge/',
+  'playwright-report-a11y/',
+  'playwright-results-phase0.json',
+  'playwright-results-phase6.json',
+  'playwright-results-wedge.json',
+  'playwright-results-a11y.json',
+  'coverage/lcov.info',
+  ...SELF_GENERATED_FILES,
+];
+
+const requiredFiles = new Set();
+const missingFiles = [];
+for (const entry of REQUIRED_ENTRIES) {
+  if (entry.endsWith('/')) {
+    const dirName = entry.slice(0, -1);
+    const dirPath = path.join(repoRoot, dirName);
+    let expanded = [];
+    try {
+      if (statSync(dirPath).isDirectory()) {
+        expanded = collectFilesRecursively(dirPath, dirName);
+      }
+    } catch {
+      expanded = [];
+    }
+    if (expanded.length > 0) {
+      for (const rel of expanded) requiredFiles.add(rel);
+    } else {
+      requiredFiles.add(entry);
+      missingFiles.push(entry);
+    }
+  } else {
+    requiredFiles.add(entry);
+    if (!SELF_GENERATED_FILES.has(entry) && !existsSync(path.join(repoRoot, entry))) {
+      missingFiles.push(entry);
+    }
+  }
+}
+
+const complete = missingFiles.length === 0;
+const requireComplete = process.argv.slice(2).includes('--require-complete');
+
 const manifest = {
   schema: 'ci-evidence-manifest/v1',
   generated_at: new Date().toISOString(),
@@ -146,10 +228,36 @@ const manifest = {
     tree_fingerprint_stats: treeFingerprintStats,
   },
   ci,
+  jobs,
+  required_files: [...requiredFiles].sort(),
+  missing_files: [...missingFiles].sort(),
+  complete,
   file_count: files.length,
   files,
 };
 
-writeFileSync(outputPath, `${JSON.stringify(manifest, null, 2)}\n`);
+const manifestBody = `${JSON.stringify(manifest, null, 2)}\n`;
+writeFileSync(outputPath, manifestBody);
+
+// sha256sum-format sidecar so the manifest's own integrity is verifiable —
+// the manifest cannot carry its own hash.
+const sidecarPath = `${outputPath}.sha256`;
+const manifestSha256 = createHash('sha256').update(manifestBody).digest('hex');
+writeFileSync(sidecarPath, `${manifestSha256}  ${path.basename(outputPath)}\n`);
+
 console.log(`ci-evidence-manifest: wrote ${outputPath}`);
+console.log(`ci-evidence-manifest: wrote ${sidecarPath}`);
 console.log(`ci-evidence-manifest: hashed ${files.length} evidence file(s)`);
+if (missingFiles.length > 0) {
+  console.log(
+    `ci-evidence-manifest: ${missingFiles.length} required ` +
+      `${missingFiles.length === 1 ? 'entry' : 'entries'} missing: ${missingFiles.join(', ')}`,
+  );
+}
+if (requireComplete && !complete) {
+  console.error('ci-evidence-manifest: --require-complete failed — required evidence missing:');
+  for (const missing of missingFiles) {
+    console.error(`  ${missing}`);
+  }
+  process.exit(1);
+}

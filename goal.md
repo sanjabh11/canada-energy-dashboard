@@ -1,25 +1,27 @@
 # goal.md — CEIP controlled-pilot objective
 
 > Bring CEIP to an evidence-backed controlled-pilot decision. Close
-> repository-owned security, data-integrity, calculation, claims and quality
-> gaps; verify the exact final tree through reproducible tests and approved
-> CI; preserve verified access for existing Whop customers while removing
-> Whop acquisition, listing promotion and channel priority. Continue
-> repository work while the Supabase project is paused. Keep project
-> restoration, staging and pilot blocked until the owner has invalidated the
-> exposed INC-001 key and reviewed relevant logs, and named privacy, legal,
-> billing, dependency, operations and business owners complete their gates.
-> Never infer closure from code presence or an unrun test; tie every status
-> to its required evidence layer.
+> repository-owned security, data-integrity, calculation, claims, quality,
+> and evidence-packaging gaps; verify the exact final tree through
+> reproducible tests and approved CI; preserve verified access for existing
+> Whop customers while removing Whop acquisition and channel priority.
+> Continue repository work while Supabase remains paused. Keep restoration,
+> staging, production, and pilot blocked until INC-001 is invalidated, logs
+> are reviewed, named owners approve their gates, and buyer evidence exists.
+> Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-20):** committed-tree CI is now bound — run
-> `39431650307` green on `043231e` (PR #50) with all five browser projects,
-> the WCAG 2.2 AA audit, and a recursively-hashed evidence manifest. Next:
-> a demonstrated existing-member Whop journey + owner-run staging once
-> INC-001 is invalidated and the Supabase project resumes. All hosted and
-> buyer gates stay blocked meanwhile. (Historical baselines — `2cdc44b`,
-> 1186-test and 80-browser claims — refer to pre-commit trees; treat them as
-> superseded by the bound run.)
+> **Milestone status (2026-10-21):** HEAD `b1fc0da` — bound CI run
+> `39541079913` green (merge `65a42671`, Git tree `def21810`, artifact
+> digest `4e8bf9804df5d4c6f3aa13fc23593e4570a165460a15b73c659229ac8e0ee4e1`).
+> Audit #3 then refuted evidence packaging (manifest hashed 9/10 files;
+> `always()` upload permits partial artifacts) and flagged unreproduced
+> clean-clone coverage, unproven assertion-inversion/JWT-fuzz assurance,
+> a11y test-design gaps, and a Supabase project-ref discrepancy
+> (`qnymbecjgeaoxsfphrti` in docs vs inactive `cwijcjhdugfqwsjbrdro` in the
+> owner environment). Those are closed or documented below; WCAG evidence
+> claims only automated axe/reflow coverage — manual 2.2 review stays open.
+> (Historical baselines — `2cdc44b`, 1186-test, 80-browser, and prior run
+> IDs — are superseded; see dated addenda.)
 
 ## Proof-layer definitions
 
@@ -39,16 +41,16 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preserve tree and separate incident gate | in progress | source | HEAD `2cdc44b` + dirty tree | `.remediation-snapshots/` manifest; `/tmp` archive absent — filtered recovery unverified | repo | inventory non-secret WIP and test isolated recovery | INC-001 rotation/migration is owner-gated |
-| P1 — Goal and exact-tree evidence | in progress | source + local runs | `node scripts/tree-fingerprint.mjs` (hashes untracked contents too) | Oct 6 + Oct 7 + Oct 8 addenda | repo | ~~commit reviewed phase → bind CI run~~ done: CI run `39425067455` green on `aeae26a` (PR #50) | CI binding obtained |
-| P2 — Security, access and dependencies | in progress | local tests | dirty tree | PGlite allow→deny test; `whop-verify-access` product-ID-scoped rewrite (this pass); `auth-session` verified chain; secret-scan in CI | repo | hosted RLS + contract verification | `/v5/me` unconfirmed; hosted denial owner-gated |
-| P3 — Economics, currency and methane | in progress | local tests | dirty tree | `tierPricing` provenance + `stale_inputs`; allocator `available`-only; screening-labeled landfill | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop and claims | in progress | local tests | dirty tree | claims swept from `whop-mini/`; Top20/COMMERCIAL_STATUS qualified; checker 430 files | repo | deployed copy + membership-route integration test | deployed copy unverified |
-| P5 — Outreach readiness | in progress | local tests | dirty tree | canonical `SUPPRESSION_REGISTRY_LIVE.csv` required by all tools (this pass); cross-dir opt-out test | repo → human | CASL owner sign-off | 0/11 experiments |
-| P6 — Product quality and governance | in progress | local tests | dirty tree | content-hash parity; server-path critical coverage floors in CI | repo | WCAG 2.2 AA + perf audit; 29-dim evidence links | shallow dimensions remain |
-| P7 — Full-suite and exact-tree verification | in progress | committed CI | `e34d265` | 1276/1276 local; CI run `39443266834` all jobs green — Phase 0/6/wedge + WCAG 2.2 AA across all 5 projects; manifest records merge SHA + `CEIP_PR_HEAD_SHA` + per-file sha256 | repo → CI | staging run | committed-tree CI bound; staging owner-gated |
-| P8 — Owner-run staging | blocked | — | — | — | owner | INC-001 + named approvals | all hosted evidence absent |
-| P9 — Human buyer experiments | blocked | — | — | `.positioning-audit/experiments.json` (0/11; WTP fields now declared) | owner | business decision | commercial readiness unverifiable |
+| P0 — Preservation and INC-001 owner separation | in progress | source | HEAD `b1fc0da` | tree fingerprint recorded; WIP clean (0 dirty files at 2026-10-21) | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) is owner-gated |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | `b1fc0da` | addendum 2026-10-21; run `39541079913`; merge `65a42671`; tree `def21810` | repo | rebind after manifest fix | prior runs superseded |
+| P2 — Repository security and billing code | partial | local tests + committed CI | `b1fc0da` | inversion + JWT-fuzz suites (this pass); secret scan in CI | repo | hosted RLS + contract verification | hosted denial owner-gated |
+| P3 — Stale economics suppressed | partial | local tests | `b1fc0da` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests | `b1fc0da` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `b1fc0da` | axe+reflow 105 tests ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `b1fc0da` | manifest completeness gate + self-hash sidecar (this pass); clean-clone synthetic env | repo → CI | next bound run proves completeness gate | reproduction pending next run |
+| P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
+| P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
 Status values: `not started / in progress / blocked / complete`.
 Proof-layer vocabulary: `source` < `local tests` < `committed CI` < `staging` < `owner approved` < `buyer validated`. A row may only move right when the artifact at that layer exists.
