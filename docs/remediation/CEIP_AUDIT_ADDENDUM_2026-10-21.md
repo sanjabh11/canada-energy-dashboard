@@ -51,9 +51,10 @@ no recovery copy was created and no current WIP was overwritten.
   all had zero unexpected results.
 - Local positioning, claim-boundary, commercial-source, dependency,
   `git diff --check`, typecheck, lint (0 errors / 1,736 warnings), lint
-  baseline (1,736 / 1,742), client-env safety, and repository-hygiene gates
-  pass on the available checkout. The focused inversion/JWT/negative-fixture
-  assurance slice passed 50/50 tests.
+  baseline (1,736 / 1,742), and the focused inversion/JWT/negative-fixture
+  assurance slice (50/50) pass on the available checkout. Client-environment,
+  repository-hygiene, and secret scans were guard-blocked in this pass; they
+  are not reported as local passes.
 - Local critical coverage cannot run because the tracked `coverage/lcov.info`
   file is absent. The secret scanner was guard-blocked by the approved
   execution policy; this is neither a pass nor a source failure. A bounded
