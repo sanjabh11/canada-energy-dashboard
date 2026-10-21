@@ -32,6 +32,18 @@ SHA-256 `a2f8b08be559708a45a92e388b2b819c092e35b3e65db38b6751435fb1bcd066`).
 The push needed for a fresh CI run was blocked by the execution guard, so this
 commit is locally reproduced but not yet CI-bound.
 
+Snapshot preservation check: the only durable snapshot currently present is the
+filenames/status manifest
+`.remediation-snapshots/pre-m-remediation-2026-10-05.txt` (SHA-256
+`e939ed4a600b10f77ebf0c043a2eb5fa98511472d627de1a5800dddacbb49ff2`); the
+previous archive is not present. A read-only archive listing of the recorded
+base commit contains 1,795 tracked entries and no `coverage/lcov.info`; that
+file was introduced later in `043231e9` (HEAD copy SHA-256
+`dbceb64404a337c35761be9101a2a133011fabf79f350970227b3cd376ef359a`) and is
+now deliberately deleted in the local overlay. An isolated materialization
+would write outside the repository and was blocked by the execution guard, so
+no recovery copy was created and no current WIP was overwritten.
+
 ## Current-tree verification
 
 - CI unit coverage: 177 test files, 1,329 tests, 22.55% lines.
@@ -53,6 +65,10 @@ commit is locally reproduced but not yet CI-bound.
 - The exact-commit clean-clone lcov and critical-path results are retained as
   run evidence; the lcov bytes are not claimed byte-identical to CI artifacts
   because coverage output varies by runtime and execution environment.
+- The snapshot preservation check found no recoverable archive and confirms
+  that the deleted lcov was not part of the October 5 snapshot base; this is a
+  preservation limitation, not permission to restore or discard the local
+  deletion.
 - No Netlify deployment exists for `4f0348d`. Supabase remains paused and the
   incident-register project ref `qnymbecjgeaoxsfphrti` still differs from the
   inactive project returned by the control-plane inventory,
