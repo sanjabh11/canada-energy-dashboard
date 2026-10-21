@@ -9,7 +9,7 @@ on:
 
 jobs:
   lint-typecheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -95,7 +95,7 @@ jobs:
         run: pnpm run check:positioning-audit -- --strict
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -133,7 +133,7 @@ jobs:
         run: node scripts/check-critical-coverage.mjs
 
   build-and-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
