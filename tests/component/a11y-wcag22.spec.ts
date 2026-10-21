@@ -161,7 +161,15 @@ test.describe('WCAG 2.2 AA — axe audit', () => {
         // Hydration on mobile engines can exceed the 5s default — a render
         // gate should wait for the route, not race it. Assertion unchanged.
         await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
-        const { scrollWidth, offenders, wideScrollRegions } = await page.evaluate((limit) => {
+        // WCAG reflow applies to the settled layout, not a mid-hydration
+        // frame — deferred data render can briefly produce a wider
+        // scrollWidth during paint. Wait for network + two rAF ticks, then
+        // measure. The assertion itself is unchanged.
+        await page.waitForLoadState('networkidle').catch(() => {});
+        await page.evaluate(
+          () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+        );
+        const { scrollWidth, offenders, wideScrollRegions, drivers } = await page.evaluate((limit) => {
           // Elements that actually extend the document: their box crosses the
           // right viewport edge AND no ancestor clips that overflow. Clipped
           // scroll-region content is expected and excluded.
@@ -204,16 +212,39 @@ test.describe('WCAG 2.2 AA — axe audit', () => {
               const cls = [...(el as HTMLElement).classList].slice(0, 3).join('.');
               return `${el.tagName.toLowerCase()}${cls ? '.' + cls : ''} clientWidth=${el.clientWidth}`;
             });
+          // Scroll-width drivers with ancestor chains: an element whose own
+          // scrollWidth exceeds the viewport is the overflow driver even when
+          // an ancestor clips it visually — the chain exposes which ancestor
+          // is missing the clip/shrink guard.
+          const drivers = [...document.querySelectorAll('body *')]
+            .filter((el) => el.scrollWidth > limit + 1)
+            .sort((a, b) => b.scrollWidth - a.scrollWidth)
+            .slice(0, 3)
+            .map((el) => {
+              const chain: string[] = [];
+              let node: Element | null = el;
+              while (node && node !== document.body && chain.length < 6) {
+                const cls = [...(node as HTMLElement).classList].slice(0, 3).join('.');
+                const ox = getComputedStyle(node).overflowX;
+                chain.push(
+                  `${node.tagName.toLowerCase()}${cls ? '.' + cls : ''}${ox !== 'visible' ? `[ox=${ox}]` : ''}`,
+                );
+                node = node.parentElement;
+              }
+              return `scrollW=${el.scrollWidth} ${chain.join(' < ')}`;
+            });
           return {
             scrollWidth: document.documentElement.scrollWidth,
             offenders: wide,
             wideScrollRegions: scrollRegions,
+            drivers,
           };
         }, vp.width);
         if (scrollWidth > vp.width + 1) {
           failures.push(
             `${route.path} overflows at ${vp.width}px (scrollWidth=${scrollWidth}) — ` +
-              `widest: ${offenders.join(' | ') || 'none found'}`,
+              `widest: ${offenders.join(' | ') || 'none found'} — ` +
+              `drivers: ${drivers.join(' | ') || 'none found'}`,
           );
         }
         if (wideScrollRegions.length > 0) {

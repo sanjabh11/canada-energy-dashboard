@@ -249,4 +249,5 @@ jobs:
             coverage/lcov.info
             ci-evidence-manifest.json
             ci-evidence-manifest.json.sha256
+            test-results/**/error-context.md
           if-no-files-found: warn
