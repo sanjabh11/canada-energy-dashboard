@@ -74,6 +74,13 @@ no recovery copy was created and no current WIP was overwritten.
   inactive project returned by the control-plane inventory,
   `cwijcjhdugfqwsjbrdro`.
 
+The final ECC advisor review returned **STOP** (`sound=0.43`,
+`unaddressed_risk=0.80`) because JEV hard-blocked the client-environment,
+repository-hygiene, and secret scanners in this checkout. The earlier bound CI
+run proves those gates for its parent tree, but no current `ad444941` CI run is
+claimed. This is an evidence-layer limitation, not a scanner PASS or a reason
+to bypass the guard; staging and pilot remain blocked.
+
 ## Refutation-protocol outcomes (auditor claims 1–14)
 
 | # | Auditor verdict | This pass |
