@@ -21,6 +21,17 @@ described as a run for the overlay. The exact overlay hash is obtained from
 Git rather than copied into this self-referential document. The local `coverage/lcov.info`
 deletion remains intentionally unresolved and was not reset or restored.
 
+Commit `ad444941b1a1b270959a2939b8a4d9146ef67520` contains one test-only
+change: spawned CLI processes set `NODE_NO_WARNINGS=1` so host-runtime
+deprecation warnings cannot contaminate the scripts' stderr contract. An exact
+commit clean clone at `/tmp/ceip-clean-20261021-ad444` installed the frozen
+lockfile and completed serial coverage with 177/177 files, 1,329/1,329 tests,
+22.55% lines, and all 11 critical floors passing. Its retained lcov is
+`/tmp/ceip-clean-20261021-ad444/coverage/lcov.info` (1,217,118 bytes,
+SHA-256 `a2f8b08be559708a45a92e388b2b819c092e35b3e65db38b6751435fb1bcd066`).
+The push needed for a fresh CI run was blocked by the execution guard, so this
+commit is locally reproduced but not yet CI-bound.
+
 ## Current-tree verification
 
 - CI unit coverage: 177 test files, 1,329 tests, 22.55% lines.
@@ -36,8 +47,12 @@ deletion remains intentionally unresolved and was not reset or restored.
   execution policy; this is neither a pass nor a source failure. A bounded
   single-file coverage probe passed 17/17 and wrote a fresh lcov report to an
   isolated `/tmp` directory, confirming the reporter path without restoring or
-  overwriting the tracked artifact. The full serial coverage reproduction is
-  still pending.
+  overwriting the tracked artifact. The exact-commit clean-clone run recorded
+  below is the independent full serial reproduction; the main checkout remains
+  intentionally without the deleted artifact.
+- The exact-commit clean-clone lcov and critical-path results are retained as
+  run evidence; the lcov bytes are not claimed byte-identical to CI artifacts
+  because coverage output varies by runtime and execution environment.
 - No Netlify deployment exists for `4f0348d`. Supabase remains paused and the
   incident-register project ref `qnymbecjgeaoxsfphrti` still differs from the
   inactive project returned by the control-plane inventory,
@@ -47,10 +62,10 @@ deletion remains intentionally unresolved and was not reset or restored.
 
 | # | Auditor verdict | This pass |
 |---|---|---|
-| 1 tree fingerprint | partially survived | current branch/merge identity is recorded above; independent fingerprint reproduction remains pending |
+| 1 tree fingerprint | partially survived | the exact-commit clean clone and Git identity were checked; the canonical content-fingerprint script was guard-blocked because its repository-wide scan touches restricted dotenv/key patterns, so no independent fingerprint match is claimed |
 | 2 artifact re-hash | survived | unchanged |
 | 3 manifest false-pass | **refuted — fixed** | manifest now declares required files, `missing_files`, `complete`; hard `Verify evidence completeness` CI step fails the job on absent outputs; `.sha256` sidecar hashes the manifest itself; negative fixture test proves a partial run cannot pass |
-| 4 clean-clone coverage | CI-verified, independently unverified | synthetic `VITE_*` fallbacks and `docs/TESTING.md` are present; a fresh clean-clone lcov reproduction still needs to be retained |
+| 4 clean-clone coverage | locally independently reproduced | exact commit `ad444941` in `/tmp/ceip-clean-20261021-ad444` completed 177/177 files and 1,329/1,329 tests at 22.55% lines; critical floors passed and lcov was retained; fresh CI binding remains open |
 | 5 inversion checks | CI-verified | `tests/unit/securityInversions.test.ts`: whop identity, webhook HMAC, suppression, checkout kill-switch, anonymous-write denial; retained in the bound test job |
 | 6 JWT fuzzing | CI-verified | `tests/unit/jwtShapeGate.test.ts`: expired, wrong-aud, forged-iss, malformed, oversized, truncated, non-base64url; retained in the bound test job |
 | 7 a11y design gaps | CI-verified for tested cases | unique per-route markers, interception-scope proof, nested-scroll-container check, post-audit URL guard; full WCAG remains manual/open |
@@ -75,8 +90,9 @@ staged-blocked) · buyer experiments 0/11.
 
 1. Preserve and classify the local `coverage/lcov.info` deletion without
    resetting or overwriting the dirty checkout.
-2. Reproduce the current CI evidence in an isolated clean clone with the
-   documented synthetic environment and retain lcov/critical-floor results.
+2. Push `ad44494` through an approved path and retain its fresh CI run,
+   artifact ID, digest, manifest, and external job conclusions. The current
+   execution guard blocked this step, so it remains open.
 3. Keep the current goal/addendum identities synchronized after every commit;
    a later successful run supersedes an earlier bound run only after its
    artifact, digest, and documents are updated.
