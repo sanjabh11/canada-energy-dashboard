@@ -279,7 +279,7 @@ export function PilotReadinessPage() {
               </nav>
             </header>
 
-            <div className="grid gap-10 py-16 lg:grid-cols-[1.2fr_0.8fr] lg:py-20">
+            <div className="grid min-w-0 grid-cols-1 gap-10 py-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:py-20">
               <div>
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">
                   Confidence gate
@@ -296,7 +296,7 @@ export function PilotReadinessPage() {
                 </p>
               </div>
 
-              <div className="grid gap-4 self-start">
+              <div className="grid grid-cols-1 gap-4 self-start">
                 <Metric value={`${summary.requirementCount}`} label="Evidence items" />
                 <Metric value={`${summary.laneCount}`} label="Buyer lanes" />
                 <Metric value={`${summary.confidenceRuleCount}`} label="Confidence rules" />
@@ -313,7 +313,7 @@ export function PilotReadinessPage() {
 
         <section className="border-b border-white/10 bg-slate-900/40">
           <div className="mx-auto max-w-7xl px-6 py-16">
-            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid min-w-0 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
               <div>
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">
                   Operator runbook
@@ -330,7 +330,7 @@ export function PilotReadinessPage() {
                 </p>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {pilotMinimumEvidenceLanes.map((lane) => (
                   <article
                     key={lane.id}
@@ -342,7 +342,7 @@ export function PilotReadinessPage() {
                         {lane.routeOptions.join(' or ')}
                       </div>
                     </div>
-                    <dl className="mt-4 grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-2">
+                    <dl className="mt-4 grid grid-cols-1 gap-3 text-sm leading-6 text-slate-200 md:grid-cols-2">
                       <div>
                         <dt className="text-xs uppercase tracking-[0.18em] text-slate-300">
                           Proof pack
@@ -367,7 +367,7 @@ export function PilotReadinessPage() {
               </div>
             </div>
 
-            <div className="mt-10 grid gap-4">
+            <div className="mt-10 grid grid-cols-1 gap-4">
               {pilotOperatorCommands.map((item, index) => (
                 <article
                   key={item.id}
@@ -421,7 +421,7 @@ export function PilotReadinessPage() {
                     </div>
                   </div>
 
-                  <div className="grid min-w-0 gap-4">
+                  <div className="grid min-w-0 grid-cols-1 gap-4">
                     {phaseFIntakeSteps.map((step, index) => (
                       <article
                         key={step.id}
@@ -492,7 +492,7 @@ export function PilotReadinessPage() {
                       id="pilot-intake-route"
                       value={selectedRoute}
                       onChange={(event) => setSelectedRoute(event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-emerald-200/25 bg-slate-950 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
+                      className="mt-2 w-full min-w-0 max-w-full rounded-2xl border border-emerald-200/25 bg-slate-950 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
                     >
                       {pilotIntakeRoutePlans.map((plan) => (
                         <option key={plan.route} value={plan.route}>
@@ -501,7 +501,7 @@ export function PilotReadinessPage() {
                       ))}
                     </select>
 
-                    <dl className="mt-5 grid gap-3 text-sm leading-6 text-slate-200">
+                    <dl className="mt-5 grid grid-cols-1 gap-3 text-sm leading-6 text-slate-200">
                       <RoutePlanInfo label="Buyer lane" value={selectedPlan.buyerLane} />
                       <RoutePlanInfo label="Proof pack ID" value={selectedPlan.proofPackId} />
                       <RoutePlanInfo
@@ -515,7 +515,7 @@ export function PilotReadinessPage() {
                     </dl>
                   </div>
 
-                  <div className="grid min-w-0 gap-4">
+                  <div className="grid min-w-0 grid-cols-1 gap-4">
                     <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
                       <div className="text-xs uppercase tracking-[0.2em] text-slate-300">
                         Claim boundary
@@ -667,7 +667,7 @@ export function PilotReadinessPage() {
                         />
                       </div>
 
-                      <dl className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-3">
+                      <dl className="grid grid-cols-1 gap-3 text-sm leading-6 text-slate-200 md:grid-cols-3">
                         <RoutePlanInfo
                           label="Normalized file"
                           value={artifactHashResult.fileName}
@@ -731,7 +731,7 @@ export function PilotReadinessPage() {
                     validator command below with an evidence-root directory.
                   </p>
                   <div
-                    className="mt-5 overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4"
+                    className="mt-5 min-w-0 max-w-full overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4"
                     role="region"
                     aria-label="95 percent evidence gate command"
                     tabIndex={0}
@@ -753,7 +753,7 @@ export function PilotReadinessPage() {
                       Phase F, not whether the hard 95% gate can already pass.
                     </p>
                     <code
-                      className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
+                      className="mt-3 block min-w-0 max-w-full overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
                       tabIndex={0}
                       aria-label="Buyer evidence readiness report command"
                     >
@@ -780,7 +780,7 @@ export function PilotReadinessPage() {
                     type="file"
                     accept=".csv,text/csv"
                     onChange={handleRegisterFileChange}
-                    className="mt-2 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm text-slate-50 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
+                    className="mt-2 w-full min-w-0 max-w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm text-slate-50 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
                   />
                   <div className="mt-2 text-xs leading-5 text-slate-300">
                     Max file size: {formatBytes(MAX_REGISTER_PREVIEW_BYTES)}. Use redacted register
@@ -818,7 +818,7 @@ export function PilotReadinessPage() {
 
                   {registerPreview && (
                     <div className="mt-5 space-y-4">
-                      <div className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-3 text-sm leading-6 text-slate-200 md:grid-cols-4">
                         <RoutePlanInfo label="Rows" value={`${registerPreview.rowCount}`} />
                         <RoutePlanInfo label="Columns" value={`${registerPreview.columnCount}`} />
                         <RoutePlanInfo
@@ -861,14 +861,14 @@ export function PilotReadinessPage() {
                           />
                         </div>
 
-                        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                           {registerPreview.readinessMetrics.map((metric) => (
                             <ReadinessMetricCard key={metric.id} metric={metric} />
                           ))}
                         </div>
 
                         <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
-                          <div className="grid gap-3 bg-slate-950/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-300 md:grid-cols-[0.8fr_0.55fr_1fr_1.2fr]">
+                          <div className="grid min-w-0 grid-cols-1 gap-3 bg-slate-950/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-300 md:grid-cols-[minmax(0,0.8fr)_minmax(0,0.55fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
                             <div>Minimum lane</div>
                             <div>Status</div>
                             <div>Accepted rows</div>
@@ -879,24 +879,24 @@ export function PilotReadinessPage() {
                               <div
                                 key={lane.id}
                                 data-testid={`buyer-evidence-dashboard-lane-${lane.id}`}
-                                className="grid gap-3 px-4 py-4 text-sm leading-6 text-slate-200 md:grid-cols-[0.8fr_0.55fr_1fr_1.2fr]"
+                                className="grid min-w-0 grid-cols-1 gap-3 px-4 py-4 text-sm leading-6 text-slate-200 md:grid-cols-[minmax(0,0.8fr)_minmax(0,0.55fr)_minmax(0,1fr)_minmax(0,1.2fr)]"
                               >
-                                <div>
+                                <div className="min-w-0">
                                   <div className="font-semibold text-slate-50">{lane.label}</div>
                                   <div className="mt-1 text-xs text-slate-300">{lane.evidence}</div>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <GateStatusPill status={lane.status} />
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <div>{lane.acceptedRowCount}</div>
-                                  <div className="mt-1 break-words text-xs text-slate-300">
+                                  <div className="mt-1 break-all text-xs text-slate-300">
                                     {lane.proofPackIds.length > 0
                                       ? lane.proofPackIds.join(', ')
                                       : 'No accepted proof pack'}
                                   </div>
                                 </div>
-                                <div className="text-slate-300">{lane.nextAction}</div>
+                                <div className="min-w-0 text-slate-300">{lane.nextAction}</div>
                               </div>
                             ))}
                           </div>
@@ -930,7 +930,7 @@ export function PilotReadinessPage() {
                         </div>
                       )}
 
-                      <div className="grid gap-3">
+                      <div className="grid grid-cols-1 gap-3">
                         {registerPreview.gates.map((gate) => (
                           <div
                             key={gate.id}
@@ -961,7 +961,7 @@ export function PilotReadinessPage() {
                           Canonical validator command
                         </div>
                         <code
-                          className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
+                          className="mt-3 block min-w-0 max-w-full overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
                           tabIndex={0}
                           aria-label="Canonical validator command"
                         >
@@ -1001,13 +1001,13 @@ export function PilotReadinessPage() {
               What the buyer must supply before stronger claims are allowed
             </h2>
 
-            <div className="mt-10 grid gap-5">
+            <div className="mt-10 grid grid-cols-1 gap-5">
               {pilotEvidenceRequirements.map((item) => (
                 <article
                   key={item.id}
                   className="min-w-0 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
                 >
-                  <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                  <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-cyan-100">
@@ -1028,7 +1028,7 @@ export function PilotReadinessPage() {
                       </Link>
                     </div>
 
-                    <div className="grid min-w-0 gap-4 md:grid-cols-2">
+                    <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
                       <Info label="Artifact" value={item.artifact} />
                       <Info label="Accepted formats" value={item.acceptedFormats.join(', ')} />
                       <div className="rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 md:col-span-2">
@@ -1076,7 +1076,7 @@ export function PilotReadinessPage() {
               changes confidence.
             </p>
 
-            <div className="mt-10 grid gap-4 lg:grid-cols-2">
+            <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
               {pilotOutcomeMetrics.map((metric) => (
                 <article
                   key={metric.id}
@@ -1134,7 +1134,7 @@ export function PilotReadinessPage() {
                   pilot wins are not enough.
                 </p>
                 <div
-                  className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-slate-950 p-4"
+                  className="mt-6 min-w-0 max-w-full overflow-x-auto rounded-2xl border border-cyan-200/15 bg-slate-950 p-4"
                   role="region"
                   aria-label="95 percent market gate command"
                   tabIndex={0}
@@ -1145,7 +1145,7 @@ export function PilotReadinessPage() {
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-3">
+              <div className="grid min-w-0 grid-cols-1 gap-3">
                 {pilotNinetyFiveGates.map((gate) => (
                   <div
                     key={gate.id}
@@ -1162,7 +1162,7 @@ export function PilotReadinessPage() {
 
         <section className="border-b border-white/10 bg-slate-900/50">
           <div className="mx-auto max-w-7xl px-6 py-16">
-            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
               <div>
                 <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">
                   Confidence rules
@@ -1176,7 +1176,7 @@ export function PilotReadinessPage() {
                 </p>
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 {pilotConfidenceRules.map((rule) => (
                   <div
                     key={rule.id}
@@ -1203,7 +1203,7 @@ export function PilotReadinessPage() {
               <h2 className="mt-4 text-3xl font-semibold text-slate-50">
                 Park the pilot when the requested outcome outruns the proof.
               </h2>
-              <div className="mt-6 grid gap-3 md:grid-cols-2">
+              <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {pilotStopConditions.map((condition) => (
                   <div
                     key={condition}
@@ -1310,7 +1310,7 @@ function RetainedArtifactManager({
           generated from the final text.
         </p>
         <code
-          className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
+          className="mt-3 block min-w-0 max-w-full overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100"
           tabIndex={0}
           aria-label="Register-ready update command"
         >
@@ -1336,7 +1336,7 @@ function RetainedArtifactCheckGrid({
   return (
     <div className="mt-5">
       <div className="text-xs uppercase tracking-[0.18em] text-slate-300">{title}</div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
         {checks.map((check) => (
           <div
             key={check.id}

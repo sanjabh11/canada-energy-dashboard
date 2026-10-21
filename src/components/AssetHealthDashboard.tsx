@@ -327,7 +327,7 @@ export const AssetHealthDashboard: React.FC = () => {
                   ref={fileInputRef}
                   accept=".csv"
                   onChange={handleFileUpload}
-                  className="hidden"
+                  className="sr-only"
                   id="asset-csv-upload"
                 />
                 <label
@@ -563,7 +563,12 @@ export const AssetHealthDashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
-              <div className="overflow-x-auto">
+              <div
+                className="min-w-0 max-w-full overflow-x-auto"
+                role="region"
+                aria-label="Asset scoring detail"
+                tabIndex={0}
+              >
                 <table className="w-full text-xs">
                   <thead className="bg-slate-700/30">
                     <tr>

@@ -259,7 +259,12 @@ const ForecastBenchmarkingPage: React.FC = () => {
         </div>
 
         {/* Main Forecast Accuracy Panel */}
-        <div className="mb-8">
+        <div
+          className="mb-8 min-w-0 max-w-full overflow-x-auto"
+          role="region"
+          aria-label="Forecast accuracy panel"
+          tabIndex={0}
+        >
           <ForecastAccuracyPanel resourceType={resourceType} province={province} />
         </div>
 
@@ -314,8 +319,8 @@ const ForecastBenchmarkingPage: React.FC = () => {
           className="bg-slate-800/80 border border-slate-700 rounded-xl p-5 mb-8"
           data-testid="feature-ranking-benchmark-card"
         >
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <h2 className="text-slate-50 font-semibold">Feature Ranking / Parity Benchmark</h2>
               <p className="text-sm text-slate-300">
                 Retained sensor set from the live SVM-RFE adapter plus the latest aligned parity
@@ -323,7 +328,7 @@ const ForecastBenchmarkingPage: React.FC = () => {
               </p>
             </div>
             <div
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              className={`min-w-0 rounded-full px-3 py-1 text-xs font-semibold ${
                 paritySummary?.available && paritySummary?.artifact?.parityPassed
                   ? 'bg-emerald-500/15 text-emerald-200'
                   : 'bg-amber-500/15 text-amber-200'

@@ -301,7 +301,7 @@ const StatusPage: React.FC = () => {
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
                       {index + 1}
                     </span>
-                    <code className="min-w-0 break-words font-mono text-xs leading-5 text-slate-800">
+                    <code className="min-w-0 break-all font-mono text-xs leading-5 text-slate-800">
                       {command}
                     </code>
                   </div>
@@ -310,7 +310,10 @@ const StatusPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
               {PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => (
-                <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                <article
+                  key={item.id}
+                  className="min-w-0 rounded-xl border border-slate-200 bg-white p-4"
+                >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div className="flex items-start gap-3">
                       {getPublicStatusIcon(item.status)}
@@ -332,7 +335,7 @@ const StatusPage: React.FC = () => {
                     <div className="mt-4 break-words rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
                       <span className="font-semibold text-slate-900">Manifest lineage:</span>{' '}
                       {item.sourceManifestPath ? (
-                        <code className="break-words font-mono text-slate-800">
+                        <code className="break-all font-mono text-slate-800">
                           {item.sourceManifestPath}
                         </code>
                       ) : null}
@@ -340,7 +343,7 @@ const StatusPage: React.FC = () => {
                         <>
                           {' '}
                           <span className="text-slate-400">/</span>{' '}
-                          <code className="break-words font-mono text-slate-800">
+                          <code className="break-all font-mono text-slate-800">
                             {item.sourceProofType}
                           </code>
                         </>
@@ -349,7 +352,7 @@ const StatusPage: React.FC = () => {
                         <>
                           {' '}
                           <span className="text-slate-400">/</span>{' '}
-                          <code className="break-words font-mono text-slate-800">
+                          <code className="break-all font-mono text-slate-800">
                             {item.sourceProofTypes.join(', ')}
                           </code>
                         </>
@@ -378,7 +381,7 @@ const StatusPage: React.FC = () => {
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Project ref:{' '}
-                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800">
+                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800 break-all">
                   {SUPABASE_ADVISOR_STATUS_CARD.projectRef}
                 </code>
               </p>

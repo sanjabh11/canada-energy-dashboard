@@ -1118,7 +1118,7 @@ const UtilityDemandForecastPage: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_1.45fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.45fr)]">
           <section className="min-w-0 space-y-6">
             <div
               className="rounded-xl border border-slate-700 bg-slate-800/70 p-5"
@@ -1472,7 +1472,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                       {ontarioSubmissionBundle.packets.map((packet) => (
                         <div
                           key={packet.slug}
-                          className="rounded-lg border border-slate-700 bg-slate-900/60 p-4"
+                          className="min-w-0 rounded-lg border border-slate-700 bg-slate-900/60 p-4"
                           data-testid={`utility-submission-card-${packet.slug}`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -1542,7 +1542,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               </div>
                               <ul className="mt-1 space-y-1 text-xs text-slate-300">
                                 {packet.field_mappings.map((field) => (
-                                  <li key={`${packet.slug}-${field.label}`} className="break-words">
+                                  <li key={`${packet.slug}-${field.label}`} className="break-all">
                                     <span className="text-slate-100">{field.label}:</span>{' '}
                                     {field.value}
                                     <span
@@ -1812,9 +1812,9 @@ const UtilityDemandForecastPage: React.FC = () => {
               </div>
 
               <div className="mt-4 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5">
-                <label className="flex cursor-pointer flex-col items-center gap-3 text-center">
+                <label className="flex min-w-0 w-full cursor-pointer flex-col items-center gap-3 text-center">
                   <Upload className="h-8 w-8 text-cyan-300" />
-                  <div>
+                  <div className="min-w-0 max-w-full break-words">
                     <div className="font-medium text-slate-50">Upload historical load CSV</div>
                     <div className="mt-1 text-xs text-slate-300">
                       Required: timestamp and demand. Optional: geography, customer class, weather
@@ -1825,7 +1825,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                   <input
                     type="file"
                     accept=".csv,text/csv"
-                    className="hidden"
+                    className="sr-only"
                     onChange={handleFileUpload}
                   />
                   <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-950">
@@ -2294,7 +2294,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </ul>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                     <div className="min-w-0 rounded-lg border border-slate-700 bg-slate-900/60 p-4">
                       <div className="font-medium text-slate-50">Live surface truth contract</div>
                       <div className="mt-2 text-xs text-slate-300">
@@ -2458,7 +2458,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
 
                   <div
-                    className="mt-4 overflow-x-auto"
+                    className="mt-4 min-w-0 max-w-full overflow-x-auto"
                     role="region"
                     aria-label="Scrollable data table"
                     tabIndex={0}
@@ -2500,7 +2500,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                   <div className="min-w-0 rounded-xl border border-slate-700 bg-slate-800/70 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -2541,7 +2541,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </div>
 
                     <div
-                      className="mt-4 overflow-x-auto"
+                      className="mt-4 min-w-0 max-w-full overflow-x-auto"
                       role="region"
                       aria-label="Scrollable data table"
                       tabIndex={0}
@@ -2638,7 +2638,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
                   <div className="min-w-0 rounded-xl border border-slate-700 bg-slate-800/70 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -2682,7 +2682,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                     </div>
 
                     <div
-                      className="mt-4 overflow-x-auto"
+                      className="mt-4 min-w-0 max-w-full overflow-x-auto"
                       role="region"
                       aria-label="Scrollable data table"
                       tabIndex={0}

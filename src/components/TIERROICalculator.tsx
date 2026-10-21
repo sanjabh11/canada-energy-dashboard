@@ -658,12 +658,12 @@ export const TIERROICalculator: React.FC = () => {
               </div>
 
               <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium text-slate-300">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <h4 className="min-w-0 text-sm font-medium text-slate-300">
                     Current planning price basis
                   </h4>
                   <div
-                    className={`text-xs px-2 py-1 rounded-full border ${
+                    className={`min-w-0 text-xs px-2 py-1 rounded-full border ${
                       liveTierMarketRateSource
                         ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
                         : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
@@ -674,13 +674,13 @@ export const TIERROICalculator: React.FC = () => {
                       : 'Fallback planning snapshot in use'}
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <div className="text-sm text-red-400">TIER Fund Price</div>
                     <div className="text-2xl font-bold text-red-500">CAD {FUND_PRICE}/t</div>
                   </div>
                   <div className="text-slate-300">vs</div>
-                  <div className="text-right">
+                  <div className="min-w-0 text-right">
                     <div className="text-sm text-emerald-400">Market Credit Price</div>
                     <div className="text-2xl font-bold text-emerald-400">CAD {MARKET_PRICE}/t</div>
                     <div className="text-xs text-slate-300 mt-1">
@@ -741,14 +741,14 @@ export const TIERROICalculator: React.FC = () => {
               <div className="space-y-3">
                 {/* Fund payment pathway — included in the best-option comparison */}
                 <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
                       <div className="text-sm text-red-400">Fund Payment Pathway</div>
                       <div className="text-xs text-slate-300">
                         {benchmarkExceedance.toLocaleString()} t × {formatCad(FUND_PRICE)}/t
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-red-500">
+                    <div className="min-w-0 text-2xl font-bold text-red-500">
                       {formatCad(results.pathways.fundPayment.costCad)}
                     </div>
                   </div>
@@ -756,14 +756,14 @@ export const TIERROICalculator: React.FC = () => {
 
                 {/* Market credits pathway */}
                 <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
                       <div className="text-sm text-emerald-400">Market Credits Pathway</div>
                       <div className="text-xs text-slate-300">
                         {benchmarkExceedance.toLocaleString()} t × {formatCad(MARKET_PRICE)}/t
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-emerald-400">
+                    <div className="min-w-0 text-2xl font-bold text-emerald-400">
                       {formatCad(results.pathways.marketCredits.costCad)}
                     </div>
                   </div>
@@ -786,7 +786,7 @@ export const TIERROICalculator: React.FC = () => {
                         under the Canada–Alberta implementation agreement
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="min-w-0 text-right">
                       <div className="text-sm font-semibold text-blue-300">
                         {formatCad(results.pathways.directInvestment.costRangeCad.low)} –{' '}
                         {formatCad(results.pathways.directInvestment.costRangeCad.high)}
@@ -800,15 +800,15 @@ export const TIERROICalculator: React.FC = () => {
 
                 {/* CEIP Fee — billed USD to match the subscription catalog */}
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
                       <div className="text-sm text-slate-300">CEIP Platform Fee (USD)</div>
                       <div className="text-xs text-slate-300">
                         {formatUsd(results.fees.baseUsd)} annual base + {SUCCESS_FEE_RATE * 100}%
                         success fee on modeled savings
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="min-w-0 text-right">
                       <div className="text-lg font-semibold text-slate-300">
                         {results.fees.totalUsd !== null ? formatUsd(results.fees.totalUsd) : '—'}
                       </div>
@@ -874,15 +874,15 @@ export const TIERROICalculator: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <div className="text-sm text-emerald-400">Your Net Savings (CAD)</div>
                         <div className="text-4xl font-bold text-slate-50">
                           {formatCad(results.netSavingsCad)}
                         </div>
                       </div>
                       {results.roiPercent !== null && (
-                        <div className="text-right">
+                        <div className="min-w-0 text-right">
                           <div className="text-sm text-emerald-400">ROI</div>
                           <div className="text-3xl font-bold text-emerald-400">
                             {results.roiPercent.toFixed(0)}%
@@ -968,18 +968,18 @@ export const TIERROICalculator: React.FC = () => {
           </div>
 
           {/* Trust Elements */}
-          <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-3 gap-4 text-center">
-            <div className="flex flex-col items-center gap-2">
+          <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-1 gap-4 text-center sm:grid-cols-3">
+            <div className="flex min-w-0 flex-col items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-500" />
               <span className="text-sm text-slate-300">
                 Published fund schedule + market scenario input
               </span>
             </div>
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex min-w-0 flex-col items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-500" />
               <span className="text-sm text-slate-300">3-Pathway Compliance Modeling</span>
             </div>
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex min-w-0 flex-col items-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-500" />
               <span className="text-sm text-slate-300">Draft Scenario Exports</span>
             </div>

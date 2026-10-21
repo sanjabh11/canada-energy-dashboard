@@ -223,7 +223,7 @@ export const ShadowBillingModule: React.FC = () => {
           className="mb-6"
         />
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <section className="min-w-0 space-y-6">
             <div
               className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6"
@@ -241,9 +241,9 @@ export const ShadowBillingModule: React.FC = () => {
               </div>
 
               <div className="mt-4 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5">
-                <label className="flex cursor-pointer flex-col items-center gap-3 text-center">
+                <label className="flex min-w-0 w-full cursor-pointer flex-col items-center gap-3 text-center">
                   <Upload className="h-8 w-8 text-cyan-300" />
-                  <div>
+                  <div className="min-w-0 max-w-full break-words">
                     <div className="font-medium text-slate-50">Upload 12-month billing CSV</div>
                     <div className="mt-1 text-xs text-slate-300">
                       Required columns: `billing_period`, `consumption_kwh`,
@@ -254,7 +254,7 @@ export const ShadowBillingModule: React.FC = () => {
                     ref={fileInputRef}
                     type="file"
                     accept=".csv,text/csv"
-                    className="hidden"
+                    className="sr-only"
                     onChange={handleImport}
                   />
                   <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-950">
@@ -392,7 +392,12 @@ export const ShadowBillingModule: React.FC = () => {
         {showDetails && (
           <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
             <h3 className="text-lg font-semibold text-slate-50">Monthly invoice comparison</h3>
-            <div className="mt-4 overflow-x-auto">
+            <div
+              className="mt-4 min-w-0 max-w-full overflow-x-auto"
+              role="region"
+              aria-label="Monthly invoice comparison"
+              tabIndex={0}
+            >
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 text-slate-300">

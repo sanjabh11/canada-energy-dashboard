@@ -160,7 +160,7 @@ export function UtilitySecurityStatement() {
         </div>
 
         <div
-          className="mt-6 min-w-0 overflow-x-auto"
+          className="mt-6 min-w-0 max-w-full overflow-x-auto"
           role="region"
           aria-label="Utility security review pack"
           tabIndex={0}
@@ -172,7 +172,7 @@ export function UtilitySecurityStatement() {
           />
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mt-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <section
             className="min-w-0 rounded-2xl border border-slate-700 bg-slate-800/60 p-6"
             data-testid="utility-security-control-matrix"
@@ -182,7 +182,7 @@ export function UtilitySecurityStatement() {
               <h2 className="text-lg font-semibold text-slate-50">Control matrix</h2>
             </div>
             <div
-              className="mt-4 overflow-x-auto"
+              className="mt-4 min-w-0 max-w-full overflow-x-auto"
               role="region"
               aria-label="Control matrix"
               tabIndex={0}

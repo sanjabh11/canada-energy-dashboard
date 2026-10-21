@@ -172,8 +172,8 @@ export function ByoCsvProofPage() {
               </nav>
             </header>
 
-            <div className="grid gap-10 py-14 lg:grid-cols-[1.12fr_0.88fr] lg:py-20">
-              <div>
+            <div className="grid min-w-0 grid-cols-1 gap-10 py-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:py-20">
+              <div className="min-w-0">
                 <div className="text-sm uppercase tracking-[0.24em] text-emerald-200/80">
                   Buyer evidence intake
                 </div>
@@ -189,7 +189,10 @@ export function ByoCsvProofPage() {
                 </p>
               </div>
 
-              <div className="grid gap-3 self-start min-w-0" data-testid="byo-csv-proof-report">
+              <div
+                className="grid min-w-0 grid-cols-1 gap-3 self-start"
+                data-testid="byo-csv-proof-report"
+              >
                 <SummaryMetric label="Rows" value={String(report.row_count)} />
                 <SummaryMetric label="Columns" value={String(report.column_count)} />
                 <SummaryMetric
@@ -218,15 +221,15 @@ export function ByoCsvProofPage() {
         </section>
 
         <section className="border-b border-white/10 bg-slate-950">
-          <div className="mx-auto grid max-w-7xl gap-8 px-6 py-14 lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="mx-auto grid min-w-0 max-w-7xl grid-cols-1 gap-8 px-6 py-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
             <div className="min-w-0">
               <div className="flex items-center gap-3 text-emerald-100">
                 <Upload className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">CSV sample</span>
               </div>
-              <div className="mt-5 grid gap-4">
+              <div className="mt-5 grid grid-cols-1 gap-4">
                 <div className="rounded-lg border border-emerald-300/20 bg-emerald-300/10 p-4">
-                  <label className="grid gap-2 text-sm text-emerald-50">
+                  <label className="grid grid-cols-1 gap-2 text-sm text-emerald-50">
                     Local CSV file
                     <input
                       ref={fileInputRef}
@@ -238,7 +241,7 @@ export function ByoCsvProofPage() {
                     />
                   </label>
                   <div
-                    className="mt-3 grid gap-1 text-sm text-slate-200"
+                    className="mt-3 grid grid-cols-1 gap-1 text-sm text-slate-200"
                     data-testid="byo-csv-local-file-status"
                   >
                     <span>Local file status: {fileStatus}</span>
@@ -254,7 +257,7 @@ export function ByoCsvProofPage() {
                     </div>
                   ) : null}
                 </div>
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid grid-cols-1 gap-2 text-sm text-slate-300">
                   Source label
                   <input
                     value={sourceLabel}
@@ -262,7 +265,7 @@ export function ByoCsvProofPage() {
                     className="rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-300/50"
                   />
                 </label>
-                <label className="grid gap-2 text-sm text-slate-300">
+                <label className="grid grid-cols-1 gap-2 text-sm text-slate-300">
                   Route under review
                   <select
                     value={route}
@@ -338,7 +341,7 @@ export function ByoCsvProofPage() {
                 <span className="text-sm uppercase tracking-[0.24em]">Column profile</span>
               </div>
               <div
-                className="mt-5 overflow-x-auto rounded-lg border border-white/10"
+                className="mt-5 min-w-0 max-w-full overflow-x-auto rounded-lg border border-white/10"
                 role="region"
                 aria-label="CSV column profile"
                 tabIndex={0}
@@ -370,7 +373,7 @@ export function ByoCsvProofPage() {
                   Proof boundary
                 </div>
                 <p className="mt-3 text-sm leading-6 text-slate-200">{report.proof_boundary}</p>
-                <ul className="mt-4 grid gap-2 text-sm leading-6 text-slate-300">
+                <ul className="mt-4 grid grid-cols-1 gap-2 text-sm leading-6 text-slate-300">
                   {report.do_not_claim.map((claim) => (
                     <li key={claim}>Do-not-claim boundary: {claim}</li>
                   ))}
@@ -397,7 +400,7 @@ export function ByoCsvProofPage() {
               </button>
             </div>
             <pre
-              className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-slate-950 p-5 text-xs leading-6 text-slate-200"
+              className="mt-4 max-h-[34rem] min-w-0 max-w-full overflow-auto rounded-lg border border-white/10 bg-slate-950 p-5 text-xs leading-6 text-slate-200"
               data-testid="byo-csv-markdown"
               tabIndex={0}
               aria-label="Markdown proof report"

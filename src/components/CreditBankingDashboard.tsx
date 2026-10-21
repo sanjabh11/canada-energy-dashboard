@@ -415,7 +415,7 @@ function UploadCard({
       <FileSpreadsheet className="mx-auto h-8 w-8 text-cyan-300" />
       <div className="mt-3 font-medium text-slate-50">{title}</div>
       <div className="mt-1 text-xs text-slate-300">{description}</div>
-      <input type="file" accept=".csv,text/csv" className="hidden" onChange={onChange} />
+      <input type="file" accept=".csv,text/csv" className="sr-only" onChange={onChange} />
       <span className="mt-4 inline-flex rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-950">
         Select CSV
       </span>

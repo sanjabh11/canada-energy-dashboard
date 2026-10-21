@@ -170,8 +170,8 @@ export function GaIciPeakPredictorPage() {
               </nav>
             </header>
 
-            <div className="grid gap-10 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:py-20">
-              <div>
+            <div className="grid min-w-0 grid-cols-1 gap-10 py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:py-20">
+              <div className="min-w-0">
                 <div className="text-sm uppercase tracking-[0.24em] text-cyan-200/80">
                   Bounded wedge route
                 </div>
@@ -185,7 +185,10 @@ export function GaIciPeakPredictorPage() {
                 </p>
               </div>
 
-              <div className="grid gap-3 self-start" aria-label="GA ICI summary metrics">
+              <div
+                className="grid min-w-0 grid-cols-1 gap-3 self-start"
+                aria-label="GA ICI summary metrics"
+              >
                 <SummaryMetric
                   label="Estimated peak demand factor"
                   value={formatNumber(report.estimated_peak_demand_factor, 6)}
@@ -211,7 +214,7 @@ export function GaIciPeakPredictorPage() {
               <span className="text-sm uppercase tracking-[0.24em]">Top 10 candidate windows</span>
             </div>
             <div
-              className="mt-6 overflow-x-auto rounded-lg border border-white/10"
+              className="mt-6 min-w-0 max-w-full overflow-x-auto rounded-lg border border-white/10"
               data-testid="ga-ici-watchlist"
               role="region"
               aria-label="Top 10 candidate peak windows"
@@ -250,14 +253,14 @@ export function GaIciPeakPredictorPage() {
         </section>
 
         <section className="border-b border-white/10 bg-slate-900/45">
-          <div className="mx-auto grid max-w-7xl gap-8 px-6 py-14 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="mx-auto grid min-w-0 max-w-7xl grid-cols-1 gap-8 px-6 py-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
             <div className="min-w-0">
               <div className="flex items-center gap-3 text-amber-100">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="text-sm uppercase tracking-[0.24em]">Proof boundary</span>
               </div>
               <p className="mt-4 text-base leading-7 text-slate-200">{report.claim_boundary}</p>
-              <ul className="mt-6 grid gap-3 text-sm leading-6 text-slate-300">
+              <ul className="mt-6 grid grid-cols-1 gap-3 text-sm leading-6 text-slate-300">
                 {report.do_not_claim.map((claim) => (
                   <li
                     key={claim}
@@ -276,7 +279,7 @@ export function GaIciPeakPredictorPage() {
                 <span className="text-sm uppercase tracking-[0.24em]">Markdown proof artifact</span>
               </div>
               <pre
-                className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-slate-950 p-5 text-xs leading-6 text-slate-200"
+                className="mt-4 max-h-[34rem] min-w-0 max-w-full overflow-auto rounded-lg border border-white/10 bg-slate-950 p-5 text-xs leading-6 text-slate-200"
                 tabIndex={0}
                 aria-label="Markdown proof artifact"
               >
@@ -288,7 +291,7 @@ export function GaIciPeakPredictorPage() {
 
         <section className="bg-slate-950">
           <div className="mx-auto max-w-7xl px-6 py-14">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {report.source_urls.map((url) => (
                 <a
                   key={url}
