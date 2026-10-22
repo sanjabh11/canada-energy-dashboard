@@ -94,6 +94,13 @@ jobs:
       - name: Positioning audit verifier
         run: pnpm run check:positioning-audit -- --strict
 
+      - name: Evidence-binding identity gate
+        # Fails when goal.md's documented bound SHA is not an ancestor of
+        # HEAD, the named run's headSha disagrees, or conclusion != success.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-evidence-binding.mjs
+
   test:
     runs-on: ubuntu-24.04
     env:
