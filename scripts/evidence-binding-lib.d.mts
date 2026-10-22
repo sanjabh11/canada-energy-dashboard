@@ -19,5 +19,6 @@ export function assertRunBinding(
   run: { head_sha?: string; conclusion?: string } | null,
   jobs: { name: string; conclusion: string }[],
   boundSha: string,
+  requiredJobNames?: string[],
 ): void;
 export function parseBoundIdentity(goalText: string): { boundSha: string; runId: string };

@@ -123,6 +123,26 @@ describe('evidence-binding gate — negative fixtures', () => {
         'aaaaaaa',
       ),
     ).toThrow(/no verification jobs/);
+    expect(() =>
+      assertRunBinding(
+        { head_sha: 'aaaaaaa', conclusion: 'success' },
+        [
+          { name: 'lint-typecheck', conclusion: 'success' },
+          { name: 'test', conclusion: 'success' },
+          { name: 'build-and-smoke', conclusion: 'success' },
+        ],
+        'aaaaaaa',
+        ['lint-typecheck', 'test', 'build-and-smoke'],
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertRunBinding(
+        { head_sha: 'aaaaaaa', conclusion: 'success' },
+        [{ name: 'test', conclusion: 'success' }],
+        'aaaaaaa',
+        ['lint-typecheck', 'test', 'build-and-smoke'],
+      ),
+    ).toThrow(/required verification jobs missing/);
   });
 
   it('staleDescendants exempts only the current run head commit', () => {

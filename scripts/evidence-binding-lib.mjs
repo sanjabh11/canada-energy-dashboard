@@ -79,13 +79,18 @@ const GATE_JOB = 'evidence-binding';
 // binding job itself may fail — its red means "docs are stale", not that the
 // code is unproven. This avoids the recursion deadlock where a code commit's
 // own run can never become the bound source.
-export function assertRunBinding(run, jobs, boundSha) {
+export function assertRunBinding(run, jobs, boundSha, requiredJobNames = []) {
   if (!run || !run.head_sha) throw new Error(`run not found for bound run id`);
   if (!run.head_sha.startsWith(boundSha))
     throw new Error(`run headSha ${run.head_sha.slice(0, 8)} ≠ bound ${boundSha}`);
   const verificationJobs = (jobs ?? []).filter((j) => j.name !== GATE_JOB);
   if (verificationJobs.length === 0)
     throw new Error(`no verification jobs found for bound run`);
+  const missing = requiredJobNames.filter(
+    (name) => !verificationJobs.some((job) => job.name === name),
+  );
+  if (missing.length > 0)
+    throw new Error(`required verification jobs missing: ${missing.join(', ')}`);
   const bad = verificationJobs.filter((j) => j.conclusion !== 'success');
   if (bad.length > 0)
     throw new Error(`verification jobs not green: ${bad.map((j) => `${j.name}=${j.conclusion}`).join(', ')}`);

@@ -38,6 +38,15 @@ const fail = (msg) => {
   process.exit(1);
 };
 
+const REQUIRED_WORKFLOW = 'CI';
+const REQUIRED_VERIFICATION_JOBS = ['lint-typecheck', 'test', 'build-and-smoke'];
+
+const assertCiRunBinding = (run, jobs, boundSha) => {
+  if (!run || run.name !== REQUIRED_WORKFLOW)
+    throw new Error(`run workflow ${run?.name ?? 'unknown'} is not ${REQUIRED_WORKFLOW}`);
+  assertRunBinding(run, jobs, boundSha, REQUIRED_VERIFICATION_JOBS);
+};
+
 let bound;
 try {
   bound = parseBoundIdentity(readFileSync('goal.md', 'utf8'));
@@ -64,7 +73,7 @@ try {
         'api',
         `repos/{owner}/{repo}/actions/runs/${bound.runId}`,
         '--jq',
-        '{head_sha,conclusion,head_branch}',
+        '{head_sha,conclusion,head_branch,name}',
       ],
       { encoding: 'utf8' },
     ),
@@ -80,7 +89,7 @@ try {
   fail(`could not fetch run ${bound.runId}`);
 }
 try {
-  assertRunBinding(run, jobs, bound.boundSha);
+  assertCiRunBinding(run, jobs, bound.boundSha);
 } catch (e) {
   fail(e.message);
 }
@@ -134,7 +143,11 @@ for (const c of staleCommits) {
           { encoding: 'utf8' },
         ),
       );
-      assertRunBinding(candidate, rjobs, c.sha);
+      try {
+        assertCiRunBinding(candidate, rjobs, c.sha);
+      } catch {
+        continue;
+      }
       if (rjobs.length > 0) {
         covered = true;
         break;
