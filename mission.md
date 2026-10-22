@@ -67,11 +67,11 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Branch HEAD | `7d8c1fed66be9ec3d18b09b2367a91df2680f87e` | Git checkout |
+| Branch HEAD | `0a9d6713f98987639eddc9e43b6be51f7864e870` | Git checkout |
 | Code-bearing CI subject | `3766ca6d` / run `39726844686` | CI-verified dependency/source change |
-| Current documentation subject | `7d8c1fe` / run `39728420587` | CI-verified docs descendant |
+| Current documentation subject | `0a9d671` / run `39740724289` | CI-verified docs descendant |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Bound CI | [run 39728420587](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39728420587) | GitHub job conclusions |
+| Bound CI | [run 39740724289](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39740724289) | GitHub job conclusions |
 | CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success | CI-verified |
 | Artifact | `12404293064`, digest `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702` | GitHub artifact API |
 | Manifest | `complete=true`, nine files, `missing_files=[]` | Artifact-verified |
@@ -257,7 +257,7 @@ hosted service stops the mission.
 1. Update `goal.md` and the current audit addendum to the exact current HEAD,
    CI run, merge SHA, artifact ID/digest, tree fingerprint and manifest hash.
 2. Record the dependency/source proof separately for `3766ca6`/`39726844686`,
-   the documentation proof for `7d8c1fe`/`39728420587`, and the older external
+   the documentation proof for `0a9d671`/`39740724289`, and the older external
    review for `10ab812`/`39641749404`.
 3. Mark `jobs: not-recorded` as a manifest limitation and cite external job
    conclusions separately.

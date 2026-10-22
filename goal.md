@@ -10,21 +10,21 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-22):** bound HEAD `7d8c1fe` — CI run
-> `39728420587` green on pinned `ubuntu-24.04` (merge `656e5f53`, artifact
-> `12404293064`, digest
-> `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702`;
-> manifest `complete:true`, sidecar `shasum -c` verified here). Externally
-> auditor-verified run `39641749404` on `10ab812` (merge `d36e88f2`, artifact
-> `12365798216`, digest `sha256:7e77cc63…`, tree fingerprint `494227ce…`,
-> manifest hash `a7557cbf…`; Phase0 35/35, Phase6 80/80, wedge 80/80, a11y
-> 110/110). Docs commits `42d4e2d`→`3375d8c` bound by runs `39732926207`,
-> `39735034544`, `39735076602` (all green; latest artifact `12407332805`,
-> digest `sha256:82540ccd…`). Any later commit is docs-only; latest
-> successful run is authoritative.
-> Clean-clone reproduction at exact HEAD `42d4e2d`: 177/177 files,
-> 1329/1329 tests, 22.37% lines (expected nondeterminism vs CI 22.55%),
-> lcov `f7364e6c…`, a11y 110/110 ×5 engines.
+> **Milestone status (2026-10-22):** bound HEAD `0a9d671` — CI run
+> `39740724289` green on pinned `ubuntu-24.04` (merge `38b0b2b9`, artifact
+> `12409798785`, digest
+> `sha256:5e720c593682d4fcae0118703e10b65bbde7cb1f38b1c2ca60eb7734d7ae909f`;
+> manifest `complete:true`, sidecar verified). The commit carrying this
+> document is bound by its own CI run — the authoritative binding rule is:
+> **the run whose `headSha` equals a commit binds that commit; no older run
+> is proof for a newer HEAD.** Machine check:
+> `node scripts/check-evidence-binding.mjs`. Externally auditor-verified run
+> `39641749404` on `10ab812` (merge `d36e88f2`, artifact `12365798216`,
+> digest `sha256:7e77cc63…`, tree fingerprint `494227ce…`, manifest hash
+> `a7557cbf…`; Phase0 35/35, Phase6 80/80, wedge 80/80, a11y 110/110).
+> Clean-clone reproduction at `42d4e2d`: 177/177 files, 1329/1329 tests,
+> 22.37% lines (expected nondeterminism vs CI 22.55%), lcov `f7364e6c…`,
+> a11y 110/110 ×5 engines.
 > This run binds the audit-session overlay commits (`ad444941`…`f12accc`)
 > and the structural WebKit reflow fixes; the audit-3 refutations are closed
 > at the committed CI proof layer (manifest `complete:true`, `missing_files:[]`,
@@ -36,7 +36,8 @@
 > broke the previous run's browser install; the image is now pinned.
 > Prior bound runs (`39554044008`/`4f0348d`, `39552477642`/`e7a5f81`,
 > `39550773406`/`caadfc5`) remain historical evidence. Any later commit is
-> docs-only; the latest successful branch run is authoritative.
+> docs-only; binding rule: the run whose `headSha` equals a commit
+> binds that commit — no older run is proof for a newer HEAD.
 > WCAG evidence claims automated axe+reflow coverage only —
 > manual 2.2 review stays open. Supabase project-ref discrepancy
 > (`qnymb…` vs `cwij…`) is recorded owner-gated. (Historical baselines —
@@ -50,7 +51,7 @@
 > for classification; no reset or restoration was performed.
 >
 > **Source remediation — now CI-bound:** commit `ad44494` (test-only
-> child-process warning isolation) is bound by run `39728420587` on `7d8c1fe`
+> child-process warning isolation) is bound by run `39740724289` on `0a9d671`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
 > lifted here. The guard-blocked scans (client-env 2272 surfaces, repo
 > hygiene, secret scan — HEAD clean, documented INC history only) were
@@ -74,14 +75,14 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `7d8c1fe` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; bound HEAD `7d8c1fe` | addendum 2026-10-21/22; run `39728420587`; merge `656e5f53`; artifact `12404293064` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
+| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `0a9d671` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; bound HEAD `0a9d671` | addendum 2026-10-21/22; run `39740724289`; merge `38b0b2b9`; artifact `12409798785` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
-| P3 — Stale economics suppressed | partial | local tests + committed CI | `7d8c1fe` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `7d8c1fe` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P3 — Stale economics suppressed | partial | local tests + committed CI | `0a9d671` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `0a9d671` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
-| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `7d8c1fe` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `7d8c1fe` | run `39728420587` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `0a9d671` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `0a9d671` | run `39740724289` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
