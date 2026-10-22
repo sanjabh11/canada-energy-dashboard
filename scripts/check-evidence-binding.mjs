@@ -50,7 +50,7 @@ try {
   fail(`bound source ${bound.boundSha} is not an ancestor of ${currentHead.slice(0, 8)}`);
 }
 
-let run;
+let run, jobs;
 try {
   run = JSON.parse(
     execFileSync(
@@ -64,11 +64,18 @@ try {
       { encoding: 'utf8' },
     ),
   );
+  jobs = JSON.parse(
+    execFileSync(
+      'gh',
+      ['api', `repos/{owner}/{repo}/actions/runs/${bound.runId}/jobs`, '--jq', '.jobs'],
+      { encoding: 'utf8' },
+    ),
+  );
 } catch {
   fail(`could not fetch run ${bound.runId}`);
 }
 try {
-  assertRunBinding(run, bound.boundSha);
+  assertRunBinding(run, jobs, bound.boundSha);
 } catch (e) {
   fail(e.message);
 }
@@ -93,10 +100,56 @@ const commits = descendants.map((sha) => ({
 }));
 const staleCommits = staleDescendants(commits, currentHead);
 
-if (staleCommits.length > 0) {
+const unbound = [];
+for (const c of staleCommits) {
+  // A non-evidence descendant is covered if it has its own binding-eligible
+  // run: every verification job green (the gate job may be red — staleness
+  // signal only). Otherwise the code has no proof and the gate fails.
+  let runs;
+  try {
+    runs = JSON.parse(
+      execFileSync(
+        'gh',
+        [
+          'api',
+          `repos/{owner}/{repo}/actions/runs?head_sha=${c.sha}&per_page=5`,
+          '--jq',
+          '.workflow_runs[].databaseId',
+        ],
+        { encoding: 'utf8' },
+      ),
+    )
+      .split('\n')
+      .filter(Boolean);
+  } catch {
+    runs = [];
+  }
+  let covered = false;
+  for (const rid of runs.slice(0, 3)) {
+    try {
+      const rjobs = JSON.parse(
+        execFileSync(
+          'gh',
+          ['api', `repos/{owner}/{repo}/actions/runs/${rid}/jobs`, '--jq', '.jobs'],
+          { encoding: 'utf8' },
+        ),
+      );
+      const bad = rjobs.filter((j) => j.name !== 'evidence-binding' && j.conclusion !== 'success');
+      if (bad.length === 0) {
+        covered = true;
+        break;
+      }
+    } catch {
+      /* keep looking */
+    }
+  }
+  if (!covered) unbound.push(c);
+}
+
+if (unbound.length > 0) {
   fail(
-    `non-evidence commits after bound source ${bound.boundSha}: ` +
-      staleCommits.map((c) => `${c.sha}(${c.nonEvidence.join(',')})`).join(' | ') +
+    `non-evidence commits after bound source ${bound.boundSha} lack a green run: ` +
+      unbound.map((c) => `${c.sha.slice(0, 8)}(${c.nonEvidence.join(',')})`).join(' | ') +
       ` — rebind goal.md/mission.md/addendum to a green run covering them`,
   );
 }

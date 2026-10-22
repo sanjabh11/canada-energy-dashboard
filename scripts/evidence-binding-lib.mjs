@@ -41,12 +41,19 @@ export function assertEvidenceOnlyDiff(changedFiles) {
   }
 }
 
-export function assertRunBinding(run, boundSha) {
+const GATE_JOB = 'evidence-binding';
+
+// A run binds a source commit when every verification job passed. The
+// binding job itself may fail — its red means "docs are stale", not that the
+// code is unproven. This avoids the recursion deadlock where a code commit's
+// own run can never become the bound source.
+export function assertRunBinding(run, jobs, boundSha) {
   if (!run || !run.head_sha) throw new Error(`run not found for bound run id`);
-  if (run.conclusion !== 'success')
-    throw new Error(`run conclusion is ${run.conclusion}, not success`);
   if (!run.head_sha.startsWith(boundSha))
     throw new Error(`run headSha ${run.head_sha.slice(0, 8)} ≠ bound ${boundSha}`);
+  const bad = (jobs ?? []).filter((j) => j.name !== GATE_JOB && j.conclusion !== 'success');
+  if (bad.length > 0)
+    throw new Error(`verification jobs not green: ${bad.map((j) => `${j.name}=${j.conclusion}`).join(', ')}`);
 }
 
 export function parseBoundIdentity(goalText) {

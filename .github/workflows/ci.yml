@@ -94,14 +94,6 @@ jobs:
       - name: Positioning audit verifier
         run: pnpm run check:positioning-audit -- --strict
 
-      - name: Evidence-binding identity gate
-        # Fails when goal.md's documented bound SHA is not an ancestor of
-        # HEAD, the named run's headSha disagrees, or conclusion != success.
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CEIP_CURRENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: node scripts/check-evidence-binding.mjs
-
   test:
     runs-on: ubuntu-24.04
     env:
@@ -139,6 +131,21 @@ jobs:
         # Per-file floors on auth/intake/billing/TIER paths; the 26% global
         # line floor alone would let security-critical files sit at 0%.
         run: node scripts/check-critical-coverage.mjs
+
+  evidence-binding:
+    # Separate job: its failure means "docs are stale relative to bound
+    # source" — it must not poison the verification jobs, or a code commit
+    # could never become the bound source (recursion deadlock).
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Evidence-binding identity gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CEIP_CURRENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/check-evidence-binding.mjs
 
   build-and-smoke:
     runs-on: ubuntu-24.04

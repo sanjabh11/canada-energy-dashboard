@@ -47,15 +47,37 @@ describe('evidence-binding gate — negative fixtures', () => {
 
   it('fails a run/head mismatch', () => {
     expect(() =>
-      assertRunBinding({ head_sha: 'aaaaaaa', conclusion: 'success' }, 'bbbbbbb'),
+      assertRunBinding(
+        { head_sha: 'aaaaaaa', conclusion: 'success' },
+        [{ name: 'test', conclusion: 'success' }],
+        'bbbbbbb',
+      ),
     ).toThrow(/headSha/);
   });
 
-  it('fails a failed or missing run', () => {
+  it('fails when any verification job is not green; tolerates a red gate job', () => {
     expect(() =>
-      assertRunBinding({ head_sha: 'aaaaaaa', conclusion: 'failure' }, 'aaaaaaa'),
-    ).toThrow(/failure/);
-    expect(() => assertRunBinding(null, 'aaaaaaa')).toThrow(/not found/);
+      assertRunBinding(
+        { head_sha: 'aaaaaaa', conclusion: 'failure' },
+        [
+          { name: 'test', conclusion: 'success' },
+          { name: 'lint-typecheck', conclusion: 'success' },
+          { name: 'evidence-binding', conclusion: 'failure' },
+        ],
+        'aaaaaaa',
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertRunBinding(
+        { head_sha: 'aaaaaaa', conclusion: 'failure' },
+        [
+          { name: 'test', conclusion: 'failure' },
+          { name: 'evidence-binding', conclusion: 'failure' },
+        ],
+        'aaaaaaa',
+      ),
+    ).toThrow(/test=failure/);
+    expect(() => assertRunBinding(null, [], 'aaaaaaa')).toThrow(/not found/);
   });
 
   it('staleDescendants exempts only the current run head commit', () => {
