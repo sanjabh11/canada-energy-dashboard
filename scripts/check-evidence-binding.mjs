@@ -24,6 +24,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import {
   assertRunBinding,
+  isEvidenceFile,
   parseBoundIdentity,
   staleDescendants,
 } from './evidence-binding-lib.mjs';
@@ -152,6 +153,27 @@ if (unbound.length > 0) {
       unbound.map((c) => `${c.sha.slice(0, 8)}(${c.nonEvidence.join(',')})`).join(' | ') +
       ` — rebind goal.md/mission.md/addendum to a green run covering them`,
   );
+}
+
+// Safety net for merge commits: diff-tree on a merge yields no file list, so
+// code smuggled in via a merge would look "evidence-only" per-commit. Check
+// the aggregate diff too — every non-evidence path must be attributable to a
+// self-bound or exempt descendant commit.
+const aggregateChanged = execFileSync(
+  'git',
+  ['diff', '--name-only', `${bound.boundSha}..${currentHead}`],
+  { encoding: 'utf8' },
+)
+  .split('\n')
+  .filter(Boolean);
+const justified = new Set(
+  commits
+    .filter((c) => !staleDescendants([c], currentHead).length)
+    .flatMap((c) => c.files),
+);
+const smuggled = aggregateChanged.filter((f) => !isEvidenceFile(f) && !justified.has(f));
+if (smuggled.length > 0) {
+  fail(`non-evidence paths in aggregate diff not covered by a bound commit: ${smuggled.join(', ')}`);
 }
 
 console.log(
