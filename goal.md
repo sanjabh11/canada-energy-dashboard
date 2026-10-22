@@ -18,8 +18,10 @@
 > auditor-verified run `39641749404` on `10ab812` (merge `d36e88f2`, artifact
 > `12365798216`, digest `sha256:7e77cc63…`, tree fingerprint `494227ce…`,
 > manifest hash `a7557cbf…`; Phase0 35/35, Phase6 80/80, wedge 80/80, a11y
-> 110/110). Docs commit `42d4e2d` is bound by run `39732926207` (green).
-> Any later commit is docs-only; latest successful run is authoritative.
+> 110/110). Docs commits `42d4e2d`→`3375d8c` bound by runs `39732926207`,
+> `39735034544`, `39735076602` (all green; latest artifact `12407332805`,
+> digest `sha256:82540ccd…`). Any later commit is docs-only; latest
+> successful run is authoritative.
 > Clean-clone reproduction at exact HEAD `42d4e2d`: 177/177 files,
 > 1329/1329 tests, 22.37% lines (expected nondeterminism vs CI 22.55%),
 > lcov `f7364e6c…`, a11y 110/110 ×5 engines.
@@ -42,8 +44,8 @@
 > see dated addenda.)
 >
 > **Current checkout overlay:** the checkout contains a documentation-only
-> descendant of the CI-bound parent. Its own CI run (`39728420587` on
-> `7d8c1fe`) is green — every commit on the branch is bound. The tracked
+> descendant of the CI-bound parent. Its own CI run (`39735076602` on
+> `3375d8c`) is green — every commit on the branch is bound. The tracked
 > `coverage/lcov.info` deletion remains in the local overlay and is preserved
 > for classification; no reset or restoration was performed.
 >
