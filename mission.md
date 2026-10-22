@@ -67,11 +67,11 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Branch HEAD | `3ff27df` | Git checkout |
+| Branch HEAD | `01006d9` | Git checkout |
 | Code-bearing CI subject | `3766ca6d` / run `39726844686` | CI-verified dependency/source change |
-| Current documentation subject | `3ff27df` / run `39755846368` | CI-verified docs descendant |
+| Current documentation subject | `01006d9` / run `39774258190` | CI-verified docs descendant |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Bound CI | [run 39755846368](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39755846368) | GitHub job conclusions |
+| Bound CI | [run 39774258190](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39774258190) | GitHub job conclusions |
 | CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success | CI-verified |
 | Artifact | `12404293064`, digest `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702` | GitHub artifact API |
 | Manifest | `complete=true`, nine files, `missing_files=[]` | Artifact-verified |
@@ -257,7 +257,7 @@ hosted service stops the mission.
 1. Update `goal.md` and the current audit addendum to the exact current HEAD,
    CI run, merge SHA, artifact ID/digest, tree fingerprint and manifest hash.
 2. Record the dependency/source proof separately for `3766ca6`/`39726844686`,
-   the documentation proof for `3ff27df`/`39755846368`, and the older external
+   the documentation proof for `01006d9`/`39774258190`, and the older external
    review for `10ab812`/`39641749404`.
 3. Mark `jobs: not-recorded` as a manifest limitation and cite external job
    conclusions separately.

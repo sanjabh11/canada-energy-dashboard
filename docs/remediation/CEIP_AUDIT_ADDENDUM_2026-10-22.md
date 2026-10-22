@@ -29,9 +29,13 @@ staging/pilot STOP. (Note: `7d8c1fe` was HEAD at the time of that update;
 see the audit-7 binding below for the current bound source.)
 
 **Update (2026-10-22, audit-7 two-state binding):** bound source HEAD
-`3ff27df` is bound by run `39755846368` (`head_sha` == `3ff27df` exact; all
-verification jobs green; merge `2111069c`, artifact `12417415983`, digest
-`sha256:2eb16a414139365be5d7b72dff916654d7d91304ea2205fe10f8a0078e1c8c4c`).
+`01006d9` is bound by run `39774258190` (`head_sha` == `01006d9` exact; all
+4 jobs green including `evidence-binding`; merge `1f089982`, artifact
+`12424756786`, digest
+`sha256:612771f42c17794cb3c124e41a1e25d98c4f20064ca717a9c95be6aebe726e27`).
+The intermediate bound source `3ff27df`/`39755846368` (merge `2111069c`,
+artifact `12417415983`, digest `sha256:2eb16a41…`) remains valid historical
+evidence — all its verification jobs were green.
 The dedicated `evidence-binding` job reported the pre-rebind staleness on
 that run — by design it is a staleness signal only and does not invalidate
 the verification jobs. `check-evidence-binding.mjs` now enforces the
@@ -39,9 +43,12 @@ two-state contract in CI: `bound_source_sha`+`bound_source_run` with exact
 `head_sha` equality and ancestry, and every descendant commit after the
 bound source must be evidence-allowlist-only (`goal.md`, `mission.md`,
 dated addenda, `.phase-loop/`, `.positioning-audit/`) or self-bound as the
-current run head. Negative fixtures cover: stale ancestor + code change,
-stale ancestor + CI workflow change, evidence-only descendant pass,
-run/head mismatch, and failed/missing run.
+current run head or a descendant with its own green verification run. A
+merge-commit blind spot in per-commit `diff-tree` output is closed by an
+aggregate-diff safety net. Negative fixtures cover: stale ancestor + code
+change, stale ancestor + CI workflow change, evidence-only descendant pass,
+run/head mismatch, failed/missing run, red gate job tolerated while
+verification jobs stay green, and current-head exemption scoping.
 
 ## Audit-5 disposition
 
