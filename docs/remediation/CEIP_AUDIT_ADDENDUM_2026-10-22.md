@@ -15,8 +15,9 @@ Bound state (audit #5, externally verified by the auditor):
 - browser evidence: Phase 0 35/35, Phase 6 80/80, wedge 80/80,
   accessibility 110/110; zero unexpected results
 
-Any later commit on this branch is a documentation-only delta; the latest
-successful branch run is the authoritative bound state.
+Any later commit on this branch is a documentation-only delta. (The earlier
+"latest successful branch run is authoritative" phrasing is superseded by
+the audit-7 two-state binding contract below.)
 
 **Update (2026-10-22, mission contract):** HEAD `7d8c1fe` is bound by run
 `39728420587` (all jobs green; merge `656e5f53`, artifact `12404293064`,
@@ -24,7 +25,23 @@ digest `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702`
 manifest `complete:true`, sidecar verified). `mission.md` + append-only
 `.phase-loop/ceip-controlled-pilot-mission.jsonl` added by the architect
 lane; status `PLANNED / NOT COMPLETE` — repository CI evidence defensible,
-staging/pilot STOP.
+staging/pilot STOP. (Note: `7d8c1fe` was HEAD at the time of that update;
+see the audit-7 binding below for the current bound source.)
+
+**Update (2026-10-22, audit-7 two-state binding):** bound source HEAD
+`3ff27df` is bound by run `39755846368` (`head_sha` == `3ff27df` exact; all
+verification jobs green; merge `2111069c`, artifact `12417415983`, digest
+`sha256:2eb16a414139365be5d7b72dff916654d7d91304ea2205fe10f8a0078e1c8c4c`).
+The dedicated `evidence-binding` job reported the pre-rebind staleness on
+that run — by design it is a staleness signal only and does not invalidate
+the verification jobs. `check-evidence-binding.mjs` now enforces the
+two-state contract in CI: `bound_source_sha`+`bound_source_run` with exact
+`head_sha` equality and ancestry, and every descendant commit after the
+bound source must be evidence-allowlist-only (`goal.md`, `mission.md`,
+dated addenda, `.phase-loop/`, `.positioning-audit/`) or self-bound as the
+current run head. Negative fixtures cover: stale ancestor + code change,
+stale ancestor + CI workflow change, evidence-only descendant pass,
+run/head mismatch, and failed/missing run.
 
 ## Audit-5 disposition
 
