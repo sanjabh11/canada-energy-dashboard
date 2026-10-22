@@ -24,9 +24,13 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import {
   assertRunBinding,
+  diffTreeArgs,
   isEvidenceFile,
+  justifiedFiles,
+  parseFileList,
   parseBoundIdentity,
   staleDescendants,
+  workflowRunsFromPages,
 } from './evidence-binding-lib.mjs';
 
 const fail = (msg) => {
@@ -91,17 +95,12 @@ const descendants = execFileSync(
 
 const commits = descendants.map((sha) => ({
   sha,
-  files: execFileSync(
-    'git',
-    ['diff-tree', '--no-commit-id', '--name-only', '-r', sha],
-    { encoding: 'utf8' },
-  )
-    .split('\n')
-    .filter(Boolean),
+  files: parseFileList(execFileSync('git', diffTreeArgs(sha), { encoding: 'utf8' })),
 }));
 const staleCommits = staleDescendants(commits, currentHead);
 
 const unbound = [];
+const coveredShas = new Set();
 for (const c of staleCommits) {
   // A non-evidence descendant is covered if it has its own binding-eligible
   // run: every verification job green (the gate job may be red — staleness
@@ -113,20 +112,20 @@ for (const c of staleCommits) {
         'gh',
         [
           'api',
-          `repos/{owner}/{repo}/actions/runs?head_sha=${c.sha}&per_page=5`,
-          '--jq',
-          '.workflow_runs[].databaseId',
+          `repos/{owner}/{repo}/actions/runs?head_sha=${c.sha}&per_page=100`,
+          '--paginate',
+          '--slurp',
         ],
         { encoding: 'utf8' },
       ),
-    )
-      .split('\n')
-      .filter(Boolean);
+    );
   } catch {
     runs = [];
   }
   let covered = false;
-  for (const rid of runs.slice(0, 3)) {
+  for (const candidate of workflowRunsFromPages(runs)) {
+    const rid = candidate.database_id ?? candidate.id;
+    if (!rid) continue;
     try {
       const rjobs = JSON.parse(
         execFileSync(
@@ -135,8 +134,8 @@ for (const c of staleCommits) {
           { encoding: 'utf8' },
         ),
       );
-      const bad = rjobs.filter((j) => j.name !== 'evidence-binding' && j.conclusion !== 'success');
-      if (bad.length === 0) {
+      assertRunBinding(candidate, rjobs, c.sha);
+      if (rjobs.length > 0) {
         covered = true;
         break;
       }
@@ -144,7 +143,8 @@ for (const c of staleCommits) {
       /* keep looking */
     }
   }
-  if (!covered) unbound.push(c);
+  if (covered) coveredShas.add(c.sha);
+  else unbound.push(c);
 }
 
 if (unbound.length > 0) {
@@ -166,11 +166,7 @@ const aggregateChanged = execFileSync(
 )
   .split('\n')
   .filter(Boolean);
-const justified = new Set(
-  commits
-    .filter((c) => !staleDescendants([c], currentHead).length)
-    .flatMap((c) => c.files),
-);
+const justified = justifiedFiles(commits, coveredShas, currentHead);
 const smuggled = aggregateChanged.filter((f) => !isEvidenceFile(f) && !justified.has(f));
 if (smuggled.length > 0) {
   fail(`non-evidence paths in aggregate diff not covered by a bound commit: ${smuggled.join(', ')}`);

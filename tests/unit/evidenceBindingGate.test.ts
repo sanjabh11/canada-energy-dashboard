@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   assertEvidenceOnlyDiff,
   assertRunBinding,
+  diffTreeArgs,
+  justifiedFiles,
+  parseFileList,
   parseBoundIdentity,
   staleDescendants,
+  workflowRunsFromPages,
 } from '../../scripts/evidence-binding-lib.mjs';
 
 describe('evidence-binding gate — negative fixtures', () => {
@@ -45,6 +49,40 @@ describe('evidence-binding gate — negative fixtures', () => {
     ).not.toThrow();
   });
 
+  it('uses parent-aware diff-tree arguments for merge commits', () => {
+    expect(diffTreeArgs('abc123')).toEqual([
+      'diff-tree',
+      '--no-commit-id',
+      '--name-only',
+      '-r',
+      '-m',
+      'abc123',
+    ]);
+    expect(parseFileList('src/a.ts\nsrc/a.ts\n\n')).toEqual(['src/a.ts']);
+  });
+
+  it('attributes aggregate paths to covered code descendants', () => {
+    const commits = [
+      { sha: 'covered', files: ['src/covered.ts'] },
+      { sha: 'docs', files: ['goal.md'] },
+      { sha: 'head', files: ['src/current.ts'] },
+    ];
+    expect(justifiedFiles(commits, new Set(['covered']), 'head')).toEqual(
+      new Set(['src/covered.ts', 'goal.md', 'src/current.ts']),
+    );
+  });
+
+  it('reads every paginated workflow-run page, including an empty page', () => {
+    expect(
+      workflowRunsFromPages([
+        { workflow_runs: [{ database_id: 1, head_sha: 'a' }] },
+        { workflow_runs: [] },
+        { workflow_runs: [{ database_id: 2, head_sha: 'b' }] },
+      ]),
+    ).toHaveLength(2);
+    expect(workflowRunsFromPages({ workflow_runs: [] })).toEqual([]);
+  });
+
   it('fails a run/head mismatch', () => {
     expect(() =>
       assertRunBinding(
@@ -78,6 +116,13 @@ describe('evidence-binding gate — negative fixtures', () => {
       ),
     ).toThrow(/test=failure/);
     expect(() => assertRunBinding(null, [], 'aaaaaaa')).toThrow(/not found/);
+    expect(() =>
+      assertRunBinding(
+        { head_sha: 'aaaaaaa', conclusion: 'success' },
+        [{ name: 'evidence-binding', conclusion: 'success' }],
+        'aaaaaaa',
+      ),
+    ).toThrow(/no verification jobs/);
   });
 
   it('staleDescendants exempts only the current run head commit', () => {
