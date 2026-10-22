@@ -18,6 +18,14 @@ Bound state (audit #5, externally verified by the auditor):
 Any later commit on this branch is a documentation-only delta; the latest
 successful branch run is the authoritative bound state.
 
+**Update (2026-10-22, mission contract):** HEAD `7d8c1fe` is bound by run
+`39728420587` (all jobs green; merge `656e5f53`, artifact `12404293064`,
+digest `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702`,
+manifest `complete:true`, sidecar verified). `mission.md` + append-only
+`.phase-loop/ceip-controlled-pilot-mission.jsonl` added by the architect
+lane; status `PLANNED / NOT COMPLETE` — repository CI evidence defensible,
+staging/pilot STOP.
+
 ## Audit-5 disposition
 
 The auditor independently re-downloaded the artifact, verified the GitHub

@@ -10,10 +10,10 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-22):** bound HEAD `3766ca6` — CI run
-> `39726844686` green on pinned `ubuntu-24.04` (merge `edf5389b`, artifact
-> `12404206819`, digest
-> `sha256:7a7d081f3984f0f5b330cb76443537d520fa26e5fb6efabe7e9e24d836e40c40`;
+> **Milestone status (2026-10-22):** bound HEAD `7d8c1fe` — CI run
+> `39728420587` green on pinned `ubuntu-24.04` (merge `656e5f53`, artifact
+> `12404293064`, digest
+> `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702`;
 > manifest `complete:true`, sidecar `shasum -c` verified here). Externally
 > auditor-verified run `39641749404` on `10ab812` (merge `d36e88f2`, artifact
 > `12365798216`, digest `sha256:7e77cc63…`, tree fingerprint `494227ce…`,
@@ -39,13 +39,13 @@
 > see dated addenda.)
 >
 > **Current checkout overlay:** the checkout contains a documentation-only
-> descendant of the CI-bound parent. Its own CI run (`39726844686` on
-> `3766ca6`) is green — every commit on the branch is bound. The tracked
+> descendant of the CI-bound parent. Its own CI run (`39728420587` on
+> `7d8c1fe`) is green — every commit on the branch is bound. The tracked
 > `coverage/lcov.info` deletion remains in the local overlay and is preserved
 > for classification; no reset or restoration was performed.
 >
 > **Source remediation — now CI-bound:** commit `ad44494` (test-only
-> child-process warning isolation) is bound by run `39726844686` on `3766ca6`
+> child-process warning isolation) is bound by run `39728420587` on `7d8c1fe`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
 > lifted here. The guard-blocked scans (client-env 2272 surfaces, repo
 > hygiene, secret scan — HEAD clean, documented INC history only) were
@@ -76,7 +76,7 @@ owner approval or buyer validation.
 | P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `4f0348d` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
 | P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `4f0348d` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `3766ca6` | run `39726844686` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `7d8c1fe` | run `39728420587` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
