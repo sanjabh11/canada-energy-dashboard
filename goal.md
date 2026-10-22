@@ -10,13 +10,13 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-21):** bound HEAD `edc4163` — CI run
-> `39638728096` green on pinned `ubuntu-24.04`. Code-bound run `39634936628`
-> on `69e182f` also green (merge `65a7658f`, artifact `12363351105`, digest
-> `sha256:a85dae2d074293e0c18a140cd7e8c7b6a6b60cc17faee4cc291320fcd9e57bdb`).
-> This run includes the settled-layout reflow measurement and driver-chain
-> diagnostics; prior bound run `39628050850` on `947bbfe` (merge `758cecc1`,
-> artifact `12358059140`, digest `845cdcf0…`).
+> **Milestone status (2026-10-22):** bound HEAD `10ab812` — CI run
+> `39641749404` green on pinned `ubuntu-24.04` (merge `d36e88f2`, artifact
+> `12365798216`, digest
+> `sha256:7e77cc63a96b0764167e95b7043b7b85847c9915209a6432cc80b64e1962ad6f`,
+> tree fingerprint `494227ce…`, manifest hash `a7557cbf…`). The auditor
+> independently verified artifact digest, sidecar, all internal hashes, and
+> browser results (Phase0 35/35, Phase6 80/80, wedge 80/80, a11y 110/110).
 > This run binds the audit-session overlay commits (`ad444941`…`f12accc`)
 > and the structural WebKit reflow fixes; the audit-3 refutations are closed
 > at the committed CI proof layer (manifest `complete:true`, `missing_files:[]`,
@@ -36,13 +36,13 @@
 > see dated addenda.)
 >
 > **Current checkout overlay:** the checkout contains a documentation-only
-> descendant of the CI-bound parent. Its own CI run (`39638728096` on
-> `edc4163`) is green — every commit on the branch is bound. The tracked
+> descendant of the CI-bound parent. Its own CI run (`39641749404` on
+> `10ab812`) is green — every commit on the branch is bound. The tracked
 > `coverage/lcov.info` deletion remains in the local overlay and is preserved
 > for classification; no reset or restoration was performed.
 >
 > **Source remediation — now CI-bound:** commit `ad44494` (test-only
-> child-process warning isolation) is bound by run `39638728096` on `edc4163`
+> child-process warning isolation) is bound by run `39641749404` on `10ab812`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
 > lifted here. The guard-blocked scans (client-env 2272 surfaces, repo
 > hygiene, secret scan — HEAD clean, documented INC history only) were
@@ -68,12 +68,12 @@ owner approval or buyer validation.
 |---|---|---|---|---|---|---|---|
 | P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay / CI parent `4f0348d` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
 | P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; CI parent `4f0348d` | addendum 2026-10-21; run `39554044008`; merge `8e81bbe`; artifact `12325836686` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; overlay has no new CI run |
-| P2 — Repository security and billing code | partial | local tests + committed CI | `edc4163` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
+| P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
 | P3 — Stale economics suppressed | partial | local tests + committed CI | `4f0348d` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
 | P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `4f0348d` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
 | P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `4f0348d` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `edc4163` | run `39638728096` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `10ab812` | run `39641749404` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
