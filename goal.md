@@ -18,8 +18,11 @@
 > auditor-verified run `39641749404` on `10ab812` (merge `d36e88f2`, artifact
 > `12365798216`, digest `sha256:7e77cc63…`, tree fingerprint `494227ce…`,
 > manifest hash `a7557cbf…`; Phase0 35/35, Phase6 80/80, wedge 80/80, a11y
-> 110/110). Any later commit is docs-only; latest successful run is
-> authoritative.
+> 110/110). Docs commit `42d4e2d` is bound by run `39732926207` (green).
+> Any later commit is docs-only; latest successful run is authoritative.
+> Clean-clone reproduction at exact HEAD `42d4e2d`: 177/177 files,
+> 1329/1329 tests, 22.37% lines (expected nondeterminism vs CI 22.55%),
+> lcov `f7364e6c…`, a11y 110/110 ×5 engines.
 > This run binds the audit-session overlay commits (`ad444941`…`f12accc`)
 > and the structural WebKit reflow fixes; the audit-3 refutations are closed
 > at the committed CI proof layer (manifest `complete:true`, `missing_files:[]`,
@@ -69,13 +72,13 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay / CI parent `4f0348d` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; CI parent `4f0348d` | addendum 2026-10-21; run `39554044008`; merge `8e81bbe`; artifact `12325836686` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; overlay has no new CI run |
+| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `7d8c1fe` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; bound HEAD `7d8c1fe` | addendum 2026-10-21/22; run `39728420587`; merge `656e5f53`; artifact `12404293064` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
-| P3 — Stale economics suppressed | partial | local tests + committed CI | `4f0348d` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `4f0348d` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P3 — Stale economics suppressed | partial | local tests + committed CI | `7d8c1fe` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `7d8c1fe` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
-| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `4f0348d` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `7d8c1fe` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
 | P7 — CI green; reproduction + manifest completeness | partial | committed CI | `7d8c1fe` | run `39728420587` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
