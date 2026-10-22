@@ -99,6 +99,7 @@ jobs:
         # HEAD, the named run's headSha disagrees, or conclusion != success.
         env:
           GH_TOKEN: ${{ github.token }}
+          CEIP_CURRENT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/check-evidence-binding.mjs
 
   test:

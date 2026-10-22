@@ -10,10 +10,10 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-22):** bound HEAD `0a9d671` — CI run
-> `39740724289` green on pinned `ubuntu-24.04` (merge `38b0b2b9`, artifact
-> `12409798785`, digest
-> `sha256:5e720c593682d4fcae0118703e10b65bbde7cb1f38b1c2ca60eb7734d7ae909f`;
+> **Milestone status (2026-10-22):** bound HEAD `97e0d433` — CI run
+> `39748877686` green on pinned `ubuntu-24.04` (merge `fa5b4ac4`, artifact
+> `12413337884`, digest
+> `sha256:dc76fa363d6838891e5aebb0c216c2fe0a5c44dbd49d318bc422e41a930f9881`;
 > manifest `complete:true`, sidecar verified). The commit carrying this
 > document is bound by its own CI run — the authoritative binding rule is:
 > **the run whose `headSha` equals a commit binds that commit; no older run
@@ -45,13 +45,13 @@
 > see dated addenda.)
 >
 > **Current checkout overlay:** the checkout contains a documentation-only
-> descendant of the CI-bound parent. Its own CI run (`39735076602` on
-> `3375d8c`) is green — every commit on the branch is bound. The tracked
+> descendant of the CI-bound parent. Its own CI run (`39748877686` on
+> `97e0d433`) is green — every commit on the branch is bound. The tracked
 > `coverage/lcov.info` deletion remains in the local overlay and is preserved
 > for classification; no reset or restoration was performed.
 >
 > **Source remediation — now CI-bound:** commit `ad44494` (test-only
-> child-process warning isolation) is bound by run `39740724289` on `0a9d671`
+> child-process warning isolation) is bound by run `39748877686` on `97e0d433`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
 > lifted here. The guard-blocked scans (client-env 2272 surfaces, repo
 > hygiene, secret scan — HEAD clean, documented INC history only) were
@@ -75,14 +75,14 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `0a9d671` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; bound HEAD `0a9d671` | addendum 2026-10-21/22; run `39740724289`; merge `38b0b2b9`; artifact `12409798785` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
+| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `97e0d433` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | docs-only overlay; bound HEAD `97e0d433` | addendum 2026-10-21/22; run `39748877686`; merge `fa5b4ac4`; artifact `12413337884` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
-| P3 — Stale economics suppressed | partial | local tests + committed CI | `0a9d671` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `0a9d671` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P3 — Stale economics suppressed | partial | local tests + committed CI | `97e0d433` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `97e0d433` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
-| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `0a9d671` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `0a9d671` | run `39740724289` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `97e0d433` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `97e0d433` | run `39748877686` green; manifest complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass, lcov `a2f8b08b…`; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; scans verified green |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
