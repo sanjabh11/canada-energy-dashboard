@@ -180,3 +180,13 @@ External re-verification findings, dispositioned:
 - All other ~108 functions: classified non-pilot; leave undeployed or
   disabled until a staged inventory review (P2 of the audit-9 packet)
   assigns each to scheduled/internal/deprecated.
+
+### Port hardening pass (audit-9 sweep)
+
+Two robustness fixes to the ported migrations before canonicalization:
+- `20261023002`: policy-drop filter now matches `TO public` scoped
+  INSERT/ALL policies too (roles ⊂ {anon, authenticated, public}); a
+  public-scoped permissive policy would otherwise survive the port.
+  Policies that include service_role or other named roles are unaffected.
+- `20250926001`: `weather_data` dedup adds `ctid` tiebreak so equal
+  `created_at` values can't strand duplicate rows and fail the PK add.

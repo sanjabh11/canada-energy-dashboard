@@ -308,14 +308,18 @@ raising a timeout or reducing coverage.
 
 ### P4 — Resolve the Supabase and hosted boundary
 
-1. Owner identifies whether `qnymbecjgeaoxsfphrti` or
-   `cwijcjhdugfqwsjbrdro` is authoritative.
-2. Owner invalidates the leaked INC-001 key and reviews access logs. Supabase
-   guidance requires explicit key rotation/revocation; pausing alone is not
-   sufficient.
-3. If the original project is unrecoverable, the owner chooses a replacement
-   path, preserves required data, compares schema/RLS, rotates/decommissions
-   the old path, and documents rollback.
+1. Resolved (2026-10-23): owner provisioned `qktgjpbifknqjpvrgkrj` as the
+   authoritative replacement; 122+6 migrations replayed, 6,797 rows
+   imported, 0 edge functions deployed. The `qnymb…`/`cwij…` question is
+   superseded for the forward path; the register keeps `qnymb…` as the
+   leak-site project of record.
+2. Owner invalidates the leaked INC-001 key on `qnymbecjgeaoxsfphrti`
+   (revoke/disable the service_role key or delete the project) and reviews
+   access logs. Supabase guidance requires explicit key rotation/revocation;
+   pausing alone is not sufficient.
+3. Remaining on the new project: `.env` anon key, edge-function deploy
+   allowlist, hosted RLS/migration-order/rate-limit/retention/rollback
+   proofs, advisor-finding disposition, and real backup exports.
 4. Only then apply migrations before functions in a controlled staging project.
 5. Verify RLS, direct-write denial, deduplication, rate limits, retention,
    provider region, redacted logs, monitoring, backup/restore and rollback

@@ -20,7 +20,8 @@ DELETE FROM public.weather_data a
 USING public.weather_data b
 WHERE a.timestamp = b.timestamp
   AND a.station_id = b.station_id
-  AND a.created_at < b.created_at;
+  AND (a.created_at < b.created_at
+       OR (a.created_at = b.created_at AND a.ctid < b.ctid));
 
 ALTER TABLE public.weather_data
   DROP CONSTRAINT IF EXISTS weather_data_pkey;

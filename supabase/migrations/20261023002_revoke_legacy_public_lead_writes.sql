@@ -5,8 +5,9 @@
 -- revoked direct client writes on the wider lead/credential table set
 -- (target-only migration `20261023_revoke_legacy_public_lead_writes`).
 -- This ports that hardening: any INSERT/ALL policy scoped entirely to
--- anon/authenticated is dropped and INSERT is revoked at the privilege
--- layer for defense in depth.
+-- anon/authenticated/public is dropped and INSERT is revoked at the
+-- privilege layer for defense in depth. Policies naming service_role
+-- (or any other role alongside public roles) are preserved.
 --
 -- Policies that include service_role (or other roles) are preserved —
 -- server functions writing via the service role are unaffected.
@@ -32,7 +33,7 @@ BEGIN
         WHERE schemaname = 'public'
           AND tablename = t
           AND cmd IN ('INSERT', 'ALL')
-          AND roles <@ ARRAY['anon', 'authenticated']::name[]
+          AND roles <@ ARRAY['anon', 'authenticated', 'public']::name[]
       LOOP
         EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, t);
       END LOOP;
