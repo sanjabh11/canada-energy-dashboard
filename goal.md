@@ -114,3 +114,14 @@ Proof-layer vocabulary: `source` < `local tests` < `committed CI` < `staging` < 
 - The coverage threshold is set only from a passing full serial run; the current
   committed CI measurement is 22.55% lines, while the local lcov deletion is
   unresolved and must not be treated as a passing local coverage state.
+
+**Last completed exact-HEAD receipt before the current implementation overlay:**
+`4967b72` was verified by run `39990265678`; all four jobs succeeded and the
+evidence artifact was `12519384283`. Changes made after that receipt are an
+unbound implementation overlay until a new run has `headSha` equal to the
+resulting commit and succeeds.
+
+**Replacement-project security baseline:** the read-only snapshot in
+[`SUPABASE_SECURITY_BASELINE_2026-10-23.md`](docs/remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md)
+records 26 ERROR, 73 WARN, and 108 INFO findings. This is an open staging
+gate, not a security-clearance claim.

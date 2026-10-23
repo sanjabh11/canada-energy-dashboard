@@ -41,9 +41,11 @@ targeted lint exit `0`, syntax checks exit `0`, and `git diff --check` clean.
 
 The strict positioning verifier initially caught EV-005 at `252` versus `253`
 documentation files after this addendum was added. The phase-1 inventory,
-evidence claim, and snapshot were resynchronised; the strict verifier now
-returns zero warnings with `253/253` inventory values. This drift was closed
-before the evidence update was recorded.
+evidence claim, and snapshot were resynchronised; that predecessor state
+returned zero warnings with `253/253` inventory values. The current
+implementation overlay adds three evidence documents, so the snapshot is now
+`257` and the strict verifier must be rerun before this overlay receives a
+new CI receipt.
 
 The evidence-binding job remains a staleness signal. A bound run is accepted
 only when the named workflow is `CI`, all required verification jobs exist and
@@ -72,6 +74,37 @@ evidence that the leaked key has been invalidated.
 The local `coverage/lcov.info` deletion is preserved as a dirty-overlay item.
 No deployment, project restoration, outreach, checkout enablement, or buyer
 contact was performed.
+
+## Current-head receipt before the implementation overlay
+
+- HEAD `4967b728d2c09724198e7ec286065b7a6cfd8ef5` completed CI run
+  `39990265678` with `lint-typecheck`, `test`, `evidence-binding`, and
+  `build-and-smoke` all successful.
+- The evidence artifact was `12519384283` (`ci-evidence-9ee16c26df6b0e9a36f2f615d27e83dc63e697f3`).
+- This receipt is the last verified predecessor. The repository changes in
+  this implementation overlay require a new exact-head CI receipt before they
+  can be called CI-verified.
+
+## Implementation overlay awaiting a new receipt
+
+- Removed a hard-coded database password from
+  `scripts/shell/test_migration.sh`. The helper now requires the approved
+  `SUPABASE_DB_PASSWORD` environment injection, fails closed when it is absent,
+  and never prints or embeds a credential.
+- Added `tests/unit/migrationHelperSecurity.test.ts` to prevent literal
+  password piping and to prove the missing-password stop path.
+- Added the standalone migration/data ledger and the owner-run Supabase
+  staging pack.
+- Added the point-in-time replacement-project security baseline. It records
+  26 ERROR, 73 WARN, and 108 INFO findings; it is not an advisor-clearance or
+  staging claim.
+- Resynchronised EV-005 after adding the three evidence documents: the
+  positioning verifier now reports `257/257` documentation files with zero
+  warnings locally.
+
+These changes are source/local evidence only until a new CI run binds the
+resulting commit. Hosted project state, secrets, deployments, and owner gates
+remain untouched.
 
 ## Update — new authoritative Supabase project (audit-8 continuation)
 
@@ -163,11 +196,16 @@ External re-verification findings, dispositioned:
   untracked files — placeholders, NOT usable backups. Per Supabase's
   restore flow, real exports must be generated (or backups/PITR chosen)
   before recovery is claimed.
-- **Target advisors:** 108 security + 23 performance INFO findings
-  outstanding — many are expected deny-all RLS/no-policy tables, but
-  each requires explicit classification (minimum-policy, explicit-deny,
-  or non-API) before staging. Grant-layer denial for lead tables is
-  verified; hosted REST/function behavior is not.
+- **Target security baseline (refreshed 2026-10-23T16:58:12.995Z):** the
+  replacement project reported 108 `rls_enabled_no_policy` INFO findings,
+  26 `security_definer_view` ERROR findings, one `rls_disabled_in_public`
+  ERROR, 42 mutable-search-path WARN findings, 11 anonymous and 11
+  authenticated security-definer execution WARN findings, five
+  API-exposed materialized-view WARN findings, and four public-extension WARN
+  findings. The previous `108 + 23 performance INFO` summary was incomplete;
+  see `docs/remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md`.
+  No advisor finding is closed by this snapshot. Grant-layer denial for lead
+  tables is verified; hosted REST/function behavior is not.
 - **Semgrep semantics:** the CI step is audit-mode — a completed run
   means "scan executed", not "security cleared". Finding dispositions
   remain part of the security review, not the CI signal.

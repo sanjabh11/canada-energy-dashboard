@@ -69,6 +69,7 @@ the mission must rebind its documents before claiming current status.
 |---|---|---|
 | Latest source/CI-tested subject before this evidence update | `0550c29` / run `39777254650` | CI-verified |
 | Code-bearing CI subject | `5c883f1` / run `39987095875` | CI-verified binding-gate change |
+| Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
 | Latest CI-tested documentation subject | `0550c29` / run `39777254650` | CI-verified docs descendant |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
 | Canonical bound CI | [run 39987095875](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39987095875) | GitHub job conclusions |
@@ -81,6 +82,7 @@ the mission must rebind its documents before claiming current status.
 | Local overlay | `coverage/lcov.info` deleted; no other local changes | Dirty worktree |
 | Current document risk | Current source/CI receipt recorded in the 2026-10-23 addendum; evidence-only overlays remain subject to the binding gate | Open only until the next receipt is recorded |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
+| Replacement-project security snapshot | `SUPABASE_SECURITY_BASELINE_2026-10-23.md`; 26 ERROR and 73 WARN findings plus 108 INFO findings | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
 
 The incident register at `docs/security/SECRET_EXPOSURE_INCIDENTS.md` is the
@@ -319,7 +321,9 @@ raising a timeout or reducing coverage.
    pausing alone is not sufficient.
 3. Remaining on the new project: `.env` anon key, edge-function deploy
    allowlist, hosted RLS/migration-order/rate-limit/retention/rollback
-   proofs, advisor-finding disposition, and real backup exports.
+   proofs, the current advisor-finding disposition in
+   `docs/remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md`, and real
+   backup exports.
 4. Only then apply migrations before functions in a controlled staging project.
 5. Verify RLS, direct-write denial, deduplication, rate limits, retention,
    provider region, redacted logs, monitoring, backup/restore and rollback
