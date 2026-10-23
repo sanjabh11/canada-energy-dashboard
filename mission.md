@@ -67,19 +67,19 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Branch HEAD | `01006d9` | Git checkout |
-| Code-bearing CI subject | `3766ca6d` / run `39726844686` | CI-verified dependency/source change |
-| Current documentation subject | `01006d9` / run `39774258190` | CI-verified docs descendant |
+| Latest source/CI-tested subject before this evidence update | `0550c29` / run `39777254650` | CI-verified |
+| Code-bearing CI subject | `01006d9` / run `39774258190` | CI-verified binding-gate change |
+| Latest CI-tested documentation subject | `0550c29` / run `39777254650` | CI-verified docs descendant |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Bound CI | [run 39774258190](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39774258190) | GitHub job conclusions |
+| Canonical bound CI | [run 39774258190](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39774258190) | GitHub job conclusions |
+| Latest artifact receipt | `12425598211`, digest `sha256:93f00e9745d615cece0a16a6502a00aa6d1d1a5422735d92d15967f774ea74b4` | GitHub artifact API + independent hash check |
 | CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success | CI-verified |
-| Artifact | `12404293064`, digest `sha256:859df2f85ebfa72878562fa6e3024c9100baa57b23deb300cd8aa44c55cf7702` | GitHub artifact API |
-| Manifest | `complete=true`, nine files, `missing_files=[]` | Artifact-verified |
+| Manifest | `complete=true`, nine evidence files, `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
 | Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
-| Local overlay | `coverage/lcov.info` deleted; `.phase-loop/phase-ledger.jsonl` modified | Dirty worktree |
-| Current document risk | `goal.md` and the 2026-10-22 addendum still cite older milestones | Open G1/G3 evidence defect |
+| Local overlay | `coverage/lcov.info` deleted; no other local changes | Dirty worktree |
+| Current document risk | Current source/CI receipt recorded in the 2026-10-23 addendum; evidence-only overlays remain subject to the binding gate | Open only until the next receipt is recorded |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
 | Buyer state | 0/11 experiments run | Human-gated |
 

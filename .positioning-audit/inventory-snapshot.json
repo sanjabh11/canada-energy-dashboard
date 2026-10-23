@@ -1,5 +1,5 @@
 {
-  "snapshot_at": "2026-10-05T05:58:35.463Z",
+  "snapshot_at": "2026-10-23T05:45:08.431Z",
   "audit_id": "ceip-v2-2026-07-13",
   "inventory": {
     "routes": 140,
@@ -7,7 +7,7 @@
     "lazyImports": 68,
     "components": 208,
     "libFiles": 220,
-    "docs": 248,
+    "docs": 253,
     "edgeFunctions": 110
   },
   "mismatches": []
