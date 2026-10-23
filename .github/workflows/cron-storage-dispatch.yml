@@ -13,6 +13,7 @@ on:
 
 jobs:
   trigger-storage-dispatch:
+    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
     runs-on: ubuntu-latest
     
     strategy:
