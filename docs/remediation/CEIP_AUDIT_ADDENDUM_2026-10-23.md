@@ -132,3 +132,51 @@ public tables; 89 withheld (41 null/invalid required fields, 48 missing
 FK parents); auth/storage/credential/lead tables excluded by policy.
 Edge functions still undeployed; `.env` anon key + INC-001 revocation
 remain owner steps.
+
+## Update — audit-9 reconciliation (deep-research peer review)
+
+External re-verification findings, dispositioned:
+
+- **Counting rule (122 vs 123):** the repo holds **122 active `.sql`
+  migrations + 1 `.disabled`** (`20250904_investment_tables.sql.disabled`)
+  = 123 dir entries. The target ledger has **123 records** = 117 replayed
+  repo names + 6 target-only names. The repo's five ported files cover
+  all six target entries (the two extension entries merged into
+  `20251112008`). A fresh replay therefore produces 122 ledger versions —
+  the one-name delta vs target is the merged extension entry, recorded
+  here, not an error.
+- **Run conclusion semantics:** run `39948353655` concluded `failure`
+  because `evidence-binding` was red (designed staleness signal for the
+  unbound intermediates it now covers). Its three verification jobs were
+  all green, making it binding-eligible. goal.md previously said "all 4
+  jobs green" — corrected.
+- **HEAD generations:** `2f1b88d` (all-green run incl. gate), `a86f1f8`
+  (loop receipt). Current exact-head run `39959995194` on `a86f1f8`:
+  `lint-typecheck`/`test`/`evidence-binding` green, `build-and-smoke`
+  `build-and-smoke` green — run conclusion `success` (all 4 jobs green).
+- **Function surface:** 111 local `supabase/functions/` dirs, **0
+  deployed** on target. The pilot intake function is `lead-capture`
+  (no `intake` function exists); Whop paths are `whop-verify-access`
+  and `whop-webhook`. A pilot function allowlist (below) replaces the
+  vague "deploy intake" task.
+- **Dump stubs:** `data.sql`, `roles.sql`, `schema.sql` are **zero-byte**
+  untracked files — placeholders, NOT usable backups. Per Supabase's
+  restore flow, real exports must be generated (or backups/PITR chosen)
+  before recovery is claimed.
+- **Target advisors:** 108 security + 23 performance INFO findings
+  outstanding — many are expected deny-all RLS/no-policy tables, but
+  each requires explicit classification (minimum-policy, explicit-deny,
+  or non-API) before staging. Grant-layer denial for lead tables is
+  verified; hosted REST/function behavior is not.
+- **Semgrep semantics:** the CI step is audit-mode — a completed run
+  means "scan executed", not "security cleared". Finding dispositions
+  remain part of the security review, not the CI signal.
+
+### Pilot function allowlist (candidate; owner-gated deploy)
+
+- `lead-capture` — intake (pilot-required)
+- `whop-verify-access` — existing-customer entitlement (owner config)
+- `whop-webhook` — billing lifecycle events (owner config)
+- All other ~108 functions: classified non-pilot; leave undeployed or
+  disabled until a staged inventory review (P2 of the audit-9 packet)
+  assigns each to scheduled/internal/deprecated.

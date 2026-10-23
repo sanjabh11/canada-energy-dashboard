@@ -10,10 +10,17 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-22):** bound HEAD `e239699` — CI run
-> `39948353655` on pinned `ubuntu-24.04` — all 4 jobs green (merge `b50aced6`, artifact `12502592736`, digest
+> **Milestone status (2026-10-23):** bound HEAD `e239699` — CI run
+> `39948353655` on pinned `ubuntu-24.04` — `head_sha` exact; all three
+> verification jobs green (`lint-typecheck`, `test`, `build-and-smoke`);
+> `evidence-binding` red as the designed staleness signal for the
+> then-unbound intermediate commits this binding covers, so the run's
+> conclusion was `failure` while remaining binding-eligible
+> (merge `b50aced6`, artifact `12502592736`, digest
 > `sha256:baf23ce1a462fd26d45de69e19130b9df5a5e082a49b7a1197b85fc0eb5338e2`;
-> manifest `complete:true`, sidecar verified). Two-state binding contract:
+> manifest `complete:true`, sidecar verified). Evidence-only descendants:
+> `2f1b88d` (run all-green incl. `evidence-binding`), `a86f1f8`.
+> Two-state binding contract:
 > the bound source requires a run whose `headSha` equals it with all
 > verification jobs green; descendants after it may touch only the
 > evidence-file allowlist, except the current run head which self-binds.
