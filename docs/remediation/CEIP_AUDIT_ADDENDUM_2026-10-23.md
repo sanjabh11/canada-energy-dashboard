@@ -95,3 +95,40 @@ contact was performed.
   fresh migration-before-function deployment — all hosted staging
   checks (RLS denial, dedup, rate limits, retention, rollback) apply
   to `qktgjpbifknqjpvrgkrj` before pilot intake.
+
+## Update — deviation ledger ported to repo (audit-9)
+
+The six target-only migrations applied during the `qktgjpbifknqjpvrgkrj`
+replay are now repository migrations (`9cb343e`), so a fresh replay
+reproduces the target:
+
+| Target ledger entry | Repo file |
+|---|---|
+| `20250927_fix_weather_data_primary_key` | `20250926001_fix_weather_data_primary_key.sql` (re-orders the fix before the 20250927 seed upsert) |
+| `20261023_enable_cube_for_earthdistance` + `20261023_enable_earthdistance_for_ev` | `20251112008_enable_cube_earthdistance.sql` (pre-`20251113004`) |
+| `20261023_create_provinces_reference` | `20251112009_create_provinces_reference.sql` (pre-`20251113007`) |
+| `20261023_harden_rls_auto_enable_api_acl` | `20261023001_harden_rls_auto_enable_api_acl.sql` |
+| `20261023_revoke_legacy_public_lead_writes` | `20261023002_revoke_legacy_public_lead_writes.sql` |
+
+Active refs (netlify.toml, cron workflows, scripts, tests, edge defaults)
+repointed `qnymbecjgeaoxsfphrti` → `qktgjpbifknqjpvrgkrj`. The incident
+register, historical addenda, archive docs, and the mission identity
+question retain `qnymbecjgeaoxsfphrti` — the leaked key's project of
+record is a historical fact, not a mutable config value.
+
+Remaining target-side divergences still documented (not ported — they
+were non-destructive replays of defective source files):
+`20250927` policy/ON CONFLICT rewrites, `innovations.name` backfill,
+`20251009005` idempotent replay, `20251010004` deferred ordered replay,
+`20251010007` alternate weather schema recorded no-op, `20251012001`
+adapted index/defaults, `20251013001` non-destructive view replay,
+`20251014005` + clear-mock no-ops. A fresh repo replay of those files
+still differs from target; they are candidates for a future
+canonicalization pass, not correctness blockers (target schema is
+semantically equivalent and advisor-clean).
+
+Data phase result (Codex): 6,797 rows accepted across 87 whitelisted
+public tables; 89 withheld (41 null/invalid required fields, 48 missing
+FK parents); auth/storage/credential/lead tables excluded by policy.
+Edge functions still undeployed; `.env` anon key + INC-001 revocation
+remain owner steps.
