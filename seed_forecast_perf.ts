@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL ?? 'https://qnymbecjgeaoxsfphrti.supabase.co',
+  process.env.SUPABASE_URL ?? 'https://qktgjpbifknqjpvrgkrj.supabase.co',
   process.env.SUPABASE_ANON_KEY ?? (() => { throw new Error('SUPABASE_ANON_KEY required for seeding'); })()
 );
 

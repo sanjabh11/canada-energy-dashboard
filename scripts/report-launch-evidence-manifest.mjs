@@ -5231,13 +5231,13 @@ function probeSupabaseAdvisorStatus({ packageManager, gitStatus }) {
   const cardCliAppLintStatus = extractCheckStatus(cardBlock, 'cli_app_lint') || 'unknown';
   const advisor = {
     status: publicAdvisorItem.status ?? (extractStringValue(cardBlock, 'status') || 'unknown'),
-    projectRef: extractStringValue(cardBlock, 'projectRef') || 'qnymbecjgeaoxsfphrti',
+    projectRef: extractStringValue(cardBlock, 'projectRef') || 'qktgjpbifknqjpvrgkrj',
     cliAppLintStatus: supabaseAppLintProof.status === 'pass' ? 'verified' : cardCliAppLintStatus,
     supabaseAppLintProof,
     securityPerformanceAdvisorsStatus: extractCheckStatus(cardBlock, 'security_performance_advisors') || publicAdvisorItem.status || 'unknown',
     connectorPermission: /permission denied/i.test(`${publicAdvisorItem.evidenceBoundary ?? ''}\n${cardBlock}\n${conversationReviewText}`) ? 'permission_denied' : 'unknown',
     proofBucket: publicAdvisorItem.proofBucket ?? 'external account',
-    command: publicAdvisorItem.command ?? 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+    command: publicAdvisorItem.command ?? 'Supabase MCP security/performance advisors for qktgjpbifknqjpvrgkrj',
     evidenceBoundary: publicAdvisorItem.evidenceBoundary
       ?? (extractStringValue(cardBlock, 'decisionBoundary')
         || 'Supabase advisor evidence is account-authorization dependent and does not claim advisor clearance.'),

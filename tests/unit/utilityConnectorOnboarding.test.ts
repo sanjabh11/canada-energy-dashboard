@@ -6,7 +6,7 @@ describe('utilityConnectorOnboarding', () => {
     const packs = buildOntarioUtilityOnboardingPacks({
       publicAppUrl: 'https://app.ceip.energy',
       utilityConnectorBaseUrl: 'https://gb.ceip.energy',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     expect(packs).toHaveLength(2);

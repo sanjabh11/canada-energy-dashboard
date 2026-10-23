@@ -14,8 +14,8 @@
   [build.environment]
     NODE_VERSION = "20"
     CACHE_BUSTER = "2026-02-08-security-hardening"
-    VITE_SUPABASE_URL = "https://qnymbecjgeaoxsfphrti.supabase.co"
-    VITE_SUPABASE_EDGE_BASE = "https://qnymbecjgeaoxsfphrti.functions.supabase.co"
+    VITE_SUPABASE_URL = "https://qktgjpbifknqjpvrgkrj.supabase.co"
+    VITE_SUPABASE_EDGE_BASE = "https://qktgjpbifknqjpvrgkrj.functions.supabase.co"
     # Do NOT hardcode credentials in this file (it's committed to git).
     VITE_USE_STREAMING_DATASETS = "true"
     VITE_ENABLE_EDGE_FETCH = "true"

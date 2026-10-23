@@ -875,7 +875,7 @@ describe('launch evidence manifest report', () => {
     expect(minimumPacketRowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
     expect(minimumPacketRowsByLane.get('Retained-artifact 95% validation')?.blocks_95_gate).toBe(true);
     expect(manifest.supabase_advisor.status).toBe('needs_remediation');
-    expect(manifest.supabase_advisor.project_ref).toBe('qnymbecjgeaoxsfphrti');
+    expect(manifest.supabase_advisor.project_ref).toBe('qktgjpbifknqjpvrgkrj');
     expect(manifest.supabase_advisor.cli_app_lint_status).toBe('watch');
     expect(manifest.supabase_advisor.security_performance_advisors_status).toBe('needs_remediation');
     expect(manifest.supabase_advisor.connector_permission).toBe('permission_denied');

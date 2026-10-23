@@ -14,7 +14,7 @@ jobs:
           echo "Triggering TIER market rates ingestion..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-tier-market-rates" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ingest-tier-market-rates" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "x-supabase-cron: true" \
             -H "Content-Type: application/json" \

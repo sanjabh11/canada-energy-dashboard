@@ -7,7 +7,7 @@ SELECT cron.schedule(
   '*/30 * * * *', -- Every 30 minutes
   $$
   SELECT net.http_post(
-    url:='https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/storage-dispatch-scheduler',
+    url:='https://qktgjpbifknqjpvrgkrj.supabase.co/functions/v1/storage-dispatch-scheduler',
     headers:='{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY", "Content-Type": "application/json"}'::jsonb
   );
   $$
@@ -18,7 +18,7 @@ SELECT * FROM cron.job WHERE jobname = 'storage-dispatch-tick';
 
 -- To manually trigger (for testing):
 SELECT net.http_post(
-  url:='https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/storage-dispatch-scheduler',
+  url:='https://qktgjpbifknqjpvrgkrj.supabase.co/functions/v1/storage-dispatch-scheduler',
   headers:='{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY", "Content-Type": "application/json"}'::jsonb
 );
 

@@ -185,7 +185,7 @@ export const OpenAPIDocsPage: React.FC = () => {
                   tabIndex={0}
                 >
                   {`curl -H "X-API-Key: YOUR_API_KEY" \\
-  https://qnymbecjgeaoxsfphrti.functions.supabase.co/api/v1/grid/alberta/pool-price`}
+  https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api/v1/grid/alberta/pool-price`}
                 </pre>
               </div>
 

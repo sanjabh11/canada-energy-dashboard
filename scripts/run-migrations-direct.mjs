@@ -136,7 +136,7 @@ async function main() {
   } else {
     console.log('⚠️  Some migrations may have had issues.');
     console.log('You can also run migrations via Supabase Dashboard:');
-    console.log(`https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/sql\n`);
+    console.log(`https://supabase.com/dashboard/project/qktgjpbifknqjpvrgkrj/sql\n`);
   }
 }
 

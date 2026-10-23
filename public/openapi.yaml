@@ -20,7 +20,7 @@ info:
     
     ```bash
     curl -H "X-API-Key: sk_professional_YOUR_KEY" \
-      https://qnymbecjgeaoxsfphrti.functions.supabase.co/api/v1/tier/emissions?facilityId=ABC123&year=2025
+      https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api/v1/tier/emissions?facilityId=ABC123&year=2025
     ```
     
     ## Rate Limits
@@ -39,7 +39,7 @@ info:
   termsOfService: https://canada-energy.netlify.app/terms
 
 servers:
-  - url: https://qnymbecjgeaoxsfphrti.functions.supabase.co/api/v1
+  - url: https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api/v1
     description: Hosted API base where enabled
 
 security:
