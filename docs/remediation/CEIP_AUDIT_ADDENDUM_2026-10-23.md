@@ -72,3 +72,26 @@ evidence that the leaked key has been invalidated.
 The local `coverage/lcov.info` deletion is preserved as a dirty-overlay item.
 No deployment, project restoration, outreach, checkout enablement, or buyer
 contact was performed.
+
+## Update — new authoritative Supabase project (audit-8 continuation)
+
+- Owner provisioned new project `qktgjpbifknqjpvrgkrj` (healthy, nano,
+  zero migrations/backups). Endpoint reachable: `GET /rest/v1/` → 401
+  (API alive, key required).
+- `.env` updated: `VITE_SUPABASE_URL` + `VITE_SUPABASE_EDGE_BASE` now
+  point at `qktgjpbifknqjpvrgkrj`; `VITE_SUPABASE_ANON_KEY` still carries
+  the OLD project's anon key — owner must paste the new project's anon
+  key (Dashboard → API Keys → anon public).
+- Devin MCP scaffold added to `~/.config/devin/mcp_config.json`
+  (`--read-only --project-ref=qktgjpbifknqjpvrgkrj`, `disabled:true`)
+  pending owner PAT.
+- Supersedes the `qnymb…` vs `cwij…` identity question for the FORWARD
+  path: `qktgjpbifknqjpvrgkrj` is now the authoritative project.
+- **INC-001 remains open:** the leaked `service_role` key belonged to
+  `qnymbecjgeaoxsfphrti` per the register; creating a new project does
+  NOT revoke the old key. Owner must still disable/revoke it in the old
+  project's dashboard (or delete that project) and review logs.
+- Migration to the new project (schema + RLS + intake function) is a
+  fresh migration-before-function deployment — all hosted staging
+  checks (RLS denial, dedup, rate limits, retention, rollback) apply
+  to `qktgjpbifknqjpvrgkrj` before pilot intake.
