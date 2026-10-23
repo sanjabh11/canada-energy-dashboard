@@ -39,7 +39,7 @@ jobs:
         run: node scripts/check-dep-audit.mjs
 
       - name: Semgrep SAST scan
-        uses: returntocorp/semgrep-action@v1
+        uses: semgrep/semgrep-action@v1
         with:
           config: auto
           auditOn: never
