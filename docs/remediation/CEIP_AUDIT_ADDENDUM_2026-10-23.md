@@ -190,3 +190,35 @@ Two robustness fixes to the ported migrations before canonicalization:
   Policies that include service_role or other named roles are unaffected.
 - `20250926001`: `weather_data` dedup adds `ctid` tiebreak so equal
   `created_at` values can't strand duplicate rows and fail the PK add.
+
+## Handoff record — audit-9 closeout (Devin → Codex)
+
+- **Final HEAD:** `5c883f1` (+ this handoff commit, evidence-only)
+- **Run:** `39987095875` — conclusion `success`, all 4 jobs green
+  (`lint-typecheck`, `test`, `evidence-binding`, `build-and-smoke`);
+  `head_sha` == `5c883f1` exact
+- **Artifact:** `12517835140`, digest
+  `sha256:1b6e7bc2cc9282fe3f246fbfc5297b186e08911fea2a94b44f7f6b50df4b973f`;
+  merge `97bef02b`
+- **Changed files this cycle:** 5 ported migrations
+  (`20250926001` weather PK, `20251112008` cube+earthdistance,
+  `20251112009` provinces, `20261023001` rls_auto_enable ACL,
+  `20261023002` lead-write revoke w/ public-policy + ctid fixes);
+  ~50 ref-repointed files (`qnymb`→`qktg`, active config only;
+  history preserved); `ci.yml` (pinned pipx semgrep);
+  `verify-supabase-migrations.mjs` (revoke/do); 14 gated cron workflows;
+  `docs/PILOT_FUNCTION_INVENTORY.md`; EV-005 pins (3 sources);
+  goal/mission/addenda/loop receipts
+- **Dirty overlay:** `coverage/lcov.info` intentionally deleted
+  (unstaged, preserved); `data.sql`/`roles.sql`/`schema.sql` zero-byte
+  untracked stubs — NOT usable backups
+- **Unresolved owner gates:** `.env` anon key (line 12, still old
+  project's); PAT → `~/.config/devin/mcp_config.json` + `disabled:false`;
+  INC-001 service_role revocation on `qnymbecjgeaoxsfphrti` + log review;
+  repo var `SUPABASE_CRONS_LIVE=true` (only after function deploy)
+- **Unresolved staging gates:** edge-function deploy (`lead-capture`,
+  `whop-verify-access`, `whop-webhook` per inventory allowlist);
+  hosted RLS/migration-order/rate-limit/retention/rollback proofs;
+  108+23 advisor-finding dispositions; withheld 89-row reconciliation;
+  4 missing source tables; real backup exports; 2 storage files;
+  CASL, manual WCAG, deployed performance, buyer 0/11

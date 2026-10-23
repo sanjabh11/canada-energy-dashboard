@@ -29,12 +29,11 @@ staging/pilot STOP. (Note: `7d8c1fe` was HEAD at the time of that update;
 see the audit-7 binding below for the current bound source.)
 
 **Update (2026-10-22, audit-7 two-state binding):** bound source HEAD
-`b1e5d98` is bound by run `39976560874` (`head_sha` == `b1e5d98` exact; all
-three verification jobs green — `lint-typecheck`, `test`, `build-and-smoke`;
-the `evidence-binding` job was red as the designed staleness signal for the
-unbound intermediate commits (9cb343e..b1e5d98) this binding now covers;
-merge `cca72a97`, artifact `12515486198`, digest
-`sha256:386340ac9e8c9f7995e83b8e26529d75aece40033254af540c5c2353d1b64724`).
+`5c883f1` is bound by run `39987095875` (`head_sha` == `5c883f1` exact;
+all four jobs green including `evidence-binding` — the intermediate
+commits `9cb343e..b1e5d98` are covered inside this bound source;
+merge `97bef02b`, artifact `12517835140`, digest
+`sha256:1b6e7bc2cc9282fe3f246fbfc5297b186e08911fea2a94b44f7f6b50df4b973f`).
 The intermediate bound source `3ff27df`/`39755846368` (merge `2111069c`,
 artifact `12417415983`, digest `sha256:2eb16a41…`) remains valid historical
 evidence — all its verification jobs were green.
