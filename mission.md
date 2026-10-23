@@ -79,11 +79,16 @@ the mission must rebind its documents before claiming current status.
 | Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
-| Local overlay | `coverage/lcov.info` deleted; no other local changes | Dirty worktree |
-| Current document risk | Current source/CI receipt recorded in the 2026-10-23 addendum; evidence-only overlays remain subject to the binding gate | Open only until the next receipt is recorded |
+| Local overlay | Commit `779eef6` implementation/evidence overlay; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty/unbound worktree |
+| Current document risk | The overlay is recorded in the 2026-10-23 addendum, but it needs an exact-head CI receipt | Open until the next receipt is recorded |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
 | Replacement-project security snapshot | `SUPABASE_SECURITY_BASELINE_2026-10-23.md`; 26 ERROR and 73 WARN findings plus 108 INFO findings | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
+
+The current repository overlay is commit `779eef6`. It contains repository
+implementation and evidence-preparation changes and is locally checked, but
+it is not yet CI-verified. The predecessor `4967b72` / run `39990265678` is
+the last exact-head receipt before this overlay and cannot prove it.
 
 The incident register at `docs/security/SECRET_EXPOSURE_INCIDENTS.md` is the
 authoritative security record. Do not inspect or print credential values.

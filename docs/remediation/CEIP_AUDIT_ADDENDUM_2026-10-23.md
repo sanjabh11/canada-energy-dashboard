@@ -157,8 +157,10 @@ were non-destructive replays of defective source files):
 adapted index/defaults, `20251013001` non-destructive view replay,
 `20251014005` + clear-mock no-ops. A fresh repo replay of those files
 still differs from target; they are candidates for a future
-canonicalization pass, not correctness blockers (target schema is
-semantically equivalent and advisor-clean).
+canonicalization pass. A prior replay note described the target schema as
+semantically equivalent and advisor-clean; that historical wording is
+superseded by the current replacement-project security baseline and must not
+be read as present advisor clearance.
 
 Data phase result (Codex): 6,797 rows accepted across 87 whitelisted
 public tables; 89 withheld (41 null/invalid required fields, 48 missing

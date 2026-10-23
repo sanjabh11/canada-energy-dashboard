@@ -9,8 +9,14 @@
 > staging, production, and pilot blocked until INC-001 is invalidated, logs
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
+
+**Current implementation overlay (2026-10-23):** commit `779eef6` adds the
+credential-safe migration helper, security baseline, migration/data deviation
+ledger, and owner-run staging pack. It is locally checked but not yet bound by
+an exact-head CI run. The last completed CI receipt is the predecessor
+`4967b72` / run `39990265678`; it does not prove this overlay.
 >
-> **Milestone status (2026-10-23):** bound HEAD `5c883f1` — CI run
+> **Predecessor milestone status (2026-10-23):** bound HEAD `5c883f1` — CI run
 > `39987095875` on pinned `ubuntu-24.04` — `head_sha` exact; **all four
 > jobs green** including `evidence-binding` (the intermediate commits
 > `9cb343e..b1e5d98` are covered inside this bound source, so no
@@ -38,13 +44,15 @@
 > at the committed CI proof layer (manifest `complete:true`, `missing_files:[]`,
 > sidecar verified, hard `Verify evidence completeness` gate, synthetic-env
 > coverage reproduction, inversion/JWT-fuzz/a11y-design suites in CI).
-> The scans the audit environment could not run (client-env, hygiene,
-> secret scan) pass locally on this tree. `coverage/lcov.info` remains
-> deleted locally by owner decision. The `ubuntu-latest`→26.04 migration
+> The predecessor receipt recorded client-env, hygiene, and secret-scan
+> results; those restricted scans are guard-blocked for the current overlay
+> and remain unverified here. `coverage/lcov.info` remains deleted locally by
+> owner decision. The `ubuntu-latest`→26.04 migration
 > broke the previous run's browser install; the image is now pinned.
 > Prior bound runs (`39554044008`/`4f0348d`, `39552477642`/`e7a5f81`,
 > `39550773406`/`caadfc5`) remain historical evidence. Any later commit is
-> docs-only; binding rule: the run whose `headSha` equals a commit
+> evidence-only in that historical chain; the current implementation overlay
+> is separate. Binding rule: the run whose `headSha` equals a commit
 > binds that commit — no older run is proof for a newer HEAD.
 > Latest CI-tested documentation descendant: `0550c29` — run
 > `39777254650`, artifact `12425598211`, GitHub digest
@@ -59,18 +67,19 @@
 > `2cdc44b`, 1186-test, 80-browser, and prior run IDs — are superseded;
 > see dated addenda.)
 >
-> **Current checkout overlay:** the checkout contains the CI-tested
-> documentation descendant `0550c29` and any later evidence-only document
-> overlay. Run `39777254650` covered `0550c29` with all four jobs green; the
-> tracked `coverage/lcov.info` deletion remains in the local overlay and is
-> preserved for classification. No reset or restoration was performed.
+> **Current checkout overlay:** commit `779eef6` contains the credential-safe
+> migration helper, security baseline, migration/data ledger, and owner-run
+> staging pack. It is locally checked but not CI-verified. The predecessor
+> `4967b72` / run `39990265678` is the last exact-head receipt before this
+> overlay; the tracked `coverage/lcov.info` deletion remains preserved and no
+> reset or restoration was performed.
 >
-> **Source remediation — now CI-bound:** commit `ad44494` (test-only
+> **Source remediation — predecessor CI-bound:** commit `ad44494` (test-only
 > child-process warning isolation) is bound by run `39987095875` on `5c883f1`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
-> lifted here. The guard-blocked scans (client-env 2272 surfaces, repo
-> hygiene, secret scan — HEAD clean, documented INC history only) were
-> executed directly and pass on this tree.
+> lifted here. The predecessor receipt recorded client-env 2272 surfaces,
+> repository hygiene, and secret-scan results. Those restricted scans remain
+> guard-blocked and unverified for the current `779eef6` overlay.
 
 ## Proof-layer definitions
 
