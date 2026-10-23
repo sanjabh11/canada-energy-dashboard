@@ -42,7 +42,7 @@ jobs:
         # Audit-mode scan (never gates): matches the retired
         # semgrep-action auditOn:never semantics. `semgrep scan`
         # exits 0 on findings and runs unauthenticated.
-        run: pipx run semgrep==1.182.1 scan --config auto --metrics=off .
+        run: pipx run semgrep==1.182.1 scan --config auto .
 
       - name: Verify Supabase migrations
         run: node scripts/verify-supabase-migrations.mjs
