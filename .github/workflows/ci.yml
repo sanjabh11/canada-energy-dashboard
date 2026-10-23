@@ -39,10 +39,10 @@ jobs:
         run: node scripts/check-dep-audit.mjs
 
       - name: Semgrep SAST scan
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: auto
-          auditOn: never
+        # Audit-mode scan (never gates): matches the retired
+        # semgrep-action auditOn:never semantics. `semgrep scan`
+        # exits 0 on findings and runs unauthenticated.
+        run: pipx run semgrep==1.182.1 scan --config auto --metrics=off .
 
       - name: Verify Supabase migrations
         run: node scripts/verify-supabase-migrations.mjs
