@@ -10,9 +10,9 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 >
-> **Milestone status (2026-10-22):** bound HEAD `01006d9` — CI run
-> `39774258190` on pinned `ubuntu-24.04` — all 4 jobs green (merge `1f089982`, artifact `12424756786`, digest
-> `sha256:612771f42c17794cb3c124e41a1e25d98c4f20064ca717a9c95be6aebe726e27`;
+> **Milestone status (2026-10-22):** bound HEAD `48ad6fe` — CI run
+> `39909428337` on pinned `ubuntu-24.04` — all 4 jobs green (merge `0d474e68`, artifact `12482867672`, digest
+> `sha256:632ea92d0a1574a56a2ec89ffb51dbce92cd4ee95c3d4da64847f39f46e82c63`;
 > manifest `complete:true`, sidecar verified). Two-state binding contract:
 > the bound source requires a run whose `headSha` equals it with all
 > verification jobs green; descendants after it may touch only the
@@ -59,7 +59,7 @@
 > preserved for classification. No reset or restoration was performed.
 >
 > **Source remediation — now CI-bound:** commit `ad44494` (test-only
-> child-process warning isolation) is bound by run `39774258190` on `01006d9`
+> child-process warning isolation) is bound by run `39909428337` on `48ad6fe`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
 > lifted here. The guard-blocked scans (client-env 2272 surfaces, repo
 > hygiene, secret scan — HEAD clean, documented INC history only) were
@@ -83,14 +83,14 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `01006d9` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | bound source `01006d9`; latest tested docs descendant `0550c29` | addendum 2026-10-23; runs `39774258190` / `39777254650`; artifact `12425598211` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
+| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `48ad6fe` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | bound source `48ad6fe`; latest tested docs descendant `0550c29` | addendum 2026-10-23; runs `39909428337` / `39777254650`; artifact `12425598211` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
-| P3 — Stale economics suppressed | partial | local tests + committed CI | `01006d9` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `01006d9` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P3 — Stale economics suppressed | partial | local tests + committed CI | `48ad6fe` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `48ad6fe` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
-| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `01006d9` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `01006d9` + docs receipt `0550c29` | runs `39774258190` / `39777254650`; latest artifact complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; independent local hygiene scan remains guard-blocked in this audit |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `48ad6fe` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `48ad6fe` + docs receipt `0550c29` | runs `39909428337` / `39777254650`; latest artifact complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; independent local hygiene scan remains guard-blocked in this audit |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
