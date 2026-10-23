@@ -63,6 +63,12 @@ retention, logging, restore and rollback; `WHOP_CEIP_*` configuration and edge
 deployment; `/v5/me` removal/verification; CASL approval; manual WCAG 2.2
 review; deployed performance; and all `0/11` paid buyer experiments.
 
+Read-only Supabase control-plane evidence on 2026-10-23 lists only project
+`cwijcjhdugfqwsjbrdro` in the connected account, with status `INACTIVE` and
+region `ap-southeast-1`. The incident register's `qnymbecjgeaoxsfphrti` is
+not reconciled to that inventory. This confirms the owner stop rule; it is not
+evidence that the leaked key has been invalidated.
+
 The local `coverage/lcov.info` deletion is preserved as a dirty-overlay item.
 No deployment, project restoration, outreach, checkout enablement, or buyer
 contact was performed.
