@@ -67,28 +67,31 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Latest source/CI-tested subject before this evidence update | `0550c29` / run `39777254650` | CI-verified |
-| Code-bearing CI subject | `a460a82` / run `40071166986` | CI-verified binding-gate change |
+| Current exact-head source/CI subject | `389dad3` / run `40073506314` | CI-verified; all four jobs successful |
+| Prior code-bearing CI subject | `a460a82` / run `40071166986` | Historical CI-verified binding-gate change; evidence-binding was the staleness signal |
 | Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
-| Latest CI-tested documentation subject | `0550c29` / run `39777254650` | CI-verified docs descendant |
+| Current documentation subject (bound parent) | `389dad3` / run `40073506314` | CI-verified exact-head receipt |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Canonical bound CI | [run 40071166986](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40071166986) | GitHub job conclusions |
-| Latest artifact receipt | `12425598211`, digest `sha256:93f00e9745d615cece0a16a6502a00aa6d1d1a5422735d92d15967f774ea74b4` | GitHub artifact API + independent hash check |
-| CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success | CI-verified |
+| Canonical current CI | [run 40073506314](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40073506314) | GitHub job conclusions |
+| Current artifact receipt | `12551764380`, digest `sha256:036865d5043db63b545b6b80ec73dbc9e01bc6dd663dd26632e7eb8541a6a9f4` | GitHub artifact API + downloaded ZIP digest + internal hash checks |
+| CI jobs | `lint-typecheck`, `test`, `evidence-binding`, `build-and-smoke`: success | CI-verified |
 | Manifest | `complete=true`, nine evidence files, `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
 | Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
-| Local overlay | Commit `779eef6` implementation/evidence overlay; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty/unbound worktree |
-| Current document risk | The overlay is recorded in the 2026-10-23 addendum, but it needs an exact-head CI receipt | Open until the next receipt is recorded |
+| Local overlay | HEAD `389dad3`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
+| Local evidence/migration descendant | unpushed descendant after `389dad3` | Locally checked; push/own CI receipt pending because shared-state guard blocked the push |
+| Current document risk | Bound parent identity is reconciled; the local descendant is not yet CI-verified | Push and exact-head receipt required |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
 | Replacement-project security snapshot | `SUPABASE_SECURITY_BASELINE_2026-10-23.md`; 26 ERROR and 73 WARN findings plus 108 INFO findings | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
 
-The current repository overlay is commit `779eef6`. It contains repository
-implementation and evidence-preparation changes and is locally checked, but
-it is not yet CI-verified. The predecessor `4967b72` / run `39990265678` is
-the last exact-head receipt before this overlay and cannot prove it.
+The current repository subject for CI proof is `389dad3`, and its exact-head
+receipt is run `40073506314`. The local evidence/migration descendant after
+`389dad3` is not yet a remote CI subject because the shared-state push was
+blocked. The local checkout still carries the intentional lcov deletion and
+zero-byte dump stubs; those dirty files are not included in the CI proof and
+must remain preserved.
 
 The incident register at `docs/security/SECRET_EXPOSURE_INCIDENTS.md` is the
 authoritative security record. Do not inspect or print credential values.

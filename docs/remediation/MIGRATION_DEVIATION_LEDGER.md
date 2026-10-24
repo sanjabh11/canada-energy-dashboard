@@ -12,10 +12,13 @@ Supabase migration or claim that the replacement project is pilot-ready.
 | Replacement-project ledger | 123 target records reported during the owner-led replay |
 | Replay relationship | 117 repository migration names replayed plus six target-only entries |
 | Ported repository migrations | Five files cover six target entries because the two extension entries are intentionally merged |
-| Latest local code-bearing commit | `3d1880ff` (dependency and source remediation); exact CI receipt pending |
-| Current local tree | Documentation-only descendants of the code-bearing commit; exact CI receipt pending |
-| Last remote CI receipt | `4967b72` / CI run `39990265678`, all four jobs successful; does not prove the local overlay |
+| Latest exact-head source/documentation subject | `389dad3` / CI run `40073506314`, all four jobs successful |
+| Current local tree | Unpushed evidence/migration descendant after `389dad3` plus intentional D/?? overlay files; own remote CI receipt pending |
+| Current artifact receipt | `12551764380`, GitHub digest `sha256:036865d5043db63b545b6b80ec73dbc9e01bc6dd663dd26632e7eb8541a6a9f4` |
 | Proof boundary | CI proves the committed repository; it does not prove a hosted migration or rollback |
+
+The predecessor ledger recorded **exact CI receipt pending** for this lane;
+that wording is historical and is superseded by the exact-head receipt above.
 
 The merged extension entries are a counting rule, not permission to discard
 history. A fresh replay must record the merge explicitly.
@@ -83,7 +86,11 @@ closed:
 | Missing foreign-key parent | 48 | Identify parent dependency, restore the parent or formally exclude |
 | **Total** | **89** | No fabricated values and no silent drop |
 
-The source-only tables reported without target equivalents are:
+The source-only tables reported without target equivalents are present in the
+owner-provided old-project dump, but are absent from the replacement target.
+The metadata-only dump inventory and caller review support a bounded
+`excluded-from-pilot-scope` recommendation; this is not an owner/data-steward
+approval and does not delete or overwrite the source data.
 
 - `der_assets_summary`
 - `energy_events`
@@ -116,17 +123,24 @@ fabricate missing fields or copy raw personal/facility data into this ledger.
 The four source-only tables also remain explicitly unresolved until the data
 steward records one of the three allowed dispositions:
 
+The earlier `PENDING_DATA_STEWARD` state is retained as the historical
+pre-decision label; the current rows below are recommendations, not owner
+approval.
+
 | Source table | Required decision evidence | Current status |
 |---|---|---|
-| `der_assets_summary` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
-| `energy_events` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
-| `onet_related_occupations` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
-| `smr_vendors` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
+| `der_assets_summary` | Old dump: 4 rows, 4 columns; no `.from()` caller; API response shape only; schema SHA-256 `6555e869…` | `RECOMMENDED_EXCLUDE_PILOT_SCOPE` — owner confirmation required |
+| `energy_events` | Old dump: 37,409 rows, 13 columns; no application caller; schema SHA-256 `6bea3d4d…` | `RECOMMENDED_EXCLUDE_PILOT_SCOPE` — owner confirmation required |
+| `onet_related_occupations` | Old dump: 42 rows, 9 columns; no application caller; schema SHA-256 `c0fe0df1…` | `RECOMMENDED_EXCLUDE_PILOT_SCOPE` — owner confirmation required |
+| `smr_vendors` | Old dump: 5 rows, 13 columns; no application caller; schema SHA-256 `cec20bdb…` | `RECOMMENDED_EXCLUDE_PILOT_SCOPE` — owner confirmation required |
 
 A read-only target metadata query on 2026-10-24 returned no public tables with
-any of these four names. That confirms the reported absence at the target
-table-name layer; it does not decide whether the source data is deprecated,
-needed under another name, or required for the pilot.
+any of these four names. The old dump was verified as a valid gzip SQL stream
+(SHA-256 `b1addd8f…`) and inspected without printing row values. The source
+caller search found only the `der_assets_summary` response-shape field in
+`api-v2-vpp-platforms`; it does not query a table. This supports the scoped
+exclusion recommendation above, while the data steward still owns the final
+disposition and rollback consequence.
 
 ## Backup and artifact rule
 

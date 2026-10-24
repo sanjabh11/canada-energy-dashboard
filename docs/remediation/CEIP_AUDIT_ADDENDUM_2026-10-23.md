@@ -282,3 +282,46 @@ Two robustness fixes to the ported migrations before canonicalization:
 - `check:supabase-app-lint` blocked by `401 Invalid access token`;
   secret/client-env/hygiene scans JEV-denied (protected paths) —
   owner-side steps, unchanged.
+
+## Update — audit-11 exact-head cross-verification (Codex, 2026-10-24)
+
+The CI-reviewed parent is `389dad33600fc2b754bf39d8c69637e0b4f718d5`. Run
+`40073506314` has `head_sha` equal to that exact source commit and all four
+jobs (`lint-typecheck`, `test`, `evidence-binding`, `build-and-smoke`)
+successful. This supersedes the audit-10 `a460a82` / `40071166986` receipt for
+current-state claims; the older run remains historical evidence. The local
+evidence/migration descendant after `389dad3`; its push was blocked by the
+shared-state guard, so it remains locally checked and unbound at the remote
+CI layer.
+
+The current artifact is `12551764380`, GitHub digest
+`sha256:036865d5043db63b545b6b80ec73dbc9e01bc6dd663dd26632e7eb8541a6a9f4`,
+merge SHA `02d17636953cf1a2e2482abfe50704b5a1c42c28`. A fresh artifact download
+reproduced the GitHub digest. Its manifest has `complete: true`,
+`missing_files: []`, `file_count: 9`, and `jobs: "not-recorded"`; the sidecar
+verified and all nine listed evidence files matched their recorded SHA-256
+hashes and byte counts. External GitHub job conclusions remain authoritative.
+
+The worktree still intentionally contains `D coverage/lcov.info` and
+untracked zero-byte `data.sql`, `roles.sql`, and `schema.sql`. They were not
+restored, staged, or presented as backup evidence. No hosted mutation,
+deployment, project unpause, secret read, outreach, or buyer experiment was
+performed.
+
+The old-project SQL backup passed gzip integrity and has SHA-256
+`b1addd8f7310c6b968aa0b861b9cdf6bf3c9616f4a6e80bc7182d8f19b265a38`.
+Metadata-only parsing found the four source-only tables and row counts
+`der_assets_summary=4`, `energy_events=37409`,
+`onet_related_occupations=42`, and `smr_vendors=5`. Application caller review
+found no table query for any of them; `der_assets_summary` is only a response
+shape in `api-v2-vpp-platforms`. The migration ledger therefore records a
+bounded recommendation to exclude all four from pilot scope, pending named
+data-steward confirmation and rollback impact. The 89 withheld rows remain
+`NOT_REPLAYED` pending the owner’s redacted row-level packet.
+
+**Current decision:** repository evidence is CI-verified and artifact-verified
+for the `389dad3` parent; the local descendant after that parent is not yet CI-verified.
+Staging and pilot remain **STOP**. INC-001 invalidation and log
+review, project identity, hosted migration/RLS/rate-limit/retention/rollback,
+allowlisted function deployment, `WHOP_CEIP_*`, CASL, manual WCAG, deployed
+performance, and buyer `0/11` remain open owner gates.
