@@ -13,7 +13,7 @@ describe('migration helper secret boundary', () => {
     expect(source).toContain('SUPABASE_DB_PASSWORD');
     expect(source).toContain('supabase db push --password-stdin');
     expect(source).toMatch(/set -euo pipefail/);
-    expect(source).not.toMatch(/(?:echo|printf)\s+['\"][^$]*['\"]\s*\|\s*supabase\s+db\s+push/i);
+    expect(source).not.toMatch(/(?:echo|printf)\s+["'][^$]*["']\s*\|\s*supabase\s+db\s+push/i);
   });
 
   it('fails closed before invoking the CLI when no password is supplied', () => {

@@ -32,6 +32,12 @@ set secrets, enable cron workflows, or upload Storage objects.
 restore, schema comparison, and an owner sign-off. The current zero-byte files
 in the checkout do not satisfy this gate.
 
+The owner-provided compressed backup `db_cluster-10-08-2026@09-22-47.backup.gz`
+has a local size of approximately 19 MiB and SHA-256
+`b1addd8f7310c6b968aa0b861b9cdf6bf3c9616f4a6e80bc7182d8f19b265a38`. This is
+an integrity reference only; it is not a restore result, schema comparison, or
+proof that the backup contains the required tables.
+
 ## Gate 2 — migration order and database boundary
 
 1. Confirm the repository migration count using its documented 122-active plus
@@ -88,6 +94,20 @@ each one to `scheduled`, `internal`, `deprecated`, or `not-in-pilot-scope`.
 
 Database dumps do not prove Storage-object transfer; keep separate object
    receipts.
+
+### Downloaded archive preflight inventory
+
+The owner-provided archive `qnymbecjgeaoxsfphrti.storage.zip` was inspected by
+name and byte/hash metadata only. No object was uploaded or copied into the
+repository. The two objects are:
+
+| Archive path | Bytes | SHA-256 | Required staging action |
+|---|---:|---|---|
+| `qnymbecjgeaoxsfphrti/historical-energy-data/canada_energy_historical.csv` | 871 | `371b98e9fb871dc1852609f8ac63362a84e74d30b476dcf43e1f923c05ceda40` | Owner uploads to an approved target bucket/path, then performs a readback hash check |
+| `qnymbecjgeaoxsfphrti/historical-energy-data/energy_prices.json` | 660 | `9bda706b49d0d3bd27d87707631bd9d6c416975f5059e67e1bd12d7f76945ea1` | Owner uploads to an approved target bucket/path, then performs a readback hash check |
+
+These hashes prove only the downloaded archive members. They do not prove
+bucket existence, access policy, upload, readback, retention, or rollback.
 
 ## Gate 6 — operations and rollback
 

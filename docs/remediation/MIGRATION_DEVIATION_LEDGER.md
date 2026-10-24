@@ -19,6 +19,29 @@ Supabase migration or claim that the replacement project is pilot-ready.
 The merged extension entries are a counting rule, not permission to discard
 history. A fresh replay must record the merge explicitly.
 
+## Target-name reconciliation — 2026-10-24 read-only comparison
+
+The replacement project returned 123 migration records through the Supabase
+MCP. The repository contains 122 active SQL migrations and one intentionally
+disabled SQL entry. Comparing target names with repository basenames produced
+the following six-to-six difference set:
+
+| Target migration name | Repository representation | Reconciliation |
+|---|---|---|
+| `20261023_harden_rls_auto_enable_api_acl` | `20261023001_harden_rls_auto_enable_api_acl.sql` | Same reviewed change; timestamp/name normalized locally |
+| `20250927_fix_weather_data_primary_key` | `20250926001_fix_weather_data_primary_key.sql` | Same reviewed change; timestamp/name normalized locally |
+| `20261023_enable_cube_for_earthdistance` | `20251112008_enable_cube_earthdistance.sql` | Intentionally merged with the next target entry |
+| `20261023_enable_earthdistance_for_ev` | `20251112008_enable_cube_earthdistance.sql` | Intentionally merged with the preceding target entry |
+| `20261023_create_provinces_reference` | `20251112009_create_provinces_reference.sql` | Same reviewed change; timestamp/name normalized locally |
+| `20261023_revoke_legacy_public_lead_writes` | `20261023002_revoke_legacy_public_lead_writes.sql` | Same reviewed change; timestamp/name normalized locally |
+
+The only repository-only basename is
+`20250904_investment_tables.sql.disabled`; it is not active and is retained as
+historical evidence. This comparison resolves the count/name discrepancy at
+the repository evidence layer. It does not prove SQL equivalence, applied
+order, resulting object state, or rollback; those remain owner-run staging
+checks.
+
 ## Target-only entries ported
 
 | Target entry | Repository representation | Status |
@@ -69,6 +92,40 @@ The source-only tables reported without target equivalents are:
 For each table, the owner and data steward must choose `add-equivalent`,
 `deprecated-with-evidence`, or `excluded-from-pilot-scope`. The choice must
 include row counts, schema comparison, downstream callers, and rollback impact.
+
+### Row-level register status
+
+The repository contains the aggregate import result but no row-level rejection
+manifest. Therefore the 89 rows cannot be safely enumerated from source code or
+from the compressed backup without risking accidental exposure of imported
+data. They remain `NOT_REPLAYED` rather than being inferred from counts.
+
+The owner-run reconciliation packet must provide one record per withheld row
+using a stable non-secret row identifier (for example, a keyed hash of the
+source primary key), source table, reason code, required field or missing
+parent relation, proposed disposition, evidence reference, and rollback
+consequence. Values must come from the importer/export owner; no agent may
+fabricate missing fields or copy raw personal/facility data into this ledger.
+
+| Reason group | Required row-level artifact | Current status |
+|---|---|---|
+| 41 null/invalid required fields | Redacted row manifest plus source-quality repair or formal exclusion decision | `PENDING_OWNER_DATA_PACKET` |
+| 48 missing foreign-key parents | Redacted row manifest plus parent restore, dependency exclusion, or schema decision | `PENDING_OWNER_DATA_PACKET` |
+
+The four source-only tables also remain explicitly unresolved until the data
+steward records one of the three allowed dispositions:
+
+| Source table | Required decision evidence | Current status |
+|---|---|---|
+| `der_assets_summary` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
+| `energy_events` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
+| `onet_related_occupations` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
+| `smr_vendors` | Schema/row count, downstream caller search, pilot need, rollback impact | `PENDING_DATA_STEWARD` |
+
+A read-only target metadata query on 2026-10-24 returned no public tables with
+any of these four names. That confirms the reported absence at the target
+table-name layer; it does not decide whether the source data is deprecated,
+needed under another name, or required for the pilot.
 
 ## Backup and artifact rule
 
