@@ -10,6 +10,7 @@ export const EVIDENCE_ALLOWLIST = [
   /^goal\.md$/,
   /^mission\.md$/,
   /^docs\/remediation\/CEIP_AUDIT_ADDENDUM_\d{4}-\d{2}-\d{2}B?\.md$/,
+  /^docs\/staging\/(FOUR_TABLE_DECISIONS|FUNCTION_DEPLOYMENT_MANIFEST|MIGRATION_REPLAY_COMPARISON|OWNER_SIGNOFF_MATRIX|STORAGE_RECEIPT_TEMPLATE|WITHHELD_ROWS_RECONCILIATION_PACKET)\.md$/,
   /^\.phase-loop\//,
   /^\.positioning-audit\//,
 ];

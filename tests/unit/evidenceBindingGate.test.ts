@@ -43,10 +43,25 @@ describe('evidence-binding gate — negative fixtures', () => {
         'goal.md',
         'mission.md',
         'docs/remediation/CEIP_AUDIT_ADDENDUM_2026-10-22.md',
+        'docs/staging/FOUR_TABLE_DECISIONS.md',
+        'docs/staging/FUNCTION_DEPLOYMENT_MANIFEST.md',
+        'docs/staging/MIGRATION_REPLAY_COMPARISON.md',
+        'docs/staging/OWNER_SIGNOFF_MATRIX.md',
+        'docs/staging/STORAGE_RECEIPT_TEMPLATE.md',
+        'docs/staging/WITHHELD_ROWS_RECONCILIATION_PACKET.md',
         '.phase-loop/ceip-controlled-pilot-mission.jsonl',
         '.positioning-audit/artifacts/phase-1-evidence-reconnaissance.md',
       ]),
     ).not.toThrow();
+  });
+
+  it('does not allow arbitrary staging or remediation documents to bypass binding', () => {
+    for (const f of [
+      'docs/staging/UNREVIEWED_NOTE.md',
+      'docs/remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md',
+    ]) {
+      expect(() => assertEvidenceOnlyDiff([f]), f).toThrow();
+    }
   });
 
   it('uses parent-aware diff-tree arguments for merge commits', () => {
