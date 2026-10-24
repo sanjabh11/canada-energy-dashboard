@@ -12,8 +12,9 @@ Supabase migration or claim that the replacement project is pilot-ready.
 | Replacement-project ledger | 123 target records reported during the owner-led replay |
 | Replay relationship | 117 repository migration names replayed plus six target-only entries |
 | Ported repository migrations | Five files cover six target entries because the two extension entries are intentionally merged |
-| Current code-bearing proof | `5c883f1` / CI run `39987095875` |
-| Current evidence-only HEAD proof | `4967b72` / CI run `39990265678`, all four jobs successful |
+| Latest local code-bearing commit | `3d1880ff` (dependency and source remediation); exact CI receipt pending |
+| Current local tree | Documentation-only descendants of the code-bearing commit; exact CI receipt pending |
+| Last remote CI receipt | `4967b72` / CI run `39990265678`, all four jobs successful; does not prove the local overlay |
 | Proof boundary | CI proves the committed repository; it does not prove a hosted migration or rollback |
 
 The merged extension entries are a counting rule, not permission to discard
