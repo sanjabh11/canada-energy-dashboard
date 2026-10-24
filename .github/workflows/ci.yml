@@ -91,6 +91,9 @@ jobs:
       - name: Pilot evidence 95 fixture gate
         run: pnpm run check:pilot-evidence-95-fixture-gate
 
+      - name: Staging packet contract
+        run: pnpm run check:staging-packet-contract
+
       - name: Positioning audit verifier
         run: pnpm run check:positioning-audit -- --strict
 

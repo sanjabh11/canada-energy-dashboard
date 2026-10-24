@@ -69,6 +69,7 @@
     "check:post-deploy-live": "corepack pnpm run check:live-public-metadata && corepack pnpm run check:live-static-parity && corepack pnpm run test:browser:hosted:proof-packs",
     "check:proof-pack-bundles": "node scripts/check-proof-pack-bundle-budgets.mjs",
     "check:repo-hygiene": "node scripts/check-repo-hygiene.mjs",
+    "check:staging-packet-contract": "node scripts/check-staging-packet-contract.mjs",
     "check:client-env-safety": "node scripts/check-client-env-safety.mjs",
     "check:dep-audit": "node scripts/check-dep-audit.mjs",
     "check:lint-baseline": "node scripts/check-lint-warning-baseline.mjs",
