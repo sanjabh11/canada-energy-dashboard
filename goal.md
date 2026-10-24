@@ -10,31 +10,17 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 
-**Current implementation overlay (2026-10-23):** commit `779eef6` adds the
-credential-safe migration helper, security baseline, migration/data deviation
-ledger, and owner-run staging pack. It is locally checked but not yet bound by
-an exact-head CI run. The last completed CI receipt is the predecessor
-`4967b72` / run `39990265678`; it does not prove this overlay.
-
-**Current binding (2026-10-24):** bound HEAD `a460a82` — CI run
-`40071166986` — `head_sha` exact; all three verification jobs green;
+**Milestone status (2026-10-24):** bound HEAD `a460a82` — CI run
+> `40071166986` — `head_sha` exact; all three verification jobs green;
 `evidence-binding` red as the designed staleness signal for the Codex
 nine-commit batch (`779eef6..a460a82`) this binding covers, so the run's
 conclusion was `failure` while remaining binding-eligible
 (merge `881877d9`, artifact `12552180184`, digest
 `sha256:dfa5873f8f06dbb2f4b766752c5e64a1696fd23d9c86f5e499fc2b05b55406f3`).
+The batch adds the credential-safe migration helper, security baseline,
+deviation ledger, and owner staging pack; earlier intermediate commits are
+covered inside this bound source.
 >
-> **Predecessor milestone status (2026-10-23):** bound HEAD `a460a82` — CI run
-> `40071166986` on pinned `ubuntu-24.04` — `head_sha` exact; all three
-> verification jobs green (`lint-typecheck`, `test`, `build-and-smoke`);
-> `evidence-binding` red as the designed staleness signal for the Codex
-> nine-commit batch this binding covers, so the run's conclusion was
-> `failure` while remaining binding-eligible
-> (merge `881877d9`, artifact `12552180184`, digest
-> `sha256:dfa5873f8f06dbb2f4b766752c5e64a1696fd23d9c86f5e499fc2b05b55406f3`;
-> manifest `complete:true`, sidecar verified). Chain: `e239699` →
-> `2f1b88d`/`a86f1f8`/`cc3ff23` (evidence-only) → `fb5cddd`/`aa6d8d5`
-> (code, covered inside this bound source) → `a460a82` bound.
 > Two-state binding contract:
 > the bound source requires a run whose `headSha` equals it with all
 > verification jobs green; descendants after it may touch only the
