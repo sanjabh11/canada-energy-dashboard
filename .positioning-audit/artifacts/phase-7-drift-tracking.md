@@ -113,7 +113,7 @@
     {"id": "H-CREDIT-2", "status": "unresolved"},
     {"id": "H-CONTRA-1", "status": "unresolved"}
   ],
-  "experiments_designed": 10,
+  "experiments_designed": 11,
   "experiments_executed": 0,
   "next_audit": "2026-10-13 (90-day refresh) or after EXP-004 completion",
   "key_risks": [

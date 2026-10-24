@@ -54,6 +54,12 @@ describe('utilityForecastProofPack', () => {
       isSampleData: false,
       sourceKind: 'green_button_cmd',
       liveSurfaces: [],
+      sourceTrust: {
+        owner_bound: true,
+        freshness_status: 'live',
+        fetched_at: '2026-04-26T12:05:00.000Z',
+        observed_at: '2026-04-26T12:00:00.000Z',
+      },
     });
 
     const bundle = buildUtilityForecastProofBundle(forecastPackage);
@@ -127,6 +133,12 @@ describe('utilityForecastProofPack', () => {
       isSampleData: false,
       sourceKind: 'green_button_cmd',
       liveSurfaces: [],
+      sourceTrust: {
+        owner_bound: true,
+        freshness_status: 'live',
+        fetched_at: '2026-04-26T12:05:00.000Z',
+        observed_at: '2026-04-26T12:00:00.000Z',
+      },
     });
     const failureNote = 'Baseline win: seasonal-naive baseline MAE 5.00 MW beats transparent trend-seasonal MAE 9.00 MW; treat accuracy uplift as unproven and review model inputs before making buyer-facing accuracy claims.';
     const packageWithFailure = {

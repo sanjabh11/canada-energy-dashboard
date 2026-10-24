@@ -89,11 +89,11 @@
 | Dimension | Count | Evidence ID |
 |---|---|---|
 | Routes | 140 unique paths | EV-005 |
-| Lazy-loaded components | 70 | EV-005 |
-| Component files | 210 | EV-005 |
-| Lib files | 183 | EV-005 |
-| Documentation files | 232 | EV-005 |
-| Edge Functions | 109 | EV-010 |
+| Lazy-loaded components | 68 | EV-005 |
+| Component files | 208 | EV-005 |
+| Lib files | 220 | EV-005 |
+| Documentation files | 265 | EV-005 |
+| Edge Functions | 110 | EV-010 |
 | Active commercial wedges | 10 | EV-003 |
 | Reserve wedges | 6 | EV-003 |
 | Bundle spines | 4 | EV-003 |

@@ -150,6 +150,12 @@ describe('utilityForecasting', () => {
       sourceLabel: 'ontario-monthly.csv',
       isSampleData: false,
       sourceKind: 'green_button_cmd',
+      sourceTrust: {
+        owner_bound: true,
+        freshness_status: 'live',
+        fetched_at: '2026-08-20T12:00:00.000Z',
+        observed_at: '2026-08-20T11:00:00.000Z',
+      },
     });
 
     const csv = utilityForecastPackageToCsv(forecastPackage);
@@ -171,6 +177,16 @@ describe('utilityForecasting', () => {
     expect(csv).toContain('live_surface_source');
     expect(csv).toContain('expected');
     expect(forecastPackage.input_provenance_summary.source_kind).toBe('green_button_cmd');
+  });
+
+  it('refuses Green Button forecast packages without owner-bound live read proof', () => {
+    expect(() => buildUtilityForecastPackage({
+      rows: generateUtilityLoadSampleRows('Ontario', 'hourly'),
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'unbound-green-button-history',
+      isSampleData: false,
+      sourceKind: 'green_button_cmd',
+    })).toThrow('owner-bound live read proof');
   });
 
   it('exports Alberta planning summaries with horizon rows', () => {

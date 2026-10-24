@@ -91,20 +91,18 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-${tier.color}-500/10 mb-4`}>
+          <div
+            className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-${tier.color}-500/10 mb-4`}
+          >
             <Icon className={`w-8 h-8 text-${tier.color}-400`} />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">
-            Upgrade to {tier.name}
-          </h2>
+          <h2 className="text-3xl font-bold text-white mb-2">Upgrade to {tier.name}</h2>
           <div className="flex items-center justify-center gap-2">
             <span className="text-5xl font-bold text-white">{tier.price}</span>
             <span className="text-slate-400">{tier.period}</span>
           </div>
           {targetTier === 'edubiz' && (
-            <p className="text-sm text-slate-400 mt-2">
-              7-day free trial • Cancel anytime
-            </p>
+            <p className="text-sm text-slate-400 mt-2">7-day free trial • Cancel anytime</p>
           )}
         </div>
 
@@ -144,9 +142,11 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
           >
             {loading
               ? 'Redirecting…'
-              : targetTier === 'edubiz'
-                ? 'View Plans'
-                : 'Talk to Sales'}
+              : isWhopUser
+                ? 'Manage Existing Membership'
+                : targetTier === 'edubiz'
+                  ? 'View Plans'
+                  : 'Talk to Sales'}
           </button>
 
           <button
@@ -159,10 +159,7 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
 
         {/* Comparison link */}
         <div className="mt-6 pt-6 border-t border-slate-700 text-center">
-          <a
-            href="/pricing"
-            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium"
-          >
+          <a href="/pricing" className="text-cyan-400 hover:text-cyan-300 text-sm font-medium">
             Compare all tiers →
           </a>
         </div>

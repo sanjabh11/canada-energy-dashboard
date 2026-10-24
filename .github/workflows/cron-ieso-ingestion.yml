@@ -13,6 +13,7 @@ on:
 
 jobs:
   trigger-ieso-ingestion:
+    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
     runs-on: ubuntu-latest
     
     steps:
@@ -22,7 +23,7 @@ jobs:
           
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-ontario-demand?mode=persist" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/stream-ontario-demand?mode=persist" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json")
           
@@ -45,7 +46,7 @@ jobs:
           
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-ontario-prices?mode=persist" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/stream-ontario-prices?mode=persist" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json")
           
@@ -67,7 +68,7 @@ jobs:
           echo "💓 Updating ops heartbeat..."
           
           curl -s -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ops-heartbeat" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ops-heartbeat" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"run_type":"ieso_ingestion","status":"success"}'

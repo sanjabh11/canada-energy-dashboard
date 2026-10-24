@@ -7,6 +7,7 @@ on:
 
 jobs:
   trigger-market-spike-series:
+    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Market Spike Series Ingestion
@@ -14,7 +15,7 @@ jobs:
           echo "Triggering market spike series ingestion..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-market-spike-series" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ingest-market-spike-series" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "x-supabase-cron: true" \
             -H "Content-Type: application/json" \

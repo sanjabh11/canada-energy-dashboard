@@ -4,12 +4,7 @@ import { persistAttributionEvent } from './attributionPipeline';
 export type GTMChannel = 'whop' | 'direct' | 'partner' | 'organic' | 'paid';
 
 export type GTMSegment =
-  | 'whop_trading'
-  | 'whop_business_ai'
-  | 'consultancy'
-  | 'municipal'
-  | 'industrial'
-  | 'mixed';
+  'whop_trading' | 'whop_business_ai' | 'consultancy' | 'municipal' | 'industrial' | 'mixed';
 
 export interface GTMAttributionContract {
   channel: GTMChannel;
@@ -25,7 +20,7 @@ export interface RouteIntentTag extends GTMAttributionContract {
 }
 
 export const CHANNEL_ROLE_MATRIX = {
-  whop: 'Wedge + trials + discovery',
+  whop: 'Existing-customer billing access only; not an acquisition channel',
   direct: 'Consultancy/municipal/industrial closes',
   partner: 'Referrals + channel leverage',
 } as const;
@@ -33,21 +28,21 @@ export const CHANNEL_ROLE_MATRIX = {
 export const ROUTE_INTENT_TAGS: Record<RouteIntentTag['route_key'], RouteIntentTag> = {
   whop_discover: {
     route_key: 'whop_discover',
-    route_intent: 'whop_wedge_discovery',
+    route_intent: 'legacy_billing_support',
     channel: 'whop',
-    segment: 'whop_business_ai',
-    message_variant: 'compliance_freshness_benchmark_v1',
-    cta: 'start_learning_free',
-    campaign_id: 'whop_discover_2026q1',
+    segment: 'mixed',
+    message_variant: 'existing_member_account_support',
+    cta: 'manage_existing_membership',
+    campaign_id: 'whop_legacy_billing_2026',
   },
   watchdog: {
     route_key: 'watchdog',
-    route_intent: 'whop_wedge_trial',
+    route_intent: 'legacy_member_account_access',
     channel: 'whop',
     segment: 'whop_trading',
-    message_variant: 'bill_savings_risk_v1',
-    cta: 'subscribe_watchdog',
-    campaign_id: 'watchdog_2026q1',
+    message_variant: 'existing_member_support',
+    cta: 'view_account_support',
+    campaign_id: 'watchdog_legacy_2026',
   },
   pricing: {
     route_key: 'pricing',
@@ -71,7 +66,7 @@ export const ROUTE_INTENT_TAGS: Record<RouteIntentTag['route_key'], RouteIntentT
 
 export function trackRouteIntentView(
   routeKey: RouteIntentTag['route_key'],
-  extraProps: Record<string, unknown> = {}
+  extraProps: Record<string, unknown> = {},
 ): void {
   const routeIntent = ROUTE_INTENT_TAGS[routeKey];
   trackEvent('gtm_route_intent_view', {
@@ -85,7 +80,7 @@ export function trackRouteIntentView(
 export function trackRouteIntentCta(
   routeKey: RouteIntentTag['route_key'],
   cta: string,
-  extraProps: Record<string, unknown> = {}
+  extraProps: Record<string, unknown> = {},
 ): void {
   const routeIntent = ROUTE_INTENT_TAGS[routeKey];
   const payload = {

@@ -15,7 +15,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_REF="qnymbecjgeaoxsfphrti"
+PROJECT_REF="qktgjpbifknqjpvrgkrj"
 BASE_URL="https://${PROJECT_REF}.functions.supabase.co"
 
 # Counter for results

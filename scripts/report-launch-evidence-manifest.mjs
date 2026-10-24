@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
 const repoRoot = process.cwd();
@@ -84,6 +85,51 @@ if (failures.length > 0) {
   console.error('');
   printUsage();
   process.exit(1);
+}
+
+// Probe-skip cache: under --skip-probes with no proof attachments the manifest
+// is a read-only repository survey. Focused report/check scripts each spawn a
+// fresh manifest run, so a short-lived cache collapses O(n) regenerations into
+// one while staying honest — the cache is invalidated by TTL, never by tests.
+// Cache bypass: attach a proof arg or omit --skip-probes to force a fresh run.
+const MANIFEST_CACHE_PATH = path.join(repoRoot, 'node_modules', '.cache', 'ceip-launch-evidence-manifest-skip-probes.json');
+const MANIFEST_CACHE_TTL_MS = 300_000;
+// Cache key covers the proof-attachment signature: identical proof file
+// contents produce the same manifest, so hash the referenced files and reuse
+// the cache when signatures match. Missing/unreadable proofs bypass the cache.
+const proofArgKeys = ['release-readiness-proof', 'supabase-app-lint-proof', 'branch-review-proof'];
+const manifestProofSignature = proofArgKeys
+  .map((key) => {
+    const proofPath = values.get(key);
+    if (!proofPath) return `${key}:none`;
+    try {
+      return `${key}:${createHash('sha256').update(readFileSync(path.resolve(repoRoot, proofPath))).digest('hex')}`;
+    } catch {
+      return `${key}:missing`;
+    }
+  })
+  .join('|');
+const manifestCacheEligible = skipProbes && !manifestProofSignature.includes(':missing');
+if (manifestCacheEligible) {
+  try {
+    const cached = JSON.parse(readFileSync(MANIFEST_CACHE_PATH, 'utf8'));
+    if (cached.signature === manifestProofSignature && cached.cachedAt && Date.now() - Date.parse(cached.cachedAt) < MANIFEST_CACHE_TTL_MS && typeof cached.json === 'string') {
+      const cachedOutputPath = values.get('output');
+      if (cachedOutputPath) {
+        const absoluteCachedOutput = path.resolve(repoRoot, cachedOutputPath);
+        if (!absoluteCachedOutput.endsWith('.json')) {
+          console.error('Launch evidence manifest failed:\n');
+          console.error(`- Refusing to overwrite non-JSON output path: ${cachedOutputPath}`);
+          process.exit(1);
+        }
+        writeFileSync(absoluteCachedOutput, cached.json, 'utf8');
+      }
+      writeFileSync(1, cached.json); // synchronous fd write — process.stdout.write + exit truncates large output on pipes
+      process.exit(0);
+    }
+  } catch {
+    // No usable cache — fall through to a fresh generation.
+  }
 }
 
 function run(command, commandArgs) {
@@ -3101,13 +3147,31 @@ function buyerEvidenceRemediationEvidence(queue) {
 
 function buildBuyerEvidenceRemediationQueue(deficits) {
   if (deficits.status === 'skipped') {
+    // Keep the requirement schema visible under --skip-probes: the queue lists
+    // every canonical requirement with static metadata, all marked 'skipped'.
+    const skippedItems = (deficits.items ?? []).map((item, index) => ({
+      rank: index + 1,
+      requirement: item.requirement,
+      current: item.current,
+      needed: item.needed,
+      deficit_status: 'skipped',
+      owner: buyerEvidenceRemediationOwner(item.requirement),
+      action: item.next_action,
+      proof_command: buyerEvidenceRemediationProofCommand(item.requirement),
+      proof_type: buyerEvidenceRemediationProofType(item.requirement),
+      buyer_accepted_evidence_required: buyerEvidenceRemediationRequiresBuyerAcceptedEvidence(item.requirement),
+      retained_artifact_required: buyerEvidenceRemediationRequiresRetainedArtifact(item.requirement),
+      proof_boundary: buyerEvidenceRemediationProofBoundary(item.requirement),
+      stop_gate: buyerEvidenceRemediationStopGate(item.requirement),
+      status: 'skipped',
+    }));
     const queue = {
       status: 'skipped',
       open_count: null,
-      total_count: null,
-      item_count: 0,
-      blocked_count: 0,
-      items: [],
+      total_count: deficits.total_count ?? skippedItems.length,
+      item_count: skippedItems.length,
+      blocked_count: skippedItems.length,
+      items: skippedItems,
     };
     return { ...queue, evidence: buyerEvidenceRemediationEvidence(queue) };
   }
@@ -5167,13 +5231,13 @@ function probeSupabaseAdvisorStatus({ packageManager, gitStatus }) {
   const cardCliAppLintStatus = extractCheckStatus(cardBlock, 'cli_app_lint') || 'unknown';
   const advisor = {
     status: publicAdvisorItem.status ?? (extractStringValue(cardBlock, 'status') || 'unknown'),
-    projectRef: extractStringValue(cardBlock, 'projectRef') || 'qnymbecjgeaoxsfphrti',
+    projectRef: extractStringValue(cardBlock, 'projectRef') || 'qktgjpbifknqjpvrgkrj',
     cliAppLintStatus: supabaseAppLintProof.status === 'pass' ? 'verified' : cardCliAppLintStatus,
     supabaseAppLintProof,
     securityPerformanceAdvisorsStatus: extractCheckStatus(cardBlock, 'security_performance_advisors') || publicAdvisorItem.status || 'unknown',
     connectorPermission: /permission denied/i.test(`${publicAdvisorItem.evidenceBoundary ?? ''}\n${cardBlock}\n${conversationReviewText}`) ? 'permission_denied' : 'unknown',
     proofBucket: publicAdvisorItem.proofBucket ?? 'external account',
-    command: publicAdvisorItem.command ?? 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+    command: publicAdvisorItem.command ?? 'Supabase MCP security/performance advisors for qktgjpbifknqjpvrgkrj',
     evidenceBoundary: publicAdvisorItem.evidenceBoundary
       ?? (extractStringValue(cardBlock, 'decisionBoundary')
         || 'Supabase advisor evidence is account-authorization dependent and does not claim advisor clearance.'),
@@ -5190,13 +5254,41 @@ function probeSupabaseAdvisorStatus({ packageManager, gitStatus }) {
   };
 }
 
+// Canonical hard-gate requirement schema — the same ten requirements the
+// buyer-evidence-readiness report evaluates. Under --skip-probes the ledger is
+// still emitted with status 'skipped' per row so downstream consumers (and
+// operators) can see WHAT is required even when live evidence was not probed.
+const BUYER_HARD_GATE_REQUIREMENTS = [
+  'Utility forecast lane',
+  'TIER or credit lane',
+  'Billing or security lane',
+  'Distinct accepted proof packs',
+  'Accepted confidence_delta',
+  'Retained SHA-256 references',
+  'Buyer data coverage',
+  'Artifact turnaround',
+  'Strong commercial signal',
+  'Retained-artifact 95% validation',
+];
+
 function probeBuyerEvidence() {
   if (skipProbes) {
     const hardGateDeficits = {
       status: 'skipped',
       open_count: null,
-      total_count: null,
-      items: [],
+      total_count: BUYER_HARD_GATE_REQUIREMENTS.length,
+      items: BUYER_HARD_GATE_REQUIREMENTS.map((requirement) => ({
+        requirement,
+        current: 'skipped — probes not run',
+        needed: 'run without --skip-probes to evaluate live buyer evidence',
+        status: 'skipped',
+        next_action: 'Run corepack pnpm run report:buyer-evidence-readiness for the current deficit state.',
+        proof_type: buyerEvidenceRemediationProofType(requirement),
+        buyer_accepted_evidence_required: buyerEvidenceRemediationRequiresBuyerAcceptedEvidence(requirement),
+        retained_artifact_required: buyerEvidenceRemediationRequiresRetainedArtifact(requirement),
+        proof_boundary: buyerEvidenceRemediationProofBoundary(requirement),
+        stop_gate: buyerEvidenceRemediationStopGate(requirement),
+      })),
     };
     const hardGateDeficitsWithQueue = {
       ...hardGateDeficits,
@@ -5316,8 +5408,12 @@ function gitStatusSummary() {
     : '';
   const dirtyLines = short.split(/\r?\n/).filter(Boolean);
   const dirtyDetails = dirtyLines.slice(0, 40).map(classifyDirtyPath);
+  const branch = gitText(['branch', '--show-current'], '')
+    || process.env.GITHUB_HEAD_REF
+    || process.env.GITHUB_REF_NAME
+    || `detached-${gitText(['rev-parse', '--short', 'HEAD'], 'unknown')}`;
   return {
-    branch: gitText(['branch', '--show-current'], 'unknown'),
+    branch,
     commit: gitText(['rev-parse', '--short', 'HEAD'], 'unknown'),
     dirtyLines,
     dirtyDetails,
@@ -12575,6 +12671,14 @@ const manifest = {
 };
 
 const json = `${JSON.stringify(manifest, null, 2)}\n`;
+if (manifestCacheEligible) {
+  try {
+    mkdirSync(path.dirname(MANIFEST_CACHE_PATH), { recursive: true });
+    writeFileSync(MANIFEST_CACHE_PATH, JSON.stringify({ signature: manifestProofSignature, cachedAt: manifest.generated_at ?? new Date().toISOString(), json }), 'utf8');
+  } catch {
+    // Cache write failure must never fail the report.
+  }
+}
 const outputPath = values.get('output');
 if (outputPath) {
   const absoluteOutput = path.resolve(repoRoot, outputPath);

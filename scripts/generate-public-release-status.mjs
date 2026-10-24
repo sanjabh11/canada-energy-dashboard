@@ -257,7 +257,7 @@ const requiredItemContracts = [
     id: 'supabase_advisor_access',
     status: 'needs_remediation',
     proofBucket: 'external account',
-    command: 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+    command: 'Supabase MCP security/performance advisors for qktgjpbifknqjpvrgkrj',
   },
   {
     id: 'supabase_advisor_clearance_deficit_ledger',

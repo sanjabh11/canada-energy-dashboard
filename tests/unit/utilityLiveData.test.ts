@@ -169,7 +169,9 @@ describe('utilityLiveData', () => {
       activePersisted: false,
     });
 
-    expect(cards.some((card) => card.id === 'ontario_green_button_cmd' && card.status === 'stale')).toBe(true);
+    const greenButton = cards.find((card) => card.id === 'ontario_green_button_cmd');
+    expect(greenButton?.status).toBe('stale');
+    expect(greenButton?.can_disconnect).toBe(false);
     expect(cards.some((card) => card.id === 'customer_upload')).toBe(true);
     expect(cards.some((card) => card.id === 'telemetry_gateway_http')).toBe(true);
   });

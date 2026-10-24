@@ -6,7 +6,7 @@
  * - Supports standalone mode with guest access
  * - Maintains backward compatibility with Supabase for data storage
  * - NO custom email/password login (Whop compliance)
- * 
+ *
  * Provides global auth state to the entire app:
  * - Current user (Whop or guest)
  * - User tier (free/basic/pro/team)
@@ -15,13 +15,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import {
-  whopClient,
-  isStandaloneMode,
-  handleWhopCallback,
-  type WhopUser,
-  type WhopTier
-} from '../../lib/whop';
+import { whopClient, type WhopUser, type WhopTier } from '../../lib/whop';
 import { shouldBootstrapWhopSession } from '../../lib/runtimeRouteMode';
 import { useWindowPathname } from '../../lib/useWindowPathname';
 
@@ -99,26 +93,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await whopClient.initialize();
         }
 
-        // Check for Whop OAuth callback
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-
-        if (code && shouldBootstrap && !isStandaloneMode()) {
-          // Handle Whop OAuth callback
-          const result = await handleWhopCallback(code);
-          if (!cancelled && result.success && result.user) {
-            setUser(result.user);
-          }
-          // Clean URL
-          window.history.replaceState({}, '', window.location.pathname);
-        } else {
-          // Get existing session from Whop client
-          const existingUser = whopClient.getCurrentUser();
-          if (!cancelled && existingUser) {
-            setUser(existingUser);
-          } else if (!cancelled && !existingUser) {
-            setUser(null);
-          }
+        // Whop OAuth redirect/code exchange is not wired in this deployment
+        // (no /auth/whop/callback route or exchange endpoint); existing
+        // members authenticate via the Whop iframe token flow. Restored
+        // localStorage profiles stay unverified until server confirmation.
+        const existingUser = whopClient.getCurrentUser();
+        if (!cancelled && existingUser) {
+          setUser(existingUser);
+        } else if (!cancelled && !existingUser) {
+          setUser(null);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -220,10 +203,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Otherwise, create a virtual legacy user from Whop data
     const legacyTierMap: Record<WhopTier, 'free' | 'edubiz' | 'pro'> = {
-      'free': 'free',
-      'basic': 'edubiz',
-      'pro': 'pro',
-      'team': 'pro'
+      free: 'free',
+      basic: 'edubiz',
+      pro: 'pro',
+      team: 'pro',
     };
 
     return {
@@ -233,7 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       full_name: user.name,
       tier: legacyTierMap[user.tier],
       ai_queries_today: 0,
-      created_at: user.createdAt
+      created_at: user.createdAt,
     };
   };
 
@@ -252,11 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hasTierAccess,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // Custom hook to use auth context

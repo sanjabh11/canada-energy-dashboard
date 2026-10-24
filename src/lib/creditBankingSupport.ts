@@ -6,7 +6,14 @@ export interface CreditHolding {
   purchasePrice: number;
   purchaseDate: string;
   expiryYear: number;
-  status: 'active' | 'allocated' | 'expired';
+  /**
+   * Lot lifecycle state. Only 'available' lots may enter the allocation pool:
+   * 'allocated' lots are already committed to a compliance year, 'retired'
+   * lots have been used for compliance, and 'expired' lots are void. An
+   * allocated or retired lot must never be offered again in the same or a
+   * later year.
+   */
+  status: 'available' | 'allocated' | 'retired' | 'expired';
 }
 
 export interface ComplianceYear {
@@ -29,20 +36,56 @@ export interface CreditAllocationRow extends ComplianceYear {
 export interface CreditPortfolioSummary {
   totalCredits: number;
   totalInvested: number;
-  currentValue: number;
+  currentValue: number | null;
   avgCost: number;
-  fundValueSaved: number;
-  unrealizedGain: number;
-  unrealizedGainPercent: number;
+  fundValueSaved: number | null;
+  unrealizedGain: number | null;
+  unrealizedGainPercent: number | null;
   expiringSoonCredits: number;
   coverageRatio: number;
 }
 
 const STARTER_HOLDINGS: CreditHolding[] = [
-  { id: '1', type: 'EPC', vintage: 2024, quantity: 5000, purchasePrice: 22.5, purchaseDate: '2025-03-15', expiryYear: 2029, status: 'active' },
-  { id: '2', type: 'EPC', vintage: 2025, quantity: 8000, purchasePrice: 24, purchaseDate: '2025-06-20', expiryYear: 2030, status: 'active' },
-  { id: '3', type: 'Offset', vintage: 2024, quantity: 3000, purchasePrice: 26, purchaseDate: '2025-01-10', expiryYear: 2029, status: 'allocated' },
-  { id: '4', type: 'EPC', vintage: 2023, quantity: 2000, purchasePrice: 35, purchaseDate: '2024-08-05', expiryYear: 2028, status: 'active' },
+  {
+    id: '1',
+    type: 'EPC',
+    vintage: 2024,
+    quantity: 5000,
+    purchasePrice: 22.5,
+    purchaseDate: '2025-03-15',
+    expiryYear: 2029,
+    status: 'available',
+  },
+  {
+    id: '2',
+    type: 'EPC',
+    vintage: 2025,
+    quantity: 8000,
+    purchasePrice: 24,
+    purchaseDate: '2025-06-20',
+    expiryYear: 2030,
+    status: 'available',
+  },
+  {
+    id: '3',
+    type: 'Offset',
+    vintage: 2024,
+    quantity: 3000,
+    purchasePrice: 26,
+    purchaseDate: '2025-01-10',
+    expiryYear: 2029,
+    status: 'allocated',
+  },
+  {
+    id: '4',
+    type: 'EPC',
+    vintage: 2023,
+    quantity: 2000,
+    purchasePrice: 35,
+    purchaseDate: '2024-08-05',
+    expiryYear: 2028,
+    status: 'available',
+  },
 ];
 
 const STARTER_LIABILITIES: ComplianceYear[] = [
@@ -108,7 +151,17 @@ export function parseCreditHoldingsCsv(text: string): CreditHolding[] {
       purchasePrice: toNumber(row.purchase_price || row.purchasePrice),
       purchaseDate: row.purchase_date || row.purchaseDate || new Date().toISOString().slice(0, 10),
       expiryYear: Math.round(toNumber(row.expiry_year || row.expiryYear)),
-      status: row.status === 'expired' ? 'expired' : row.status === 'allocated' ? 'allocated' : 'active',
+      // Normalize legacy 'active' to 'available'; only 'available' lots are
+      // eligible for allocation. 'allocated'/'retired'/'expired' lots are kept
+      // in the ledger view but never re-enter the allocation pool.
+      status:
+        row.status === 'expired'
+          ? 'expired'
+          : row.status === 'allocated'
+            ? 'allocated'
+            : row.status === 'retired'
+              ? 'retired'
+              : 'available',
     };
   });
 }
@@ -141,8 +194,13 @@ export function allocateCreditsToLiabilities(
   holdings: CreditHolding[],
   liabilities: ComplianceYear[],
 ): CreditAllocationRow[] {
-  const activeLots = holdings
-    .filter((holding) => holding.status !== 'expired' && holding.quantity > 0)
+  // Only 'available' lots may be offered. 'allocated', 'retired', and
+  // 'expired' lots are excluded so a committed or consumed lot is never
+  // offered again in the same or a later compliance year. Lot balances persist
+  // across the whole liability sequence (`remainingQuantity` is shared across
+  // years), so a lot depleted in one year cannot be re-allocated in the next.
+  const availableLots = holdings
+    .filter((holding) => holding.status === 'available' && holding.quantity > 0)
     .sort((left, right) => {
       if (left.expiryYear !== right.expiryYear) return left.expiryYear - right.expiryYear;
       return left.vintage - right.vintage;
@@ -153,11 +211,16 @@ export function allocateCreditsToLiabilities(
     .slice()
     .sort((left, right) => left.year - right.year)
     .map((year) => {
-      let remaining = year.liability;
+      // Honour tonnes the buyer already recorded as allocated for this
+      // compliance year — carry-forward rows must not be double-covered.
+      const priorAllocated = Math.max(0, Number.isFinite(year.allocated) ? year.allocated : 0);
+      let remaining = Math.max(year.liability - priorAllocated, 0);
       const allocatedLots: CreditAllocationRow['allocatedLots'] = [];
 
-      for (const lot of activeLots) {
+      for (const lot of availableLots) {
         if (remaining <= 0) break;
+        // A lot that expires before the compliance year cannot satisfy it.
+        if (lot.expiryYear < year.year) continue;
         if (lot.remainingQuantity <= 0) continue;
         const quantity = Math.min(lot.remainingQuantity, remaining);
         if (quantity <= 0) continue;
@@ -185,16 +248,24 @@ export function allocateCreditsToLiabilities(
 export function summarizeCreditPortfolio(
   holdings: CreditHolding[],
   liabilities: ComplianceYear[],
-  currentMarketPrice: number,
-  fundPrice: number,
 ): CreditPortfolioSummary {
-  const activeHoldings = holdings.filter((holding) => holding.status !== 'expired');
+  // Held-but-unexpired lots still count toward the portfolio; 'retired' lots
+  // have been used for compliance and 'expired' lots are void.
+  const activeHoldings = holdings.filter(
+    (holding) => holding.status === 'available' || holding.status === 'allocated',
+  );
   const totalCredits = activeHoldings.reduce((sum, holding) => sum + holding.quantity, 0);
-  const totalInvested = activeHoldings.reduce((sum, holding) => sum + (holding.quantity * holding.purchasePrice), 0);
-  const currentValue = activeHoldings.reduce((sum, holding) => sum + (holding.quantity * currentMarketPrice), 0);
+  const totalInvested = activeHoldings.reduce(
+    (sum, holding) => sum + holding.quantity * holding.purchasePrice,
+    0,
+  );
+  // This product has no configured current buyer-approved quote source. Keep
+  // price-derived values structurally unavailable instead of accepting a bare
+  // number that could be a stale planning fallback.
+  const currentValue: number | null = null;
   const avgCost = totalCredits > 0 ? totalInvested / totalCredits : 0;
-  const fundValueSaved = activeHoldings.reduce((sum, holding) => sum + (holding.quantity * Math.max(fundPrice - holding.purchasePrice, 0)), 0);
-  const unrealizedGain = currentValue - totalInvested;
+  const fundValueSaved: number | null = null;
+  const unrealizedGain = currentValue === null ? null : currentValue - totalInvested;
   const totalLiability = liabilities.reduce((sum, year) => sum + year.liability, 0);
   const expiringSoonCredits = activeHoldings
     .filter((holding) => holding.expiryYear <= new Date().getFullYear() + 4)
@@ -207,25 +278,29 @@ export function summarizeCreditPortfolio(
     avgCost,
     fundValueSaved,
     unrealizedGain,
-    unrealizedGainPercent: totalInvested > 0 ? (unrealizedGain / totalInvested) * 100 : 0,
+    unrealizedGainPercent:
+      unrealizedGain !== null && totalInvested > 0 ? (unrealizedGain / totalInvested) * 100 : null,
     expiringSoonCredits,
     coverageRatio: totalLiability > 0 ? (totalCredits / totalLiability) * 100 : 0,
   };
 }
 
-export function buildCreditAllocationCsv(rows: CreditAllocationRow[], marketPrice: number): string {
+export function buildCreditAllocationCsv(rows: CreditAllocationRow[]): string {
   return [
     '# TIER credit allocation schedule',
     `# Generated: ${new Date().toISOString()}`,
+    '# Estimated market cost suppressed: no current verified market quote is configured.',
     'year,liability_tonnes,allocated_tonnes,remaining_tonnes,estimated_market_cost_cad,allocated_lots',
-    ...rows.map((row) => [
-      row.year,
-      row.liability,
-      row.allocated,
-      row.remaining,
-      (row.remaining * marketPrice).toFixed(2),
-      `"${row.allocatedLots.map((lot) => `${lot.holdingId}:${lot.quantity}t(v${lot.vintage})`).join('; ')}"`,
-    ].join(',')),
+    ...rows.map((row) =>
+      [
+        row.year,
+        row.liability,
+        row.allocated,
+        row.remaining,
+        '',
+        `"${row.allocatedLots.map((lot) => `${lot.holdingId}:${lot.quantity}t(v${lot.vintage})`).join('; ')}"`,
+      ].join(','),
+    ),
   ].join('\n');
 }
 
@@ -234,14 +309,16 @@ export function buildExpiryRiskCsv(holdings: CreditHolding[]): string {
     '# TIER credit expiry risk register',
     `# Generated: ${new Date().toISOString()}`,
     'holding_id,type,vintage,quantity,expiry_year,status,purchase_price',
-    ...holdings.map((holding) => [
-      holding.id,
-      holding.type,
-      holding.vintage,
-      holding.quantity,
-      holding.expiryYear,
-      holding.status,
-      holding.purchasePrice.toFixed(2),
-    ].join(',')),
+    ...holdings.map((holding) =>
+      [
+        holding.id,
+        holding.type,
+        holding.vintage,
+        holding.quantity,
+        holding.expiryYear,
+        holding.status,
+        holding.purchasePrice.toFixed(2),
+      ].join(','),
+    ),
   ].join('\n');
 }

@@ -5,7 +5,7 @@
  * - NO custom email/password login forms
  * - Uses Whop OAuth or continues as guest
  * - Supports standalone mode for non-Whop deployments
- * 
+ *
  * Features:
  * - Whop login redirect
  * - Guest access option
@@ -17,12 +17,11 @@ import React, { useState } from 'react';
 import { X, LogIn, User, Zap, Crown, Users, ExternalLink } from 'lucide-react';
 import {
   getWhopConfigStatus,
-  getWhopLoginUrl,
   isStandaloneMode,
   isWhopLiveMode,
   whopClient,
   type WhopTier,
-  WHOP_ACCESS_MATRIX
+  WHOP_ACCESS_MATRIX,
 } from '../../lib/whop';
 
 interface AuthModalProps {
@@ -37,16 +36,6 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const config = getWhopConfigStatus();
 
   if (!isOpen) return null;
-
-  const handleWhopLogin = () => {
-    const url = getWhopLoginUrl();
-    if (url && url !== '#') {
-      window.location.href = url;
-    } else {
-      // Fallback for unconfigured Whop
-      alert('Whop integration is not configured. Please set VITE_WHOP_CLIENT_ID.');
-    }
-  };
 
   const handleGuestAccess = async () => {
     setLoading(true);
@@ -74,11 +63,36 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     }
   };
 
-  const tierOptions: { tier: WhopTier; label: string; icon: React.ReactNode; description: string }[] = [
-    { tier: 'free', label: 'Free', icon: <User className="w-5 h-5" />, description: 'Public dashboards only' },
-    { tier: 'basic', label: 'Basic ($29/mo)', icon: <Zap className="w-5 h-5" />, description: 'Full data + Certificates' },
-    { tier: 'pro', label: 'Pro ($99/mo)', icon: <Crown className="w-5 h-5" />, description: 'AI Copilot + Cohorts' },
-    { tier: 'team', label: 'Team ($299/mo)', icon: <Users className="w-5 h-5" />, description: 'Full platform + API' },
+  const tierOptions: {
+    tier: WhopTier;
+    label: string;
+    icon: React.ReactNode;
+    description: string;
+  }[] = [
+    {
+      tier: 'free',
+      label: 'Free',
+      icon: <User className="w-5 h-5" />,
+      description: 'Public dashboards only',
+    },
+    {
+      tier: 'basic',
+      label: 'Basic ($29/mo)',
+      icon: <Zap className="w-5 h-5" />,
+      description: 'Full data + Certificates',
+    },
+    {
+      tier: 'pro',
+      label: 'Pro ($99/mo)',
+      icon: <Crown className="w-5 h-5" />,
+      description: 'AI Copilot + Cohorts',
+    },
+    {
+      tier: 'team',
+      label: 'Team ($299/mo)',
+      icon: <Users className="w-5 h-5" />,
+      description: 'Full platform + API',
+    },
   ];
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -88,7 +102,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
@@ -107,12 +121,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
             <Zap className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Canada Energy Academy
-          </h2>
-          <p className="text-slate-400 text-sm">
-            Guided energy education for your community
-          </p>
+          <h2 className="text-2xl font-bold text-white mb-2">Canada Energy Academy</h2>
+          <p className="text-slate-400 text-sm">Guided energy education for your community</p>
         </div>
 
         {/* Tier Picker (for simulation mode) */}
@@ -126,13 +136,17 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 key={tier}
                 onClick={() => handleSimulatedLogin(tier)}
                 disabled={loading}
-                className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 ${tier === 'pro'
+                className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 ${
+                  tier === 'pro'
                     ? 'border-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20'
                     : 'border-slate-700 bg-slate-800 hover:bg-slate-700'
-                  } disabled:opacity-50`}
+                } disabled:opacity-50`}
               >
-                <div className={`p-2 rounded-lg ${tier === 'pro' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-700 text-slate-300'
-                  }`}>
+                <div
+                  className={`p-2 rounded-lg ${
+                    tier === 'pro' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-700 text-slate-300'
+                  }`}
+                >
                   {icon}
                 </div>
                 <div className="text-left flex-1">
@@ -153,26 +167,34 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             {/* Mode indicator */}
             <div className="mb-6 p-3 rounded-lg bg-slate-800 border border-slate-700">
               <div className="flex items-center gap-2 text-sm">
-                <div className={`w-2 h-2 rounded-full ${config.mode === 'live' ? 'bg-green-500' :
-                    config.mode === 'simulated' ? 'bg-yellow-500' : 'bg-blue-500'
-                  }`} />
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    config.mode === 'live'
+                      ? 'bg-green-500'
+                      : config.mode === 'simulated'
+                        ? 'bg-yellow-500'
+                        : 'bg-blue-500'
+                  }`}
+                />
                 <span className="text-slate-400">{config.message}</span>
               </div>
             </div>
 
             {/* Main Actions */}
             <div className="space-y-4">
-              {/* Whop Login - Primary action when configured */}
+              {/* Existing-member Whop access — no new acquisition checkout.
+                  The OAuth redirect flow is not wired in this deployment;
+                  members authenticate inside the Whop app and manage billing
+                  via the legacy account page. */}
               {!isStandaloneMode() && (
-                <button
-                  onClick={handleWhopLogin}
-                  disabled={loading || !config.hasClientId}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+                <a
+                  href="/whop/discover"
+                  className="w-full py-4 px-6 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all flex items-center justify-center gap-3"
                 >
                   <LogIn className="w-5 h-5" />
-                  Continue with Whop
+                  Manage existing Whop membership
                   <ExternalLink className="w-4 h-4 opacity-70" />
-                </button>
+                </a>
               )}
 
               {/* Guest Access - Always available */}

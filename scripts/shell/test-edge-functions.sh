@@ -87,4 +87,4 @@ echo "If you see ⚠️  500 errors: Functions are deployed but have runtime err
 echo "If you see ✅ 200: Functions are working correctly"
 echo ""
 echo "To deploy all functions:"
-echo "  supabase functions deploy --project-ref qnymbecjgeaoxsfphrti"
+echo "  supabase functions deploy --project-ref qktgjpbifknqjpvrgkrj"

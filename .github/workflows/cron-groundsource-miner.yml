@@ -7,6 +7,7 @@ on:
 
 jobs:
   trigger-groundsource-miner:
+    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,7 +23,7 @@ jobs:
           echo "Triggering groundsource miner for ${{ matrix.source_group }}..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/groundsource-miner/ingest" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/groundsource-miner/ingest" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "x-supabase-cron: true" \
             -H "Content-Type: application/json" \

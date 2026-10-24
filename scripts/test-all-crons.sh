@@ -10,7 +10,7 @@ if [ -z "${VITE_SUPABASE_ANON_KEY:-}" ]; then
 fi
 
 ANON_KEY="${VITE_SUPABASE_ANON_KEY}"
-BASE_URL="${VITE_SUPABASE_EDGE_BASE:-https://qnymbecjgeaoxsfphrti.functions.supabase.co}"
+BASE_URL="${VITE_SUPABASE_EDGE_BASE:-https://qktgjpbifknqjpvrgkrj.functions.supabase.co}"
 
 echo "🧪 Testing All Cron Functions"
 echo "=============================="

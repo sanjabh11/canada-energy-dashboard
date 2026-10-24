@@ -7,7 +7,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 const scriptPath = path.join(process.cwd(), 'scripts/report-unmerged-branch-readiness.mjs');
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-unmerged-branch-readiness-report.mjs');
 const tempRoots: string[] = [];
-const gitBackedTestTimeoutMs = 120_000;
+// Spawn-heavy git work: ~30-70s per check quiet; coverage instrumentation adds
+// ~2.5x, so the floor must cover ~180s to stay deterministic under --coverage.
+const gitBackedTestTimeoutMs = 300_000;
 
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-unmerged-branches-'));

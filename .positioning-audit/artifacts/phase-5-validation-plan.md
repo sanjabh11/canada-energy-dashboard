@@ -230,7 +230,7 @@ After EXP-004 passes: 9 of 11 evidence types present → evidence-limited mode d
   "phases_completed": ["phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5"],
   "gates_passed": [{"gate": "gate-0", "decision": "CONDITIONAL_GO"}, {"gate": "gate-1", "decision": "CONDITIONAL_GO"}, {"gate": "gate-2", "decision": "CONDITIONAL_GO"}, {"gate": "gate-3", "decision": "CONDITIONAL_GO"}, {"gate": "gate-4", "decision": "CONDITIONAL_GO"}, {"gate": "gate-5", "decision": "CONDITIONAL_GO"}],
   "evidence_limited_mode": true,
-  "experiments_designed": 10,
+  "experiments_designed": 11,
   "experiments_executed": 0,
   "schema_version": "v7"
 }

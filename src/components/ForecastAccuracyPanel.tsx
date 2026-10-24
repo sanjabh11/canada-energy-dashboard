@@ -1,6 +1,6 @@
 /**
  * Forecast Accuracy Panel
- * 
+ *
  * Displays forecast accuracy metrics by horizon with:
  * - MAE/MAPE for each horizon (1h/3h/6h/12h/24h/48h)
  * - Sample counts and completeness %
@@ -10,7 +10,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Wind, Sun, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Wind,
+  Sun,
+  Activity,
+  CheckCircle,
+  AlertTriangle,
+} from 'lucide-react';
 import { DataQualityBadge } from './DataQualityBadge';
 import { createProvenance } from '../lib/types/provenance';
 import { computeUplift } from '../lib/forecastBaselines';
@@ -62,7 +70,7 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
   resourceType = 'solar',
   province = 'ON',
   compact = false,
-  stats
+  stats,
 }) => {
   const hasExternalStats = !!stats && stats.length > 0;
   const [data, setData] = useState<ForecastAccuracyData | null>(null);
@@ -85,19 +93,20 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
         baseline_mae: h.baselinePersistencePct,
         baseline_uplift_percent: computeUplift(h.maePct, h.baselinePersistencePct),
         calibrated: h.calibrated,
-        calibration_source: h.calibrationSource || (h.calibrated ? 'ECCC' : undefined)
+        calibration_source: h.calibrationSource || (h.calibrated ? 'ECCC' : undefined),
       }));
 
-      const overallQuality = horizons.length > 0
-        ? horizons.reduce((sum, h) => sum + h.completeness, 0) / horizons.length
-        : 0.9;
+      const overallQuality =
+        horizons.length > 0
+          ? horizons.reduce((sum, h) => sum + h.completeness, 0) / horizons.length
+          : 0.9;
 
       return {
         resource_type: resourceType,
         province,
         horizons,
         last_updated: new Date().toISOString(),
-        overall_quality: overallQuality
+        overall_quality: overallQuality,
       };
     };
 
@@ -126,9 +135,9 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
           `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-forecast-performance?resource=${resourceType}&province=${province}`,
           {
             headers: {
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-            }
-          }
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+          },
         );
 
         if (!response.ok) {
@@ -162,31 +171,31 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
   const generateSampleData = (type: 'solar' | 'wind', prov: string): ForecastAccuracyData => {
     // Province-specific variation factors ( Ontario=1.0 as baseline)
     const provinceMultipliers: Record<string, number> = {
-      'ON': 1.0,
-      'AB': 1.15,  // Alberta: higher variability
-      'BC': 0.95,  // BC: hydro-dominated, more stable
-      'QC': 0.90,  // Quebec: hydro-dominated, very stable
+      ON: 1.0,
+      AB: 1.15, // Alberta: higher variability
+      BC: 0.95, // BC: hydro-dominated, more stable
+      QC: 0.9, // Quebec: hydro-dominated, very stable
     };
     const multiplier = provinceMultipliers[prov] ?? 1.0;
-    
-    const horizons: HorizonMetrics[] = [1, 3, 6, 12, 24, 48].map(h => {
+
+    const horizons: HorizonMetrics[] = [1, 3, 6, 12, 24, 48].map((h) => {
       const baseMae = type === 'solar' ? 4.5 : 8.2;
-      const mae = (baseMae + (h * 0.3)) * multiplier;
+      const mae = (baseMae + h * 0.3) * multiplier;
       const baselineMae = mae / 0.75; // 25% uplift
-      
+
       return {
         horizon_hours: h,
         mae: mae,
         mape: (mae / 100) * 100,
         rmse: mae * 1.2,
-        sample_count: Math.max(1000, Math.floor(2000 - (h * 50))),
-        completeness: Math.max(0.90, 0.98 - (h * 0.01)),
+        sample_count: Math.max(1000, Math.floor(2000 - h * 50)),
+        completeness: Math.max(0.9, 0.98 - h * 0.01),
         confidence_lower: mae * 0.8,
         confidence_upper: mae * 1.2,
         baseline_mae: baselineMae,
-        baseline_uplift_percent: 25 + (h * 0.5),
+        baseline_uplift_percent: 25 + h * 0.5,
         calibrated: h <= 12,
-        calibration_source: h <= 12 ? 'ECCC' : undefined
+        calibration_source: h <= 12 ? 'ECCC' : undefined,
       };
     });
 
@@ -195,12 +204,16 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
       province: prov,
       horizons,
       last_updated: new Date().toISOString(),
-      overall_quality: 0.92
+      overall_quality: 0.92,
     };
   };
 
   const getResourceIcon = () => {
-    return resourceType === 'solar' ? <Sun className="text-yellow-600" size={20} /> : <Wind className="text-blue-600" size={20} />;
+    return resourceType === 'solar' ? (
+      <Sun className="text-yellow-700" size={20} />
+    ) : (
+      <Wind className="text-blue-600" size={20} />
+    );
   };
 
   const getResourceColor = () => {
@@ -209,15 +222,15 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
 
   const getMaeColor = (mae: number): string => {
     if (resourceType === 'solar') {
-      if (mae < 5) return 'text-green-600';
+      if (mae < 5) return 'text-green-700';
       if (mae < 8) return 'text-blue-600';
-      if (mae < 12) return 'text-yellow-600';
-      return 'text-orange-600';
+      if (mae < 12) return 'text-yellow-700';
+      return 'text-orange-700';
     } else {
-      if (mae < 10) return 'text-green-600';
+      if (mae < 10) return 'text-green-700';
       if (mae < 15) return 'text-blue-600';
-      if (mae < 20) return 'text-yellow-600';
-      return 'text-orange-600';
+      if (mae < 20) return 'text-yellow-700';
+      return 'text-orange-700';
     }
   };
 
@@ -259,18 +272,20 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
 
   // Compact view - single metric
   if (compact) {
-    const best = data.horizons.find(h => h.horizon_hours === 1) || data.horizons[0];
-    
+    const best = data.horizons.find((h) => h.horizon_hours === 1) || data.horizons[0];
+
     return (
       <div className={`border-2 rounded-lg p-4 ${getMaeBgColor(best.mae)}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {getResourceIcon()}
-            <h3 className="font-semibold text-gray-900">{resourceType === 'solar' ? 'Solar' : 'Wind'} Forecast</h3>
+            <h3 className="font-semibold text-gray-900">
+              {resourceType === 'solar' ? 'Solar' : 'Wind'} Forecast
+            </h3>
           </div>
-          {best.calibrated && <CheckCircle className="text-green-600" size={16} />}
+          {best.calibrated && <CheckCircle className="text-green-700" size={16} />}
         </div>
-        
+
         <div className="space-y-1">
           <div className={`text-2xl font-bold ${getMaeColor(best.mae)}`}>
             {best.mae.toFixed(1)}% MAE
@@ -292,17 +307,16 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <div className="border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`p-2 bg-${getResourceColor()}-100 rounded-lg`}>
-              {getResourceIcon()}
-            </div>
+            <div className={`p-2 bg-${getResourceColor()}-100 rounded-lg`}>{getResourceIcon()}</div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 {resourceType === 'solar' ? 'Solar' : 'Wind'} Forecast Accuracy
               </h2>
-              <p className="text-sm text-gray-500">
-                MAE by Horizon • {province} • Updated: {new Date(data.last_updated).toLocaleString()}
+              <p className="text-sm text-gray-600">
+                MAE by Horizon • {province} • Updated:{' '}
+                {new Date(data.last_updated).toLocaleString()}
               </p>
             </div>
           </div>
@@ -311,7 +325,7 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
               'historical_archive',
               'Forecast Performance Metrics',
               0.92,
-              { completeness: 0.95 }
+              { completeness: 0.95 },
             )}
             sampleCount={data.horizons.reduce((sum, h) => sum + h.sample_count, 0)}
             showDetails={true}
@@ -327,37 +341,27 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
               className={`border-2 rounded-lg p-4 ${getMaeBgColor(horizon.mae)}`}
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="font-semibold text-gray-900">
-                  {horizon.horizon_hours}h Horizon
-                </div>
-                {horizon.calibrated && (
-                  <CheckCircle className="text-green-600" size={16} />
-                )}
+                <div className="font-semibold text-gray-900">{horizon.horizon_hours}h Horizon</div>
+                {horizon.calibrated && <CheckCircle className="text-green-700" size={16} />}
               </div>
 
               {/* MAE */}
               <div className={`text-3xl font-bold ${getMaeColor(horizon.mae)} mb-1`}>
                 {horizon.mae.toFixed(1)}%
               </div>
-              <div className="text-xs text-gray-600 mb-2">
-                MAE (Mean Absolute Error)
-              </div>
+              <div className="text-xs text-gray-600 mb-2">MAE (Mean Absolute Error)</div>
 
               {/* MAPE */}
               <div className="text-sm font-semibold text-gray-700 mb-1">
                 {horizon.mape.toFixed(1)}% MAPE
               </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Mean Absolute Percentage Error
-              </div>
+              <div className="text-xs text-gray-600 mb-2">Mean Absolute Percentage Error</div>
 
               {/* RMSE */}
               <div className="text-sm font-semibold text-gray-700 mb-1">
                 {horizon.rmse?.toFixed(1) ?? (horizon.mae * 1.2).toFixed(1)}% RMSE
               </div>
-              <div className="text-xs text-gray-500 mb-2">
-                Root Mean Square Error
-              </div>
+              <div className="text-xs text-gray-600 mb-2">Root Mean Square Error</div>
 
               {/* Confidence Band */}
               <div className="text-xs text-gray-600 mb-2">
@@ -373,12 +377,12 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
               </div>
 
               {/* Sample Count */}
-              <div className="text-xs text-gray-500 mb-1">
+              <div className="text-xs text-gray-600 mb-1">
                 n = {horizon.sample_count.toLocaleString()}
               </div>
 
               {/* Completeness */}
-              <div className="text-xs text-gray-500 mb-2">
+              <div className="text-xs text-gray-600 mb-2">
                 {(horizon.completeness * 100).toFixed(1)}% complete
               </div>
 
@@ -388,9 +392,7 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
                   ✓ Calibrated by {horizon.calibration_source}
                 </div>
               ) : (
-                <div className="text-xs text-orange-600 font-medium">
-                  ⚠️ Wider confidence band
-                </div>
+                <div className="text-xs text-orange-700 font-medium">⚠️ Wider confidence band</div>
               )}
             </div>
           ))}
@@ -407,8 +409,13 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
             </div>
             <div>
               <div className="text-gray-600 mb-1">Avg Baseline Uplift</div>
-              <div className="font-semibold text-green-600">
-                +{(data.horizons.reduce((sum, h) => sum + h.baseline_uplift_percent, 0) / data.horizons.length).toFixed(1)}%
+              <div className="font-semibold text-green-700">
+                +
+                {(
+                  data.horizons.reduce((sum, h) => sum + h.baseline_uplift_percent, 0) /
+                  data.horizons.length
+                ).toFixed(1)}
+                %
               </div>
             </div>
             <div>
@@ -422,8 +429,9 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
 
         {/* Methodology Note */}
         <div className="mt-4 p-3 border border-blue-200 bg-blue-50 rounded-lg text-xs text-blue-800">
-          <strong>Methodology:</strong> MAE measured against actual generation. Baseline is persistence forecast (current value projected forward). 
-          Calibration by ECCC improves short-horizon accuracy. Confidence intervals widen for uncalibrated long horizons.
+          <strong>Methodology:</strong> MAE measured against actual generation. Baseline is
+          persistence forecast (current value projected forward). Calibration by ECCC improves
+          short-horizon accuracy. Confidence intervals widen for uncalibrated long horizons.
         </div>
       </div>
     </div>

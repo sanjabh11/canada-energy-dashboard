@@ -8,6 +8,9 @@ import {
   encryptConnectorSecret,
   getUtilityConnectorToken,
   getUtilityConnectorClient,
+  consumeGreenButtonAuthRequest,
+  getGreenButtonAuthRequest,
+  getGreenButtonAccountByConnectorRef,
   logUtilityConnectorRun,
   registerUtilityConnectorBridgeNonce,
   sha256Hex,
@@ -41,7 +44,7 @@ serve(async (req) => {
 
   try {
     if (req.method === "GET" && action === "start") {
-      return handleStart(url, corsHeaders);
+      return await handleStart(url, corsHeaders);
     }
 
     if (req.method === "GET" && action === "callback") {
@@ -66,8 +69,20 @@ serve(async (req) => {
   }
 });
 
-function handleStart(url: URL, corsHeaders: Record<string, string>) {
-  const utilityName = url.searchParams.get("utility_name") ?? "Ontario Green Button Utility";
+async function handleStart(url: URL, corsHeaders: Record<string, string>) {
+  const supabase = getUtilityConnectorClient();
+  const connectorId = url.searchParams.get("connector_id") ?? "";
+  const authRequest = await getGreenButtonAuthRequest(supabase, connectorId);
+  if (!authRequest) {
+    return json({ error: "Green Button authorization state is missing, expired, or already used." }, 401, corsHeaders);
+  }
+
+  const requestedUtilityName = url.searchParams.get("utility_name");
+  if (requestedUtilityName && requestedUtilityName !== authRequest.utility_name) {
+    return json({ error: "Green Button authorization utility does not match its owner-bound request." }, 400, corsHeaders);
+  }
+
+  const utilityName = authRequest.utility_name;
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const defaultRedirectUri = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl)
     ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "callback", utilityName)
@@ -76,7 +91,7 @@ function handleStart(url: URL, corsHeaders: Record<string, string>) {
     authorizeUrl: url.searchParams.get("authorize_url") ?? Deno.env.get("UTILITY_GREEN_BUTTON_AUTHORIZE_URL") ?? "",
     clientId: url.searchParams.get("client_id") ?? Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "",
     redirectUri: url.searchParams.get("redirect_uri") ?? defaultRedirectUri,
-    connectorId: url.searchParams.get("connector_id") ?? "",
+    connectorId: authRequest.connector_id,
     scope: url.searchParams.get("scope") ?? "FB=4_5_15_16",
   });
 
@@ -85,7 +100,21 @@ function handleStart(url: URL, corsHeaders: Record<string, string>) {
 
 async function handleCallback(req: Request, url: URL, corsHeaders: Record<string, string>) {
   const supabase = getUtilityConnectorClient();
-  const utilityName = url.searchParams.get("utility_name") ?? "Ontario Green Button Utility";
+  const state = url.searchParams.get("state") ?? "";
+  const authRequest = await consumeGreenButtonAuthRequest(supabase, state);
+  if (!authRequest) {
+    return json({ error: "Green Button callback is not bound to an authenticated owner." }, 401, corsHeaders);
+  }
+
+  const requestedUtilityName = url.searchParams.get("utility_name");
+  if (requestedUtilityName && requestedUtilityName !== authRequest.utility_name) {
+    return json({ error: "Green Button callback utility does not match its authenticated owner binding." }, 400, corsHeaders);
+  }
+
+  const utilityName = authRequest.utility_name;
+  const displayName = authRequest.display_name;
+  const connectorId = authRequest.connector_id;
+  const ownerUserId = authRequest.owner_user_id;
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const bridgeEnabled = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl);
   let bridgeMetadata: UtilityConnectorBridgeVerificationSuccess['metadata'] | null = null;
@@ -117,14 +146,15 @@ async function handleCallback(req: Request, url: URL, corsHeaders: Record<string
     : undefined;
   const result = await runGreenButtonCallback({
     code: url.searchParams.get("code") ?? "",
-    state: url.searchParams.get("state") ?? "",
-    connectorId: url.searchParams.get("connector_id") ?? (url.searchParams.get("state") ?? ""),
+    state: authRequest.state,
+    connectorId,
+    ownerUserId,
     tokenEndpoint,
     clientId: url.searchParams.get("client_id") ?? Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "",
     clientSecret: Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_SECRET") ?? "",
     redirectUri,
     utilityName,
-    displayName: url.searchParams.get("display_name") ?? utilityName,
+    displayName,
     metadata: bridgeMetadata ? {
       bridge_request_id: bridgeMetadata.requestId,
       bridge_original_host: bridgeMetadata.originalHost,
@@ -151,7 +181,21 @@ async function handleCallback(req: Request, url: URL, corsHeaders: Record<string
 async function handleSync(req: Request, corsHeaders: Record<string, string>) {
   const body = await req.json();
   const supabase = getUtilityConnectorClient();
-  const utilityName = body?.utility_name ?? "Ontario Green Button Utility";
+  const connectorRef = typeof body?.connector_account_id === "string" ? body.connector_account_id : "";
+  const account = await getGreenButtonAccountByConnectorRef(supabase, connectorRef);
+  if (!account) {
+    return json({ error: "Green Button connector account was not found." }, 404, corsHeaders);
+  }
+  if (!account.owner_user_id) {
+    return json({ error: "Green Button connector account is quarantined because it has no owner binding." }, 409, corsHeaders);
+  }
+  if (account.status === "revoked") {
+    return json({ error: "Green Button connector account is revoked." }, 409, corsHeaders);
+  }
+
+  const utilityName = String(account.utility_name ?? "Ontario Green Button Utility");
+  const displayName = String(account.display_name ?? utilityName);
+  const connectorId = String(account.account_holder_ref ?? account.id);
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const bridgeEnabled = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl);
   const bridgeFeedUrl = bridgeEnabled ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "feed") : null;
@@ -163,9 +207,10 @@ async function handleSync(req: Request, corsHeaders: Record<string, string>) {
     })
     : undefined;
   const result = await runGreenButtonSync({
-    connectorId: body?.connector_account_id ?? "",
+    connectorId,
+    ownerUserId: String(account.owner_user_id),
     utilityName,
-    displayName: body?.display_name ?? String(utilityName),
+    displayName,
     xmlPayload: typeof body?.xml_payload === "string" ? body.xml_payload : null,
     feedUrl: typeof body?.feed_url === "string"
       ? body.feed_url
@@ -223,9 +268,19 @@ async function handleSync(req: Request, corsHeaders: Record<string, string>) {
 async function handleRevoke(req: Request, corsHeaders: Record<string, string>) {
   const body = await req.json();
   const supabase = getUtilityConnectorClient();
-  const connectorAccountId = typeof body?.connector_account_id === "string" ? body.connector_account_id : "";
+  const connectorAccountRef = typeof body?.connector_account_id === "string" ? body.connector_account_id : "";
+  const account = await getGreenButtonAccountByConnectorRef(supabase, connectorAccountRef);
+  if (!account) {
+    return json({ error: "Green Button connector account was not found." }, 404, corsHeaders);
+  }
+  if (!account.owner_user_id) {
+    return json({ error: "Green Button connector account is quarantined because it has no owner binding." }, 409, corsHeaders);
+  }
+  const connectorAccountId = String(account.id);
   const tokenLabel = typeof body?.token_label === "string" ? body.token_label : "default";
-  const utilityName = body?.utility_name ?? "Ontario Green Button Utility";
+  const utilityName = String(account.utility_name ?? "Ontario Green Button Utility");
+  const displayName = String(account.display_name ?? utilityName);
+  const connectorId = String(account.account_holder_ref ?? account.id);
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const bridgeEnabled = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl);
   const bridgeRevokeUrl = bridgeEnabled ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "revoke") : null;
@@ -238,9 +293,10 @@ async function handleRevoke(req: Request, corsHeaders: Record<string, string>) {
     : undefined;
 
   const result = await runGreenButtonRevoke({
-    connectorId: connectorAccountId,
+    connectorId,
+    ownerUserId: String(account.owner_user_id),
     utilityName,
-    displayName: body?.display_name ?? String(utilityName),
+    displayName,
     revocationMode: body?.revocation_mode === "api" ? "api" : "portal_redirect",
     revokeUrl: typeof body?.revoke_url === "string"
       ? body.revoke_url

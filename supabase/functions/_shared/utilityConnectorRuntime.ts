@@ -5,6 +5,7 @@ export interface UtilityConnectorAccountUpsertPayload {
   jurisdiction: 'Ontario' | 'Alberta';
   utility_name: string;
   display_name: string;
+  owner_user_id?: string | null;
   account_holder_ref?: string | null;
   last_synced_at?: string | null;
   last_error?: string | null;
@@ -123,6 +124,7 @@ export async function runGreenButtonCallback(params: {
   code: string;
   state?: string;
   connectorId: string;
+  ownerUserId: string;
   tokenEndpoint: string;
   clientId: string;
   clientSecret: string;
@@ -142,6 +144,7 @@ export async function runGreenButtonCallback(params: {
   const code = String(params.code ?? '').trim();
   const state = String(params.state ?? '').trim();
   const connectorId = String(params.connectorId ?? '').trim();
+  const ownerUserId = String(params.ownerUserId ?? '').trim();
   const tokenEndpoint = String(params.tokenEndpoint ?? '').trim();
   const clientId = String(params.clientId ?? '').trim();
   const clientSecret = String(params.clientSecret ?? '').trim();
@@ -150,6 +153,13 @@ export async function runGreenButtonCallback(params: {
   const displayName = String(params.displayName ?? utilityName);
   const tokenRequestHeaders = params.tokenRequestHeaders ?? {};
   const now = deps.now ?? (() => new Date());
+
+  if (!ownerUserId) {
+    return {
+      status: 412,
+      body: { error: 'Green Button callback requires a verified owner binding.' },
+    };
+  }
 
   if (!code || !connectorId) {
     return {
@@ -165,6 +175,7 @@ export async function runGreenButtonCallback(params: {
     jurisdiction: 'Ontario',
     utility_name: utilityName,
     display_name: displayName,
+    owner_user_id: ownerUserId,
     account_holder_ref: connectorId,
     metadata: {
       authorize_callback_state: state,
@@ -216,6 +227,7 @@ export async function runGreenButtonCallback(params: {
       jurisdiction: 'Ontario',
       utility_name: utilityName,
       display_name: displayName,
+      owner_user_id: ownerUserId,
       account_holder_ref: connectorId,
       last_error: readErrorMessage(tokenPayload) ?? 'Token exchange failed.',
       metadata: {
@@ -268,6 +280,7 @@ export async function runGreenButtonCallback(params: {
     jurisdiction: 'Ontario',
     utility_name: utilityName,
     display_name: displayName,
+    owner_user_id: ownerUserId,
     account_holder_ref: connectorId,
     last_synced_at: null,
     last_error: null,
@@ -298,6 +311,7 @@ export async function runGreenButtonCallback(params: {
 
 export async function runGreenButtonSync(params: {
   connectorId?: string | null;
+  ownerUserId: string;
   utilityName?: string;
   displayName?: string;
   xmlPayload?: string | null;
@@ -326,12 +340,20 @@ export async function runGreenButtonSync(params: {
   parseGreenButtonXml: (xml: string, geographyId?: string | null) => GreenButtonIntervalHistoryRow[];
 }): Promise<RuntimeResponse> {
   const connectorId = String(params.connectorId ?? '').trim();
+  const ownerUserId = String(params.ownerUserId ?? '').trim();
   const utilityName = String(params.utilityName ?? 'Ontario Green Button Utility');
   const displayName = String(params.displayName ?? utilityName);
   const feedUrl = typeof params.feedUrl === 'string' ? params.feedUrl : null;
   const accessToken = typeof params.accessToken === 'string' ? params.accessToken : null;
   const requestHeaders = params.requestHeaders ?? {};
   const now = deps.now ?? (() => new Date());
+
+  if (!ownerUserId) {
+    return {
+      status: 412,
+      body: { error: 'Green Button sync requires a verified owner binding.' },
+    };
+  }
 
   if (!connectorId && !utilityName) {
     return {
@@ -347,6 +369,7 @@ export async function runGreenButtonSync(params: {
     jurisdiction: 'Ontario',
     utility_name: utilityName,
     display_name: displayName,
+    owner_user_id: ownerUserId,
     account_holder_ref: connectorId || null,
     metadata: params.metadata ?? {},
   });
@@ -374,6 +397,7 @@ export async function runGreenButtonSync(params: {
         jurisdiction: 'Ontario',
         utility_name: utilityName,
         display_name: displayName,
+        owner_user_id: ownerUserId,
         account_holder_ref: connectorId || null,
         last_error: `Green Button feed fetch failed: ${response.status}`,
         metadata: {
@@ -431,6 +455,7 @@ export async function runGreenButtonSync(params: {
     jurisdiction: 'Ontario',
     utility_name: utilityName,
     display_name: displayName,
+    owner_user_id: ownerUserId,
     account_holder_ref: connectorId || null,
     last_synced_at: intervalRows.at(-1)?.observed_at ?? now().toISOString(),
     last_error: null,
@@ -457,6 +482,7 @@ export async function runGreenButtonSync(params: {
 
 export async function runGreenButtonRevoke(params: {
   connectorId?: string | null;
+  ownerUserId: string;
   utilityName?: string;
   displayName?: string;
   revocationMode: GreenButtonRevocationMode;
@@ -476,6 +502,7 @@ export async function runGreenButtonRevoke(params: {
   resolveAccessToken?: () => Promise<string | null>;
 }): Promise<RuntimeResponse> {
   const connectorId = String(params.connectorId ?? '').trim();
+  const ownerUserId = String(params.ownerUserId ?? '').trim();
   const utilityName = String(params.utilityName ?? 'Ontario Green Button Utility').trim();
   const displayName = String(params.displayName ?? utilityName).trim();
   const revocationMode = params.revocationMode;
@@ -494,6 +521,13 @@ export async function runGreenButtonRevoke(params: {
     };
   }
 
+  if (!ownerUserId) {
+    return {
+      status: 412,
+      body: { error: 'Green Button revocation requires a verified owner binding.' },
+    };
+  }
+
   const connectorAccount = await deps.upsertAccount({
     connector_kind: 'ontario_green_button_cmd',
     source_kind: 'green_button_cmd',
@@ -501,6 +535,7 @@ export async function runGreenButtonRevoke(params: {
     jurisdiction: 'Ontario',
     utility_name: utilityName,
     display_name: displayName,
+    owner_user_id: ownerUserId,
     account_holder_ref: connectorId || null,
     metadata: params.metadata ?? {},
   });
@@ -523,6 +558,7 @@ export async function runGreenButtonRevoke(params: {
         jurisdiction: 'Ontario',
         utility_name: utilityName,
         display_name: displayName,
+        owner_user_id: ownerUserId,
         account_holder_ref: connectorId || null,
         last_error: message,
         metadata: {
@@ -567,6 +603,7 @@ export async function runGreenButtonRevoke(params: {
       jurisdiction: 'Ontario',
       utility_name: utilityName,
       display_name: displayName,
+      owner_user_id: ownerUserId,
       account_holder_ref: connectorId || null,
       last_error: null,
       metadata: {
@@ -636,6 +673,7 @@ export async function runGreenButtonRevoke(params: {
       jurisdiction: 'Ontario',
       utility_name: utilityName,
       display_name: displayName,
+      owner_user_id: ownerUserId,
       account_holder_ref: connectorId || null,
       last_error: message,
       metadata: {
@@ -677,6 +715,7 @@ export async function runGreenButtonRevoke(params: {
     jurisdiction: 'Ontario',
     utility_name: utilityName,
     display_name: displayName,
+    owner_user_id: ownerUserId,
     account_holder_ref: connectorId || null,
     last_error: null,
     metadata: {

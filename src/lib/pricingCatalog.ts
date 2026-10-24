@@ -1,10 +1,5 @@
 export type DirectPlanCode =
-  | 'free'
-  | 'consumer_watchdog'
-  | 'professional'
-  | 'industrial_tier'
-  | 'municipal'
-  | 'sovereign';
+  'free' | 'consumer_watchdog' | 'professional' | 'industrial_tier' | 'municipal' | 'sovereign';
 
 export type WhopPlanCode = 'whop_basic' | 'whop_pro' | 'whop_team';
 
@@ -34,20 +29,64 @@ export const CEIP_PRICING = {
 
 export const PLAN_PRICES: Record<PlanPrice['code'], PlanPrice> = {
   free: { code: 'free', price: CEIP_PRICING.direct.free, currency: 'USD', interval: 'forever' },
-  consumer_watchdog: { code: 'consumer_watchdog', price: CEIP_PRICING.direct.consumer_watchdog, currency: 'USD', interval: 'month' },
-  professional: { code: 'professional', price: CEIP_PRICING.direct.professional, currency: 'USD', interval: 'month' },
-  industrial_tier: { code: 'industrial_tier', price: CEIP_PRICING.direct.industrial_tier, currency: 'USD', interval: 'month' },
-  municipal: { code: 'municipal', price: CEIP_PRICING.direct.municipal, currency: 'USD', interval: 'month' },
-  sovereign: { code: 'sovereign', price: CEIP_PRICING.direct.sovereign, currency: 'USD', interval: 'month' },
-  whop_basic: { code: 'whop_basic', price: CEIP_PRICING.whop.whop_basic, currency: 'USD', interval: 'month' },
-  whop_pro: { code: 'whop_pro', price: CEIP_PRICING.whop.whop_pro, currency: 'USD', interval: 'month' },
-  whop_team: { code: 'whop_team', price: CEIP_PRICING.whop.whop_team, currency: 'USD', interval: 'month' },
+  consumer_watchdog: {
+    code: 'consumer_watchdog',
+    price: CEIP_PRICING.direct.consumer_watchdog,
+    currency: 'USD',
+    interval: 'month',
+  },
+  professional: {
+    code: 'professional',
+    price: CEIP_PRICING.direct.professional,
+    currency: 'USD',
+    interval: 'month',
+  },
+  industrial_tier: {
+    code: 'industrial_tier',
+    price: CEIP_PRICING.direct.industrial_tier,
+    currency: 'USD',
+    interval: 'month',
+  },
+  municipal: {
+    code: 'municipal',
+    price: CEIP_PRICING.direct.municipal,
+    currency: 'USD',
+    interval: 'month',
+  },
+  sovereign: {
+    code: 'sovereign',
+    price: CEIP_PRICING.direct.sovereign,
+    currency: 'USD',
+    interval: 'month',
+  },
+  whop_basic: {
+    code: 'whop_basic',
+    price: CEIP_PRICING.whop.whop_basic,
+    currency: 'USD',
+    interval: 'month',
+  },
+  whop_pro: {
+    code: 'whop_pro',
+    price: CEIP_PRICING.whop.whop_pro,
+    currency: 'USD',
+    interval: 'month',
+  },
+  whop_team: {
+    code: 'whop_team',
+    price: CEIP_PRICING.whop.whop_team,
+    currency: 'USD',
+    interval: 'month',
+  },
 };
 
 export function getPlanPrice(code: PlanPrice['code']): PlanPrice {
   return PLAN_PRICES[code];
 }
 
+/**
+ * Format a USD amount with the explicit currency code and no bare `$` — every
+ * catalog amount reads "USD 1,500" — code first, no duplicated or bare sign.
+ */
 export function formatUsd(price: number): string {
-  return `$${price.toLocaleString('en-US')}`;
+  return `USD ${price.toLocaleString('en-US')}`;
 }

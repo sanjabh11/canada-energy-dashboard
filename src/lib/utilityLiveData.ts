@@ -910,7 +910,11 @@ function buildConnectorHealthCard(params: {
     registration_form_categories: readMetadataStringArray(account?.metadata, 'registration_form_categories'),
     awaiting_revocation_confirmation: readMetadataBoolean(account?.metadata, 'awaiting_revocation_confirmation'),
     token_material_purged: readMetadataBoolean(account?.metadata, 'token_material_purged') ?? false,
-    can_disconnect: params.fallbackSourceKind === 'green_button_cmd' && (derivedStatus === 'active' || derivedStatus === 'stale' || derivedStatus === 'failed'),
+    // A starter/fallback surface has no owner-bound account to mutate. Keep
+    // the control off until a persisted connector account is present.
+    can_disconnect: Boolean(account)
+      && params.fallbackSourceKind === 'green_button_cmd'
+      && (derivedStatus === 'active' || derivedStatus === 'stale' || derivedStatus === 'failed'),
   };
 }
 

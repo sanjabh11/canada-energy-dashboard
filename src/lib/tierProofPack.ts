@@ -1,5 +1,5 @@
 import type { TierScenarioResult } from './mlForecasting';
-import { isPricingStale, type TIERPricingConfig } from './tierPricing';
+import type { TIERPricingConfig } from './tierPricing';
 import type {
   ProofArtifactDefinition,
   ProofDocumentDescriptor,
@@ -10,10 +10,10 @@ export interface TierRoiResults {
   fundPayment: number;
   marketCredits: number;
   directInvestment: number;
-  ceipFee: number;
-  netSavings: number;
-  roiPercent: number;
-  bestOption: 'market_credits' | 'direct_investment';
+  ceipFee: number | null;
+  netSavings: number | null;
+  roiPercent: number | null;
+  bestOption: 'market_credits' | 'direct_investment' | 'fund_payment' | 'none';
 }
 
 export interface TierProofSnapshot {
@@ -50,9 +50,12 @@ function buildTierSourceCurrencyItems(snapshot: TierProofSnapshot): TierSourceCu
       sourceUrl: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
       sourceDate: 'Fall 2025 amendments and Order in Council 369/2025; page reviewed 2026-06-02',
       reviewedAt: '2026-06-02',
-      currentUse: 'Compliance options, direct-investment amendment context, annual compliance report timing, verification-documents dependency, compliance-cost-containment trigger, and buyer-specific eligibility caveats.',
-      verifyBeforeOutbound: 'Confirm the Alberta page still lists the December 2025 amendments, current Direct Investment standard status, June 30 annual compliance reporting requirement, current verification-document links, and any newer compliance-workshop or guidance updates before sending a CFO memo.',
-      doNotClaim: 'Do not claim direct-investment eligibility, compliance approval, legal advice, tax treatment, or verified reporting completeness without buyer-specific review.',
+      currentUse:
+        'Compliance options, direct-investment amendment context, annual compliance report timing, verification-documents dependency, compliance-cost-containment trigger, and buyer-specific eligibility caveats.',
+      verifyBeforeOutbound:
+        'Confirm the Alberta page still lists the December 2025 amendments, current Direct Investment standard status, June 30 annual compliance reporting requirement, current verification-document links, and any newer compliance-workshop or guidance updates before sending a CFO memo.',
+      doNotClaim:
+        'Do not claim direct-investment eligibility, compliance approval, legal advice, tax treatment, or verified reporting completeness without buyer-specific review.',
     },
     {
       label: snapshot.pricing.source,
@@ -60,8 +63,10 @@ function buildTierSourceCurrencyItems(snapshot: TierProofSnapshot): TierSourceCu
       sourceDate: `${snapshot.pricing.effectiveDate}; implementation agreement published 2026-05-15`,
       reviewedAt: snapshot.pricing.lastVerifiedAt,
       currentUse: `Headline fund-price basis of CAD ${snapshot.pricing.fundPrice}/t plus annual headline and minimum-transfer-price schedules carried for planning context.`,
-      verifyBeforeOutbound: 'Confirm no newer Alberta or Canada-Alberta pricing guidance supersedes the May 15, 2026 implementation-agreement source, annual headline schedule, minimum transfer-price floor schedule, Direct Investment caps, or carbon contracts for difference terms before external use.',
-      doNotClaim: 'Do not claim future-year price floors, executed trade pricing, credit eligibility, carbon-contract entitlement, or binding compliance economics as final buyer advice.',
+      verifyBeforeOutbound:
+        'Confirm no newer Alberta or Canada-Alberta pricing guidance supersedes the May 15, 2026 implementation-agreement source, annual headline schedule, minimum transfer-price floor schedule, Direct Investment caps, or carbon contracts for difference terms before external use.',
+      doNotClaim:
+        'Do not claim future-year price floors, executed trade pricing, credit eligibility, carbon-contract entitlement, or binding compliance economics as final buyer advice.',
     },
     {
       label: snapshot.liveTierMarketRateSource?.sourceName ?? snapshot.pricing.marketPriceSource,
@@ -69,18 +74,55 @@ function buildTierSourceCurrencyItems(snapshot: TierProofSnapshot): TierSourceCu
       sourceDate: snapshot.liveTierMarketRateSource?.observedAt ?? snapshot.pricing.lastVerifiedAt,
       reviewedAt: snapshot.liveTierMarketRateSource?.observedAt ?? snapshot.pricing.lastVerifiedAt,
       currentUse: `Market-credit scenario input of CAD ${snapshot.marketPrice}/t labeled ${snapshot.liveTierMarketRateSource?.claimLabel ?? 'fallback'} in the current route state.`,
-      verifyBeforeOutbound: 'Replace fallback pricing with a live quote, registry-backed source, or buyer-approved price source before making strong savings claims.',
-      doNotClaim: 'Do not claim real-time market pricing, executed trade pricing, or guaranteed savings from this scenario input.',
+      verifyBeforeOutbound:
+        'Replace fallback pricing with a live quote, registry-backed source, or buyer-approved price source before making strong savings claims.',
+      doNotClaim:
+        'Do not claim real-time market pricing, executed trade pricing, or guaranteed savings from this scenario input.',
     },
   ];
 }
 
-export function buildTierPricingFreshnessGate(snapshot: TierProofSnapshot): {
+export function buildTierPricingFreshnessGate(
+  snapshot: TierProofSnapshot,
+  asOf: Date = new Date(),
+): {
   status: 'fresh' | 'stale';
   message: string;
   blocksStrongSavingsClaim: boolean;
 } {
-  const stale = isPricingStale(snapshot.pricing) || !snapshot.liveTierMarketRateSource;
+  // `asOf` is the planning evaluation date (injectable for deterministic
+  // tests/exports); it is not an authoritative pricing timestamp.
+  const now = asOf.getTime();
+  const pricingDateText = snapshot.pricing.lastVerifiedAt;
+  const pricingDate = Date.parse(
+    /^\d{4}-\d{2}-\d{2}$/.test(pricingDateText) ? `${pricingDateText}T00:00:00Z` : pricingDateText,
+  );
+  const pricingFresh =
+    Number.isFinite(pricingDate) &&
+    pricingDate <= now + 5 * 60 * 1000 &&
+    now - pricingDate <= 90 * 24 * 60 * 60 * 1000 &&
+    Number.isFinite(snapshot.pricing.fundPrice) &&
+    snapshot.pricing.fundPrice >= 0;
+  const observedAt = snapshot.liveTierMarketRateSource?.observedAt
+    ? Date.parse(snapshot.liveTierMarketRateSource.observedAt)
+    : Number.NaN;
+  let marketSourceIsHttps = false;
+  try {
+    marketSourceIsHttps =
+      new URL(snapshot.liveTierMarketRateSource?.sourceUrl ?? '').protocol === 'https:';
+  } catch {
+    marketSourceIsHttps = false;
+  }
+  const marketRateFresh =
+    Number.isFinite(observedAt) &&
+    observedAt <= now + 5 * 60 * 1000 &&
+    now - observedAt <= 30 * 24 * 60 * 60 * 1000 &&
+    Number.isFinite(snapshot.marketPrice) &&
+    snapshot.marketPrice >= 0 &&
+    snapshot.liveTierMarketRateSource?.claimLabel === 'validated' &&
+    Boolean(snapshot.liveTierMarketRateSource?.sourceName?.trim()) &&
+    marketSourceIsHttps;
+  const stale = !pricingFresh || !marketRateFresh;
   return {
     status: stale ? 'stale' : 'fresh',
     message: stale
@@ -98,9 +140,10 @@ function buildArtifact(
   description: string,
   snapshot: TierProofSnapshot,
 ): ProofArtifactDefinition {
-  const claimLabel = snapshot.liveTierMarketRateSource?.claimLabel
-    ?? snapshot.simulatorResult?.meta.claim_label
-    ?? 'estimated';
+  const claimLabel =
+    snapshot.liveTierMarketRateSource?.claimLabel ??
+    snapshot.simulatorResult?.meta.claim_label ??
+    'estimated';
   const freshnessGate = buildTierPricingFreshnessGate(snapshot);
   return {
     id,
@@ -125,8 +168,10 @@ function buildArtifact(
     assumptions: buildTierAssumptions(snapshot),
     claimLabel,
     isFallback: !snapshot.liveTierMarketRateSource || snapshot.simulatorSource === 'local_fallback',
-    freshnessState: snapshot.liveTierMarketRateSource?.observedAt ?? snapshot.pricing.lastVerifiedAt,
-    boundedClaimsDisclaimer: 'This memo supports scenario review and pilot qualification only. It is not binding trading, tax, or legal advice.',
+    freshnessState:
+      snapshot.liveTierMarketRateSource?.observedAt ?? snapshot.pricing.lastVerifiedAt,
+    boundedClaimsDisclaimer:
+      'This memo supports scenario review and pilot qualification only. It is not binding trading, tax, or legal advice.',
     description,
   };
 }
@@ -142,7 +187,7 @@ export function buildTierAssumptions(snapshot: TierProofSnapshot): string[] {
   return [
     `Fund price basis is CAD ${snapshot.pricing.fundPrice}/t effective ${snapshot.pricing.effectiveDate}.`,
     `Market credit pricing is ${snapshot.liveTierMarketRateSource ? 'source-dated' : 'fallback'} at CAD ${snapshot.marketPrice}/t; the memo does not claim real-time pricing.`,
-    `Direct investment uses the route’s current credit-rate assumption and remains sensitive to Alberta TIER eligibility, timing, credit-reactivation rules, and buyer-specific verification.`,
+    `Direct investment credit treatment is undetermined because the current publication status of the Alberta Direct Investment Standard has not been verified. The memo shows a bounded cost range and never presents it as eligible. The Canada–Alberta agreement limits eligible investment to 50% of eligible capital and up to 50% of attributable operating costs net of public support.`,
     `Official headline price schedule carried for scenario context: ${headlineSchedule}.`,
     `Minimum transfer-price floor schedule begins in 2030 for future-year planning context: ${priceFloorSchedule}.`,
     ...snapshot.pricing.policyNotes,
@@ -153,14 +198,15 @@ export function buildTierAssumptions(snapshot: TierProofSnapshot): string[] {
 export function buildTierProofBundle(snapshot: TierProofSnapshot): ProofPackBundle {
   return {
     title: 'TIER CFO memo pack',
-    summary: 'Export a finance-readable TIER compliance memo with pricing provenance, scenario assumptions, and a direct next step for a paid pilot.',
+    summary:
+      'Export a draft TIER scenario memo with pricing provenance and assumptions for owner review; price, buyer outcomes, and pilot availability remain unvalidated.',
     artifacts: [
       buildArtifact(
         'tier-cfo-memo-pdf',
         'CFO memo PDF',
         'pdf',
         `tier_cfo_memo_${new Date().toISOString().slice(0, 10)}.pdf`,
-        'Board-ready scenario memo for one facility compliance decision.',
+        'Draft scenario memo for one facility compliance discussion; validate assumptions before relying on it.',
         snapshot,
       ),
       buildArtifact(
@@ -192,7 +238,30 @@ export function buildTierProofBundle(snapshot: TierProofSnapshot): ProofPackBund
 }
 
 export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocumentDescriptor {
-  const recommendation = snapshot.results.bestOption === 'market_credits' ? 'Buy market credits' : 'Use direct investment';
+  const pricingGate = buildTierPricingFreshnessGate(snapshot);
+  const recommendation = pricingGate.blocksStrongSavingsClaim
+    ? 'No pathway ranked until current pricing evidence passes the freshness gate'
+    : snapshot.results.bestOption === 'market_credits'
+      ? 'Buy market credits'
+      : snapshot.results.bestOption === 'fund_payment'
+        ? 'Pay the TIER fund'
+        : snapshot.results.bestOption === 'direct_investment'
+          ? 'Direct investment remains undetermined — current Standard status unverified'
+          : 'No pathway ranked until current pricing and FX evidence is available';
+  const hasRankedPathway =
+    !pricingGate.blocksStrongSavingsClaim &&
+    (snapshot.results.bestOption === 'market_credits' ||
+      snapshot.results.bestOption === 'fund_payment');
+  const feeLine = pricingGate.blocksStrongSavingsClaim
+    ? 'CEIP success fee and CAD-equivalent amounts withheld pending current pricing and sourced FX evidence'
+    : snapshot.results.ceipFee === null
+      ? 'CEIP fee: USD fee applies; CAD equivalent unavailable pending sourced FX'
+      : `CEIP fee: CAD ${snapshot.results.ceipFee.toLocaleString()}`;
+  const savingsLine = pricingGate.blocksStrongSavingsClaim
+    ? 'Net savings and ROI withheld pending current pricing and sourced FX evidence'
+    : snapshot.results.netSavings === null || snapshot.results.roiPercent === null
+      ? 'Net savings and ROI: unavailable pending current pricing and sourced FX'
+      : `Net savings: CAD ${snapshot.results.netSavings.toLocaleString()} (${snapshot.results.roiPercent.toFixed(0)}% ROI)`;
   return {
     definition: buildArtifact(
       'tier-cfo-memo',
@@ -203,7 +272,8 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
       snapshot,
     ),
     title: 'TIER compliance decision memo',
-    summary: 'One-facility compliance comparison across fund payment, market credits, and direct investment with explicit source provenance.',
+    summary:
+      'Draft, one-facility compliance scenario comparison. Current source and currency gates control whether ranked economics are available.',
     sections: [
       {
         heading: 'Scenario inputs',
@@ -221,8 +291,9 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
           `Fund payment: CAD ${snapshot.results.fundPayment.toLocaleString()}`,
           `Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()}`,
           `Direct investment pathway: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
-          `CEIP fee: CAD ${snapshot.results.ceipFee.toLocaleString()}`,
-          `Net savings: CAD ${snapshot.results.netSavings.toLocaleString()} (${snapshot.results.roiPercent.toFixed(0)}% ROI)`,
+          feeLine,
+          savingsLine,
+          recommendation,
         ],
       },
       {
@@ -234,7 +305,7 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
           'Official Alberta TIER source: https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
           snapshot.liveTierMarketRateSource
             ? `Market price source: ${snapshot.liveTierMarketRateSource.sourceName ?? 'live market source'} observed ${snapshot.liveTierMarketRateSource.observedAt ?? 'unknown date'}`
-            : `Market price source: fallback pricing verified ${snapshot.pricing.lastVerifiedAt}`,
+            : `Market price source: fallback planning input only (not a current market quote); snapshot dated ${snapshot.pricing.lastVerifiedAt}`,
           `Headline price schedule: ${snapshot.pricing.headlinePriceSchedule.map(({ year, priceCadPerTonne }) => `${year} CAD ${priceCadPerTonne}/t`).join('; ')}`,
           `Future price-floor schedule: ${snapshot.pricing.priceFloorSchedule.map(({ year, priceCadPerTonne }) => `${year} CAD ${priceCadPerTonne}/t`).join('; ')}`,
           `Scenario engine: ${snapshot.simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via ${snapshot.simulatorSource}`,
@@ -255,12 +326,24 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
         heading: 'Recommendation',
         kind: 'paragraphs',
         body: [
-          `${recommendation} is currently the lowest-cost route under the assumptions above.`,
-          'Use this memo to qualify a pilot that validates live pricing, buyer-specific assumptions, and the final compliance-year decision path.',
+          pricingGate.blocksStrongSavingsClaim
+            ? 'No pathway is ranked because current primary-source pricing evidence has not passed the freshness gate.'
+            : hasRankedPathway
+              ? `${recommendation} is currently the lowest-cost route under the stated scenario assumptions.`
+              : `${recommendation}.`,
+          pricingGate.blocksStrongSavingsClaim
+            ? 'Refresh current source pricing and obtain buyer-approved inputs before considering a pilot request.'
+            : hasRankedPathway
+              ? 'Use this memo to qualify a pilot that validates live pricing, buyer-specific assumptions, and the final compliance-year decision path.'
+              : 'Provide sourced USD/CAD evidence and complete buyer-specific inputs before ranking pathways.',
         ],
       },
     ],
-    nextStep: 'Book a pilot review with finance and compliance stakeholders, then replace the starter assumptions with facility-specific numbers.',
+    nextStep: pricingGate.blocksStrongSavingsClaim
+      ? 'Refresh current source pricing and obtain buyer-approved inputs before considering a pilot request.'
+      : hasRankedPathway
+        ? 'Book a pilot review with finance and compliance stakeholders, then replace the starter assumptions with facility-specific numbers.'
+        : 'Provide sourced USD/CAD evidence and complete buyer-specific inputs before ranking pathways.',
   };
 }
 
@@ -298,17 +381,33 @@ export function buildTierSourceCurrencyChecklistMarkdown(snapshot: TierProofSnap
 
 export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {
   const warnings = snapshot.simulatorResult?.warnings ?? [];
+  const pricingGate = buildTierPricingFreshnessGate(snapshot);
+  const feeLine = pricingGate.blocksStrongSavingsClaim
+    ? 'CEIP success fee and CAD-equivalent amounts withheld pending current pricing and sourced FX evidence'
+    : snapshot.results.ceipFee === null
+      ? 'CAD equivalent unavailable pending sourced FX'
+      : `CAD ${snapshot.results.ceipFee.toLocaleString()}`;
+  const savingsLine =
+    pricingGate.blocksStrongSavingsClaim ||
+    snapshot.results.netSavings === null ||
+    snapshot.results.roiPercent === null
+      ? 'withheld pending current pricing and sourced FX evidence'
+      : `CAD ${snapshot.results.netSavings.toLocaleString()} / ${snapshot.results.roiPercent.toFixed(0)}%`;
   return [
     '# TIER scenario appendix',
     '',
-    '## Raw pathway values',
+    '## Scenario pathway values (not recommendations)',
     `- Fund payment: CAD ${snapshot.results.fundPayment.toLocaleString()}`,
     `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()}`,
     `- Direct investment: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
-    `- CEIP fee: CAD ${snapshot.results.ceipFee.toLocaleString()}`,
-    `- Net savings: CAD ${snapshot.results.netSavings.toLocaleString()}`,
+    `- CEIP fee: ${feeLine}`,
+    `- Net savings / ROI: ${savingsLine}`,
+    `- Freshness gate: ${pricingGate.status} — ${pricingGate.message}`,
+    '- Direct-investment credit treatment remains undetermined until the current Alberta Standard status is verified.',
     '',
     '## Warnings',
-    ...(warnings.length > 0 ? warnings.map((warning) => `- ${warning}`) : ['- No additional warnings in the current simulator response']),
+    ...(warnings.length > 0
+      ? warnings.map((warning) => `- ${warning}`)
+      : ['- No additional warnings in the current simulator response']),
   ].join('\n');
 }

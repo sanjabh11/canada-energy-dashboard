@@ -10,6 +10,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { getOntarioDemandSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { buildDataProvenance } from "../_shared/dataProvenance.ts";
+import {
+  buildObservedGridStatusRow,
+  classifySourceBatch,
+  normalizeAuthoritativeTimestamp,
+  parseFiniteNumber,
+} from "../_shared/energySourceTruth.ts";
 
 // CORS headers placeholder — set per-request in serve()
 let corsHeaders: Record<string, string> = {};
@@ -112,7 +118,24 @@ async function collectIESOData(options: { skipFilter?: boolean } = {}): Promise<
 
 async function fetchAndPersistIESOData(options: { skipFilter?: boolean } = {}): Promise<IESODataResult> {
   const startedAt = Date.now();
+  if (!supabase) {
+    throw new Error('Supabase service configuration missing; IESO ingestion was not persisted.');
+  }
   const { rows, metadata, hadError } = await collectIESOData(options);
+  const sourceCheck = classifySourceBatch(rows, 'IESO');
+
+  if (!sourceCheck.usable) {
+    const message = sourceCheck.message ?? 'IESO returned no usable records.';
+    errorCount++;
+    const failureMeta = { ...metadata, rowsPersisted: 0, error: message };
+    await updateStreamHealth('degraded', failureMeta, {
+      last_error: new Date().toISOString(),
+      error_count: errorCount,
+    });
+    await logInvocation('error', failureMeta, startedAt);
+    await logOpsRun('failure', failureMeta, startedAt);
+    throw new Error(message);
+  }
 
   try {
     if (rows.length > 0) {
@@ -128,14 +151,19 @@ async function fetchAndPersistIESOData(options: { skipFilter?: boolean } = {}): 
         error_count: errorCount
       });
       await logInvocation('error', degradedMeta, startedAt);
+      await logOpsRun('failure', degradedMeta, startedAt);
       if (rows.length === 0) {
         throw new Error('IESO demand and price data unavailable');
       }
     } else {
       errorCount = 0;
       const successMeta = { ...metadata, rowsPersisted: rows.length };
+      const successfulFetchAt = lastSuccessfulFetch;
+      if (successfulFetchAt === null) {
+        throw new Error('IESO persistence completed without a successful fetch timestamp.');
+      }
       await updateStreamHealth('healthy', successMeta, {
-        last_success: new Date(lastSuccessfulFetch).toISOString(),
+        last_success: new Date(successfulFetchAt).toISOString(),
         error_count: errorCount
       });
       await logInvocation('success', successMeta, startedAt);
@@ -181,25 +209,13 @@ async function updateStreamHealth(
 async function persistGridSnapshots(rows: any[]) {
   if (!supabase || rows.length === 0) return;
   try {
-    const upsertRows = rows.map((row: any) => {
-      const demand = typeof row.demand_mw === 'number' ? row.demand_mw : null;
-      const supply = row.supply_mw ?? (demand !== null ? demand * 1.05 : null);
-      const reserve = demand !== null && supply !== null && demand > 0
-        ? (supply - demand) / demand
-        : null;
-      return {
-        region: row.region || 'Ontario',
-        demand_mw: demand,
-        supply_mw: supply,
-        reserve_margin: reserve,
-        frequency_hz: row.frequency_hz ?? 60,
-        voltage_kv: row.voltage_kv ?? 120,
-        congestion_index: row.congestion_index ?? null,
-        data_source: row.source || 'IESO',
-        status: row.status || 'stable',
-        captured_at: row.timestamp || new Date().toISOString()
-      };
-    });
+    const upsertRows = rows.map((row: any) => buildObservedGridStatusRow(row, {
+      region: 'Ontario',
+      dataSource: 'IESO',
+    }));
+    if (upsertRows.some((row) => row === null)) {
+      throw new Error('IESO persistence row lacked an authoritative source timestamp.');
+    }
     const { error } = await supabase.from('grid_status').upsert(upsertRows, {
       onConflict: 'region,captured_at'
     });
@@ -271,7 +287,7 @@ async function fetchWithRetry(
 // Global state for caching and deduplication
 const lastDataTimestamps: Map<string, string> = new Map();
 let errorCount = 0;
-let lastSuccessfulFetch = Date.now();
+let lastSuccessfulFetch: number | null = null;
 
 /**
  * Fetch IESO hourly demand data with retry logic
@@ -291,9 +307,6 @@ async function fetchIESODemandData(): Promise<any[]> {
 
     const csvText = await response.text();
     const data = parseIESOCSV(csvText);
-    lastSuccessfulFetch = Date.now();
-    errorCount = 0;
-
     return data;
 
   } catch (error) {
@@ -343,46 +356,47 @@ function parseIESOCSV(csvText: string): any[] {
   const lines = csvText.split('\n').filter(line => line.trim());
   if (lines.length < 2) return [];
 
-  // Find last valid data row (IESO may have metadata/comments)
-  let dataIndex = lines.length - 1;
-
-  // Look for actual data row (contains numbers)
+  // Find the latest row that contains both a source timestamp and a finite
+  // demand value. Never substitute a current timestamp or synthetic value.
   for (let i = lines.length - 1; i >= 1; i--) {
     const cells = lines[i].split(',');
-    if (cells.length >= 2 && !isNaN(parseFloat(cells[cells.length - 1]))) {
-      dataIndex = i;
-      break;
-    }
+    if (cells.length < 2) continue;
+
+    const timestamp = normalizeAuthoritativeTimestamp(cells[0]?.trim());
+    const demand = parseFiniteNumber(cells[1]);
+    if (!timestamp || demand === null) continue;
+
+    const price = parseFiniteNumber(cells[2]);
+    return [{
+      hour: cells[0]?.trim(),
+      demand_mw: demand,
+      price_cents_kwh: price === null ? null : price / 10,
+      timestamp,
+      source: 'IESO'
+    }];
   }
 
-  const lastDataRow = lines[dataIndex];
-  const cells = lastDataRow.split(',');
-
-  // IESO CSV typically has:
-  // Hour, Ontario Demand, Market Price (Weighted Avg)
-
-  return [{
-    hour: cells[0]?.trim(),
-    demand_mw: parseFloat(cells[1]) || 10000, // Default to 10GW if parsing fails
-    price_cents_kwh: (parseFloat(cells[2]) / 10) || 8.0, // Convert $/MWh to $/kWh
-    timestamp: new Date().toISOString(), // IESO doesn't provide timestamps in this format
-    source: 'IESO'
-  }];
+  return [];
 }
 
 /**
  * Combine demand and price data
  */
 function combineIESOData(demandData: any[], priceData: any[]): any[] {
-  if (demandData.length === 0 && priceData.length === 0) return [];
+  if (demandData.length === 0) return [];
 
-  const latestDemand = demandData[0] || { demand_mw: 10000 };
-  const latestPrice = priceData[0] || { price_cents_kwh: 8.0 };
+  const latestDemand = demandData[0];
+  const latestPrice = priceData[0] ?? {};
+  const timestamp = normalizeAuthoritativeTimestamp(latestDemand?.timestamp);
+  const demand = parseFiniteNumber(latestDemand?.demand_mw);
+  if (!timestamp || demand === null) return [];
 
   return [{
     ...latestDemand,
     ...latestPrice,
-    timestamp: new Date().toISOString(),
+    demand_mw: demand,
+    price_cents_kwh: parseFiniteNumber(latestPrice.price_cents_kwh),
+    timestamp,
     region: 'Ontario',
     source: 'IESO'
   }];
@@ -484,15 +498,19 @@ serve(async (req: Request) => {
         const paginated = paginateSampleData(sampleData, limit, cursor);
         
         // Transform sample data to match expected format
-        const transformedRows = paginated.rows.map((row: any) => ({
-          datetime: row.datetime || new Date().toISOString(),
-          hour_ending: row.hour_ending || new Date().getHours(),
-          total_demand_mw: row.total_demand_mw || row.demand_mw || 15000,
-          hourly_demand_gwh: row.hourly_demand_gwh || (row.total_demand_mw || 15000) / 1000,
-          date: row.date || new Date().toISOString().split('T')[0],
-          source: 'kaggle',
-          version: '1.0-sample'
-        }));
+        const transformedRows = paginated.rows.map((row: any) => {
+          const datetime = row.datetime ?? (row.date ? `${row.date}T00:00:00.000Z` : null);
+          const totalDemand = parseFiniteNumber(row.total_demand_mw ?? row.demand_mw);
+          return {
+            datetime,
+            hour_ending: row.hour_ending ?? null,
+            total_demand_mw: totalDemand,
+            hourly_demand_gwh: totalDemand === null ? null : totalDemand / 1000,
+            date: datetime ? String(datetime).split('T')[0] : null,
+            source: 'kaggle',
+            version: '1.0-sample'
+          };
+        }).filter((row: any) => row.datetime && row.total_demand_mw !== null);
         const provenance = buildDataProvenance({
           source: 'Ontario demand sample dataset',
           lastUpdated: getLatestTimestamp(transformedRows),
@@ -523,15 +541,19 @@ serve(async (req: Request) => {
       }
 
       // Transform and return IESO data
-      const transformedData = data.map((row: any) => ({
-        datetime: row.timestamp || new Date().toISOString(),
-        hour_ending: row.hour || new Date().getHours(),
-        total_demand_mw: row.demand_mw || 15000,
-        hourly_demand_gwh: (row.demand_mw || 15000) / 1000,
-        date: (row.timestamp || new Date().toISOString()).split('T')[0],
-        source: 'ieso',
-        version: '1.0-ieso'
-      }));
+      const transformedData = data.map((row: any) => {
+        const datetime = normalizeAuthoritativeTimestamp(row.timestamp);
+        const demand = parseFiniteNumber(row.demand_mw);
+        return {
+          datetime,
+          hour_ending: row.hour ?? null,
+          total_demand_mw: demand,
+          hourly_demand_gwh: demand === null ? null : demand / 1000,
+          date: datetime ? datetime.split('T')[0] : null,
+          source: 'ieso',
+          version: '1.0-ieso'
+        };
+      }).filter((row: any) => row.datetime && row.total_demand_mw !== null);
       const provenance = buildDataProvenance({
         source: usedSample ? 'Ontario demand sample dataset' : 'IESO hourly demand feed',
         lastUpdated: getLatestTimestamp(transformedData),
@@ -622,11 +644,15 @@ serve(async (req: Request) => {
 function handleHealthRequest(): Response {
   const health = {
     service: 'ieso-ontario-stream',
-    status: errorCount === 0 ? 'healthy' : 'degraded',
-    lastSuccessfulFetch: new Date(lastSuccessfulFetch).toISOString(),
+    status: lastSuccessfulFetch !== null && errorCount === 0 ? 'healthy' : 'degraded',
+    lastSuccessfulFetch: lastSuccessfulFetch === null ? null : new Date(lastSuccessfulFetch).toISOString(),
     errorCount,
-    errorRatePercent: errorCount === 0 ? 0.0 : Math.round((errorCount / (Date.now() - lastSuccessfulFetch + 60000) * 100) * 100) / 100,
-    uptime: timeSince(lastSuccessfulFetch),
+    errorRatePercent: lastSuccessfulFetch === null
+      ? 100
+      : errorCount === 0
+        ? 0.0
+        : Math.round((errorCount / (Date.now() - lastSuccessfulFetch + 60000) * 100) * 100) / 100,
+    uptime: lastSuccessfulFetch === null ? 'never' : timeSince(lastSuccessfulFetch),
     timestamp: new Date().toISOString(),
     provenance: {
       source: 'Independent Electricity System Operator (IESO)',

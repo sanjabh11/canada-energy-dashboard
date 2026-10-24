@@ -17,17 +17,17 @@ import type {
  */
 function detectPeakUsage(usage: MonthlyUsage[]): boolean {
   if (usage.length === 0) return false;
-  
+
   const recentMonth = usage[0];
   if (!recentMonth.peakUsageHours || recentMonth.peakUsageHours.length === 0) {
     return false;
   }
-  
+
   // Peak hours typically 11 AM - 5 PM (11-16)
   const peakHourUsage = recentMonth.peakUsageHours.filter(
-    hour => hour >= 11 && hour <= 16
+    (hour) => hour >= 11 && hour <= 16,
   ).length;
-  
+
   // If more than 40% of tracked hours are in peak, flag it
   return peakHourUsage / recentMonth.peakUsageHours.length > 0.4;
 }
@@ -37,7 +37,7 @@ function detectPeakUsage(usage: MonthlyUsage[]): boolean {
  */
 function calculateAverageUsage(usage: MonthlyUsage[], months: number = 3): number {
   if (usage.length === 0) return 0;
-  
+
   const recentUsage = usage.slice(0, Math.min(months, usage.length));
   const total = recentUsage.reduce((sum, u) => sum + u.consumption_kwh, 0);
   return total / recentUsage.length;
@@ -57,20 +57,18 @@ function detectSeasonalPattern(usage: MonthlyUsage[]): {
 
   const sortedByUsage = [...usage].sort((a, b) => b.consumption_kwh - a.consumption_kwh);
   const topThree = sortedByUsage.slice(0, 3);
-  
+
   const winterMonths = ['01', '02', '03', '11', '12'];
   const summerMonths = ['06', '07', '08'];
-  
-  const isWinterPeak = topThree.filter(u => 
-    winterMonths.includes(u.month.split('-')[1])
-  ).length >= 2;
-  
-  const isSummerPeak = topThree.filter(u => 
-    summerMonths.includes(u.month.split('-')[1])
-  ).length >= 2;
-  
+
+  const isWinterPeak =
+    topThree.filter((u) => winterMonths.includes(u.month.split('-')[1])).length >= 2;
+
+  const isSummerPeak =
+    topThree.filter((u) => summerMonths.includes(u.month.split('-')[1])).length >= 2;
+
   return {
-    highUsageMonths: topThree.map(u => u.month),
+    highUsageMonths: topThree.map((u) => u.month),
     isWinterPeak,
     isSummerPeak,
   };
@@ -83,33 +81,33 @@ function detectSeasonalPattern(usage: MonthlyUsage[]): {
 function estimateUsageFromProfile(profile: HouseholdProfile): number {
   // Base usage per occupant
   let estimated = 300 * profile.occupants;
-  
+
   // Adjust for square footage (larger homes use more)
   const sizeFactor = profile.squareFootage / 1500;
   estimated *= sizeFactor;
-  
+
   // Adjust for heating type
   if (profile.heatingType === 'electric') {
     estimated *= 1.4; // Electric heating adds ~40%
   } else if (profile.heatingType === 'heat-pump') {
     estimated *= 1.2; // Heat pumps are more efficient but still electric
   }
-  
+
   // Adjust for AC
   if (profile.hasAC) {
     estimated *= 1.15; // AC adds ~15% in summer (averaged over year)
   }
-  
+
   // Adjust for EV
   if (profile.hasEV) {
     estimated += 300; // ~300 kWh/month for typical EV
   }
-  
+
   // Solar reduces net usage
   if (profile.hasSolar) {
     estimated *= 0.6; // Solar can offset 40% or more
   }
-  
+
   return Math.round(estimated);
 }
 
@@ -119,29 +117,29 @@ function estimateUsageFromProfile(profile: HouseholdProfile): number {
 export function generateRecommendations(
   profile: HouseholdProfile,
   usage: MonthlyUsage[],
-  provincialData: ProvincialPricing
+  provincialData: ProvincialPricing,
 ): Recommendation[] {
   const recommendations: Recommendation[] = [];
   const avgUsage = calculateAverageUsage(usage);
   const seasonalPattern = detectSeasonalPattern(usage);
   const hasUsageData = usage.length > 0;
-  
+
   // Estimate typical usage if no data available (based on profile)
   const estimatedUsage = !hasUsageData ? estimateUsageFromProfile(profile) : avgUsage;
-  
+
   // RECOMMENDATION 1: High Electric Heating Costs (works with or without data)
   if (profile.heatingType === 'electric') {
     const usageToUse = hasUsageData ? avgUsage : estimatedUsage;
-    const monthlySavings = Math.round(usageToUse * 0.15 * provincialData.currentPrice / 100);
+    const monthlySavings = Math.round((usageToUse * 0.15 * provincialData.currentPrice) / 100);
     const annualSavings = monthlySavings * 12;
     const kwhSaved = Math.round(usageToUse * 0.15);
-    
+
     recommendations.push({
       id: 'heating-optimization',
       category: 'behavioral',
       priority: 'high',
       title: 'Reduce Electric Heating Costs by 15-20%',
-      description: hasUsageData 
+      description: hasUsageData
         ? `Your electric heating is using significant energy in winter months. Small thermostat adjustments and draft sealing can make a big difference.`
         : `Electric heating can be expensive. Based on your ${profile.squareFootage} sq ft home in ${profile.province}, we estimate simple changes could save you significantly.`,
       potentialSavings: {
@@ -183,10 +181,11 @@ export function generateRecommendations(
 
   // RECOMMENDATION 2: Time-of-Use Opportunities
   if (provincialData.hasTOUPricing && detectPeakUsage(usage)) {
-    const peakPenalty = avgUsage * 0.4 * (provincialData.touRates!.onPeak - provincialData.touRates!.offPeak) / 100;
+    const peakPenalty =
+      (avgUsage * 0.4 * (provincialData.touRates!.onPeak - provincialData.touRates!.offPeak)) / 100;
     const monthlySavings = Math.round(peakPenalty * 0.7);
     const annualSavings = monthlySavings * 12;
-    
+
     recommendations.push({
       id: 'tou-shifting',
       category: 'behavioral',
@@ -286,14 +285,10 @@ export function generateRecommendations(
   }
 
   // RECOMMENDATION 4: High Summer Cooling Costs
-  if (
-    profile.hasAC && 
-    seasonalPattern.isSummerPeak && 
-    avgUsage > 800
-  ) {
-    const monthlySavings = Math.round(avgUsage * 0.12 * provincialData.currentPrice / 100);
+  if (profile.hasAC && seasonalPattern.isSummerPeak && avgUsage > 800) {
+    const monthlySavings = Math.round((avgUsage * 0.12 * provincialData.currentPrice) / 100);
     const annualSavings = monthlySavings * 4; // Summer months only
-    
+
     recommendations.push({
       id: 'cooling-optimization',
       category: 'behavioral',
@@ -341,9 +336,9 @@ export function generateRecommendations(
     !['smart-thermostat', 'heat-pump'].includes(profile.heatingType) &&
     (avgUsage > 800 || seasonalPattern.isWinterPeak || seasonalPattern.isSummerPeak)
   ) {
-    const monthlySavings = Math.round(avgUsage * 0.10 * provincialData.currentPrice / 100);
+    const monthlySavings = Math.round((avgUsage * 0.1 * provincialData.currentPrice) / 100);
     const annualSavings = monthlySavings * 12;
-    
+
     recommendations.push({
       id: 'smart-thermostat',
       category: 'upgrade',
@@ -353,8 +348,8 @@ export function generateRecommendations(
       potentialSavings: {
         monthly: monthlySavings,
         annual: annualSavings,
-        kwh: Math.round(avgUsage * 0.10) * 12,
-        co2Reduction: Math.round(avgUsage * 0.10) * 12 * 0.13,
+        kwh: Math.round(avgUsage * 0.1) * 12,
+        co2Reduction: Math.round(avgUsage * 0.1) * 12 * 0.13,
       },
       effort: 'moderate',
       actionSteps: [
@@ -389,9 +384,9 @@ export function generateRecommendations(
 
   // RECOMMENDATION 6: High Overall Usage (General)
   if (avgUsage > 1500) {
-    const monthlySavings = Math.round(avgUsage * 0.08 * provincialData.currentPrice / 100);
+    const monthlySavings = Math.round((avgUsage * 0.08 * provincialData.currentPrice) / 100);
     const annualSavings = monthlySavings * 12;
-    
+
     recommendations.push({
       id: 'general-conservation',
       category: 'behavioral',
@@ -444,14 +439,18 @@ export function generateRecommendations(
   if (profile.hasEV) {
     const evUsage = 300; // Estimated kWh per month
     const monthlySavings = provincialData.hasTOUPricing
-      ? Math.round(evUsage * (provincialData.touRates!.onPeak - provincialData.touRates!.offPeak) / 100)
+      ? Math.round(
+          (evUsage * (provincialData.touRates!.onPeak - provincialData.touRates!.offPeak)) / 100,
+        )
       : 15; // Minimum savings even without TOU
-    
+
     recommendations.push({
       id: 'ev-charging-optimization',
       category: 'behavioral',
       priority: provincialData.hasTOUPricing ? 'high' : 'medium',
-      title: provincialData.hasTOUPricing ? 'Optimize EV Charging Times' : 'EV Charging Best Practices',
+      title: provincialData.hasTOUPricing
+        ? 'Optimize EV Charging Times'
+        : 'EV Charging Best Practices',
       description: provincialData.hasTOUPricing
         ? `Charging your EV during off-peak hours can save you significantly with time-of-use pricing.`
         : `Optimize your EV charging habits to reduce strain on the grid and potentially save on costs.`,
@@ -464,15 +463,15 @@ export function generateRecommendations(
       effort: 'easy',
       actionSteps: [
         {
-          step: provincialData.hasTOUPricing 
-            ? 'Set your EV to charge between 11 PM and 6 AM' 
+          step: provincialData.hasTOUPricing
+            ? 'Set your EV to charge between 11 PM and 6 AM'
             : 'Charge overnight when grid demand is lower',
           estimatedTime: '5 minutes',
           difficulty: 'easy',
           cost: 0,
         },
         {
-          step: 'Use your utility\'s EV charging app for lowest rates',
+          step: "Use your utility's EV charging app for lowest rates",
           estimatedTime: '15 minutes setup',
           difficulty: 'easy',
           cost: 0,
@@ -491,19 +490,20 @@ export function generateRecommendations(
   // RECOMMENDATION 8: Smart Thermostat (always applicable, profile-based)
   if (!hasUsageData || estimatedUsage > 500) {
     const usageToUse = hasUsageData ? avgUsage : estimatedUsage;
-    const savings = Math.round(usageToUse * 0.10 * provincialData.currentPrice / 100);
-    
+    const savings = Math.round((usageToUse * 0.1 * provincialData.currentPrice) / 100);
+
     recommendations.push({
       id: 'smart-thermostat',
       category: 'upgrade',
       priority: 'medium',
       title: 'Install a Smart Thermostat',
-      description: 'Smart thermostats learn your schedule and can reduce heating/cooling costs by 10-15% automatically.',
+      description:
+        'Smart thermostats learn your schedule and can reduce heating/cooling costs by 10-15% automatically.',
       potentialSavings: {
         monthly: savings,
         annual: savings * 12,
-        kwh: Math.round(usageToUse * 0.10 * 12),
-        co2Reduction: Math.round(usageToUse * 0.10 * 12 * 0.13),
+        kwh: Math.round(usageToUse * 0.1 * 12),
+        co2Reduction: Math.round(usageToUse * 0.1 * 12 * 0.13),
       },
       effort: 'moderate',
       actionSteps: [
@@ -584,8 +584,8 @@ export function generateRecommendations(
   // RECOMMENDATION 10: General Energy Conservation (always applicable)
   if (!hasUsageData || recommendations.length < 3) {
     const usageToUse = hasUsageData ? avgUsage : estimatedUsage;
-    const savings = Math.round(usageToUse * 0.08 * provincialData.currentPrice / 100);
-    
+    const savings = Math.round((usageToUse * 0.08 * provincialData.currentPrice) / 100);
+
     recommendations.push({
       id: 'general-conservation',
       category: 'behavioral',
@@ -608,7 +608,7 @@ export function generateRecommendations(
         },
         {
           step: 'Unplug devices when not in use (phantom load)',
-          estimatedTime: '10 minutes daily',
+          estimatedTime: 'Time not measured',
           difficulty: 'easy',
           cost: 0,
         },
@@ -629,9 +629,7 @@ export function generateRecommendations(
   }
 
   // Sort by potential annual savings (highest first)
-  return recommendations.sort(
-    (a, b) => b.potentialSavings.annual - a.potentialSavings.annual
-  );
+  return recommendations.sort((a, b) => b.potentialSavings.annual - a.potentialSavings.annual);
 }
 
 /**
@@ -645,7 +643,7 @@ export function calculateTotalSavings(recommendations: Recommendation[]): Potent
       kwh: total.kwh + rec.potentialSavings.kwh,
       co2Reduction: total.co2Reduction + rec.potentialSavings.co2Reduction,
     }),
-    { monthly: 0, annual: 0, kwh: 0, co2Reduction: 0 }
+    { monthly: 0, annual: 0, kwh: 0, co2Reduction: 0 },
   );
 }
 
@@ -654,12 +652,12 @@ export function calculateTotalSavings(recommendations: Recommendation[]): Potent
  */
 export function filterByEffort(
   recommendations: Recommendation[],
-  maxEffort: 'easy' | 'moderate' | 'significant'
+  maxEffort: 'easy' | 'moderate' | 'significant',
 ): Recommendation[] {
   const effortRank = { easy: 1, moderate: 2, significant: 3 };
   const maxRank = effortRank[maxEffort];
-  
-  return recommendations.filter(rec => effortRank[rec.effort] <= maxRank);
+
+  return recommendations.filter((rec) => effortRank[rec.effort] <= maxRank);
 }
 
 /**
@@ -667,6 +665,6 @@ export function filterByEffort(
  */
 export function getQuickWins(recommendations: Recommendation[]): Recommendation[] {
   return recommendations.filter(
-    rec => rec.effort === 'easy' && rec.potentialSavings.annual > 100
+    (rec) => rec.effort === 'easy' && rec.potentialSavings.annual > 100,
   );
 }

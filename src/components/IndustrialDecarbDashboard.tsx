@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { Factory, Leaf, TrendingDown, AlertCircle, Gauge } from 'lucide-react';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import { HelpButton } from './HelpButton';
@@ -92,9 +101,7 @@ const downloadCsv = (rows: TableRow[], filename: string) => {
   };
 
   const header = columns.join(',');
-  const lines = rows.map((row) =>
-    columns.map((col) => escape(row[col])).join(',')
-  );
+  const lines = rows.map((row) => columns.map((col) => escape(row[col])).join(','));
 
   const csv = [header, ...lines].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -115,7 +122,9 @@ const IndustrialDecarbDashboard: React.FC = () => {
   const [edgeDisabled, setEdgeDisabled] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string>('All');
   const [selectedYear, setSelectedYear] = useState<string>('2023');
-  const [tableView, setTableView] = useState<'none' | 'facility_emissions' | 'methane_reduction' | 'obps_compliance' | 'efficiency_projects'>('none');
+  const [tableView, setTableView] = useState<
+    'none' | 'facility_emissions' | 'methane_reduction' | 'obps_compliance' | 'efficiency_projects'
+  >('none');
   const [tableRows, setTableRows] = useState<TableRow[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [tableError, setTableError] = useState<string | null>(null);
@@ -235,10 +244,12 @@ const IndustrialDecarbDashboard: React.FC = () => {
         <div className="flex items-start gap-3">
           <AlertCircle className="text-warning mt-0.5" size={24} />
           <div>
-            <h3 className="font-semibold text-yellow-900">Industrial decarbonization analytics are disabled</h3>
+            <h3 className="font-semibold text-yellow-900">
+              Industrial decarbonization analytics are disabled
+            </h3>
             <p className="text-sm text-warning mt-1">
-              Supabase Edge fetches are disabled in this environment. Configure Supabase Edge and enable
-              VITE_ENABLE_EDGE_FETCH to use the Industrial Decarbonization dashboard.
+              Supabase Edge fetches are disabled in this environment. Configure Supabase Edge and
+              enable VITE_ENABLE_EDGE_FETCH to use the Industrial Decarbonization dashboard.
             </p>
           </div>
         </div>
@@ -262,23 +273,134 @@ const IndustrialDecarbDashboard: React.FC = () => {
 
   // Fallback sample data for when API returns empty
   const SAMPLE_FACILITIES: FacilityEmission[] = [
-    { id: '1', facility_name: 'Syncrude Mildred Lake', operator: 'Syncrude Canada', province_code: 'AB', sector: 'Oil Sands', emissions_tonnes: 11200000, reporting_year: 2023, emission_intensity: 0.42 },
-    { id: '2', facility_name: 'Suncor Base Plant', operator: 'Suncor Energy', province_code: 'AB', sector: 'Oil Sands', emissions_tonnes: 9800000, reporting_year: 2023, emission_intensity: 0.38 },
-    { id: '3', facility_name: 'CNRL Horizon', operator: 'Canadian Natural Resources', province_code: 'AB', sector: 'Oil Sands', emissions_tonnes: 8500000, reporting_year: 2023, emission_intensity: 0.35 },
-    { id: '4', facility_name: 'Imperial Kearl', operator: 'Imperial Oil', province_code: 'AB', sector: 'Oil Sands', emissions_tonnes: 7200000, reporting_year: 2023, emission_intensity: 0.40 },
-    { id: '5', facility_name: 'Shell Scotford', operator: 'Shell Canada', province_code: 'AB', sector: 'Refining', emissions_tonnes: 4100000, reporting_year: 2023, emission_intensity: 0.28 },
+    {
+      id: '1',
+      facility_name: 'Syncrude Mildred Lake',
+      operator: 'Syncrude Canada',
+      province_code: 'AB',
+      sector: 'Oil Sands',
+      emissions_tonnes: 11200000,
+      reporting_year: 2023,
+      emission_intensity: 0.42,
+    },
+    {
+      id: '2',
+      facility_name: 'Suncor Base Plant',
+      operator: 'Suncor Energy',
+      province_code: 'AB',
+      sector: 'Oil Sands',
+      emissions_tonnes: 9800000,
+      reporting_year: 2023,
+      emission_intensity: 0.38,
+    },
+    {
+      id: '3',
+      facility_name: 'CNRL Horizon',
+      operator: 'Canadian Natural Resources',
+      province_code: 'AB',
+      sector: 'Oil Sands',
+      emissions_tonnes: 8500000,
+      reporting_year: 2023,
+      emission_intensity: 0.35,
+    },
+    {
+      id: '4',
+      facility_name: 'Imperial Kearl',
+      operator: 'Imperial Oil',
+      province_code: 'AB',
+      sector: 'Oil Sands',
+      emissions_tonnes: 7200000,
+      reporting_year: 2023,
+      emission_intensity: 0.4,
+    },
+    {
+      id: '5',
+      facility_name: 'Shell Scotford',
+      operator: 'Shell Canada',
+      province_code: 'AB',
+      sector: 'Refining',
+      emissions_tonnes: 4100000,
+      reporting_year: 2023,
+      emission_intensity: 0.28,
+    },
   ];
 
   const SAMPLE_METHANE: MethaneCompany[] = [
-    { id: '1', company: 'TC Energy', sector: 'Pipelines', baseline_year: 2019, baseline_methane_tonnes: 45000, current_year: 2023, current_methane_tonnes: 28000, reduction_percent: 37.8, target_2030_reduction_percent: 75, on_track: true },
-    { id: '2', company: 'Enbridge', sector: 'Pipelines', baseline_year: 2019, baseline_methane_tonnes: 38000, current_year: 2023, current_methane_tonnes: 26000, reduction_percent: 31.6, target_2030_reduction_percent: 75, on_track: true },
-    { id: '3', company: 'Pembina Pipeline', sector: 'Midstream', baseline_year: 2019, baseline_methane_tonnes: 22000, current_year: 2023, current_methane_tonnes: 16500, reduction_percent: 25.0, target_2030_reduction_percent: 75, on_track: false },
+    {
+      id: '1',
+      company: 'TC Energy',
+      sector: 'Pipelines',
+      baseline_year: 2019,
+      baseline_methane_tonnes: 45000,
+      current_year: 2023,
+      current_methane_tonnes: 28000,
+      reduction_percent: 37.8,
+      target_2030_reduction_percent: 75,
+      on_track: true,
+    },
+    {
+      id: '2',
+      company: 'Enbridge',
+      sector: 'Pipelines',
+      baseline_year: 2019,
+      baseline_methane_tonnes: 38000,
+      current_year: 2023,
+      current_methane_tonnes: 26000,
+      reduction_percent: 31.6,
+      target_2030_reduction_percent: 75,
+      on_track: true,
+    },
+    {
+      id: '3',
+      company: 'Pembina Pipeline',
+      sector: 'Midstream',
+      baseline_year: 2019,
+      baseline_methane_tonnes: 22000,
+      current_year: 2023,
+      current_methane_tonnes: 16500,
+      reduction_percent: 25.0,
+      target_2030_reduction_percent: 75,
+      on_track: false,
+    },
   ];
 
   const SAMPLE_EFFICIENCY: EfficiencyProject[] = [
-    { id: '1', project_name: 'Suncor Cogeneration Upgrade', company: 'Suncor Energy', facility_name: 'Base Plant', province_code: 'AB', project_type: 'Cogeneration', investment_cad: 850000000, annual_emissions_avoided_tonnes: 420000, annual_cost_savings_cad: 45000000, payback_period_years: 6.2 },
-    { id: '2', project_name: 'CNRL Carbon Capture Pilot', company: 'Canadian Natural Resources', facility_name: 'Horizon', province_code: 'AB', project_type: 'Carbon Capture', investment_cad: 1200000000, annual_emissions_avoided_tonnes: 680000, annual_cost_savings_cad: 0, payback_period_years: null },
-    { id: '3', project_name: 'Imperial Heat Recovery', company: 'Imperial Oil', facility_name: 'Kearl', province_code: 'AB', project_type: 'Heat Recovery', investment_cad: 320000000, annual_emissions_avoided_tonnes: 180000, annual_cost_savings_cad: 28000000, payback_period_years: 4.8 },
+    {
+      id: '1',
+      project_name: 'Suncor Cogeneration Upgrade',
+      company: 'Suncor Energy',
+      facility_name: 'Base Plant',
+      province_code: 'AB',
+      project_type: 'Cogeneration',
+      investment_cad: 850000000,
+      annual_emissions_avoided_tonnes: 420000,
+      annual_cost_savings_cad: 45000000,
+      payback_period_years: 6.2,
+    },
+    {
+      id: '2',
+      project_name: 'CNRL Carbon Capture Pilot',
+      company: 'Canadian Natural Resources',
+      facility_name: 'Horizon',
+      province_code: 'AB',
+      project_type: 'Carbon Capture',
+      investment_cad: 1200000000,
+      annual_emissions_avoided_tonnes: 680000,
+      annual_cost_savings_cad: 0,
+      payback_period_years: null,
+    },
+    {
+      id: '3',
+      project_name: 'Imperial Heat Recovery',
+      company: 'Imperial Oil',
+      facility_name: 'Kearl',
+      province_code: 'AB',
+      project_type: 'Heat Recovery',
+      investment_cad: 320000000,
+      annual_emissions_avoided_tonnes: 180000,
+      annual_cost_savings_cad: 28000000,
+      payback_period_years: 4.8,
+    },
   ];
 
   const SAMPLE_SUMMARY: OverviewSummary = {
@@ -292,11 +414,7 @@ const IndustrialDecarbDashboard: React.FC = () => {
   };
 
   if (!data) {
-    return (
-      <div className="text-center text-secondary p-8">
-        No data available
-      </div>
-    );
+    return <div className="text-center text-secondary p-8">No data available</div>;
   }
 
   const provinces = ['All', 'AB', 'SK', 'ON', 'QC', 'BC', 'MB'];
@@ -305,20 +423,22 @@ const IndustrialDecarbDashboard: React.FC = () => {
   // Use sample data if API returns empty arrays
   const facilities = data.top_facilities?.length > 0 ? data.top_facilities : SAMPLE_FACILITIES;
   const methaneLeaders = data.methane_leaders?.length > 0 ? data.methane_leaders : SAMPLE_METHANE;
-  const efficiencyProjectsList = data.top_efficiency_projects?.length > 0 ? data.top_efficiency_projects : SAMPLE_EFFICIENCY;
+  const efficiencyProjectsList =
+    data.top_efficiency_projects?.length > 0 ? data.top_efficiency_projects : SAMPLE_EFFICIENCY;
 
-  const emissionsByFacility = facilities.map(f => ({
-    facility: f.facility_name.length > 28 ? f.facility_name.substring(0, 28) + '...' : f.facility_name,
+  const emissionsByFacility = facilities.map((f) => ({
+    facility:
+      f.facility_name.length > 28 ? f.facility_name.substring(0, 28) + '...' : f.facility_name,
     operator: f.operator,
     emissions: Number(f.emissions_tonnes ?? 0) / 1000000,
   }));
 
-  const methaneReductions = methaneLeaders.map(m => ({
+  const methaneReductions = methaneLeaders.map((m) => ({
     company: m.company,
     reduction: Number(m.reduction_percent ?? 0),
   }));
 
-  const efficiencyProjects = efficiencyProjectsList.map(p => ({
+  const efficiencyProjects = efficiencyProjectsList.map((p) => ({
     project: p.project_name.length > 30 ? p.project_name.substring(0, 30) + '...' : p.project_name,
     avoided: Number(p.annual_emissions_avoided_tonnes ?? 0) / 1000000,
     investment: Number(p.investment_cad ?? 0) / 1000000000,
@@ -339,17 +459,22 @@ const IndustrialDecarbDashboard: React.FC = () => {
     return value.toFixed(1);
   };
 
-  const summary = (data.summary && data.summary.total_facility_emissions_tonnes !== undefined && data.summary.total_facility_emissions_tonnes > 0) 
-    ? data.summary 
-    : SAMPLE_SUMMARY;
+  const summary =
+    data.summary &&
+    data.summary.total_facility_emissions_tonnes !== undefined &&
+    data.summary.total_facility_emissions_tonnes > 0
+      ? data.summary
+      : SAMPLE_SUMMARY;
+
+  // Claims-integrity: sample rows must never render as real company data.
+  const isSampleData =
+    !(data.top_facilities?.length > 0) ||
+    !(data.methane_leaders?.length > 0) ||
+    !(data.summary && data.summary.total_facility_emissions_tonnes > 0);
 
   const renderTable = () => {
     if (tableLoading) {
-      return (
-        <div className="text-center text-secondary p-6">
-          Loading table data...
-        </div>
-      );
+      return <div className="text-center text-secondary p-6">Loading table data...</div>;
     }
 
     if (tableError) {
@@ -368,9 +493,7 @@ const IndustrialDecarbDashboard: React.FC = () => {
 
     if (!tableRows.length) {
       return (
-        <div className="text-center text-secondary p-6">
-          No records available for this view.
-        </div>
+        <div className="text-center text-secondary p-6">No records available for this view.</div>
       );
     }
 
@@ -424,8 +547,17 @@ const IndustrialDecarbDashboard: React.FC = () => {
                 <h1 className="hero-title">Industrial Decarbonization</h1>
               </div>
               <p className="hero-subtitle">
-                Facility-level emissions, methane reductions, OBPS compliance and efficiency projects across Canada
+                Facility-level emissions, methane reductions, OBPS compliance and efficiency
+                projects across Canada
               </p>
+              {isSampleData && (
+                <p
+                  className="mt-2 inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800"
+                  role="note"
+                >
+                  Sample data shown for illustration — not live facility figures
+                </p>
+              )}
             </div>
             <HelpButton id="page.industrial-decarb" />
           </div>
@@ -436,30 +568,30 @@ const IndustrialDecarbDashboard: React.FC = () => {
       <div className="card shadow p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Province
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Province</label>
             <select
               value={selectedProvince}
               onChange={(e) => setSelectedProvince(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              {provinces.map(p => (
-                <option key={p} value={p}>{p === 'All' ? 'All Provinces' : p}</option>
+              {provinces.map((p) => (
+                <option key={p} value={p}>
+                  {p === 'All' ? 'All Provinces' : p}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Year
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              {years.map(y => (
-                <option key={y} value={y}>{y === 'All' ? 'All Years' : y}</option>
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y === 'All' ? 'All Years' : y}
+                </option>
               ))}
             </select>
           </div>
@@ -503,11 +635,10 @@ const IndustrialDecarbDashboard: React.FC = () => {
             <div>
               <p className="metric-label text-tertiary">OBPS Credit Balance</p>
               <p className="metric-value text-primary mt-1">
-                +{formatTonnes(summary.total_obps_surplus_tonnes)} / -{formatTonnes(summary.total_obps_deficit_tonnes)} t
+                +{formatTonnes(summary.total_obps_surplus_tonnes)} / -
+                {formatTonnes(summary.total_obps_deficit_tonnes)} t
               </p>
-              <p className="text-xs text-tertiary mt-1">
-                Surplus vs deficit compliance units
-              </p>
+              <p className="text-xs text-tertiary mt-1">Surplus vs deficit compliance units</p>
             </div>
             <Gauge className="text-yellow-400" size={40} />
           </div>
@@ -536,7 +667,9 @@ const IndustrialDecarbDashboard: React.FC = () => {
             {emissionsByFacility.length > 0 && (
               <button
                 type="button"
-                onClick={() => downloadCsv(emissionsByFacility, 'industrial_top_emitting_facilities.csv')}
+                onClick={() =>
+                  downloadCsv(emissionsByFacility, 'industrial_top_emitting_facilities.csv')
+                }
                 className="px-3 py-1.5 text-xs font-medium rounded-md border border-[var(--border-medium)] bg-primary text-secondary hover:text-primary"
               >
                 Export CSV
@@ -546,7 +679,10 @@ const IndustrialDecarbDashboard: React.FC = () => {
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={emissionsByFacility} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" label={{ value: 'Mt CO2e', position: 'insideBottom', offset: -5 }} />
+              <XAxis
+                type="number"
+                label={{ value: 'Mt CO2e', position: 'insideBottom', offset: -5 }}
+              />
               <YAxis type="category" dataKey="facility" width={180} />
               <Tooltip formatter={(value: any) => `${formatMt(Number(value))} Mt`} />
               <Bar dataKey="emissions" fill="#F97316" name="Emissions" />
@@ -560,7 +696,9 @@ const IndustrialDecarbDashboard: React.FC = () => {
             <BarChart data={methaneReductions}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="company" />
-              <YAxis label={{ value: '% reduction vs baseline', angle: -90, position: 'insideLeft' }} />
+              <YAxis
+                label={{ value: '% reduction vs baseline', angle: -90, position: 'insideLeft' }}
+              />
               <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
               <Bar dataKey="reduction" fill="#22C55E" name="Reduction %" />
             </BarChart>
@@ -573,8 +711,16 @@ const IndustrialDecarbDashboard: React.FC = () => {
             <BarChart data={efficiencyProjects}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="project" angle={-35} textAnchor="end" height={80} />
-              <YAxis yAxisId="left" orientation="left" label={{ value: 'Mt CO2e/yr avoided', angle: -90, position: 'insideLeft' }} />
-              <YAxis yAxisId="right" orientation="right" label={{ value: 'Investment ($B CAD)', angle: 90, position: 'insideRight' }} />
+              <YAxis
+                yAxisId="left"
+                orientation="left"
+                label={{ value: 'Mt CO2e/yr avoided', angle: -90, position: 'insideLeft' }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                label={{ value: 'Investment ($B CAD)', angle: 90, position: 'insideRight' }}
+              />
               <Tooltip
                 formatter={(value: any, name: string) => {
                   if (name === 'avoided') {
@@ -603,7 +749,15 @@ const IndustrialDecarbDashboard: React.FC = () => {
               <button
                 key={v.id}
                 type="button"
-                onClick={() => setTableView(v.id as 'facility_emissions' | 'methane_reduction' | 'obps_compliance' | 'efficiency_projects')}
+                onClick={() =>
+                  setTableView(
+                    v.id as
+                      | 'facility_emissions'
+                      | 'methane_reduction'
+                      | 'obps_compliance'
+                      | 'efficiency_projects',
+                  )
+                }
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   tableView === v.id
                     ? 'bg-electric text-white shadow-sm'
@@ -635,13 +789,16 @@ const IndustrialDecarbDashboard: React.FC = () => {
       <div className="bg-secondary border border-emerald-300/60 rounded-lg p-4">
         <p className="text-sm text-secondary">
           Industrial decarbonization data is built primarily from Canada&apos;s
-          <span className="font-semibold"> National Pollutant Release Inventory (NPRI)</span> and related greenhouse gas
-          reporting programs, supplemented by company methane reduction disclosures, provincial and federal
-          <span className="font-semibold"> Output-Based Pricing System (OBPS)</span> compliance reports, and documented
-          <span className="font-semibold"> industrial efficiency projects</span> (e.g., EMRF/ERA-funded projects and major
-          company investments. Data is updated periodically as new NPRI years and public compliance reports are
-          released. For regulatory or investment-critical use, always verify key figures against the source NPRI and
-          OBPS documents.
+          <span className="font-semibold"> National Pollutant Release Inventory (NPRI)</span> and
+          related greenhouse gas reporting programs, supplemented by company methane reduction
+          disclosures, provincial and federal
+          <span className="font-semibold"> Output-Based Pricing System (OBPS)</span> compliance
+          reports, and documented
+          <span className="font-semibold"> industrial efficiency projects</span> (e.g.,
+          EMRF/ERA-funded projects and major company investments. Data is updated periodically as
+          new NPRI years and public compliance reports are released. For regulatory or
+          investment-critical use, always verify key figures against the source NPRI and OBPS
+          documents.
         </p>
       </div>
     </div>

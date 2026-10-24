@@ -18,6 +18,7 @@ const BASE_ACTIVE_PATHS = [
   'scripts/deploy-production.sh',
   'src',
   'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'docs/COMMERCIAL_STATUS.md',
   'docs/LINKEDIN_PROOF_BUNDLES.md',
   'docs/OPENCLAW_CONSOLE_KICKSTART_STRATEGY.md',
   'docs/Openclaw_outreach.md',
@@ -46,6 +47,19 @@ const REFERENCE_ONLY_FILES = new Set([
   'src/lib/quizData.ts',
   'src/lib/regulatoryTemplates.ts',
 ]);
+
+// Directories holding the same educational/reference content as the exempt
+// files above (helpContent.ts and moduleContent.ts were split into per-domain
+// modules under these roots; the exemption follows the content, not the path).
+const REFERENCE_ONLY_PREFIXES = [
+  'src/lib/helpContent/',
+  'src/lib/moduleContent/',
+];
+
+function isReferenceOnly(relative) {
+  return REFERENCE_ONLY_FILES.has(relative)
+    || REFERENCE_ONLY_PREFIXES.some((prefix) => relative.startsWith(prefix));
+}
 
 const BOUNDARY_CONTEXT = [
   /do not/i,
@@ -141,7 +155,7 @@ function collectFiles(targetPath) {
       const nextPath = path.join(current, entry.name);
       const relative = path.relative(repoRoot, nextPath);
       if (shouldSkipPath(relative)) continue;
-      if (REFERENCE_ONLY_FILES.has(relative)) continue;
+      if (isReferenceOnly(relative)) continue;
 
       if (entry.isDirectory()) {
         stack.push(nextPath);
@@ -166,7 +180,7 @@ const failures = [];
 
 for (const file of checkedFiles) {
   const relative = path.relative(repoRoot, file);
-  if (REFERENCE_ONLY_FILES.has(relative)) continue;
+  if (isReferenceOnly(relative)) continue;
   const lines = readFileSync(file, 'utf8').split(/\r?\n/);
 
   lines.forEach((line, index) => {

@@ -143,10 +143,7 @@ function BadgesPageContent() {
 
         {/* Badge Grid */}
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-          <BadgeGrid
-            badgeProgress={badgeProgress}
-            onBadgeClick={(bp) => setSelectedBadge(bp)}
-          />
+          <BadgeGrid badgeProgress={badgeProgress} onBadgeClick={(bp) => setSelectedBadge(bp)} />
         </div>
 
         {/* Badge Detail Modal (Simple version, not the earned celebration) */}
@@ -160,18 +157,12 @@ function BadgesPageContent() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
-                <div className="text-7xl mb-4">
-                  {selectedBadge.badge.icon || '🏆'}
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  {selectedBadge.badge.name}
-                </h2>
+                <div className="text-7xl mb-4">{selectedBadge.badge.icon || '🏆'}</div>
+                <h2 className="text-2xl font-bold text-white mb-2">{selectedBadge.badge.name}</h2>
                 <span className="inline-block px-3 py-1 bg-slate-900 text-cyan-400 text-xs font-semibold rounded-full uppercase mb-4">
                   {selectedBadge.badge.tier}
                 </span>
-                <p className="text-slate-300 mb-6">
-                  {selectedBadge.badge.description}
-                </p>
+                <p className="text-slate-300 mb-6">{selectedBadge.badge.description}</p>
 
                 {selectedBadge.earned ? (
                   <div className="bg-green-950 border border-green-700 rounded-lg p-4 mb-4">
@@ -181,8 +172,17 @@ function BadgesPageContent() {
                         new Date(selectedBadge.earnedAt).toLocaleDateString('en-CA', {
                           month: 'long',
                           day: 'numeric',
-                          year: 'numeric'
+                          year: 'numeric',
                         })}
+                    </div>
+                  </div>
+                ) : selectedBadge.tracked === false ? (
+                  <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 mb-4">
+                    <div className="text-slate-400 font-semibold mb-1">
+                      Progress tracking not yet live
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      We are not measuring progress toward this badge yet.
                     </div>
                   </div>
                 ) : (

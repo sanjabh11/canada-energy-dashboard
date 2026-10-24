@@ -1,323 +1,81 @@
-/**
- * Competitive Comparison Page (M5)
- * Based on Value Proposition Research Dec 2025
- * 
- * Purpose: SEO-optimized comparison vs. Carbonhound, Measurabl, Energy Toolbase
- * Shows why CEIP wins for Canadian energy compliance
- */
-
 import React from 'react';
-import {
-    CheckCircle,
-    XCircle,
-    Minus,
-    ArrowRight,
-    Shield,
-    Zap,
-    Building2,
-    DollarSign,
-    Globe,
-    Leaf
-} from 'lucide-react';
+import { ArrowRight, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
 
-interface CompetitorFeature {
-    feature: string;
-    ceip: 'yes' | 'no' | 'partial';
-    energyToolbase: 'yes' | 'no' | 'partial';
-    carbonhound: 'yes' | 'no' | 'partial';
-    measurabl: 'yes' | 'no' | 'partial';
-    importance: 'critical' | 'high' | 'medium';
-}
+/**
+ * Keep the public comparison route available without publishing unsourced
+ * competitor rankings, prices, or capability gaps.
+ */
+export const CompetitorComparison: React.FC = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+    <SEOHead
+      title="Energy Product Comparison Research | CEIP"
+      description="CEIP is reviewing primary-source evidence before publishing comparative capability or price claims."
+      path="/compare"
+      keywords={['energy product research', 'Alberta TIER workflow research']}
+    />
+    <main className="max-w-4xl mx-auto px-6 py-20">
+      <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-4 py-2 text-sm text-amber-300">
+        <Shield className="h-4 w-4" />
+        Comparative research in progress
+      </div>
+      <h1 className="mt-6 text-4xl font-bold">Capability and price comparisons are under review</h1>
+      <p className="mt-5 text-lg leading-8 text-slate-300">
+        We are not publishing competitor rankings, pricing comparisons, or claims that another
+        product lacks a capability without dated primary-source evidence for comparable scope.
+      </p>
 
-const FEATURES: CompetitorFeature[] = [
-    { feature: 'Alberta TIER source-dated pathway comparison', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'critical' },
-    { feature: 'TIER credit-banking planning pack', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'critical' },
-    { feature: 'Direct Investment sensitivity workflow', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'critical' },
-    { feature: 'OCAP-aligned reporting workflow markers', ceip: 'partial', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'high' },
-    { feature: 'RoLR 12¢ Benchmark Comparison', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'high' },
-    { feature: 'NWPTA Procurement-Ready Pricing', ceip: 'yes', energyToolbase: 'no', carbonhound: 'partial', measurabl: 'partial', importance: 'high' },
-    { feature: 'CAD-Native Billing (Paddle MoR)', ceip: 'yes', energyToolbase: 'no', carbonhound: 'yes', measurabl: 'no', importance: 'high' },
-    { feature: 'Live-when-available AESO pool price display', ceip: 'partial', energyToolbase: 'partial', carbonhound: 'no', measurabl: 'no', importance: 'high' },
-    { feature: 'Methane Quantification (AB Protocol)', ceip: 'yes', energyToolbase: 'no', carbonhound: 'partial', measurabl: 'no', importance: 'high' },
-    { feature: 'FCM/AICEI Grant Templates', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'medium' },
-    { feature: 'Professional Certification LMS', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'no', importance: 'medium' },
-    { feature: 'Bank-Ready Export (TD/RBC)', ceip: 'yes', energyToolbase: 'no', carbonhound: 'no', measurabl: 'partial', importance: 'medium' },
-    { feature: 'Solar/Storage Project Modeling', ceip: 'partial', energyToolbase: 'yes', carbonhound: 'no', measurabl: 'no', importance: 'medium' },
-    { feature: 'Scope 1/2/3 Carbon Accounting', ceip: 'partial', energyToolbase: 'no', carbonhound: 'yes', measurabl: 'yes', importance: 'medium' },
-    { feature: 'GRESB/CDP Real Estate Reporting', ceip: 'no', energyToolbase: 'no', carbonhound: 'partial', measurabl: 'yes', importance: 'medium' },
-];
+      <section
+        className="mt-10 rounded-2xl border border-slate-700 bg-slate-800/60 p-6"
+        aria-labelledby="evidence-status"
+      >
+        <h2 id="evidence-status" className="text-xl font-semibold">
+          Current evidence status
+        </h2>
+        <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm text-slate-400">Primary sources reviewed</dt>
+            <dd className="mt-1">One official Orennia product page, reviewed 2026-10-05</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-slate-400">TIER-specific competitor capability</dt>
+            <dd className="mt-1">Unknown; no capability-gap claim is made</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-slate-400">Competitor pricing and buyer outcomes</dt>
+            <dd className="mt-1">Unknown; no comparison is published</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-slate-400">CEIP buyer validation</dt>
+            <dd className="mt-1">
+              Not completed; TIER remains a desk-research-only pilot hypothesis
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-5 text-sm text-slate-400">
+          Source:{' '}
+          <a
+            className="text-cyan-300 underline"
+            href="https://orennia.com/how-we-help"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Orennia — How We Help
+          </a>
+          . That source does not establish whether Orennia provides a facility-specific Alberta TIER
+          scenario memo.
+        </p>
+      </section>
 
-const COMPETITORS = [
-    {
-        id: 'ceip',
-        name: 'CEIP',
-        fullName: 'Canada Energy Intelligence Platform',
-        pricing: '$9 - $5,900/mo',
-        focus: 'Canadian Compliance & Sovereignty',
-        color: 'emerald'
-    },
-    {
-        id: 'energyToolbase',
-        name: 'Energy Toolbase',
-        fullName: 'Energy Toolbase',
-        pricing: '$170 - $224 USD/mo',
-        focus: 'Solar & Storage Modeling',
-        color: 'slate'
-    },
-    {
-        id: 'carbonhound',
-        name: 'Carbonhound',
-        fullName: 'Carbonhound',
-        pricing: '$50 - $300 USD/mo',
-        focus: 'SME Carbon Accounting',
-        color: 'slate'
-    },
-    {
-        id: 'measurabl',
-        name: 'Measurabl',
-        fullName: 'Measurabl',
-        pricing: 'Free - $25/building/mo',
-        focus: 'Real Estate ESG',
-        color: 'slate'
-    },
-];
-
-const StatusIcon: React.FC<{ status: 'yes' | 'no' | 'partial' }> = ({ status }) => {
-    switch (status) {
-        case 'yes':
-            return <CheckCircle className="h-5 w-5 text-emerald-400" />;
-        case 'no':
-            return <XCircle className="h-5 w-5 text-red-400" />;
-        case 'partial':
-            return <Minus className="h-5 w-5 text-yellow-400" />;
-    }
-};
-
-export const CompetitorComparison: React.FC = () => {
-    const ceipWins = FEATURES.filter(f => f.ceip === 'yes' && f.importance === 'critical').length;
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-            <SEOHead
-                title="CEIP vs Competitors | Energy Toolbase, Carbonhound, Measurabl Comparison"
-                description="Compare CEIP against Energy Toolbase, Carbonhound, and Measurabl. Contrast Canadian TIER workflow support, OCAP-aligned reporting workflows, and buyer-facing proof artifacts."
-                path="/compare"
-                keywords={['CEIP vs Carbonhound', 'CEIP vs Energy Toolbase', 'Canadian energy platform comparison', 'TIER compliance software comparison', 'best energy analytics Canada']}
-            />
-            {/* Hero */}
-            <header className="px-6 py-16 text-center">
-                <div className="max-w-4xl mx-auto">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600/20 rounded-full text-emerald-400 text-sm font-medium mb-6">
-                        <Shield className="h-4 w-4" />
-                        Canadian Compliance Proof-Pack Workflows
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        Where CEIP Is Strongest for Canadian
-                        <span className="block text-emerald-400">Energy Intelligence</span>
-                    </h1>
-                    <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-                        Compare CEIP against adjacent tools across Canadian energy data,
-                        TIER workflow support, municipal reporting, and stakeholder-ready proof packs
-                    </p>
-                </div>
-            </header>
-
-            {/* Quick Stats */}
-            <div className="max-w-6xl mx-auto px-6 mb-12">
-                <div className="grid md:grid-cols-4 gap-6">
-                    <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-bold text-emerald-400">{ceipWins}</div>
-                        <div className="text-sm text-slate-400 mt-1">Critical proof workflows CEIP focuses on</div>
-                    </div>
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-bold text-white">TIER</div>
-                        <div className="text-sm text-slate-400 mt-1">Pathway comparison focus for Alberta compliance workflows</div>
-                    </div>
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-bold text-white">API</div>
-                        <div className="text-sm text-slate-400 mt-1">Consultant-friendly access and enterprise upgrade path</div>
-                    </div>
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-bold text-white">&lt;$75k</div>
-                        <div className="text-sm text-slate-400 mt-1">Municipal pricing positioned for simpler procurement review</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Comparison Table */}
-            <div className="max-w-6xl mx-auto px-6 mb-16">
-                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-slate-700">
-                                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Feature</th>
-                                    {COMPETITORS.map(comp => (
-                                        <th key={comp.id} className={`text-center py-4 px-4 ${comp.id === 'ceip' ? 'bg-emerald-900/20' : ''
-                                            }`}>
-                                            <div className={`font-bold ${comp.id === 'ceip' ? 'text-emerald-400' : 'text-white'}`}>
-                                                {comp.name}
-                                            </div>
-                                            <div className="text-xs text-slate-400 mt-1">{comp.pricing}</div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {FEATURES.map((feature, idx) => (
-                                    <tr
-                                        key={idx}
-                                        className={`border-b border-slate-700/50 ${feature.importance === 'critical' ? 'bg-slate-700/20' : ''
-                                            }`}
-                                    >
-                                        <td className="py-4 px-6">
-                                            <div className="flex items-center gap-2">
-                                                {feature.importance === 'critical' && (
-                                                    <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded">CRITICAL</span>
-                                                )}
-                                                <span className="text-white">{feature.feature}</span>
-                                            </div>
-                                        </td>
-                                        <td className="text-center py-4 px-4 bg-emerald-900/10">
-                                            <div className="flex justify-center">
-                                                <StatusIcon status={feature.ceip} />
-                                            </div>
-                                        </td>
-                                        <td className="text-center py-4 px-4">
-                                            <div className="flex justify-center">
-                                                <StatusIcon status={feature.energyToolbase} />
-                                            </div>
-                                        </td>
-                                        <td className="text-center py-4 px-4">
-                                            <div className="flex justify-center">
-                                                <StatusIcon status={feature.carbonhound} />
-                                            </div>
-                                        </td>
-                                        <td className="text-center py-4 px-4">
-                                            <div className="flex justify-center">
-                                                <StatusIcon status={feature.measurabl} />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Legend */}
-                    <div className="p-4 border-t border-slate-700 flex items-center justify-center gap-8 text-sm">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-emerald-400" />
-                            <span className="text-slate-400">Full Support</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Minus className="h-4 w-4 text-yellow-400" />
-                            <span className="text-slate-400">Partial/Limited</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <XCircle className="h-4 w-4 text-red-400" />
-                            <span className="text-slate-400">Not Supported</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Why CEIP Wins */}
-            <div className="max-w-6xl mx-auto px-6 mb-16">
-                <h2 className="text-2xl font-bold text-white text-center mb-8">
-                    Where CEIP Has a Practical Edge
-                </h2>
-                <div className="grid md:grid-cols-3 gap-6">
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                        <div className="p-3 bg-emerald-600/20 rounded-xl inline-block mb-4">
-                            <DollarSign className="h-8 w-8 text-emerald-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-white mb-2">TIER Pathway Review</h3>
-                        <p className="text-slate-400 text-sm">
-                            Model fund-payment, market-credit, and direct-investment scenarios against disclosed source-dated inputs.
-                            CEIP still requires buyer-specific pricing refresh before external approval.
-                        </p>
-                    </div>
-
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                        <div className="p-3 bg-blue-600/20 rounded-xl inline-block mb-4">
-                            <Shield className="h-8 w-8 text-blue-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-white mb-2">OCAP-aligned workflow support</h3>
-                        <p className="text-slate-400 text-sm">
-                            CEIP includes governance, FPIC, and owner-supplied review markers in its Indigenous reporting flows.
-                            That is different from claiming certified sovereignty infrastructure or Nation-controlled hosting.
-                        </p>
-                    </div>
-
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                        <div className="p-3 bg-amber-600/20 rounded-xl inline-block mb-4">
-                            <Building2 className="h-8 w-8 text-amber-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-white mb-2">Procurement-Ready</h3>
-                        <p className="text-slate-400 text-sm">
-                            Pilot pricing can be scoped below common procurement thresholds, while each buyer's procurement rules
-                            and approval process still govern.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* CTA */}
-            <div className="max-w-4xl mx-auto px-6 pb-16">
-                <div className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border-2 border-emerald-500 rounded-2xl p-8 text-center">
-                    <h2 className="text-2xl font-bold text-white mb-4">
-                        Ready to Pilot a Canadian Proof Pack?
-                    </h2>
-                    <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
-                        Start with one bounded artifact: TIER savings, utility planning, regulatory filing,
-                        asset capex, billing review, or OCAP-aligned reporting support.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link
-                            to="/roi-calculator"
-                            className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition-all inline-flex items-center justify-center gap-2"
-                        >
-                            Calculate Your Savings
-                            <ArrowRight className="h-5 w-5" />
-                        </Link>
-                        <Link
-                            to="/pricing"
-                            className="px-8 py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-medium text-white transition-all inline-flex items-center justify-center gap-2"
-                        >
-                            View Pricing
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
-            {/* Cross-Links */}
-            <section className="py-12 border-t border-slate-800">
-                <div className="max-w-4xl mx-auto px-6 text-center space-y-3">
-                    <p className="text-slate-400">
-                        <Link to="/pricing" className="text-emerald-400 hover:underline">See all pricing tiers →</Link>
-                        {' • '}
-                        <Link to="/roi-calculator" className="text-emerald-400 hover:underline">Calculate TIER savings →</Link>
-                        {' • '}
-                        <Link to="/municipal" className="text-emerald-400 hover:underline">Municipal solutions →</Link>
-                    </p>
-                </div>
-            </section>
-
-            {/* SEO Footer */}
-            <footer className="border-t border-slate-800 py-8 px-6 text-center text-sm text-slate-500">
-                <p>
-                    Comparing CEIP to Energy Toolbase, Carbonhound, and Measurabl for Canadian energy compliance,
-                    Alberta TIER planning, OCAP-aligned reporting workflows, and municipal climate action planning.
-                </p>
-                <p className="mt-2">
-                    © {new Date().getFullYear()} Canada Energy Intelligence Platform. Built for Canada. Priced for Procurement.
-                </p>
-            </footer>
-        </div>
-    );
-};
+      <Link
+        to="/roi-calculator"
+        className="mt-8 inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200"
+      >
+        Review the current TIER scenario hypothesis <ArrowRight className="h-4 w-4" />
+      </Link>
+    </main>
+  </div>
+);
 
 export default CompetitorComparison;

@@ -15,7 +15,12 @@ export interface Badge {
   tier: 'bronze' | 'silver' | 'gold' | 'platinum';
   icon: string;
   criteria: {
-    type: 'module_complete' | 'tour_complete' | 'certificate_complete' | 'webinar_attend' | 'streak_days';
+    type:
+      | 'module_complete'
+      | 'tour_complete'
+      | 'certificate_complete'
+      | 'webinar_attend'
+      | 'streak_days';
     required_count?: number;
     specific_ids?: string[];
   };
@@ -40,11 +45,26 @@ export interface BadgeProgress {
   badge: Badge;
   earned: boolean;
   earnedAt?: string;
+  /**
+   * False when the badge's criteria type has no implemented tracking source.
+   * UI must render "tracking not yet live" rather than a fake 0/N bar.
+   */
+  tracked?: boolean;
   progress: {
     current: number;
     total: number;
     percentage: number;
   };
+}
+
+/**
+ * Criteria types backed by a real tracking source. Everything else is
+ * reported as untracked instead of silently showing 0 progress (audit F-12).
+ */
+const TRACKED_CRITERIA_TYPES: ReadonlySet<Badge['criteria']['type']> = new Set(['tour_complete']);
+
+function isCriteriaTracked(type: Badge['criteria']['type']): boolean {
+  return TRACKED_CRITERIA_TYPES.has(type);
 }
 
 /**
@@ -70,14 +90,18 @@ export async function getAllBadges(): Promise<{ badges: Badge[]; error: Error | 
 /**
  * Get user's earned badges
  */
-export async function getUserBadges(userId: string): Promise<{ userBadges: UserBadge[]; error: Error | null }> {
+export async function getUserBadges(
+  userId: string,
+): Promise<{ userBadges: UserBadge[]; error: Error | null }> {
   try {
     const { data, error } = await supabase
       .from('user_badges')
-      .select(`
+      .select(
+        `
         *,
         badge:badges(*)
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .order('earned_at', { ascending: false });
 
@@ -93,7 +117,9 @@ export async function getUserBadges(userId: string): Promise<{ userBadges: UserB
 /**
  * Get badge progress for a user across all badges
  */
-export async function getBadgeProgress(userId: string): Promise<{ progress: BadgeProgress[]; error: Error | null }> {
+export async function getBadgeProgress(
+  userId: string,
+): Promise<{ progress: BadgeProgress[]; error: Error | null }> {
   try {
     // Guest users cannot have badge progress - return sample badges without progress
     if (!userId || userId.startsWith('guest_')) {
@@ -108,10 +134,11 @@ export async function getBadgeProgress(userId: string): Promise<{ progress: Badg
             tier: 'bronze',
             icon: '🚀',
             criteria: { type: 'tour_complete', required_count: 1 },
-            points: 50
+            points: 50,
           },
           earned: false,
-          progress: { current: 0, total: 1, percentage: 0 }
+          tracked: false,
+          progress: { current: 0, total: 1, percentage: 0 },
         },
         {
           badge: {
@@ -122,10 +149,11 @@ export async function getBadgeProgress(userId: string): Promise<{ progress: Badg
             tier: 'silver',
             icon: '⚡',
             criteria: { type: 'module_complete', required_count: 3 },
-            points: 100
+            points: 100,
           },
           earned: false,
-          progress: { current: 0, total: 3, percentage: 0 }
+          tracked: false,
+          progress: { current: 0, total: 3, percentage: 0 },
         },
         {
           badge: {
@@ -136,11 +164,12 @@ export async function getBadgeProgress(userId: string): Promise<{ progress: Badg
             tier: 'gold',
             icon: '📜',
             criteria: { type: 'certificate_complete', required_count: 1 },
-            points: 200
+            points: 200,
           },
           earned: false,
-          progress: { current: 0, total: 1, percentage: 0 }
-        }
+          tracked: false,
+          progress: { current: 0, total: 1, percentage: 0 },
+        },
       ];
       return { progress: sampleBadges, error: null };
     }
@@ -163,8 +192,8 @@ export async function getBadgeProgress(userId: string): Promise<{ progress: Badg
     if (userError) throw userError;
 
     // Calculate progress for each badge
-    const progress: BadgeProgress[] = badges.map(badge => {
-      const userBadge = userBadges.find(ub => ub.badge_id === badge.id);
+    const progress: BadgeProgress[] = badges.map((badge) => {
+      const userBadge = userBadges.find((ub) => ub.badge_id === badge.id);
 
       if (userBadge) {
         // Badge already earned
@@ -175,46 +204,40 @@ export async function getBadgeProgress(userId: string): Promise<{ progress: Badg
           progress: {
             current: badge.criteria.required_count || 1,
             total: badge.criteria.required_count || 1,
-            percentage: 100
-          }
+            percentage: 100,
+          },
         };
       }
 
       // Calculate current progress based on criteria type
       let current = 0;
       const total = badge.criteria.required_count || 1;
+      const tracked = isCriteriaTracked(badge.criteria.type);
 
       switch (badge.criteria.type) {
         case 'tour_complete':
-          // Check if tour completion is tracked (you'll implement this)
           current = edubizUser?.tour_completed ? 1 : 0;
           break;
         case 'module_complete':
-          // Count completed modules (you'll implement this)
-          current = 0; // TODO: Implement module tracking
-          break;
         case 'certificate_complete':
-          // Count completed certificates
-          current = 0; // TODO: Implement certificate tracking
-          break;
         case 'webinar_attend':
-          // Count attended webinars
-          current = 0; // TODO: Implement webinar tracking
-          break;
         case 'streak_days':
-          // Calculate login streak
-          current = 0; // TODO: Implement streak tracking
+          // No tracking source exists for this criteria type yet; the badge is
+          // reported as untracked so the UI can disclose that instead of
+          // presenting 0 progress as a real measurement.
+          current = 0;
           break;
       }
 
       return {
         badge,
         earned: false,
+        tracked,
         progress: {
           current: Math.min(current, total),
           total,
-          percentage: Math.min((current / total) * 100, 100)
-        }
+          percentage: tracked ? Math.min((current / total) * 100, 100) : 0,
+        },
       };
     });
 
@@ -238,7 +261,7 @@ export async function awardBadge(
     moduleId?: string;
     trackSlug?: string;
     trackId?: string;
-  }
+  },
 ): Promise<{ userBadge: UserBadge | null; alreadyEarned: boolean; error: Error | null }> {
   try {
     // Get badge by slug
@@ -269,12 +292,14 @@ export async function awardBadge(
       .insert({
         user_id: userId,
         badge_id: badge.id,
-        progress_data: progressData || {}
+        progress_data: progressData || {},
       })
-      .select(`
+      .select(
+        `
         *,
         badge:badges(*)
-      `)
+      `,
+      )
       .single();
 
     if (insertError) throw insertError;
@@ -292,8 +317,9 @@ export async function awardBadge(
  */
 export async function checkAndAwardBadge(
   userId: string,
-  eventType: 'tour_complete' | 'module_complete' | 'certificate_complete' | 'webinar_attend' | 'login',
-  eventData?: { moduleId?: string; certificateId?: string; webinarId?: string }
+  eventType:
+    'tour_complete' | 'module_complete' | 'certificate_complete' | 'webinar_attend' | 'login',
+  eventData?: { moduleId?: string; certificateId?: string; webinarId?: string },
 ): Promise<{ awarded: boolean; badge?: Badge; error: Error | null }> {
   try {
     // Get all badges that match this event type
@@ -311,7 +337,7 @@ export async function checkAndAwardBadge(
     const { userBadges, error: userBadgesError } = await getUserBadges(userId);
     if (userBadgesError) throw userBadgesError;
 
-    const earnedBadgeIds = userBadges.map(ub => ub.badge_id);
+    const earnedBadgeIds = userBadges.map((ub) => ub.badge_id);
 
     // Check each matching badge
     for (const badge of matchingBadges) {
@@ -326,28 +352,21 @@ export async function checkAndAwardBadge(
           criteriaMet = true; // Tour completion is a one-time event
           break;
         case 'module_complete':
-          // TODO: Check if required number of modules completed
-          criteriaMet = false;
-          break;
         case 'certificate_complete':
-          // TODO: Check if required certificate completed
-          criteriaMet = false;
-          break;
         case 'webinar_attend':
-          // TODO: Check if required number of webinars attended
-          criteriaMet = false;
-          break;
         case 'login':
-          // TODO: Check login streak
+          // No tracking source exists for this event type yet; the badge
+          // simply cannot be earned until tracking lands.
           criteriaMet = false;
           break;
       }
 
       if (criteriaMet) {
-        const { userBadge, alreadyEarned, error: awardError } = await awardBadge(
-          userId,
-          badge.slug
-        );
+        const {
+          userBadge,
+          alreadyEarned,
+          error: awardError,
+        } = await awardBadge(userId, badge.slug);
 
         if (awardError) throw awardError;
         if (!alreadyEarned && userBadge) {
@@ -374,7 +393,7 @@ export function getBadgeTierConfig(tier: 'bronze' | 'silver' | 'gold' | 'platinu
       borderColor: 'border-orange-300',
       gradientFrom: 'from-orange-400',
       gradientTo: 'to-orange-600',
-      icon: '🥉'
+      icon: '🥉',
     },
     silver: {
       color: 'text-slate-600',
@@ -382,7 +401,7 @@ export function getBadgeTierConfig(tier: 'bronze' | 'silver' | 'gold' | 'platinu
       borderColor: 'border-slate-300',
       gradientFrom: 'from-slate-400',
       gradientTo: 'to-slate-600',
-      icon: '🥈'
+      icon: '🥈',
     },
     gold: {
       color: 'text-yellow-600',
@@ -390,7 +409,7 @@ export function getBadgeTierConfig(tier: 'bronze' | 'silver' | 'gold' | 'platinu
       borderColor: 'border-yellow-300',
       gradientFrom: 'from-yellow-400',
       gradientTo: 'to-yellow-600',
-      icon: '🥇'
+      icon: '🥇',
     },
     platinum: {
       color: 'text-purple-600',
@@ -398,8 +417,8 @@ export function getBadgeTierConfig(tier: 'bronze' | 'silver' | 'gold' | 'platinu
       borderColor: 'border-purple-300',
       gradientFrom: 'from-purple-400',
       gradientTo: 'to-purple-600',
-      icon: '💎'
-    }
+      icon: '💎',
+    },
   };
 
   return configs[tier] || configs.bronze;

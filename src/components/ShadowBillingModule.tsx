@@ -26,10 +26,7 @@ import {
   buildShadowBillingProofBundle,
   type ShadowBillingSourceMode,
 } from '../lib/shadowBillingProofPack';
-import {
-  downloadTextArtifact,
-  renderHtmlProofDocument,
-} from '../lib/proofPack';
+import { downloadTextArtifact, renderHtmlProofDocument } from '../lib/proofPack';
 
 export const ShadowBillingModule: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -46,40 +43,44 @@ export const ShadowBillingModule: React.FC = () => {
       if (artifact.id === 'shadow-billing-memo') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
-            'text/html;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+              'text/html;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'shadow-billing-delta-csv') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            buildShadowBillingDeltaCsv(analysis),
-            'text/csv;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              buildShadowBillingDeltaCsv(analysis),
+              'text/csv;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'shadow-billing-field-map') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            buildShadowBillingFieldMapMarkdown(),
-            'text/markdown;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              buildShadowBillingFieldMapMarkdown(),
+              'text/markdown;charset=utf-8;',
+            ),
         };
       }
       return {
         ...artifact,
-        onDownload: () => downloadTextArtifact(
-          artifact,
-          buildShadowBillingExecutiveMarkdown(analysis),
-          'text/markdown;charset=utf-8;',
-        ),
+        onDownload: () =>
+          downloadTextArtifact(
+            artifact,
+            buildShadowBillingExecutiveMarkdown(analysis),
+            'text/markdown;charset=utf-8;',
+          ),
       };
     });
   }, [analysis, proofBundle.artifacts, sourceMode]);
@@ -104,7 +105,9 @@ export const ShadowBillingModule: React.FC = () => {
       setImportError(null);
       setShowDetails(true);
     } catch (error) {
-      setImportError(error instanceof Error ? error.message : 'Unable to parse the bill comparison file.');
+      setImportError(
+        error instanceof Error ? error.message : 'Unable to parse the bill comparison file.',
+      );
     } finally {
       event.target.value = '';
     }
@@ -117,7 +120,9 @@ export const ShadowBillingModule: React.FC = () => {
   }
 
   function loadConstructedScenario() {
-    const constructed = parseShadowBillingCsv(SHADOW_BILLING_CONSTRUCTED_SCENARIO.downloads[0].content);
+    const constructed = parseShadowBillingCsv(
+      SHADOW_BILLING_CONSTRUCTED_SCENARIO.downloads[0].content,
+    );
     setRecords(constructed);
     setSourceMode('constructed_commercial_scenario');
     setImportError(null);
@@ -127,16 +132,18 @@ export const ShadowBillingModule: React.FC = () => {
   function downloadStarterTemplate() {
     const starterCsv = [
       'billing_period,consumption_kwh,actual_energy_rate_cents_per_kwh,actual_supply_cost_cad,fixed_charge_cad,retailer_name,rolr_rate_cents_per_kwh,pool_price_cents_per_kwh',
-      ...buildStarterShadowBills().map((record) => [
-        record.billingPeriod,
-        record.consumptionKwh,
-        record.actualEnergyRateCentsPerKwh.toFixed(2),
-        record.actualSupplyCostCad.toFixed(2),
-        (record.fixedChargeCad ?? 0).toFixed(2),
-        `"${record.retailerName ?? ''}"`,
-        record.rolrRateCentsPerKwh.toFixed(2),
-        record.poolPriceCentsPerKwh.toFixed(2),
-      ].join(',')),
+      ...buildStarterShadowBills().map((record) =>
+        [
+          record.billingPeriod,
+          record.consumptionKwh,
+          record.actualEnergyRateCentsPerKwh.toFixed(2),
+          record.actualSupplyCostCad.toFixed(2),
+          (record.fixedChargeCad ?? 0).toFixed(2),
+          `"${record.retailerName ?? ''}"`,
+          record.rolrRateCentsPerKwh.toFixed(2),
+          record.poolPriceCentsPerKwh.toFixed(2),
+        ].join(','),
+      ),
     ].join('\n');
 
     downloadTextArtifact(
@@ -160,7 +167,8 @@ export const ShadowBillingModule: React.FC = () => {
         claimLabel: 'advisory',
         isFallback: true,
         freshnessState: 'starter-template',
-        boundedClaimsDisclaimer: 'Populate this file with the buyer’s last 12 bills before using it in a paid pilot.',
+        boundedClaimsDisclaimer:
+          'Populate this file with the buyer’s last 12 bills before using it in a paid pilot.',
       },
       starterCsv,
       'text/csv;charset=utf-8;',
@@ -176,10 +184,13 @@ export const ShadowBillingModule: React.FC = () => {
               <RefreshCcw className="h-10 w-10 text-amber-400" />
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Municipal and facilities wedge</div>
-              <h1 className="mt-2 text-3xl font-bold text-white">Shadow Billing Module</h1>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
+                Municipal and facilities wedge
+              </div>
+              <h1 className="mt-2 text-3xl font-bold text-slate-50">Shadow Billing Module</h1>
               <p className="mt-2 max-w-3xl text-lg text-slate-300">
-                Review the last 12 bills against Alberta&apos;s disclosed RoLR comparison path without overclaiming full delivered-bill parity.
+                Review the last 12 bills against Alberta&apos;s disclosed RoLR comparison path
+                without overclaiming full delivered-bill parity.
               </p>
             </div>
           </div>
@@ -212,36 +223,43 @@ export const ShadowBillingModule: React.FC = () => {
           className="mb-6"
         />
 
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="space-y-6">
-            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6" data-testid="shadow-billing-upload-panel">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+          <section className="min-w-0 space-y-6">
+            <div
+              className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6"
+              data-testid="shadow-billing-upload-panel"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">1. Upload bill history</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Upload a 12-month invoice file with consumption, supply rate, supply cost, and optional fixed charges.
+                  <h2 className="text-lg font-semibold text-slate-50">1. Upload bill history</h2>
+                  <p className="mt-1 text-sm text-slate-300">
+                    Upload a 12-month invoice file with consumption, supply rate, supply cost, and
+                    optional fixed charges.
                   </p>
                 </div>
                 <Building2 className="h-5 w-5 text-cyan-300" />
               </div>
 
               <div className="mt-4 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5">
-                <label className="flex cursor-pointer flex-col items-center gap-3 text-center">
+                <label className="flex min-w-0 w-full cursor-pointer flex-col items-center gap-3 text-center">
                   <Upload className="h-8 w-8 text-cyan-300" />
-                  <div>
-                    <div className="font-medium text-white">Upload 12-month billing CSV</div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      Required columns: `billing_period`, `consumption_kwh`, `actual_energy_rate_cents_per_kwh`, `actual_supply_cost_cad`.
+                  <div className="min-w-0 max-w-full break-words">
+                    <div className="font-medium text-slate-50">Upload 12-month billing CSV</div>
+                    <div className="mt-1 text-xs text-slate-300">
+                      Required columns: `billing_period`, `consumption_kwh`,
+                      `actual_energy_rate_cents_per_kwh`, `actual_supply_cost_cad`.
                     </div>
                   </div>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept=".csv,text/csv"
-                    className="hidden"
+                    className="sr-only"
                     onChange={handleImport}
                   />
-                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">Select billing file</span>
+                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-950">
+                    Select billing file
+                  </span>
                 </label>
               </div>
 
@@ -251,27 +269,33 @@ export const ShadowBillingModule: React.FC = () => {
                 </div>
               )}
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   onClick={loadConstructedScenario}
                   className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-left text-sm text-cyan-50 transition-colors hover:border-cyan-400"
                 >
                   <div className="font-medium">Load constructed municipal scenario</div>
-                  <div className="mt-1 text-xs text-cyan-100/80">Swap in a semi-real Alberta municipal bill file for pilot demos and outreach.</div>
+                  <div className="mt-1 text-xs text-cyan-100/80">
+                    Swap in a semi-real Alberta municipal bill file for pilot demos and outreach.
+                  </div>
                 </button>
                 <button
                   onClick={downloadStarterTemplate}
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                  className="rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                 >
                   <div className="font-medium">Download starter invoice template</div>
-                  <div className="mt-1 text-xs text-slate-500">Use this schema to replace the seeded comparison with buyer invoices.</div>
+                  <div className="mt-1 text-xs text-slate-300">
+                    Use this schema to replace the seeded comparison with buyer invoices.
+                  </div>
                 </button>
                 <button
                   onClick={resetStarterDataset}
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                  className="rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
                 >
                   <div className="font-medium">Reload starter bill set</div>
-                  <div className="mt-1 text-xs text-slate-500">Switch back to the seeded Alberta starter set for demos.</div>
+                  <div className="mt-1 text-xs text-slate-300">
+                    Switch back to the seeded Alberta starter set for demos.
+                  </div>
                 </button>
               </div>
             </div>
@@ -282,16 +306,26 @@ export const ShadowBillingModule: React.FC = () => {
               testId="shadow-billing-constructed-scenario"
             />
 
-            <ProofPackPanel
-              title={proofBundle.title}
-              summary={proofBundle.summary}
-              artifacts={proofActions}
-            />
+            <div
+              className="min-w-0 overflow-x-auto"
+              role="region"
+              aria-label="Shadow billing proof pack"
+              tabIndex={0}
+            >
+              <ProofPackPanel
+                title={proofBundle.title}
+                summary={proofBundle.summary}
+                artifacts={proofActions}
+              />
+            </div>
           </section>
 
-          <section className="space-y-6">
+          <section className="min-w-0 space-y-6">
             <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300" data-testid="shadow-billing-source-mode">
+              <div
+                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300"
+                data-testid="shadow-billing-source-mode"
+              >
                 <CheckCircle2 className="h-4 w-4" />
                 {sourceMode === 'starter_bills'
                   ? 'Starter bill set active'
@@ -299,16 +333,35 @@ export const ShadowBillingModule: React.FC = () => {
                     ? 'Constructed municipal invoice scenario active'
                     : 'Uploaded 12-month invoice history active'}
               </div>
-              <h2 className="mt-4 text-xl font-semibold text-white">Annual comparison summary</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Default comparison scope is energy-supply-only. Fixed charges remain directional unless the buyer provides them in the import file.
+              <h2 className="mt-4 text-xl font-semibold text-slate-50">
+                Annual comparison summary
+              </h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Default comparison scope is energy-supply-only. Fixed charges remain directional
+                unless the buyer provides them in the import file.
               </p>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <SummaryCard label="Actual supply cost" value={formatCurrency(analysis.totalActualSupplyCostCad)} tone="slate" />
-                <SummaryCard label="RoLR comparison cost" value={formatCurrency(analysis.totalRolrSupplyCostCad)} tone="emerald" />
-                <SummaryCard label="Delta vs RoLR" value={formatCurrency(analysis.deltaVsRolrCad)} tone={analysis.deltaVsRolrCad > 0 ? 'amber' : 'emerald'} />
-                <SummaryCard label="Months above RoLR" value={`${analysis.monthsOverRolr} / ${analysis.rows.length}`} tone="slate" />
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <SummaryCard
+                  label="Actual supply cost"
+                  value={formatCurrency(analysis.totalActualSupplyCostCad)}
+                  tone="slate"
+                />
+                <SummaryCard
+                  label="RoLR comparison cost"
+                  value={formatCurrency(analysis.totalRolrSupplyCostCad)}
+                  tone="emerald"
+                />
+                <SummaryCard
+                  label="Delta vs RoLR"
+                  value={formatCurrency(analysis.deltaVsRolrCad)}
+                  tone={analysis.deltaVsRolrCad > 0 ? 'amber' : 'emerald'}
+                />
+                <SummaryCard
+                  label="Months above RoLR"
+                  value={`${analysis.monthsOverRolr} / ${analysis.rows.length}`}
+                  tone="slate"
+                />
               </div>
             </div>
 
@@ -316,9 +369,11 @@ export const ShadowBillingModule: React.FC = () => {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-300" />
                 <div>
-                  <div className="font-medium text-white">Comparison boundary</div>
+                  <div className="font-medium text-slate-50">Comparison boundary</div>
                   <p className="mt-2 text-sm text-amber-100">
-                    This route does not claim full delivered-bill reconstruction unless rider and fixed-charge mapping are explicitly supplied. The current proof pack stays honest by leading with supply-cost deltas first.
+                    This route does not claim full delivered-bill reconstruction unless rider and
+                    fixed-charge mapping are explicitly supplied. The current proof pack stays
+                    honest by leading with supply-cost deltas first.
                   </p>
                 </div>
               </div>
@@ -326,7 +381,7 @@ export const ShadowBillingModule: React.FC = () => {
 
             <button
               onClick={() => setShowDetails((current) => !current)}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-600"
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-50 transition-colors hover:bg-slate-600"
             >
               <Calendar className="h-4 w-4" />
               {showDetails ? 'Hide monthly comparison' : 'Show monthly comparison'}
@@ -336,11 +391,16 @@ export const ShadowBillingModule: React.FC = () => {
 
         {showDetails && (
           <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
-            <h3 className="text-lg font-semibold text-white">Monthly invoice comparison</h3>
-            <div className="mt-4 overflow-x-auto">
+            <h3 className="text-lg font-semibold text-slate-50">Monthly invoice comparison</h3>
+            <div
+              className="mt-4 min-w-0 max-w-full overflow-x-auto"
+              role="region"
+              aria-label="Monthly invoice comparison"
+              tabIndex={0}
+            >
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700 text-slate-400">
+                  <tr className="border-b border-slate-700 text-slate-300">
                     <th className="px-4 py-3 text-left">Period</th>
                     <th className="px-4 py-3 text-right">Usage (kWh)</th>
                     <th className="px-4 py-3 text-right">Actual supply</th>
@@ -353,11 +413,21 @@ export const ShadowBillingModule: React.FC = () => {
                   {analysis.rows.map((row) => (
                     <tr key={row.id} className="border-b border-slate-800 text-slate-200">
                       <td className="px-4 py-3">{row.billingPeriod}</td>
-                      <td className="px-4 py-3 text-right">{row.consumptionKwh.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right">{formatCurrency(row.actualSupplyCostCad)}</td>
-                      <td className="px-4 py-3 text-right text-emerald-300">{formatCurrency((row.consumptionKwh * row.rolrRateCentsPerKwh) / 100)}</td>
-                      <td className="px-4 py-3 text-right text-cyan-300">{formatCurrency(row.poolSupplyCostCad)}</td>
-                      <td className={`px-4 py-3 text-right font-semibold ${row.deltaVsRolrCad > 0 ? 'text-amber-300' : 'text-emerald-300'}`}>
+                      <td className="px-4 py-3 text-right">
+                        {row.consumptionKwh.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {formatCurrency(row.actualSupplyCostCad)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-emerald-300">
+                        {formatCurrency((row.consumptionKwh * row.rolrRateCentsPerKwh) / 100)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-cyan-300">
+                        {formatCurrency(row.poolSupplyCostCad)}
+                      </td>
+                      <td
+                        className={`px-4 py-3 text-right font-semibold ${row.deltaVsRolrCad > 0 ? 'text-amber-300' : 'text-emerald-300'}`}
+                      >
                         {formatCurrency(row.deltaVsRolrCad)}
                       </td>
                     </tr>
@@ -381,15 +451,16 @@ function SummaryCard({
   value: string;
   tone: 'slate' | 'emerald' | 'amber';
 }) {
-  const toneClasses = tone === 'emerald'
-    ? 'border-emerald-500/30 bg-emerald-900/20 text-emerald-300'
-    : tone === 'amber'
-      ? 'border-amber-500/30 bg-amber-900/20 text-amber-300'
-      : 'border-slate-700 bg-slate-900/70 text-white';
+  const toneClasses =
+    tone === 'emerald'
+      ? 'border-emerald-500/30 bg-emerald-900/20 text-emerald-300'
+      : tone === 'amber'
+        ? 'border-amber-500/30 bg-amber-900/20 text-amber-300'
+        : 'border-slate-700 bg-slate-900/70 text-slate-50';
 
   return (
     <div className={`rounded-2xl border p-4 ${toneClasses}`}>
-      <div className="text-sm text-slate-400">{label}</div>
+      <div className="text-sm text-slate-300">{label}</div>
       <div className="mt-2 text-2xl font-bold">{value}</div>
     </div>
   );
