@@ -127,25 +127,25 @@ const SCENARIOS: Scenario[] = [
     context:
       "It's Q4 and you need to settle your TIER compliance obligation. Your facility emitted 50,000 tonnes above benchmark.",
     situation:
-      'Current TIER credit price: $80/tonne. Carbon offset price: $65/tonne. You can also invest $3M in on-site emissions reduction (Direct Investment Credit).',
+      'Illustrative scenario values only (not current quotes): a $80/tonne fund proxy, a $65/tonne offset proxy, or a $3M direct-investment scenario. Verify current prices, eligibility, and credit treatment from authoritative sources before making a decision.',
     options: [
       {
-        text: 'Buy TIER credits at $80/tonne',
+        text: 'Use the illustrative fund-price proxy ($80/tonne)',
         result: -4000000,
         explanation:
-          'Standard approach. Total cost: 50,000 × $80 = $4,000,000. Straightforward but expensive.',
+          'Illustrative arithmetic only: 50,000 × $80 = $4,000,000. This is not a quote, current market price, or compliance recommendation.',
       },
       {
-        text: 'Purchase carbon offsets at $65/tonne',
+        text: 'Use the illustrative offset proxy ($65/tonne)',
         result: -3250000,
         explanation:
-          'Good savings! Total cost: 50,000 × $65 = $3,250,000. You saved $750,000 vs TIER credits.',
+          'Illustrative comparison only: 50,000 × $65 = $3,250,000. It does not establish savings, credit eligibility, or a buyer outcome.',
       },
       {
-        text: 'Invest $3M in Direct Investment Credits',
+        text: 'Explore an illustrative direct-investment scenario',
         result: -2500000,
         explanation:
-          'Best long-term option! The $3M investment generates credits for multiple years AND reduces future emissions. Effective cost: $2,500,000 over 5 years.',
+          'Screening scenario only: no claim is made that an investment generates credits, reduces compliance cost, or recovers its spend. Validate the applicable Standard and project evidence first.',
       },
     ],
   },

@@ -98,6 +98,42 @@ describe('Lane D — claims reconciliation (G13/G16)', () => {
       expect(source).not.toMatch(/guaranteed ROI/i);
     },
   );
+
+  it('bounds simulation and constructed-scenario claims outside the primary landing pages', () => {
+    const trader = read('src/components/whop-mini/EnergyTrader.tsx');
+    const utility = read('src/components/UtilityDemandForecastPage.tsx');
+
+    expect(trader).toContain('Illustrative scenario values only');
+    expect(trader).toContain('not a quote, current market price, or compliance recommendation');
+    expect(trader).not.toMatch(/Good savings|Best long-term option|Current TIER credit price/i);
+
+    expect(utility).toContain('illustrative screening scenario');
+    expect(utility).not.toContain('It is validated pilot evidence');
+  });
+
+  it('keeps active solution and outreach copy below the buyer-validation ceiling', () => {
+    const solutions = read('src/components/SolutionsNavigatorPage.tsx');
+    const campaign = read('docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md');
+    const hermes = read('docs/HERMES_OUTREACH_OPERATING_PLAN.md');
+
+    expect(solutions).toContain('minimum testable slices');
+    expect(solutions).toContain('willingness to pay remain unvalidated');
+    expect(solutions).not.toContain('minimum sellable slices');
+    expect(solutions).not.toContain('then sell.');
+
+    expect(campaign).toContain('desk-research hypotheses');
+    expect(campaign).toContain('willingness to pay is unvalidated');
+    expect(campaign).not.toMatch(/should be sold as|buyer-ready artifact/i);
+
+    expect(hermes).toContain('draft proof-pack hypotheses');
+    expect(hermes).not.toContain('buyer-ready proof packs');
+  });
+
+  it.each(['docs/Openclaw_outreach.md', 'docs/COMET_OUTREACH_STRATEGY.md'])('%s does not promise a procurement shortcut', (file) => {
+    const source = read(file);
+    expect(source).toContain('procurement treatment remains unverified');
+    expect(source).not.toMatch(/no RFP needed|no lengthy RFP|sole-source threshold so you don\x27t need an RFP|stay below the \$75K NWPTA sole-source threshold/i);
+  });
 });
 
 describe('Lane D — suppression registry (G15)', () => {

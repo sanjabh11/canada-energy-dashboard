@@ -2,7 +2,7 @@
 
 ## Campaign Thesis
 
-CEIP should be sold as Canadian utility and TIER proof packs, not as a broad dashboard collection. The lead promise is a buyer-ready artifact: forecast planning memo, benchmark appendix, filing pack, Ontario GA/ICI peak-risk decision-support note, local BYO-CSV privacy proof, CFO compliance memo, credit banking audit pack, capex recommendation, security questionnaire, or invoice comparison report.
+CEIP is being tested as Canadian utility and TIER proof packs, not as a broad dashboard collection. These are desk-research hypotheses and must not be presented as buyer-validated or approved offers. The proposed artifact is a buyer-reviewable draft: forecast planning memo, benchmark appendix, filing pack, Ontario GA/ICI peak-risk decision-support note, local BYO-CSV privacy proof, CFO compliance memo, credit banking audit pack, capex recommendation, security questionnaire, or invoice comparison report.
 
 Lead with utility planning, benchmark/provenance, OEB/AUC filing, Ontario GA/ICI, BYO-CSV privacy proof, TIER CFO, TIER credit banking, asset capex, utility security, and shadow billing. Use large-load and API/data-pack work as reserve/support when the workflow clearly matches. Keep Indigenous/AICEI reporting as a reserve/support lane until partner-backed review exists.
 
@@ -10,8 +10,8 @@ Lead with utility planning, benchmark/provenance, OEB/AUC filing, Ontario GA/ICI
 
 | Priority | Buyer lane | Best route | Primary proof pack | Why it is marketable now |
 |---:|---|---|---|---|
-| 1 | Utility consultants serving LDCs, REAs, municipalities, and industrial loads | `/utility-demand-forecast` | Utility demand forecast planning pack | Consultants can evaluate a sample workflow quickly and turn the output into client-facing evidence. |
-| 2 | LDCs and REAs with load growth, DER, DSP, or large-load planning pressure | `/utility-demand-forecast` | Planning memo with benchmark/provenance attachment | Clear utility pain and strong fit with CEIP's Canadian planning wedge. |
+| 1 | Utility consultants serving LDCs, REAs, municipalities, and industrial loads | `/utility-demand-forecast` | Utility demand forecast planning pack | Consultants may evaluate a sample workflow quickly; willingness to pay is unvalidated. |
+| 2 | LDCs and REAs with load growth, DER, DSP, or large-load planning pressure | `/utility-demand-forecast` | Planning memo with benchmark/provenance attachment | Desk research suggests a fit with CEIP's Canadian planning wedge; buyer acceptance is unvalidated. |
 | 3 | Regulatory consultants and utility filing teams | `/regulatory-filing` | OEB/AUC filing evidence pack | Structured reviewer artifacts are easier to sell than another analytics page. |
 | 4 | Forecast reviewers and planning leads | `/forecast-benchmarking` | Benchmark and provenance appendix | Trust layer strengthens every forecast conversation. |
 | 5 | Ontario Class A industrials and peak-response advisors | `/ga-ici-5cp` | GA/ICI 5CP decision-support pack | Ontario-specific peak-risk evidence is narrow, high-stakes, and defensible when kept bounded. |

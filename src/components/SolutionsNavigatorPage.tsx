@@ -476,12 +476,13 @@ export function SolutionsNavigatorPage() {
                   Execution bias
                 </div>
                 <h2 className="mt-3 text-2xl font-semibold text-slate-50">
-                  Build 25% to 40% first, then sell.
+                  Build 25% to 40% first, then validate.
                 </h2>
                 <p className="mt-4 text-base leading-7 text-slate-200">
-                  The implementation strategy now favors minimum sellable slices: enough proof,
-                  export behavior, trust copy, and buyer-specific language to win pilots before
-                  expanding the full platform scope.
+                  The implementation strategy now favors minimum testable slices: enough proof,
+                  export behavior, trust copy, and buyer-specific language to support a paid-pilot
+                  conversation before expanding the full platform scope. Buyer demand and
+                  willingness to pay remain unvalidated.
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Link

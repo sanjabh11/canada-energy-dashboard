@@ -1008,7 +1008,7 @@ const UtilityDemandForecastPage: React.FC = () => {
           <DataTrustNotice
             mode="fallback"
             title="Constructed commercial scenario active"
-            message="This route is using a constructed utility-planning case built from realistic Alberta or Ontario operating assumptions. It is pilot-ready proof, but not a customer history file, production approval artifact, or audited utility record."
+            message="This route is using a constructed utility-planning case built from realistic Alberta or Ontario operating assumptions. It is an illustrative screening scenario, not validated pilot evidence, a customer history file, a production approval artifact, or an audited utility record."
             className="mb-6"
           />
         ) : sourceKind === 'public_system_sample' ? (
