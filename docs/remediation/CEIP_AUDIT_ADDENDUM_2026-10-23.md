@@ -319,9 +319,33 @@ bounded recommendation to exclude all four from pilot scope, pending named
 data-steward confirmation and rollback impact. The 89 withheld rows remain
 `NOT_REPLAYED` pending the owner’s redacted row-level packet.
 
-**Current decision:** repository evidence is CI-verified and artifact-verified
-for the `389dad3` parent; the local descendant after that parent is not yet CI-verified.
+**Audit-11 decision (historical):** repository evidence was CI-verified and
+artifact-verified for the `389dad3` parent; the descendant was not yet
+CI-verified at that point.
 Staging and pilot remain **STOP**. INC-001 invalidation and log
 review, project identity, hosted migration/RLS/rate-limit/retention/rollback,
 allowlisted function deployment, `WHOP_CEIP_*`, CASL, manual WCAG, deployed
 performance, and buyer `0/11` remain open owner gates.
+
+## Update — audit-12 exact-head receipt (2026-10-24)
+
+The evidence/migration packet commit `f196402ef5555a23b29687c5e9ee408858bd2396`
+was pushed and verified by CI run `40110114146`. Its `head_sha` is exact and
+all four jobs (`lint-typecheck`, `test`, `evidence-binding`, and
+`build-and-smoke`) succeeded. This supersedes the `389dad3`/`40073506314`
+receipt for current-state claims; the older receipt remains historical.
+
+The current artifact is `12567025326` with GitHub digest
+`sha256:3e0aec961a5f74046fa81e3fbcaaee5a907bbd7c8a16edebf1f8666560b37dad`.
+The downloaded ZIP reproduced that digest. Its manifest records merge
+checkout `1dc964af`, `complete: true`, `missing_files: []`, nine evidence
+files, and `jobs: "not-recorded"`; the sidecar hash verified and all nine
+listed files matched their recorded SHA-256 hashes and byte counts. External
+GitHub job conclusions are authoritative for job status.
+
+The worktree remains intentionally dirty only with `D coverage/lcov.info` and
+untracked zero-byte `data.sql`, `roles.sql`, and `schema.sql` stubs. No reset,
+restore, hosted mutation, deployment, secret read, outreach, or buyer
+experiment was performed. The four-table decisions, 89-row reconciliation,
+deviation comparison, function manifest, storage receipt, and owner sign-off
+matrix remain preparation artifacts; their hosted and steward gates are open.

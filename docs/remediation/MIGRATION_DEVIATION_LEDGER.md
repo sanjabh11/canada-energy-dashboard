@@ -12,9 +12,9 @@ Supabase migration or claim that the replacement project is pilot-ready.
 | Replacement-project ledger | 123 target records reported during the owner-led replay |
 | Replay relationship | 117 repository migration names replayed plus six target-only entries |
 | Ported repository migrations | Five files cover six target entries because the two extension entries are intentionally merged |
-| Latest exact-head source/documentation subject | `389dad3` / CI run `40073506314`, all four jobs successful |
-| Current local tree | Unpushed evidence/migration descendant after `389dad3` plus intentional D/?? overlay files; own remote CI receipt pending |
-| Current artifact receipt | `12551764380`, GitHub digest `sha256:036865d5043db63b545b6b80ec73dbc9e01bc6dd663dd26632e7eb8541a6a9f4` |
+| Latest exact-head source/documentation subject | `f196402` / CI run `40110114146`, all four jobs successful |
+| Current local tree | `f196402` plus intentional D/?? overlay files; current receipt is exact-head CI-verified |
+| Current artifact receipt | `12567025326`, GitHub digest `sha256:3e0aec961a5f74046fa81e3fbcaaee5a907bbd7c8a16edebf1f8666560b37dad` |
 | Proof boundary | CI proves the committed repository; it does not prove a hosted migration or rollback |
 
 The predecessor ledger recorded **exact CI receipt pending** for this lane;
