@@ -68,11 +68,11 @@ the mission must rebind its documents before claiming current status.
 | Item | Current value | Proof layer |
 |---|---|---|
 | Latest source/CI-tested subject before this evidence update | `0550c29` / run `39777254650` | CI-verified |
-| Code-bearing CI subject | `5c883f1` / run `39987095875` | CI-verified binding-gate change |
+| Code-bearing CI subject | `a460a82` / run `40071166986` | CI-verified binding-gate change |
 | Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
 | Latest CI-tested documentation subject | `0550c29` / run `39777254650` | CI-verified docs descendant |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Canonical bound CI | [run 39987095875](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/39987095875) | GitHub job conclusions |
+| Canonical bound CI | [run 40071166986](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40071166986) | GitHub job conclusions |
 | Latest artifact receipt | `12425598211`, digest `sha256:93f00e9745d615cece0a16a6502a00aa6d1d1a5422735d92d15967f774ea74b4` | GitHub artifact API + independent hash check |
 | CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success | CI-verified |
 | Manifest | `complete=true`, nine evidence files, `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
@@ -264,7 +264,7 @@ hosted service stops the mission.
 1. Update `goal.md` and the current audit addendum to the exact current HEAD,
    CI run, merge SHA, artifact ID/digest, tree fingerprint and manifest hash.
 2. Record the dependency/source proof separately for `3766ca6`/`39726844686`,
-   the documentation proof for `5c883f1`/`39987095875`, and the older external
+   the documentation proof for `a460a82`/`40071166986`, and the older external
    review for `10ab812`/`39641749404`.
 3. Mark `jobs: not-recorded` as a manifest limitation and cite external job
    conclusions separately.

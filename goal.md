@@ -15,17 +15,26 @@ credential-safe migration helper, security baseline, migration/data deviation
 ledger, and owner-run staging pack. It is locally checked but not yet bound by
 an exact-head CI run. The last completed CI receipt is the predecessor
 `4967b72` / run `39990265678`; it does not prove this overlay.
+
+**Current binding (2026-10-24):** bound HEAD `a460a82` — CI run
+`40071166986` — `head_sha` exact; all three verification jobs green;
+`evidence-binding` red as the designed staleness signal for the Codex
+nine-commit batch (`779eef6..a460a82`) this binding covers, so the run's
+conclusion was `failure` while remaining binding-eligible
+(merge `881877d9`, artifact `12552180184`, digest
+`sha256:dfa5873f8f06dbb2f4b766752c5e64a1696fd23d9c86f5e499fc2b05b55406f3`).
 >
-> **Predecessor milestone status (2026-10-23):** bound HEAD `5c883f1` — CI run
-> `39987095875` on pinned `ubuntu-24.04` — `head_sha` exact; **all four
-> jobs green** including `evidence-binding` (the intermediate commits
-> `9cb343e..b1e5d98` are covered inside this bound source, so no
-> staleness signal fired); run conclusion `success`
-> (merge `97bef02b`, artifact `12517835140`, digest
-> `sha256:1b6e7bc2cc9282fe3f246fbfc5297b186e08911fea2a94b44f7f6b50df4b973f`;
+> **Predecessor milestone status (2026-10-23):** bound HEAD `a460a82` — CI run
+> `40071166986` on pinned `ubuntu-24.04` — `head_sha` exact; all three
+> verification jobs green (`lint-typecheck`, `test`, `build-and-smoke`);
+> `evidence-binding` red as the designed staleness signal for the Codex
+> nine-commit batch this binding covers, so the run's conclusion was
+> `failure` while remaining binding-eligible
+> (merge `881877d9`, artifact `12552180184`, digest
+> `sha256:dfa5873f8f06dbb2f4b766752c5e64a1696fd23d9c86f5e499fc2b05b55406f3`;
 > manifest `complete:true`, sidecar verified). Chain: `e239699` →
 > `2f1b88d`/`a86f1f8`/`cc3ff23` (evidence-only) → `fb5cddd`/`aa6d8d5`
-> (code, covered inside this bound source) → `5c883f1` bound.
+> (code, covered inside this bound source) → `a460a82` bound.
 > Two-state binding contract:
 > the bound source requires a run whose `headSha` equals it with all
 > verification jobs green; descendants after it may touch only the
@@ -75,7 +84,7 @@ an exact-head CI run. The last completed CI receipt is the predecessor
 > reset or restoration was performed.
 >
 > **Source remediation — predecessor CI-bound:** commit `ad44494` (test-only
-> child-process warning isolation) is bound by run `39987095875` on `5c883f1`
+> child-process warning isolation) is bound by run `40071166986` on `a460a82`
 > (all 3 jobs green); its push succeeded after the execution-guard block was
 > lifted here. The predecessor receipt recorded client-env 2272 surfaces,
 > repository hygiene, and secret-scan results. Those restricted scans remain
@@ -99,14 +108,14 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `5c883f1` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | bound source `5c883f1`; latest tested docs descendant `0550c29` | addendum 2026-10-23; runs `39987095875` / `39777254650`; artifact `12425598211` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
+| P0 — Preservation and INC-001 owner separation | in progress | source | docs-only overlay; bound HEAD `a460a82` | current CI tree bound; local `coverage/lcov.info` deletion preserved for classification | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | source + bound CI | bound source `a460a82`; latest tested docs descendant `0550c29` | addendum 2026-10-23; runs `40071166986` / `39777254650`; artifact `12425598211` | repo | retain current digest and external job outcomes | manifest is complete; `jobs` is explicitly not-recorded; every commit receives its own run |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
-| P3 — Stale economics suppressed | partial | local tests + committed CI | `5c883f1` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `5c883f1` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P3 — Stale economics suppressed | partial | local tests + committed CI | `a460a82` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `a460a82` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
-| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `5c883f1` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `5c883f1` + docs receipt `0550c29` | runs `39987095875` / `39777254650`; latest artifact complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; independent local hygiene scan remains guard-blocked in this audit |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `a460a82` | automated axe+reflow 110 cases ×5 engines (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `a460a82` + docs receipt `0550c29` | runs `40071166986` / `39777254650`; latest artifact complete + self-hash sidecar; exact-commit clean clone 177/1329, 22.55%, floors pass; focused assurance 50/50 | repo → CI | retain clean-clone lcov; hosted staging | tracked lcov deletion remains local; independent local hygiene scan remains guard-blocked in this audit |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 

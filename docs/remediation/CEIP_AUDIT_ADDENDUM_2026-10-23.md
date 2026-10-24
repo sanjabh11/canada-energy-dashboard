@@ -262,3 +262,23 @@ Two robustness fixes to the ported migrations before canonicalization:
   108+23 advisor-finding dispositions; withheld 89-row reconciliation;
   4 missing source tables; real backup exports; 2 storage files;
   CASL, manual WCAG, deployed performance, buyer 0/11
+
+## Update — audit-10 binding (Devin, 2026-10-24)
+
+- Codex 9-commit audit batch (`779eef6..a460a82`) pushed as one
+  execution-order step; run `40071166986` on `a460a82`: `head_sha`
+  exact, all three verification jobs green, `evidence-binding` red as
+  designed staleness signal → conclusion `failure`, binding-eligible.
+- Bound source is now `a460a82`/run `40071166986` (merge `881877d9`,
+  artifact `12552180184`, digest
+  `sha256:dfa5873f8f06dbb2f4b766752c5e64a1696fd23d9c86f5e499fc2b05b55406f3`).
+  All nine commits are covered inside the bound source.
+- Parallel-lane prep (uncommitted during run, per Codex scoping):
+  four-table decision analysis — `der_assets_summary` exists only as an
+  `api-v2-vpp-platforms` response shape (no `.from()` table query, no
+  migration) → all four source-only tables are formally excludable as
+  out-of-band objects; `der_assets_summary` gets a verify-before-decide
+  flag. 89 withheld rows: 41 null/invalid + 48 FK-absent per manifest.
+- `check:supabase-app-lint` blocked by `401 Invalid access token`;
+  secret/client-env/hygiene scans JEV-denied (protected paths) —
+  owner-side steps, unchanged.
