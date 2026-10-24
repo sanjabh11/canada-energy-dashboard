@@ -4,6 +4,17 @@ This is a read-only inventory of the replacement project
 `qktgjpbifknqjpvrgkrj`. It is not a hosted remediation and does not authorize
 revokes, ownership changes, function deployment, or project restoration.
 
+## Disposition proof boundary
+
+This inventory separates repository classification from hosted verification.
+Application-owned objects with mapped migration provenance or callers are
+classified `owner-staging-fix`: the repository evidence is sufficient to name
+the owner action, but only an owner-run role/grant/API probe can prove the
+deployed exposure and remediation. Extension-managed objects are
+`not-applicable-with-evidence` to the application migration lane. No object is
+marked `accepted-with-control` or `fix-in-repo` solely from source metadata,
+and no broad revoke is implied by this document.
+
 ## Snapshot
 
 | Field | Value |
@@ -26,44 +37,51 @@ Every row needs a staging-time role/grant probe and an owner disposition. The
 repository migration is provenance only; it does not prove the view is exposed
 through PostgREST or used by a deployed function.
 
-| View | Repository migration | Current disposition |
+| View | Repository migration | Repository disposition |
 |---|---|---|
-| `active_rebate_programs_summary` | `20251113006_heat_pump_deployment` | `PENDING_OWNER_CLASSIFICATION` |
-| `badge_leaderboard` | `20251117_edubiz_tables` | `PENDING_OWNER_CLASSIFICATION` |
-| `capacity_auction_trends` | `20251113003_capacity_market_tracking` | `PENDING_OWNER_CLASSIFICATION` |
-| `capacity_resource_mix` | `20251113003_capacity_market_tracking` | `PENDING_OWNER_CLASSIFICATION` |
-| `certificate_completion_stats` | `20251117_edubiz_tables` | `PENDING_OWNER_CLASSIFICATION` |
-| `connector_freshness` | `20260820001_connector_freshness_truth`, `20260610002_connector_lineage` | `PENDING_OWNER_CLASSIFICATION` |
-| `data_quality_summary` | `20251014007_add_data_provenance` | `PENDING_OWNER_CLASSIFICATION` |
-| `der_fleet_composition` | `20251113005_vpp_der_aggregation` | `PENDING_OWNER_CLASSIFICATION` |
-| `ev_adoption_progress` | `20251113004_ev_charging_infrastructure` | `PENDING_OWNER_CLASSIFICATION` |
-| `ev_charging_infrastructure_summary` | `20251113004_ev_charging_infrastructure` | `PENDING_OWNER_CLASSIFICATION` |
-| `grid_queue_summary_by_province` | `20251112004_grid_queue_tracker` | `PENDING_OWNER_CLASSIFICATION` |
-| `grid_queue_technology_mix` | `20251112004_grid_queue_tracker` | `PENDING_OWNER_CLASSIFICATION` |
-| `grid_queue_timeline` | `20251112004_grid_queue_tracker` | `PENDING_OWNER_CLASSIFICATION` |
-| `grid_snapshots` | `20251013001_create_views`, `20251012001_comprehensive_fixes`, `20251014002_update_grid_snapshots` | `PENDING_OWNER_CLASSIFICATION` |
-| `gtm_weekly_funnel_summary` | `20260303001_gtm_pipeline_entities` | `PENDING_OWNER_CLASSIFICATION` |
-| `heat_pump_adoption_summary` | `20251113006_heat_pump_deployment` | `PENDING_OWNER_CLASSIFICATION` |
-| `ieso_procurement_summary` | `20251113002_ieso_interconnection_queue`, `20251120010_stage2_rls_and_api_usage` | `PENDING_OWNER_CLASSIFICATION` |
-| `ieso_queue_summary` | `20251113002_ieso_interconnection_queue`, `20251120010_stage2_rls_and_api_usage` | `PENDING_OWNER_CLASSIFICATION` |
-| `minerals_geopolitical_risk_summary` | `20251112007_minerals_geopolitical_risk` | `PENDING_OWNER_CLASSIFICATION` |
-| `renewable_penetration_by_province` | `20251011002_add_fuel_type_breakdown` | `PENDING_OWNER_CLASSIFICATION` |
-| `smr_projects_summary` | `20251113001_smr_nuclear_tracking` | `PENDING_OWNER_CLASSIFICATION` |
-| `user_tier_stats` | `20251117_edubiz_tables` | `PENDING_OWNER_CLASSIFICATION` |
-| `v_indigenous_economic_summary` | `20251112002_indigenous_equity_enhancement` | `PENDING_OWNER_CLASSIFICATION` |
-| `v_indigenous_equity_summary` | `20251112002_indigenous_equity_enhancement` | `PENDING_OWNER_CLASSIFICATION` |
-| `v_indigenous_iba_summary` | `20251112002_indigenous_equity_enhancement` | `PENDING_OWNER_CLASSIFICATION` |
-| `vpp_platform_summary` | `20251113005_vpp_der_aggregation` | `PENDING_OWNER_CLASSIFICATION` |
+| `active_rebate_programs_summary` | `20251113006_heat_pump_deployment` | `owner-staging-fix` |
+| `badge_leaderboard` | `20251117_edubiz_tables` | `owner-staging-fix` |
+| `capacity_auction_trends` | `20251113003_capacity_market_tracking` | `owner-staging-fix` |
+| `capacity_resource_mix` | `20251113003_capacity_market_tracking` | `owner-staging-fix` |
+| `certificate_completion_stats` | `20251117_edubiz_tables` | `owner-staging-fix` |
+| `connector_freshness` | `20260820001_connector_freshness_truth`, `20260610002_connector_lineage` | `owner-staging-fix` |
+| `data_quality_summary` | `20251014007_add_data_provenance` | `owner-staging-fix` |
+| `der_fleet_composition` | `20251113005_vpp_der_aggregation` | `owner-staging-fix` |
+| `ev_adoption_progress` | `20251113004_ev_charging_infrastructure` | `owner-staging-fix` |
+| `ev_charging_infrastructure_summary` | `20251113004_ev_charging_infrastructure` | `owner-staging-fix` |
+| `grid_queue_summary_by_province` | `20251112004_grid_queue_tracker` | `owner-staging-fix` |
+| `grid_queue_technology_mix` | `20251112004_grid_queue_tracker` | `owner-staging-fix` |
+| `grid_queue_timeline` | `20251112004_grid_queue_tracker` | `owner-staging-fix` |
+| `grid_snapshots` | `20251013001_create_views`, `20251012001_comprehensive_fixes`, `20251014002_update_grid_snapshots` | `owner-staging-fix` |
+| `gtm_weekly_funnel_summary` | `20260303001_gtm_pipeline_entities` | `owner-staging-fix` |
+| `heat_pump_adoption_summary` | `20251113006_heat_pump_deployment` | `owner-staging-fix` |
+| `ieso_procurement_summary` | `20251113002_ieso_interconnection_queue`, `20251120010_stage2_rls_and_api_usage` | `owner-staging-fix` |
+| `ieso_queue_summary` | `20251113002_ieso_interconnection_queue`, `20251120010_stage2_rls_and_api_usage` | `owner-staging-fix` |
+| `minerals_geopolitical_risk_summary` | `20251112007_minerals_geopolitical_risk` | `owner-staging-fix` |
+| `renewable_penetration_by_province` | `20251011002_add_fuel_type_breakdown` | `owner-staging-fix` |
+| `smr_projects_summary` | `20251113001_smr_nuclear_tracking` | `owner-staging-fix` |
+| `user_tier_stats` | `20251117_edubiz_tables` | `owner-staging-fix` |
+| `v_indigenous_economic_summary` | `20251112002_indigenous_equity_enhancement` | `owner-staging-fix` |
+| `v_indigenous_equity_summary` | `20251112002_indigenous_equity_enhancement` | `owner-staging-fix` |
+| `v_indigenous_iba_summary` | `20251112002_indigenous_equity_enhancement` | `owner-staging-fix` |
+| `vpp_platform_summary` | `20251113005_vpp_der_aggregation` | `owner-staging-fix` |
+
+The two extension-managed public views are recorded separately:
+
+| View | Owner | Repository disposition |
+|---|---|---|
+| `geography_columns` | `supabase_admin` / PostGIS | `not-applicable-with-evidence` |
+| `geometry_columns` | `supabase_admin` / PostGIS | `not-applicable-with-evidence` |
 
 ## Materialized views exposed in `public`
 
-| Materialized view | Repository caller/provenance found | Current disposition |
+| Materialized view | Repository caller/provenance found | Repository disposition |
 |---|---|---|
-| `ccus_project_summary` | `supabase/functions/api-v2-ccus-projects`, `20251113010_ccus_project_tracking` | `PENDING_OWNER_CLASSIFICATION` |
-| `cross_border_trade_summary` | `supabase/functions/api-v2-cross-border-trade`, `20251113008_cross_border_electricity_trade` | `PENDING_OWNER_CLASSIFICATION` |
-| `mv_llm_daily_spend` | LLM usage migrations/functions | `PENDING_OWNER_CLASSIFICATION` |
-| `provincial_emissions_summary` | `supabase/functions/api-v2-carbon-emissions`, `20251113007_carbon_emissions_tracking` | `PENDING_OWNER_CLASSIFICATION` |
-| `transmission_congestion_summary` | `supabase/functions/api-v2-transmission-infrastructure`, `20251113009_transmission_infrastructure` | `PENDING_OWNER_CLASSIFICATION` |
+| `ccus_project_summary` | `supabase/functions/api-v2-ccus-projects`, `20251113010_ccus_project_tracking` | `owner-staging-fix` |
+| `cross_border_trade_summary` | `supabase/functions/api-v2-cross-border-trade`, `20251113008_cross_border_electricity_trade` | `owner-staging-fix` |
+| `mv_llm_daily_spend` | LLM usage migrations/functions | `owner-staging-fix` |
+| `provincial_emissions_summary` | `supabase/functions/api-v2-carbon-emissions`, `20251113007_carbon_emissions_tracking` | `owner-staging-fix` |
+| `transmission_congestion_summary` | `supabase/functions/api-v2-transmission-infrastructure`, `20251113009_transmission_infrastructure` | `owner-staging-fix` |
 
 ## Required owner staging packet
 
