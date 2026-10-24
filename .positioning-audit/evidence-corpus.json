@@ -74,7 +74,7 @@
       "source": "src/App.tsx",
       "source_tier": "primary",
       "content_summary": "140 unique routes (with aliases), 70 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments",
-      "claim": "140 unique routes (with aliases), 68 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments. Component files: 208; lib files: 220; documentation files: 257.",
+      "claim": "140 unique routes (with aliases), 68 lazy-loaded components, covering utility, industrial, security, indigenous, municipal segments. Component files: 208; lib files: 220; documentation files: 259.",
       "timestamp": "2026-07-15T00:00:00Z",
       "date_collected": "2026-07-15",
       "freshness": "fresh",
