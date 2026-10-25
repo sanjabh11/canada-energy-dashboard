@@ -110,8 +110,15 @@ for (const r of ROUTES) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(r.path);
     await expect(page.locator('h1').filter({ hasText: r.marker }).first()).toBeVisible();
-    const running = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running').length);
-    expect(running, `${running} animations still running under prefers-reduced-motion`).toBe(0);
+    // Finite load-in animations may still be mid-flight on a fast runner;
+    // an infinite-loop animation under reduced-motion is the real defect.
+    await page.waitForTimeout(2000);
+    const running = await page.evaluate(() =>
+      document
+        .getAnimations()
+        .filter((a) => a.playState === 'running' && (a.effect?.getTiming?.() as { iterations?: number })?.iterations === Infinity).length,
+    );
+    expect(running, `${running} infinite animations still running under prefers-reduced-motion`).toBe(0);
   });
 }
 

@@ -1,6 +1,7 @@
 # Edge-function deployment manifest (allowlist — owner-gated)
 
-Target `qktgjpbifknqjpvrgkrj`: **5/110 deployed** (2026-10-24): `lead-capture` (dedup-patched), `whop-verify-access`, `whop-webhook` (dormant — secrets absent), `calibration-cron`, `storage-dispatch-scheduler`.
+Target `qktgjpbifknqjpvrgkrj`: baseline **0/110 functions deployed** → **5/110 deployed** (2026-10-24): `lead-capture` (dedup-patched), `whop-verify-access`, `whop-webhook` (dormant — secrets absent), `calibration-cron`, `storage-dispatch-scheduler`.
+Cron safety gate history: the global `SUPABASE_CRONS_LIVE=true` switch was removed 2026-10-25; workflows now run only when their `CRON_LIVE_<FUNC>` variable is `true`.
 See `docs/PILOT_FUNCTION_INVENTORY.md` for the full classification.
 
 ## Deploy order (secrets first, functions second)
