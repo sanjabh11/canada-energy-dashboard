@@ -10,13 +10,10 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 
-**Milestone status (2026-10-24):** bound HEAD `54a94d7` — CI run
+**Milestone status (2026-10-25):** bound HEAD `54a94d7` — CI run
 > `40117333650` — `head_sha` exact; `lint-typecheck`, `test`, and
-`build-and-smoke` all succeeded; `evidence-binding` was red as the
-designed staleness signal for intermediate `9d0d880` (now covered
-inside this bound source), so the run's conclusion was `failure` while
-remaining binding-eligible (artifact
-`12570122541`, merge SHA `1dc964af9c5c04d88ffac63a39488cc324f5eeb6`, GitHub
+`build-and-smoke`, and `evidence-binding` all succeeded (artifact
+`12570122541`, merge SHA `c315bef1cb5968f25a2af18362f6a1faea261e41`, GitHub
 digest `sha256:dc7df8ed8abf035bc088ca5963beeb52f147a10e5b55243a7cdd4a69d666247b`).
 The downloaded artifact ZIP reproduced the GitHub digest; its manifest was
 complete, its sidecar verified, and all nine listed evidence files matched
@@ -93,7 +90,7 @@ owner approval or buyer validation.
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
 | P0 — Preservation and INC-001 owner separation | in progress | source | current HEAD `54a94d7`; intentional dirty overlay preserved | exact-head CI receipt; lcov deletion and zero-byte stubs remain classified | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | committed CI | bound source `54a94d7` / run `40117333650` | artifact `12570122541`; digest `sha256:3e0aec…37dad`; manifest/sidecar/internal hashes verified | repo | retain current receipt and historical distinction | manifest jobs field is explicitly not-recorded; hosted proof remains absent |
+| P1 — Current-tree addendum and evidence binding | in progress | committed CI | bound source `54a94d7` / run `40117333650` | artifact `12570122541`; digest `sha256:dc7df8ed8abf035bc088ca5963beeb52f147a10e5b55243a7cdd4a69d666247b`; manifest/sidecar/internal hashes verified | repo | retain current receipt and historical distinction | manifest jobs field is explicitly not-recorded; hosted proof remains absent |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
 | P3 — Stale economics suppressed | partial | local tests + committed CI | `54a94d7` / run `40117333650` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
 | P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `54a94d7` / run `40117333650` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
