@@ -49,7 +49,7 @@ but its evidence-binding job was the intended staleness signal.
 > evidence-only in that historical chain; the current implementation overlay
 > is separate. Binding rule: the run whose `headSha` equals a commit
 > binds that commit — no older run is proof for a newer HEAD.
-> The current receipt's manifest records merge checkout `1dc964a`, PR head
+> The current receipt's manifest records merge checkout `c315bef1`, PR head
 > `54a94d7`, `complete: true`, `missing_files: []`, nine evidence files,
 > and `jobs: "not-recorded"`; GitHub's four external job conclusions are the
 > authoritative job result. Browser and coverage artifacts are retained by
