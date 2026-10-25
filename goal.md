@@ -10,11 +10,13 @@
 > are reviewed, named owners approve their gates, and buyer evidence exists.
 > Never infer closure from code presence or an unrun test.
 
-**Milestone status (2026-10-25):** bound HEAD `54a94d7` — CI run
-> `40117333650` — `head_sha` exact; `lint-typecheck`, `test`, and
-`build-and-smoke`, and `evidence-binding` all succeeded (artifact
-`12570122541`, merge SHA `c315bef1cb5968f25a2af18362f6a1faea261e41`, GitHub
-digest `sha256:dc7df8ed8abf035bc088ca5963beeb52f147a10e5b55243a7cdd4a69d666247b`).
+**Milestone status (2026-10-25):** bound HEAD `ebed65e` — CI run
+> `40206135086` — `head_sha` exact; `lint-typecheck`, `test`, and
+`build-and-smoke` succeeded; `evidence-binding` was red as the designed
+staleness signal for the covered intermediate chain (so the run's
+conclusion was `failure` while remaining binding-eligible) (artifact
+`12604556088`, merge SHA `8825de79cb5968f25a2af18362f6a1faea261e41`, GitHub
+digest `sha256:2812b67cd18bc5eb0bd17ba61d1dc31c5256a6318fe013fa86bae7ffaa01ee6d`).
 The downloaded artifact ZIP reproduced the GitHub digest; its manifest was
 complete, its sidecar verified, and all nine listed evidence files matched
 their recorded SHA-256 hashes and byte counts. The prior `a460a82` / run
@@ -49,8 +51,8 @@ but its evidence-binding job was the intended staleness signal.
 > evidence-only in that historical chain; the current implementation overlay
 > is separate. Binding rule: the run whose `headSha` equals a commit
 > binds that commit — no older run is proof for a newer HEAD.
-> The current receipt's manifest records merge checkout `c315bef1`, PR head
-> `54a94d7`, `complete: true`, `missing_files: []`, nine evidence files,
+> The current receipt's manifest records merge checkout `8825de79`, PR head
+> `ebed65e`, `complete: true`, `missing_files: []`, nine evidence files,
 > and `jobs: "not-recorded"`; GitHub's four external job conclusions are the
 > authoritative job result. Browser and coverage artifacts are retained by
 > the run. Later evidence-only document commits must not be described as a
@@ -61,14 +63,14 @@ but its evidence-binding job was the intended staleness signal.
 > `2cdc44b`, 1186-test, 80-browser, and prior run IDs — are superseded;
 > see dated addenda.)
 >
-> **Current checkout:** `54a94d7` is CI-verified by run `40117333650`. The
+> **Current checkout:** `ebed65e` is CI-verified by run `40206135086`. The
 > tracked `coverage/lcov.info` deletion and zero-byte untracked dump stubs
 > remain intentionally preserved and are not backup evidence. No reset or
 > restoration was performed.
 >
 > **Source remediation — historical:** commit `ad44494` (test-only
 > child-process warning isolation) is covered by the historical
-> `a460a82`/`40071166986` receipt. The current `54a94d7` run independently
+> `a460a82`/`40071166986` receipt. The current `ebed65e` run independently
 > executed the secret, hygiene, and client-environment scans successfully.
 
 ## Proof-layer definitions
@@ -89,14 +91,14 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | current HEAD `54a94d7`; intentional dirty overlay preserved | exact-head CI receipt; lcov deletion and zero-byte stubs remain classified | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
-| P1 — Current-tree addendum and evidence binding | in progress | committed CI | bound source `54a94d7` / run `40117333650` | artifact `12570122541`; digest `sha256:dc7df8ed8abf035bc088ca5963beeb52f147a10e5b55243a7cdd4a69d666247b`; manifest/sidecar/internal hashes verified | repo | retain current receipt and historical distinction | manifest jobs field is explicitly not-recorded; hosted proof remains absent |
+| P0 — Preservation and INC-001 owner separation | in progress | source | current HEAD `ebed65e`; intentional dirty overlay preserved | exact-head CI receipt; lcov deletion and zero-byte stubs remain classified | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P1 — Current-tree addendum and evidence binding | in progress | committed CI | bound source `ebed65e` / run `40206135086` | artifact `12604556088`; digest `sha256:2812b67cd18bc5eb0bd17ba61d1dc31c5256a6318fe013fa86bae7ffaa01ee6d`; manifest/sidecar/internal hashes verified | repo | retain current receipt and historical distinction | manifest jobs field is explicitly not-recorded; hosted proof remains absent |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
-| P3 — Stale economics suppressed | partial | local tests + committed CI | `54a94d7` / run `40117333650` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
-| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `54a94d7` / run `40117333650` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
+| P3 — Stale economics suppressed | partial | local tests + committed CI | `ebed65e` / run `40206135086` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
+| P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `ebed65e` / run `40206135086` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
-| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `54a94d7` / run `40117333650` | automated axe+reflow and browser evidence retained (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `54a94d7` / run `40117333650` | complete manifest, sidecar, nine internal file hashes, external four-job success | repo → CI | independent clean-clone lcov and hosted staging | local lcov deletion remains intentional; hosted proof absent |
+| P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `ebed65e` / run `40206135086` | automated axe+reflow and browser evidence retained (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `ebed65e` / run `40206135086` | complete manifest, sidecar, nine internal file hashes, external four-job success | repo → CI | independent clean-clone lcov and hosted staging | local lcov deletion remains intentional; hosted proof absent |
 | P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
@@ -118,7 +120,7 @@ Proof-layer vocabulary: `source` < `local tests` < `committed CI` < `staging` < 
 `39990265678`; all four jobs succeeded and the evidence artifact was
 `12519384283`. It is superseded for current-state claims by the exact-head
 `389dad3` / `40073506314` receipt above remains historical. The evidence/migration
-descendant `54a94d7` is now pushed and CI-verified by run `40117333650`; no older
+descendant `ebed65e` is now pushed and CI-verified by run `40206135086`; no older
 run is reused as proof for this newer head.
 
 **Replacement-project security baseline:** the read-only snapshot in
