@@ -73,11 +73,17 @@ serve(async (req: Request) => {
     }
 
     // Idempotent dedup: one lead per normalized email (DB unique index is the backstop)
-    const { data: existing } = await supabase
+    const { data: existing, error: lookupError } = await supabase
       .from('contact_leads')
       .select('id')
       .eq('email', email)
       .limit(1);
+
+    if (lookupError) {
+      // Fail closed: a broken dedup lookup must not fall through to insert
+      console.error('lead-capture dedup lookup error:', lookupError);
+      return jsonResponse(req, 500, { error: 'Failed to save lead' }, rl.headers);
+    }
 
     if (existing && existing.length > 0) {
       return jsonResponse(req, 200, { success: true, duplicate: true }, rl.headers);

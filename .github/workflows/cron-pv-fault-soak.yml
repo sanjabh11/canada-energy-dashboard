@@ -7,7 +7,7 @@ on:
 
 jobs:
   pv-fault-soak:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_PV_FAULT_SOAK == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

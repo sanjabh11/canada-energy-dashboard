@@ -33,26 +33,35 @@ for (const r of ROUTES) {
     await expect(page.locator('h1').filter({ hasText: r.marker }).first()).toBeVisible();
 
     const stops: string[] = [];
+    const ringlessStops: string[] = [];
     let ringless = 0;
     for (let i = 0; i < 40; i++) {
       await page.keyboard.press('Tab');
       const info = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
         if (!el || el === document.body) return null;
+        const r = el.getBoundingClientRect();
+        // Skip elements that are not visible (off-screen skip links, hidden)
+        if (r.width <= 1 || r.height <= 1 || el.offsetParent === null) return null;
         const cs = getComputedStyle(el);
+        // A ring must be actually visible: non-none outline, box-shadow,
+        // or a border/background change against the element's backdrop.
         const hasRing =
-          parseFloat(cs.outlineWidth) > 0 ||
-          cs.boxShadow !== 'none' ||
-          parseFloat(cs.borderWidth) > 0 && cs.borderColor !== cs.backgroundColor ||
-          el.matches(':focus-visible');
-        return {
-          tag: el.tagName + (el.getAttribute('role') ? `[${el.getAttribute('role')}]` : ''),
-          hasRing,
-        };
+          (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) ||
+          cs.boxShadow !== 'none';
+        const ident =
+          el.tagName +
+          '|' +
+          (el.id || el.getAttribute('href') || el.getAttribute('aria-label') ||
+            (el.textContent || '').trim().slice(0, 24) || el.getAttribute('role') || '');
+        return { ident, hasRing };
       });
       if (info) {
-        if (!info.hasRing) ringless++;
-        stops.push(info.tag);
+        if (!info.hasRing) {
+          ringless++;
+          ringlessStops.push(info.ident);
+        }
+        stops.push(info.ident);
       }
       if (stops.length > 30) break;
     }
@@ -64,7 +73,10 @@ for (const r of ROUTES) {
     }
     expect(stops.length, 'no focusable elements found').toBeGreaterThan(3);
     expect(maxRun, 'keyboard trap: focus pinned on one element').toBeLessThan(8);
-    expect(ringless, `${ringless} focused elements had no visible indicator`).toBe(0);
+    expect(
+      ringless,
+      `${ringless} focused elements had no visible indicator: ${ringlessStops.slice(0, 10).join(' | ')}`,
+    ).toBe(0);
   });
 
   test(`interactive targets >= 24px — ${r.name}`, async ({ page }) => {
@@ -79,8 +91,11 @@ for (const r of ROUTES) {
       const offenders: string[] = [];
       for (const el of els) {
         const r = el.getBoundingClientRect();
-        if (r.width === 0 || r.height === 0) continue; // hidden
-        if (r.width < 24 && r.height < 24) {
+        // hidden OR visually-clipped (<=4px min-dim: sr-only/skip-link pattern —
+        // these elements are not presented targets until focused/expanded)
+        if (Math.min(r.width, r.height) <= 4 || el.offsetParent === null) continue;
+        // WCAG 2.5.8: target is deficient when its smallest dimension < 24px
+        if (Math.min(r.width, r.height) < 24) {
           offenders.push(
             `${el.tagName} "${(el.textContent || '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`,
           );

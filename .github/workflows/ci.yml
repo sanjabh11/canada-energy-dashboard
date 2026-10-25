@@ -234,6 +234,15 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-a11y.json
         run: pnpm exec playwright test --config=playwright.config.ts tests/component/a11y-wcag22.spec.ts
 
+      - name: WCAG manual-assist audit — keyboard/targets/motion/form-errors
+        env:
+          VITE_ENABLE_EDGE_FETCH: 'false'
+          VITE_ALLOW_LOCAL_EDGE_FETCH: 'false'
+          VITE_SUPABASE_EDGE_BASE: ''
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-a11y-manual
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-a11y-manual.json
+        run: pnpm exec playwright test --config=playwright.config.ts tests/component/a11y-manual-assist.spec.ts --project=chromium
+
       - name: Record CI evidence manifest
         # Binds the uploaded evidence to the tree/commit: HEAD sha (the merge
         # SHA on PR checkouts), PR head SHA, dirty-tree count, working-tree

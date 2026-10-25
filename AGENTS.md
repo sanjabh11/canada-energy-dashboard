@@ -3,8 +3,8 @@
 ## Security incidents — READ FIRST
 
 `docs/security/SECRET_EXPOSURE_INCIDENTS.md` is the authoritative secret-exposure
-register. INC-001 (Supabase `service_role` key) is the **only open owner action** —
-rotate it in the Supabase dashboard. INC-002 (Gemini key) is **closed**
+register. INC-001 is **closed** (2026-10-24 — leak-site project absent from owner
+account, key invalidated-by-deletion). No open secret-exposure actions. INC-002 (Gemini key) is **closed**
 (owner-verified revoked, live probe `API_KEY_INVALID` 2026-10-06). Do not
 re-investigate from scratch; read the register. Do not block repository work on
 the open owner action.

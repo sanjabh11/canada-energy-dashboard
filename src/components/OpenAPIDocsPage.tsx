@@ -36,7 +36,7 @@ export const OpenAPIDocsPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <Link
                 to="/"
-                className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -49,7 +49,7 @@ export const OpenAPIDocsPage: React.FC = () => {
             </div>
             <Link
               to="/pricing"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium text-slate-950 transition-all"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium text-slate-950 transition-all focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
             >
               Get API Key
             </Link>
@@ -156,7 +156,7 @@ export const OpenAPIDocsPage: React.FC = () => {
 
               <Link
                 to="/pricing"
-                className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-slate-950 transition-all"
+                className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-slate-950 transition-all focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
               >
                 Subscribe to Get API Key
               </Link>

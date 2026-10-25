@@ -7,7 +7,7 @@ on:
 
 jobs:
   trigger-tier-market-rates:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_INGEST_TIER_MARKET_RATES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger TIER Market Rates Ingestion

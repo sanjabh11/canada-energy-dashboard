@@ -459,3 +459,27 @@ prefers-reduced-motion (2.3.3), form-error semantics (3.3.1/3.3.3) where
 inputs exist. Local run: **21 passed, 0 failed, 20 skipped** (skipped =
 routes without form inputs). Remaining human-only: screen-reader
 semantics, chart contrast judgment, zoom feel — owner checklist.
+
+## Update — audit-11 remediation batch (Devin, 2026-10-24/25)
+
+- **Cron safety**: `SUPABASE_CRONS_LIVE` global var deleted — 14 workflows
+  converted to per-function vars (`CRON_LIVE_<FUNC>`); only the two
+  deployed functions (`calibration-cron`, `storage-dispatch-scheduler`)
+  are enabled. 11 undeployed functions' workflows stay off.
+- **Manual-assist spec fixed + hardened**: element identity (not tag
+  strings), real ring measurement (outline-style/width or box-shadow —
+  `:focus-visible` alone is tautological), clip-aware visibility
+  (<=4px = visually-hidden technique, not a target), WCAG 2.5.8 logic
+  (min dimension <24px = offender). Spec is now a CI job (chromium).
+  Local chromium: 12 pass / 0 fail / 4 skip.
+- **Real app defects caught + fixed**: api-docs `/pricing` links had no
+  focus ring -> `focus-visible:ring-2` added; forecast page footer/pack
+  links were 16px tall -> `min-h-6` (24px) added.
+- **`contact_leads_lower_email_uniq`** ported to repo migration
+  `20261024001` (no CONCURRENTLY — tx-safe); dedup lookup now fails
+  closed on lookup errors.
+- **Reconciled**: INC-001 register + AGENTS.md marked CLOSED
+  (invalidated-by-deletion, history retained); deployment manifest
+  corrected to 5/110 functions.
+- Codex's Chromium repro result (7f/5p/4s) was accurate; the earlier
+  "21 passed" report overcounted per-project runs and skipped tests.

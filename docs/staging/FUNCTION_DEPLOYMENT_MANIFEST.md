@@ -1,6 +1,6 @@
 # Edge-function deployment manifest (allowlist — owner-gated)
 
-Target `qktgjpbifknqjpvrgkrj`: 0/110 functions deployed.
+Target `qktgjpbifknqjpvrgkrj`: **5/110 deployed** (2026-10-24): `lead-capture` (dedup-patched), `whop-verify-access`, `whop-webhook` (dormant — secrets absent), `calibration-cron`, `storage-dispatch-scheduler`.
 See `docs/PILOT_FUNCTION_INVENTORY.md` for the full classification.
 
 ## Deploy order (secrets first, functions second)

@@ -7,7 +7,7 @@ on:
 
 jobs:
   trigger-market-spike-series:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_INGEST_MARKET_SPIKE_SERIES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Market Spike Series Ingestion

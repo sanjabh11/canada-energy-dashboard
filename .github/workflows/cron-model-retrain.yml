@@ -31,7 +31,7 @@ on:
 
 jobs:
   retrain:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_MODEL_RETRAIN == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -7,7 +7,7 @@ on:
 
 jobs:
   trigger-gas-basis-series:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_INGEST_GAS_BASIS_SERIES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Gas Basis Series Ingestion

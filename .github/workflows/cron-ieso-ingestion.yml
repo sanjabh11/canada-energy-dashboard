@@ -13,7 +13,7 @@ on:
 
 jobs:
   trigger-ieso-ingestion:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_STREAM_ONTARIO_DEMAND == 'true' }}
     runs-on: ubuntu-latest
     
     steps:

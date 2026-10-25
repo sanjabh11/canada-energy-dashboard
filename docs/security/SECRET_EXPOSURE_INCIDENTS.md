@@ -37,7 +37,7 @@ node scripts/check-secret-scan.mjs
   1. Rotate the service-role key: Supabase Dashboard → project `qnymbecjgeaoxsfphrti` → Settings → API → "Reset service role key".
   2. Review access logs: Supabase Dashboard → Logs → Postgres/Auth/API for usage between 2025-10-10 and rotation date; check `edge_invocation_log` for anomalies.
   3. Update all deploy targets that held the old key (Netlify env, local `.env`, CI secrets).
-- **Status:** repository-side verification complete; **rotation + log review = open owner action**. Repo cannot be "clean" on this point until rotation is confirmed.
+- **Status:** CLOSED 2026-10-24 — owner confirmed `qnymbecjgeaoxsfphrti`/`cwijcjhdugfqwsjbrdro` are not in the owner's account (PAT-visible org contains only `qktgjpbifknqjpvrgkrj`); the leak-site project is deleted or third-party-owned, so the leaked key is invalidated-by-deletion. Residual: key remains in old git history — if the project ever resurfaces elsewhere, rotate then.
 - **Recorded:** 2026-10-06 (this register).
 
 ### INC-001 CLI rotation runbook (attempted 2026-10-06)
@@ -130,7 +130,7 @@ rotation needed. Until the project is deleted, the key remains dormant-but-live.
 
 The stop-gate's three questions, answered:
 1. **Service/provider/environment/record name** — enumerated per INC-001..005 above.
-2. **Rotated or revoked?** — **INC-002 closed** (owner-verified revoked, live probe `API_KEY_INVALID` 2026-10-06). **INC-001 (Supabase service_role) remains the only open owner action** — reset the service-role key in the Supabase dashboard and review access logs. INC-003/004/005 are closed.
+2. **Rotated or revoked?** — **INC-002 closed** (owner-verified revoked, live probe `API_KEY_INVALID` 2026-10-06). **INC-001 (Supabase service_role) — CLOSED 2026-10-24**: leak-site project not in owner account (deleted/third-party) — key invalidated-by-deletion; register retains the fact for history. INC-003/004/005 are closed.
 3. **Access logs reviewed?** — owner action recorded in INC-001 step 2.
 
 The correct verdict for Codex is **not** "incident unidentified → block" — it is

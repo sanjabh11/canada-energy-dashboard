@@ -7,7 +7,7 @@ on:
 
 jobs:
   trigger-retailer-rate-offers:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_INGEST_RETAILER_RATE_OFFERS == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Retailer Rate Offers Ingestion

@@ -13,7 +13,7 @@ on:
 
 jobs:
   trigger-data-purge:
-    if: ${{ vars.SUPABASE_CRONS_LIVE == 'true' }}
+    if: ${{ vars.CRON_LIVE_DATA_PURGE_CRON == 'true' }}
     runs-on: ubuntu-latest
     
     steps:

@@ -1365,7 +1365,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                               href={pack.terms_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-cyan-300 transition-colors hover:text-cyan-200"
+                              className="inline-flex items-center min-h-6 text-cyan-300 transition-colors hover:text-cyan-200"
                             >
                               View utility terms
                             </a>
@@ -1580,7 +1580,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                             </button>
                             <Link
                               to="/utility-security"
-                              className="text-cyan-300 transition-colors hover:text-cyan-200"
+                              className="inline-flex items-center min-h-6 text-cyan-300 transition-colors hover:text-cyan-200"
                             >
                               Utility security statement
                             </Link>
@@ -2835,7 +2835,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                         </span>
                         <Link
                           to="/utility-security"
-                          className="text-cyan-300 transition-colors hover:text-cyan-200"
+                          className="inline-flex items-center min-h-6 text-cyan-300 transition-colors hover:text-cyan-200"
                         >
                           Attach utility security review pack
                         </Link>
