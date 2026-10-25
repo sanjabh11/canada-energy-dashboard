@@ -390,3 +390,26 @@ Advisor pull via management API: **208 lints** — dispositioned:
 Proof layer: these are hosted mutations on `qktgjpbifknqjpvrgkrj`
 executed via owner-authorized PAT through the management query
 endpoint — logged here as the required evidence receipt.
+
+## Update — hosted hardening pass 2 (Devin, 2026-10-24)
+
+- `function_search_path_mutable` 42 -> 0: all flagged public functions
+  `ALTER ... SET search_path = public, pg_temp` (non-breaking fix).
+- Sec-definer RPC surface closed: `execute_readonly_sql`,
+  `award_badge_if_eligible`, `can_access_feature`,
+  `check_api_rate_limit`, `get_user_tier`, `increment_ai_queries`,
+  `record_api_usage`, `st_estimatedextent` (3 overloads) EXECUTE revoked
+  from anon+authenticated — zero client/edge callers; service_role
+  unaffected. Advisors still show 11 (lint cache lag); revocation verified.
+- `security_definer_view` ERROR class: PostgREST served all 26 to anon.
+  REVOKED `anon` SELECT on 25 (kept `connector_freshness` — the client
+  reads it in connectorFreshness.ts); REVOKED `authenticated` SELECT on
+  the 3 internal/business views: `user_tier_stats`,
+  `gtm_weekly_funnel_summary`, `data_quality_summary`. Verified: anon
+  probes -> 401; connector_freshness -> 200.
+- Residual (documented, not mutated): `rls_enabled_no_policy` x107
+  intentional deny-all; `extension_in_public` x4 (cube, earthdistance,
+  postgis, vector — schema move is disruptive, low-value);
+  `materialized_view_in_api` x5 + `spatial_ref_sys` managed exception.
+- Lint totals: 208 -> 165 (advisor recompute lag explains residual
+  anon/sec-definer counts).
