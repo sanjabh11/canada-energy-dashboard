@@ -1,8 +1,11 @@
 # Pilot Function Inventory (audit-9, P2)
 
-Target `qktgjpbifknqjpvrgkrj`: **0 of 110 functions deployed.** Deploy is
-owner/secret-gated (`WHOP_CEIP_*`, service_role). The client route calls
-`lead-capture` (not `intake`).
+Target `qktgjpbifknqjpvrgkrj`: **5 of 110 functions reported deployed**
+(`lead-capture`, `whop-verify-access`, `whop-webhook`, `calibration-cron`,
+`storage-dispatch-scheduler`). This is owner-reported inventory; hosted MCP
+verification remains pending because the connected account cannot access the
+target project. Deploy is secret-gated (`WHOP_CEIP_*`, service_role). The
+client route calls `lead-capture` (not `intake`).
 
 ## Classification
 

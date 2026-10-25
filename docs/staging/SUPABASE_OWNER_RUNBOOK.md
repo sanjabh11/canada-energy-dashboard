@@ -111,8 +111,8 @@ bucket existence, access policy, upload, readback, retention, or rollback.
 
 ## Gate 6 — operations and rollback
 
-- Keep `SUPABASE_CRONS_LIVE` disabled until all allowlisted functions pass
-  smoke tests.
+- Keep every `CRON_LIVE_<FUNC>` variable unset until that function passes its
+  synthetic smoke tests; enable only the reviewed per-function variables.
 - Confirm rate-limit behavior against the actual Netlify/Supabase plan.
 - Verify alerts, log routing, backup schedule, restore time and rollback owner.
 - Exercise manual billing and existing-customer Whop management only.

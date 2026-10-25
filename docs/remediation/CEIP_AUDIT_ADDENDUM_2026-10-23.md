@@ -497,3 +497,26 @@ semantics, chart contrast judgment, zoom feel — owner checklist.
 - Owner-only items remain: Supabase MCP access reconciliation,
   data-steward decisions, privacy/CASL/manual-WCAG/performance,
   buyer experiments (0/11).
+
+## Update — Audit-12 exact-head and owner-lane reconciliation (2026-10-25)
+
+- `fc133bc` is bound by CI run `40214413753` with all four jobs successful.
+  Artifact `12607099570` has GitHub digest
+  `sha256:e826aba042a8c589ea17165e16782c24ac83765363cd987297fa376d0ec205f7`.
+- The downloaded manifest is `complete: true` with `missing_files: []` and
+  `jobs: "not-recorded"`. It contains 9 required core evidence files plus
+  2 manual-assist payloads, for 11 hashed payload files; sidecar and all
+  payload hashes/byte counts verify.
+- Function inventory now records **5/110 reported deployed**, with hosted MCP
+  verification still pending. Cron activation is per-function
+  `CRON_LIVE_<FUNC>`; the removed global `SUPABASE_CRONS_LIVE` switch is not a
+  valid activation path.
+- The Supabase connector is authorized for all app actions but its current
+  OAuth scope exposes only inactive project `cwijcjhdugfqwsjbrdro`; access to
+  target `qktgjpbifknqjpvrgkrj` and leak-site `qnymbecjgeaoxsfphrti` is denied.
+  No hosted mutation was attempted. The owner must reconnect the MCP to the
+  organization containing the target project before read-only inventory or
+  staging actions can proceed.
+- Staging/pilot remain **STOP**. INC-001, project identity, steward decisions,
+  privacy/CASL, manual WCAG, deployed performance, Whop secret/configuration,
+  and buyer validation remain owner-gated at their required proof layers.

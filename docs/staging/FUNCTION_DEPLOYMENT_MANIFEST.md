@@ -13,8 +13,9 @@ See `docs/PILOT_FUNCTION_INVENTORY.md` for the full classification.
 3. `whop-verify-access` — existing-customer entitlement; verify
    401 without auth, entitlement mapping for test member.
 4. `whop-webhook` — verify HMAC gate fails closed without secret.
-5. Then set repo var `SUPABASE_CRONS_LIVE=true` ONLY if cron functions
-   are deployed too; otherwise crons stay skipped.
+5. Set each intended cron's repo variable `CRON_LIVE_<FUNC>=true` only after
+   that function is deployed and its synthetic smoke tests pass. Unset
+   per-function variables fail closed; there is no global cron switch.
 6. Everything else: undeployed = non-pilot (see inventory).
 
 ## Receipts required per function

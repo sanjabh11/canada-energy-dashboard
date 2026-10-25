@@ -60,12 +60,16 @@ function validateFunctionAllowlist(packets, errors, checks) {
     errors.push('function allowlist: missing packet');
     return;
   }
-  const section = text.match(/2\.\s*`lead-capture`[\s\S]*?5\.\s*Then set repo var/)?.[0] ?? '';
+  const section = text.match(/2\.\s*`lead-capture`[\s\S]*?5\.\s*Set each intended cron/)?.[0] ?? '';
   const found = [...section.matchAll(/^\s*[2-4]\.\s*`([^`]+)`/gm)].map((match) => match[1]);
   if (found.length !== PILOT_FUNCTIONS.length || found.some((name, index) => name !== PILOT_FUNCTIONS[index])) {
     errors.push(`function allowlist: expected ${PILOT_FUNCTIONS.join(', ')}, found ${found.join(', ') || 'none'}`);
-  } else if (!text.includes('0/110 functions deployed') || !text.includes('SUPABASE_CRONS_LIVE=true')) {
-    errors.push('function allowlist: missing undeployed baseline or cron safety gate');
+  } else if (
+    !text.includes('0/110 functions deployed') ||
+    !text.includes('CRON_LIVE_<FUNC>') ||
+    !/no global cron switch/i.test(text)
+  ) {
+    errors.push('function allowlist: missing undeployed baseline or per-function cron safety gate');
   } else {
     checks.push('function allowlist');
   }
@@ -156,7 +160,8 @@ export function validateStagingPacketTexts(packets) {
     'owner runbook stop gates',
     (text) =>
       text.includes('Stop conditions') &&
-      text.includes('SUPABASE_CRONS_LIVE') &&
+      text.includes('CRON_LIVE_<FUNC>') &&
+      /unset[\s\S]*until[\s\S]*synthetic smoke tests/i.test(text) &&
       /must not (unpause|apply|deploy|upload)/i.test(text) &&
       text.includes('rollback'),
     errors,
