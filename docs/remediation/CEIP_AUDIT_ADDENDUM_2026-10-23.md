@@ -434,3 +434,18 @@ Deployed to `qktgjpbifknqjpvrgkrj` via owner-approved CLI:
 Hosted proof points so far: anon lead-table INSERT -> 401; innovations
 read -> 200; execute_readonly_sql RPC -> 404; sec-definer views ->
 401/25 anon + 3 authenticated; intake function round-trip -> success.
+
+## Update — dedup closure + cron functions deployed (2026-10-24)
+
+- `contact_leads_lower_email_uniq` unique index on `lower(email)` —
+  DB-level dedup backstop on the new project.
+- `lead-capture` pre-check + `23505`-catch: dup resubmits now return
+  `{"success":true,"duplicate":true}` — verified live.
+- `calibration-cron` + `storage-dispatch-scheduler` deployed (the only
+  two functions invoked by the 14 gated cron workflows);
+  `SUPABASE_CRONS_LIVE=true` set — workflows now run against live
+  functions.
+- Whop functions deployed but dormant: only `VITE_WHOP_APP_ID` exists
+  in `.env`; server-side Whop secrets absent — per owner, Whop is not a
+  current priority.
+- Remaining hosted: CASL/manual-WCAG/perf/buyer gates.
