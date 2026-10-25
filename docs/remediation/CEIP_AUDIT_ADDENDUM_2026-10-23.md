@@ -413,3 +413,24 @@ endpoint — logged here as the required evidence receipt.
   `materialized_view_in_api` x5 + `spatial_ref_sys` managed exception.
 - Lint totals: 208 -> 165 (advisor recompute lag explains residual
   anon/sec-definer counts).
+
+## Update — pilot function deployment (Devin, 2026-10-24)
+
+Deployed to `qktgjpbifknqjpvrgkrj` via owner-approved CLI:
+- `lead-capture` — LIVE-verified end-to-end: malformed POST -> 400;
+  synthetic lead -> `{"success":true}`; row confirmed in
+  `public.contact_leads` (n=2 for synthetic-staging-20261024@example.invalid).
+  Note: `lead-capture` writes to `contact_leads`, NOT
+  `lead_intake_submissions` — intake-table deny-all stays correct.
+  **Dedup gap observed**: identical email resubmitted -> second row
+  accepted (function has no dedupe constraint/logic). Recorded for
+  follow-up; not a regression.
+- `whop-verify-access`, `whop-webhook` — deployed; runtime requires
+  owner-set secrets (WHOP_API_KEY, WHOP_CEIP_*,
+  WHOP_WEBHOOK_SECRET, VITE_WHOP_PRODUCT_*) — untestable until then.
+- `SUPABASE_CRONS_LIVE` stays unset — cron-targeted functions still
+  0 deployed.
+
+Hosted proof points so far: anon lead-table INSERT -> 401; innovations
+read -> 200; execute_readonly_sql RPC -> 404; sec-definer views ->
+401/25 anon + 3 authenticated; intake function round-trip -> success.
