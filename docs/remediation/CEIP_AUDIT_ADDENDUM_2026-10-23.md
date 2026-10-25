@@ -363,3 +363,30 @@ matrix remain preparation artifacts; their hosted and steward gates are open.
   writes on lead tables are live-blocked (grant+policy layer working).
   `provinces` read returns 13 rows via anon key — ported reference
   migration live.
+
+## Update — first hosted hardening pass (Devin, 2026-10-24)
+
+Advisor pull via management API: **208 lints** — dispositioned:
+- `rls_enabled_no_policy` ×108: 107 intentional deny-all
+  (server-only: api_keys, api_usage, lead tables, etc.); **1 real gap:
+  `innovations`** — client `.from('innovations')` read was broken.
+  Fixed: `innovations_public_select` policy created (anon+authenticated
+  SELECT) — anon REST read verified `200`.
+- `anon_security_definer_function_executable` ×11: worst =
+  `execute_readonly_sql(text)` + `(text,integer)` — arbitrary SQL as
+  security definer, anon-executable. Only caller is the `nl2sql` edge
+  function (service_role, unaffected). **REVOKED from
+  anon+authenticated** — anon RPC now returns `404`.
+- `rls_disabled_in_public` ERROR: `spatial_ref_sys` — platform-managed
+  PostGIS table; cannot alter; recorded as managed exception.
+- Remaining review lanes (need per-item decisions, not blanket fixes):
+  `function_search_path_mutable` ×42, `security_definer_view` ×26,
+  `authenticated_security_definer_function_executable` ×11,
+  `materialized_view_in_api` ×5 (transmission_congestion_summary,
+  cross_border_trade_summary, ccus_project_summary,
+  mv_llm_daily_spend, provincial_emissions_summary),
+  `extension_in_public` ×4.
+
+Proof layer: these are hosted mutations on `qktgjpbifknqjpvrgkrj`
+executed via owner-authorized PAT through the management query
+endpoint — logged here as the required evidence receipt.
