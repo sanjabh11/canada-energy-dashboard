@@ -47,7 +47,15 @@ Driven with `supabase` CLI v2.109.1 + `SUPABASE_ACCESS_TOKEN` (PAT). Findings:
 - **Legacy keys cannot be rotated in place** — Supabase removed direct legacy `service_role` rotation. The supported path: create new `sb_publishable_`/`sb_secret_` API keys → migrate usage → rotate JWT signing keys (invalidates the leaked JWT).
 - **Current blocker:** project `qnymbecjgeaoxsfphrti` is `INACTIVE` (free-tier pause) and restore is quota-blocked — owner `sanjabh1103` has the max 2 active free projects (`Avalanche Hub Prod` `eyyellmffzzujyssaayb`, `avalanche-hub-v2` `cyjqvqwpdgluivjoxcfl`). API returned `{"message":"Project must be healthy to create new API keys"}` and restore returned the quota error. **Paused = the leaked key is currently dead, but revives on any restore — rotation is still required.**
 - Endpoints verified live: `GET/POST /v1/projects/{ref}/api-keys`, `GET /v1/projects/{ref}`, `POST /v1/projects/{ref}/restore`, `GET /v1/projects/{ref}/config/auth/signing-keys`.
-- **Project-ref discrepancy (2026-10-21, owner-gated):** an external audit observed a *different* inactive project `cwijcjhdugfqwsjbrdro` in the owner's environment — a ref that appears nowhere in this repository. The incident register's `qnymbecjgeaoxsfphrti` may be a prior/deleted project or the connector may be configured against a newer record. The owner must identify the authoritative project record (which ref actually hosts CEIP data + holds the leaked key) before any restore or key rotation; do not assume the register's ref is current.
+- **Project-ref discrepancy RESOLVED (2026-10-24):** owner confirms
+  `qnymbecjgeaoxsfphrti` and `cwijcjhdugfqwsjbrdro` are NOT in the
+  PAT-visible org (`ewlsdfplszsivrgdqjtp` — which contains only the new
+  `qktgjpbifknqjpvrgkrj`, ACTIVE_HEALTHY). The leak-site project is
+  deleted or third-party-owned; the leaked `service_role` JWT is
+  invalidated-by-deletion (a dead project's key cannot authenticate).
+  **INC-001 closed — 2026-10-24.** Residual: if a third party ever
+  revives the project, its key remains in old repo history — the
+  register's prior rotation guidance still applies in that event.
 
 Resume once a free slot exists (pause/delete an Avalanche project or upgrade):
 

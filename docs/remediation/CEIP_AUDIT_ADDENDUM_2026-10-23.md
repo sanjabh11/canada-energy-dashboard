@@ -349,3 +349,17 @@ restore, hosted mutation, deployment, secret read, outreach, or buyer
 experiment was performed. The four-table decisions, 89-row reconciliation,
 deviation comparison, function manifest, storage receipt, and owner sign-off
 matrix remain preparation artifacts; their hosted and steward gates are open.
+
+## Update — INC-001 closed + first hosted RLS proof (2026-10-24)
+
+- Owner confirmed `qnymbecjgeaoxsfphrti`/`cwijcjhdugfqwsjbrdro` are not in
+  the account — the leak-site project is deleted/third-party, so the
+  leaked service_role key is invalidated-by-deletion. Incident register
+  updated; INC-001 closed.
+- `.env` now carries the new project's anon key + URL/edge base; PAT
+  wired into Supabase CLI + MCP config (`disabled:false`).
+- First hosted proof on `qktgjpbifknqjpvrgkrj`: anonymous POST to
+  `lead_intake_submissions` and `leads` → **401 denied** — direct public
+  writes on lead tables are live-blocked (grant+policy layer working).
+  `provinces` read returns 13 rows via anon key — ported reference
+  migration live.
