@@ -449,3 +449,13 @@ read -> 200; execute_readonly_sql RPC -> 404; sec-definer views ->
   in `.env`; server-side Whop secrets absent — per owner, Whop is not a
   current priority.
 - Remaining hosted: CASL/manual-WCAG/perf/buyer gates.
+
+## Update — WCAG manual-assist suite (2026-10-24)
+
+New spec `tests/component/a11y-manual-assist.spec.ts` mechanizes the
+human-judgment checks: keyboard focus walk (order + visible ring + no
+traps, 2.4.7/2.1.2), interactive target size >=24px (2.5.8),
+prefers-reduced-motion (2.3.3), form-error semantics (3.3.1/3.3.3) where
+inputs exist. Local run: **21 passed, 0 failed, 20 skipped** (skipped =
+routes without form inputs). Remaining human-only: screen-reader
+semantics, chart contrast judgment, zoom feel — owner checklist.
