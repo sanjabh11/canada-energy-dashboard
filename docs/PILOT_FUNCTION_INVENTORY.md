@@ -8,7 +8,7 @@ owner/secret-gated (`WHOP_CEIP_*`, service_role). The client route calls
 
 | Function | Status |
 |---|---|
-| `aeso-ingestion-cron` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `aeso-ingestion-cron` | scheduled — gated by `CRON_LIVE_AESO_INGESTION_CRON` until deployed |
 | `alert-export-health` | non-pilot (staged classification) |
 | `api-keys-admin` | non-pilot (staged classification) |
 | `api-v2-aeso-queue` | api-v2 surface — non-pilot (staged classification) |
@@ -64,22 +64,22 @@ owner/secret-gated (`WHOP_CEIP_*`, service_role). The client route calls
 | `calibration-cron` | non-pilot (staged classification) |
 | `cohort-invite-email` | non-pilot (staged classification) |
 | `create-export-job` | non-pilot (staged classification) |
-| `data-purge-cron` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `data-purge-cron` | scheduled — gated by `CRON_LIVE_DATA_PURGE_CRON` until deployed |
 | `digital-twin` | non-pilot (staged classification) |
 | `energy-rag` | non-pilot (staged classification) |
 | `energy-rag-ingest` | non-pilot (staged classification) |
 | `export-job-status` | non-pilot (staged classification) |
 | `fix-innovations` | non-pilot (staged classification) |
 | `grid-risk` | non-pilot (staged classification) |
-| `groundsource-miner` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `groundsource-miner` | scheduled — gated by `CRON_LIVE_GROUNDSOURCE_MINER` until deployed |
 | `help` | non-pilot (staged classification) |
 | `help-simple` | non-pilot (staged classification) |
 | `historical` | non-pilot (staged classification) |
 | `household-advisor` | non-pilot (staged classification) |
-| `ingest-gas-basis-series` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
-| `ingest-market-spike-series` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
-| `ingest-retailer-rate-offers` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
-| `ingest-tier-market-rates` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `ingest-gas-basis-series` | scheduled — gated by `CRON_LIVE_INGEST_GAS_BASIS_SERIES` until deployed |
+| `ingest-market-spike-series` | scheduled — gated by `CRON_LIVE_INGEST_MARKET_SPIKE_SERIES` until deployed |
+| `ingest-retailer-rate-offers` | scheduled — gated by `CRON_LIVE_INGEST_RETAILER_RATE_OFFERS` until deployed |
+| `ingest-tier-market-rates` | scheduled — gated by `CRON_LIVE_INGEST_TIER_MARKET_RATES` until deployed |
 | `lead-capture` | pilot-required — public intake |
 | `legal` | non-pilot (staged classification) |
 | `llm` | non-pilot (staged classification) |
@@ -95,17 +95,17 @@ owner/secret-gated (`WHOP_CEIP_*`, service_role). The client route calls
 | `nl2sql` | non-pilot (staged classification) |
 | `opportunity-detector` | non-pilot (staged classification) |
 | `ops-health` | non-pilot (staged classification) |
-| `ops-heartbeat` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `ops-heartbeat` | scheduled — gated by `CRON_LIVE_OPS_HEARTBEAT` until deployed |
 | `process-export-jobs` | non-pilot (staged classification) |
 | `rate-alert-email` | non-pilot (staged classification) |
 | `rate-watchdog` | non-pilot (staged classification) |
-| `storage-dispatch-engine` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `storage-dispatch-engine` | scheduled — gated by `CRON_LIVE_STORAGE_DISPATCH_ENGINE` until deployed |
 | `storage-dispatch-scheduler` | non-pilot (staged classification) |
 | `storage-metrics-calculator` | non-pilot (staged classification) |
 | `stream-aeso-grid-data` | non-pilot (staged classification) |
 | `stream-hf-electricity-demand` | non-pilot (staged classification) |
-| `stream-ontario-demand` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
-| `stream-ontario-prices` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `stream-ontario-demand` | scheduled — gated by `CRON_LIVE_STREAM_ONTARIO_DEMAND` until deployed |
+| `stream-ontario-prices` | scheduled — gated by `CRON_LIVE_STREAM_ONTARIO_PRICES` until deployed |
 | `stream-provincial-generation` | non-pilot (staged classification) |
 | `stripe-create-checkout-session` | non-pilot (staged classification) |
 | `stripe-webhook` | non-pilot (staged classification) |
@@ -115,13 +115,14 @@ owner/secret-gated (`WHOP_CEIP_*`, service_role). The client route calls
 | `utility-connector-telemetry-ingest` | non-pilot (staged classification) |
 | `utilityapi-demo` | non-pilot (staged classification) |
 | `walkthroughs` | non-pilot (staged classification) |
-| `weather-ingestion-cron` | scheduled — gated by SUPABASE_CRONS_LIVE until deployed |
+| `weather-ingestion-cron` | scheduled — gated by `CRON_LIVE_WEATHER_INGESTION_CRON` until deployed |
 | `whop-verify-access` | pilot — existing-customer entitlement (owner config) |
 | `whop-webhook` | pilot — billing lifecycle (owner config) |
 
 ## Rules
 
 - Pilot allowlist: `lead-capture`, `whop-verify-access`, `whop-webhook` only.
-- Scheduled functions deploy only after the owner sets repo var
-  `SUPABASE_CRONS_LIVE=true` (workflows are guarded; until then they skip).
+- Scheduled functions deploy + enable only after the owner sets their
+  per-function repo var `CRON_LIVE_<FUNC>=true` (2026-10-25: the global
+  `SUPABASE_CRONS_LIVE` switch was removed; unset vars fail closed).
 - Acquisition functions stay disabled; existing-customer paths only.

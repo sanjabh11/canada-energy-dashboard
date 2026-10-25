@@ -67,26 +67,26 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Current exact-head source/CI subject | `ebed65e` / run `40206135086` | CI-verified; all four jobs successful |
+| Current exact-head source/CI subject | `e5261b2` / run `40207778791` | CI-verified; all four jobs successful |
 | Prior code-bearing CI subject | `a460a82` / run `40071166986` | Historical CI-verified binding-gate change; evidence-binding was the staleness signal |
 | Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
-| Current documentation subject | `ebed65e` / run `40206135086` | CI-verified exact-head receipt |
+| Current documentation subject | `e5261b2` / run `40207778791` | CI-verified exact-head receipt |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Canonical current CI | [run 40206135086](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40206135086) | GitHub job conclusions |
-| Current artifact receipt | `12604556088`, digest `sha256:2812b67cd18bc5eb0bd17ba61d1dc31c5256a6318fe013fa86bae7ffaa01ee6d` | GitHub artifact API + downloaded ZIP digest + internal hash checks |
+| Canonical current CI | [run 40207778791](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40207778791) | GitHub job conclusions |
+| Current artifact receipt | `12604898756`, digest `sha256:47f1b93bb27063ccd2791e95adb97f804f94694e906c63977336949ef9c08bea` | GitHub artifact API + downloaded ZIP digest + internal hash checks |
 | CI jobs | `lint-typecheck`, `test`, `evidence-binding`, `build-and-smoke`: success | CI-verified |
 | Manifest | `complete=true`, nine evidence files, `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
 | Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
-| Local overlay | HEAD `ebed65e`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
-| Current document risk | `ebed65e` exact-head receipt is current; `389dad3` remains historical | Hosted proof and owner gates remain open |
+| Local overlay | HEAD `e5261b2`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
+| Current document risk | `e5261b2` exact-head receipt is current; `389dad3` remains historical | Hosted proof and owner gates remain open |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
 | Replacement-project security snapshot | `SUPABASE_SECURITY_BASELINE_2026-10-23.md`; 26 ERROR and 73 WARN findings plus 108 INFO findings | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
 
-The current repository subject for CI proof is `ebed65e`, and its exact-head
-receipt is run `40206135086`. The earlier `389dad3`/`40073506314` receipt is
+The current repository subject for CI proof is `e5261b2`, and its exact-head
+receipt is run `40207778791`. The earlier `389dad3`/`40073506314` receipt is
 retained as historical evidence. The local checkout still carries the
 intentional lcov deletion and zero-byte dump stubs; those dirty files are not
 included in the CI proof and must remain preserved.

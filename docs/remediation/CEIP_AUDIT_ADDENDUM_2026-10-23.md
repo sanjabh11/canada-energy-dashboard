@@ -483,3 +483,17 @@ semantics, chart contrast judgment, zoom feel — owner checklist.
   corrected to 5/110 functions.
 - Codex's Chromium repro result (7f/5p/4s) was accurate; the earlier
   "21 passed" report overcounted per-project runs and skipped tests.
+
+## Update — audit-12 doc reconciliation (Devin, 2026-10-24/25)
+
+- Bound source `e5261b2` / run `40207778791` — all four jobs green;
+  evidence-only HEAD distinction recorded in goal.md/mission.md.
+- `PILOT_FUNCTION_INVENTORY.md` reconciled: `0/110` -> `5/110`
+  (deployed set named) and `SUPABASE_CRONS_LIVE` references replaced
+  with per-function `CRON_LIVE_<FUNC>` gates.
+- `a11y-manual-assist` target-size semantics corrected: WCAG 2.5.8
+  spacing exception + clip-aware visibility; skipped tests reported
+  honestly. Chromium local: 12 pass / 4 skip / 0 fail.
+- Owner-only items remain: Supabase MCP access reconciliation,
+  data-steward decisions, privacy/CASL/manual-WCAG/performance,
+  buyer experiments (0/11).

@@ -94,8 +94,20 @@ for (const r of ROUTES) {
         // hidden OR visually-clipped (<=4px min-dim: sr-only/skip-link pattern —
         // these elements are not presented targets until focused/expanded)
         if (Math.min(r.width, r.height) <= 4 || el.offsetParent === null) continue;
-        // WCAG 2.5.8: target is deficient when its smallest dimension < 24px
+        // WCAG 2.5.8: <24px is deficient UNLESS the spacing exception holds —
+        // no other target's 24px bounding circle may intersect this one.
         if (Math.min(r.width, r.height) < 24) {
+          const cx = r.x + r.width / 2;
+          const cy = r.y + r.height / 2;
+          const spacingOk = [...els].every((o) => {
+            if (o === el) return true;
+            const or_ = o.getBoundingClientRect();
+            if (Math.min(or_.width, or_.height) <= 4) return true;
+            const ocx = or_.x + or_.width / 2;
+            const ocy = or_.y + or_.height / 2;
+            return Math.hypot(cx - ocx, cy - ocy) >= 24;
+          });
+          if (spacingOk) continue;
           offenders.push(
             `${el.tagName} "${(el.textContent || '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`,
           );
