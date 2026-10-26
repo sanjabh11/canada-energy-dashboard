@@ -7,6 +7,22 @@ not a staging, deployment, production, compliance, or buyer-validation receipt.
 The repository remains under the controlled-pilot mission and all hosted and
 human gates remain stop-gated.
 
+## Current exact-head CI receipt — 2026-10-26
+
+- Bound source: `180a1e5d745d961d7b1b48d8c14f7b82dd3e746a`
+- CI run: `40282361170` (head SHA exact)
+- Verification jobs: `lint-typecheck`, `test`, and `build-and-smoke` all succeeded
+- Evidence-binding job: failed as the designed staleness signal for the prior
+  unbound code commit; it does not invalidate the three verification jobs
+- Artifact: `12634400722`
+- GitHub artifact digest: `sha256:a6553839f6f73e3d8174be3a949123e60ff3507ddfeb141b864137c730e849ff`
+- Local ZIP rehash: not performed because the approved command path blocked
+  network egress; no local byte-level verification is claimed
+
+This receipt supersedes the earlier snapshot for repository CI identity. It
+still does not prove hosted staging, owner approval, compliance, or buyer
+validation.
+
 ## Snapshot identity
 
 - Branch: `codex/green-button-truth-spine`

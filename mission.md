@@ -27,6 +27,15 @@ local checkout at capture was `de11fa4` with an intentional dirty overlay.
 This snapshot does not upgrade hosted staging, manual quality, compliance, or
 buyer proof.
 
+
+**Current source receipt (2026-10-26):** `180a1e5` is bound by CI run
+`40282361170`. The three verification jobs succeeded; the evidence-binding
+job failed only because the preceding code commit had not yet been covered.
+Artifact `12634400722` and GitHub digest
+`sha256:a6553839f6f73e3d8174be3a949123e60ff3507ddfeb141b864137c730e849ff`
+are recorded. This remains repository proof only; staging and pilot remain
+STOP.
+
 The safe execution scope before owner gates is repository inspection, evidence
 reconciliation, read-only testing, documentation, and preparation of owner
 runbooks. No phase plan or mock runner output changes the current decision.

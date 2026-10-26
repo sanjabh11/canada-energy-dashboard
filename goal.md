@@ -13,6 +13,16 @@
 > project's hosted controls, named owner approvals, and buyer evidence exist.
 > Never infer closure from code presence or an unrun test.
 
+**Current bound source (2026-10-26):** bound HEAD `180a1e5d745d961d7b1b48d8c14f7b82dd3e746a` — CI run
+> `40282361170` (source head SHA exact; `lint-typecheck`, `test`, and
+> `build-and-smoke` successful; the `evidence-binding` job is the expected
+> staleness signal for the preceding unbound code commit). Artifact
+> `12634400722`, GitHub digest
+> `sha256:a6553839f6f73e3d8174be3a949123e60ff3507ddfeb141b864137c730e849ff`.
+> GitHub job conclusions are authoritative; the manifest jobs field remains
+> an honest sentinel. This receipt proves repository CI only, not staging or
+> pilot readiness.
+
 **Audit snapshot (2026-10-26; captured before this documentation update; not CI proof):**
 
 - The latest remote PR head at capture was `5ba25d9`, bound by CI run
@@ -38,7 +48,7 @@
 | Phase | Status | Highest proof layer | Next checkpoint |
 |---|---|---|---|
 | P0 — incident and preservation | complete | owner-recorded | retain closure evidence and preserve dirty overlay |
-| P1 — goal/evidence binding | in progress | remote CI; this update pending exact-head CI | bind the resulting documentation commit to a fresh exact-head CI run |
+| P1 — goal/evidence binding | complete | committed CI | `180a1e5` / run `40282361170` | three verification jobs green; artifact `12634400722`; GitHub digest recorded above; binding gate staleness signal documented | repo | keep hosted gates blocked and preserve receipt |
 | P2 — repository security/billing | ci-verified remotely | committed CI | verify replacement-project grants, RLS and function behavior in staging |
 | P8 — replacement-project staging | blocked | none | backup/export, migration order, RLS, rate limits, retention, rollback |
 | P9 — buyer validation | blocked | none | CASL/privacy approval followed by 11 paid experiments |
