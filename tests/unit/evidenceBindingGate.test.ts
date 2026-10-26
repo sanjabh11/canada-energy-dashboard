@@ -48,6 +48,7 @@ describe('evidence-binding gate — negative fixtures', () => {
         'docs/staging/FUNCTION_DEPLOYMENT_MANIFEST.md',
         'docs/staging/MIGRATION_REPLAY_COMPARISON.md',
         'docs/staging/OWNER_SIGNOFF_MATRIX.md',
+        'docs/staging/SUPABASE_OWNER_RUNBOOK.md',
         'docs/staging/STORAGE_RECEIPT_TEMPLATE.md',
         'docs/staging/WITHHELD_ROWS_RECONCILIATION_PACKET.md',
         '.phase-loop/ceip-controlled-pilot-mission.jsonl',

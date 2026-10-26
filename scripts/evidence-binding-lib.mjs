@@ -13,7 +13,7 @@ export const EVIDENCE_ALLOWLIST = [
   // The incident register is an evidence record: status changes remain
   // auditable without changing application behavior or CI semantics.
   /^docs\/security\/SECRET_EXPOSURE_INCIDENTS\.md$/,
-  /^docs\/staging\/(FOUR_TABLE_DECISIONS|FUNCTION_DEPLOYMENT_MANIFEST|MIGRATION_REPLAY_COMPARISON|OWNER_SIGNOFF_MATRIX|STORAGE_RECEIPT_TEMPLATE|WITHHELD_ROWS_RECONCILIATION_PACKET)\.md$/,
+  /^docs\/staging\/(FOUR_TABLE_DECISIONS|FUNCTION_DEPLOYMENT_MANIFEST|MIGRATION_REPLAY_COMPARISON|OWNER_SIGNOFF_MATRIX|STORAGE_RECEIPT_TEMPLATE|WITHHELD_ROWS_RECONCILIATION_PACKET|SUPABASE_OWNER_RUNBOOK)\.md$/,
   /^\.phase-loop\//,
   /^\.positioning-audit\//,
 ];
