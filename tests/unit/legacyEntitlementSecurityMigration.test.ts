@@ -53,7 +53,7 @@ describe('legacy entitlement helper privilege boundary', () => {
         GRANT EXECUTE ON FUNCTION public.get_user_tier(uuid) TO PUBLIC;
         GRANT EXECUTE ON FUNCTION public.can_access_feature(uuid, text) TO PUBLIC;
         GRANT EXECUTE ON FUNCTION public.increment_ai_queries(uuid) TO PUBLIC;
-        GRANT EXECUTE ON FUNCTION public.award_badge_if_eligible(uuid) TO PUBLIC;
+        GRANT EXECUTE ON FUNCTION public.award_badge_if_eligible(uuid, text) TO PUBLIC;
       `);
 
       await db.exec(migration);
