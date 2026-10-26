@@ -18,6 +18,15 @@ owner approvals, manual quality evidence and buyer validation remain open.
 Staging and pilot are **STOP**. This mission artifact grants no deployment,
 restoration, billing, outreach or buyer authority.
 
+**Audit snapshot (2026-10-26; captured before this documentation update):** The authoritative incident register records
+INC-001 closed because the leak-site project was deleted or is outside the
+owner's account. The forward project is `qktgjpbifknqjpvrgkrj`; its dashboard
+inventory is read-only evidence and does not prove hosted behavior. The latest
+remote PR head at capture was `5ba25d9` on CI run `40216410789`, while the
+local checkout at capture was `de11fa4` with an intentional dirty overlay.
+This snapshot does not upgrade hosted staging, manual quality, compliance, or
+buyer proof.
+
 The safe execution scope before owner gates is repository inspection, evidence
 reconciliation, read-only testing, documentation, and preparation of owner
 runbooks. No phase plan or mock runner output changes the current decision.
@@ -44,8 +53,9 @@ The mission is complete only when all of the following are true:
 3. A clean-clone reproduction has regenerated the required coverage and
    browser evidence, or the inability to reproduce is explicitly recorded as
    an unresolved risk.
-4. Supabase project identity and INC-001 key invalidation/log review are
-   resolved by the owner before restoration or hosted testing.
+4. The incident register records INC-001 closed by deletion or third-party
+   ownership of the leak-site project, and the replacement project identity is
+   confirmed before hosted testing; the leak-site project is never restored.
 5. Hosted migration order, RLS, direct-write denial, rate limits, retention,
    redacted logs, monitoring, backup/restore, rollback, Whop legacy access,
    and billing kill-switches are verified with synthetic data.
@@ -138,8 +148,10 @@ author the evidence under review. It must:
 8. Search the merged diff and active documents for stale bindings, generated
    artifact coupling, unsupported claims, test-only production paths, and
    contradictory status language.
-9. Refuse to close INC-001, hosted Supabase, Whop deployment, CASL, manual
-   WCAG, performance, or buyer gates without the named external evidence.
+9. Refuse to close hosted Supabase, Whop deployment, CASL, manual WCAG,
+   performance, or buyer gates without the named external evidence. Treat
+   INC-001 as closed only at the incident-register proof layer and never infer
+   that closure from a new-project dashboard state.
 10. Check binary obligations rather than treating a subjective confidence
     percentage as completion: all dimensions dispositioned, all critical/high
     findings challenged, identities valid, and every unresolved item assigned
@@ -322,10 +334,10 @@ raising a timeout or reducing coverage.
    imported, 0 edge functions deployed. The `qnymb…`/`cwij…` question is
    superseded for the forward path; the register keeps `qnymb…` as the
    leak-site project of record.
-2. Owner invalidates the leaked INC-001 key on `qnymbecjgeaoxsfphrti`
-   (revoke/disable the service_role key or delete the project) and reviews
-   access logs. Supabase guidance requires explicit key rotation/revocation;
-   pausing alone is not sufficient.
+2. INC-001 is recorded closed (2026-10-24) because the leak-site project was
+   deleted or is outside the owner's account. Preserve the register and do not
+   restore that project; if it resurfaces, the owner must rotate/revoke the key
+   and review access logs before any use.
 3. Remaining on the new project: `.env` anon key, edge-function deploy
    allowlist, hosted RLS/migration-order/rate-limit/retention/rollback
    proofs, the current advisor-finding disposition in

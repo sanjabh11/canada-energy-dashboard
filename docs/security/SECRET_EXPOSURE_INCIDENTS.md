@@ -26,14 +26,14 @@ node scripts/check-secret-scan.mjs
 
 ---
 
-## INC-001 — Supabase `service_role` key committed to public repo — **OPEN: ROTATION REQUIRED (owner)**
+## INC-001 — Supabase `service_role` key committed to public repo — **CLOSED 2026-10-24: INVALIDATED-BY-DELETION (owner-recorded)**
 
 - **Provider/service:** Supabase, project ref `qnymbecjgeaoxsfphrti`
 - **Environment:** production credentials committed to a **PUBLIC** GitHub repo (`sanjabh11/canada-energy-dashboard`)
 - **Record name:** `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`
 - **Evidence:** commit `0422accf` (2025-10-10, "Phase 5 Final") added `.env.local` containing a real `service_role` JWT (`eyJhbGci…`, payload `role: service_role`, `exp: 2035-08-24`). File deleted in `d110a28c`, but **the value persists in public git history** and must be treated as compromised. Not present at HEAD or in any working-tree `.env` (verified).
 - **Impact:** service_role bypasses all RLS — full read/write/admin on every table.
-- **Owner actions (CANNOT be delegated to an agent):**
+- **Historical owner actions (recorded before closure; not a current blocker):**
   1. Rotate the service-role key: Supabase Dashboard → project `qnymbecjgeaoxsfphrti` → Settings → API → "Reset service role key".
   2. Review access logs: Supabase Dashboard → Logs → Postgres/Auth/API for usage between 2025-10-10 and rotation date; check `edge_invocation_log` for anomalies.
   3. Update all deploy targets that held the old key (Netlify env, local `.env`, CI secrets).

@@ -5,12 +5,45 @@
 > and evidence-packaging gaps; verify the exact final tree through
 > reproducible tests and approved CI; preserve verified access for existing
 > Whop customers while removing Whop acquisition and channel priority.
-> Continue repository work while Supabase remains paused. Keep restoration,
-> staging, production, and pilot blocked until INC-001 is invalidated, logs
-> are reviewed, named owners approve their gates, and buyer evidence exists.
+> Continue repository work while the replacement Supabase project is under
+> controlled preparation. INC-001 is closed at the owner-recorded incident
+> layer because the leak-site project was deleted or is outside the owner's
+> account; preserve that historical evidence and never restore the leak-site
+> project. Keep staging, production, and pilot blocked until the replacement
+> project's hosted controls, named owner approvals, and buyer evidence exist.
 > Never infer closure from code presence or an unrun test.
 
-**Milestone status (2026-10-25):** bound HEAD `fc133bc` — CI run
+**Audit snapshot (2026-10-26; captured before this documentation update; not CI proof):**
+
+- The latest remote PR head at capture was `5ba25d9`, bound by CI run
+  `40216410789`; all four jobs succeeded. This receipt did not prove the local
+  checkout.
+- The local checkout at capture was `de11fa4`, with the intentional
+  `coverage/lcov.info` deletion and untracked zero-byte dump stubs. No reset,
+  clean, or restoration is permitted.
+- The replacement project is `qktgjpbifknqjpvrgkrj`. Read-only dashboard
+  evidence shows migrations and five visible Edge Functions, no Storage
+  buckets/objects, and no Free-plan scheduled backups. Hosted behavior remains
+  unverified.
+- The displayed project-scoped MCP token has been revoked. The CLI OAuth MCP
+  remains the preferred read-only path; the in-chat connector still requires
+  account refresh before it can query the replacement project.
+- The authoritative incident register records INC-001 closed by deletion or
+  third-party ownership of the leak-site project. The residual risk is the
+  historical credential in public Git history; the leak-site project must not
+  be restored.
+
+**Current phase overrides:**
+
+| Phase | Status | Highest proof layer | Next checkpoint |
+|---|---|---|---|
+| P0 — incident and preservation | complete | owner-recorded | retain closure evidence and preserve dirty overlay |
+| P1 — goal/evidence binding | in progress | remote CI; this update pending exact-head CI | bind the resulting documentation commit to a fresh exact-head CI run |
+| P2 — repository security/billing | ci-verified remotely | committed CI | verify replacement-project grants, RLS and function behavior in staging |
+| P8 — replacement-project staging | blocked | none | backup/export, migration order, RLS, rate limits, retention, rollback |
+| P9 — buyer validation | blocked | none | CASL/privacy approval followed by 11 paid experiments |
+
+**Historical milestone (2026-10-25; superseded for current-state claims):** bound HEAD `fc133bc` — CI run
 > `40214413753` — `head_sha` exact; all four jobs green including
 `evidence-binding` (the audit-12 chain is covered inside bound source
 `fc133bc`; run conclusion `success`) (artifact
@@ -92,7 +125,7 @@ owner approval or buyer validation.
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
-| P0 — Preservation and INC-001 owner separation | in progress | source | current HEAD `fc133bc`; intentional dirty overlay preserved | exact-head CI receipt; lcov deletion and zero-byte stubs remain classified | repo | owner resolves Supabase project identity + invalidates INC-001 | project-ref mismatch (qnymb… vs cwij…) and local dirty overlay remain |
+| P0 — Preservation and INC-001 owner separation | complete | owner-recorded | leak-site deletion/third-party ownership recorded in incident register; intentional dirty overlay preserved | incident register closure; lcov deletion and zero-byte stubs remain classified | repo/owner | retain closure evidence; never restore leak-site project | historical credential remains in public Git history |
 | P1 — Current-tree addendum and evidence binding | in progress | committed CI | bound source `fc133bc` / run `40214413753` | artifact `12607099570`; digest `sha256:e826aba042a8c589ea17165e16782c24ac83765363cd987297fa376d0ec205f7`; manifest/sidecar/11 payload hashes verified | repo | retain current receipt and historical distinction | manifest jobs field is explicitly not-recorded; hosted proof remains absent |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
 | P3 — Stale economics suppressed | partial | local tests + committed CI | `fc133bc` / run `40214413753` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
@@ -100,7 +133,7 @@ owner approval or buyer validation.
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
 | P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `fc133bc` / run `40214413753` | automated axe+reflow and browser evidence retained (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
 | P7 — CI green; reproduction + manifest completeness | partial | committed CI | `fc133bc` / run `40214413753` | complete manifest, sidecar, 11 hashed payload files, external four-job success | repo → CI | independent clean-clone lcov and hosted staging | local lcov deletion remains intentional; hosted proof absent |
-| P8 — Supabase staging and named-owner approvals | blocked | — | — | — | owner | INC-001 + project identity + named approvals | all hosted evidence absent |
+| P8 — Replacement Supabase staging and named-owner approvals | blocked | — | — | — | owner | backup/export, migration order, RLS, rate limits, retention, rollback and named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 
 Status values: `not started / in progress / blocked / complete`.
@@ -110,9 +143,10 @@ Proof-layer vocabulary: `source` < `local tests` < `committed CI` < `staging` < 
 
 - No buyer contact, no new checkout enablement, no project restore, no hosted
   migration, no staging/production deploy, no owner-gate approval by agents.
-- INC-001 (`SUPABASE_SERVICE_ROLE_KEY` in public history, `0422accf`) remains
-  an open owner action until key invalidation + log review, or project
-  deletion on migration. See the incident register.
+- INC-001 (`SUPABASE_SERVICE_ROLE_KEY` in public history, `0422accf`) is
+  closed at the incident-register layer by deletion or third-party ownership
+  of the leak-site project. Preserve the historical record and do not restore
+  that project; any future resurfacing requires owner rotation and log review.
 - The coverage threshold is set only from a passing full serial run; the current
   committed CI measurement is 22.55% lines, while the local lcov deletion is
   unresolved and must not be treated as a passing local coverage state.
