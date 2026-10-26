@@ -7,8 +7,6 @@ import { validateApiKeyAccess } from "../_shared/apiKeyAccess.ts";
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
   ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-  ?? Deno.env.get("EDGE_SUPABASE_ANON_KEY")
-  ?? Deno.env.get("SUPABASE_ANON_KEY")
   ?? "";
 
 const supabase = SUPABASE_URL && SUPABASE_KEY
