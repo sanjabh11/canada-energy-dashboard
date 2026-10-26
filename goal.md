@@ -50,7 +50,7 @@
 | Phase | Status | Highest proof layer | Next checkpoint |
 |---|---|---|---|
 | P0 — incident and preservation | complete | owner-recorded | retain closure evidence and preserve dirty overlay |
-| P1 — goal/evidence binding | complete | committed CI | code source `3941e1d` / run `40292290033`; evidence-only docs `853f7eee` / run `40294701772` | artifact `12638082780`; digest `sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`; all four jobs green | retain receipt; keep hosted gates blocked | hosted proof absent |
+| P1 — goal/evidence binding | complete | committed CI | code source `3941e1d` / run `40292290033`; evidence-only docs `853f7eee` / run `40294701772`; artifact `12638082780`; digest `sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`; all four jobs green; hosted gates remain blocked |
 | P2 — repository security/billing | ci-verified remotely | committed CI | repository hardening is verified; replacement-project grants, RLS and function behavior remain staging-gated |
 | P8 — replacement-project staging | blocked | none | backup/export, migration order, RLS, rate limits, retention, rollback |
 | P9 — buyer validation | blocked | none | CASL/privacy approval followed by 11 paid experiments |
@@ -173,7 +173,7 @@ checks.
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
 | P0 — Preservation and INC-001 owner separation | complete | owner-recorded | leak-site deletion/third-party ownership recorded in incident register; intentional dirty overlay preserved | incident register closure; lcov deletion and zero-byte stubs remain classified | repo/owner | retain closure evidence; never restore leak-site project | historical credential remains in public Git history |
-| P1 — Current-tree addendum and evidence binding | complete | committed CI | code source `3941e1d` / run `40292290033`; evidence-only docs `853f7eee` / run `40294701772` | artifact `12638082780`; digest `sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`; all four jobs green | retain receipt; keep hosted gates blocked | hosted proof absent |
+| P1 — Current-tree addendum and evidence binding | complete | committed CI | code source `3941e1d` / run `40292290033`; evidence-only docs `853f7eee` / run `40294701772` | artifact `12638082780`; digest `sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`; all four jobs green | repo | retain receipt; keep hosted gates blocked | hosted proof absent |
 | P2 — Repository security and billing code | partial | committed CI | `3941e1d` / run `40292290033` | readonly-SQL privileges, fail-closed rate protection, service-role-only API accounting; hosted RLS still pending | repo → owner | apply and test hosted controls in staging | hosted denial owner-gated |
 | P3 — Stale economics suppressed | partial | committed CI | `3941e1d` / run `40292290033` | provenance/freshness, allocator availability, landfill screening controls retained | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
 | P4 — Whop legacy path and deployment proof | partial | committed CI | `3941e1d` / run `40292290033` | server-verified identity/entitlement and acquisition removal retained | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
