@@ -1,5 +1,25 @@
 # goal.md — CEIP controlled-pilot objective
 
+## Current authoritative receipt — 2026-10-26
+
+**Bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run**
+> `40307916382`
+
+The exact-head run completed with `lint-typecheck`, `test`, and `build-and-smoke` successful. Its `evidence-binding` job failed only because this document set still named the preceding receipt; that is the designed stale-document signal, not a source-test failure. The run's merge checkout was `2a302ccb48ac209d590db68c779406511b4ec271`. Evidence artifact `12645175367` has GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; its manifest is complete, has no missing files, and its 11 listed payload hashes and sizes plus the manifest sidecar were independently verified. This proves repository CI only; it does not prove hosted staging, owner approval, or pilot readiness.
+
+This receipt supersedes older “current” paragraphs below. The source change is `20261026003_restrict_legacy_entitlement_helpers.sql`, which removes `anon` and `authenticated` EXECUTE grants from four unused SECURITY DEFINER helpers, pins their search path, and retains service-role execution for an explicitly reviewed server path. The replacement project still has the prior migration frontier, so the hosted helpers remain exposed until an owner applies and verifies this migration in staging.
+
+| Phase | Status | Highest proof layer | Next checkpoint |
+|---|---|---|---|
+| P0 incident/preservation | complete | owner-recorded | retain incident closure and preserve the intentional dirty overlay |
+| P1 evidence binding | in progress | CI-verified source; docs rebind pending | run the evidence-only document update and verify its binding job |
+| P2 repository security | complete for this overlay | CI-verified | apply migration and test hosted grants/RLS in owner-run staging |
+| P8 replacement-project staging | blocked | none | backup, migration order, RLS/direct-write denial, rate limits, retention, restore and rollback |
+| P9 buyer validation | blocked | none | privacy/CASL approval, then 11 paid experiments |
+
+The currently authenticated Supabase account is `sanjabh11@gmail.com`; its token inventory contains no matching CEIP/Devin token, so no unrelated token was revoked. OAuth MCP remains the read-only path. Do not claim token revocation without the owner account and a matching token record.
+
+
 > Bring CEIP to an evidence-backed controlled-pilot decision. Close
 > repository-owned security, data-integrity, calculation, claims, quality,
 > and evidence-packaging gaps; verify the exact final tree through
@@ -13,7 +33,7 @@
 > project's hosted controls, named owner approvals, and buyer evidence exist.
 > Never infer closure from code presence or an unrun test.
 
-**Current code-bearing verification source (2026-10-26):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` — CI run
+**Historical code-bearing verification source (superseded by the authoritative receipt above):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` — CI run
 > `40292290033` (head SHA exact; `lint-typecheck`, `test`, and
 > `build-and-smoke` succeeded). The `evidence-binding` job failed only
 > because these documents still referenced the previous source; that is the
@@ -45,7 +65,7 @@
   historical credential in public Git history; the leak-site project must not
   be restored.
 
-**Current phase overrides:**
+**Historical phase snapshot (superseded by the authoritative phase table above):**
 
 | Phase | Status | Highest proof layer | Next checkpoint |
 |---|---|---|---|
@@ -109,7 +129,7 @@ but its evidence-binding job was the intended staleness signal.
 > `2cdc44b`, 1186-test, 80-browser, and prior run IDs — are superseded;
 > see dated addenda.)
 >
-> **Current checkout:** `fc133bc` is CI-verified by run `40214413753`. The
+> **Historical checkout snapshot:** `fc133bc` is CI-verified by run `40214413753`. The
 > tracked `coverage/lcov.info` deletion and zero-byte untracked dump stubs
 > remain intentionally preserved and are not backup evidence. No reset or
 > restoration was performed.
@@ -157,7 +177,7 @@ but its evidence-binding job was the intended staleness signal.
 A code change is not CI evidence; CI is not staging evidence; staging is not
 owner approval or buyer validation.
 
-## Current repository security overlay
+## Historical repository security overlay
 
 The repository now contains two additional hardening migrations:
 `20261026001_harden_readonly_sql_privileges` and

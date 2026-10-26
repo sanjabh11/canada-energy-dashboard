@@ -106,3 +106,14 @@ service-role staging checks. No hosted mutation was performed by this agent.
    experiments and records the decision.
 
 **Decision:** repository work may continue; staging and pilot remain STOP.
+
+
+## Security overlay receipt — 2026-10-26
+
+- Final source: `3cc92a5a6e7ce872efd052d654b09f413686e3ff`; CI run `40307916382`; verification jobs `lint-typecheck`, `test`, and `build-and-smoke` succeeded. The evidence-binding job failed only on stale document identity before this update.
+- Artifact: `12645175367`; GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; merge checkout `2a302ccb48ac209d590db68c779406511b4ec271`. Manifest `complete=true`, `missing_files=[]`, 11 payloads; independent file-size/hash and sidecar checks passed.
+- Repository change: `20261026003_restrict_legacy_entitlement_helpers.sql` restricts four unused SECURITY DEFINER helper functions to service-role execution and pins `search_path`. Focused tests, typecheck, migration-version verification and diff check passed in the isolated implementation lane; the exact-head CI run is authoritative for the final tree.
+- Hosted boundary: read-only MCP still shows the replacement project at the earlier migration frontier and the four helper RPCs publicly executable. No hosted migration, deployment, storage upload, backup, restore or rollback was performed.
+- Token boundary: the active browser account `sanjabh11@gmail.com` has no matching CEIP/Devin token. No unrelated token was revoked; OAuth MCP remains preferred until the owner account exposes the intended token.
+
+**Decision:** repository security overlay is CI-verified; hosted staging and pilot remain STOP.
