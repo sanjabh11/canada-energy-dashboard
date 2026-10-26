@@ -2,7 +2,7 @@
 
 ## Current authoritative receipt — 2026-10-26
 
-**Bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run**
+**bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run**
 > `40307916382`
 
 The exact-head run completed with `lint-typecheck`, `test`, and `build-and-smoke` successful. Its `evidence-binding` job failed only because this document set still named the preceding receipt; that is the designed stale-document signal, not a source-test failure. The run's merge checkout was `2a302ccb48ac209d590db68c779406511b4ec271`. Evidence artifact `12645175367` has GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; its manifest is complete, has no missing files, and its 11 listed payload hashes and sizes plus the manifest sidecar were independently verified. This proves repository CI only; it does not prove hosted staging, owner approval, or pilot readiness.

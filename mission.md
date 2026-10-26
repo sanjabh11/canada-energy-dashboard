@@ -2,7 +2,7 @@
 
 ## Authoritative update — 2026-10-26
 
-**Bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run**
+**bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run**
 > `40307916382`
 
 The exact-head verification jobs `lint-typecheck`, `test`, and `build-and-smoke` succeeded. The evidence-binding job was red because the mission still referenced the previous source; this is the intended stale-document stop signal. Merge checkout: `2a302ccb48ac209d590db68c779406511b4ec271`. Artifact `12645175367`, GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; manifest complete with no missing files, 11 payloads and a verified sidecar. This is repository proof only. The new legacy-helper privilege migration is not applied to Supabase; hosted staging, named approvals, manual WCAG/performance and buyer validation remain STOP.
