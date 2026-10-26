@@ -20,7 +20,9 @@
 > designed stale-document signal, not a source-test failure. Artifact
 > `12637053422`, GitHub digest
 > `sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54`. This receipt proves repository verification only, not staging or
-> pilot readiness. The evidence-only document update is the next binding step.
+> pilot readiness. The evidence-only document update `853f7eee` is bound by CI run
+`40294701772`; all four jobs succeeded. Artifact `12638082780`, GitHub digest
+`sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`.
 
 **Audit snapshot (2026-10-26; captured before this documentation update; not CI proof):**
 

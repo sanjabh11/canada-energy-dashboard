@@ -20,9 +20,11 @@ human gates remain stop-gated.
   protection, and service-role-only API rate accounting changes.
 - Local ZIP rehash is not claimed.
 
-This receipt proves repository verification only. The evidence-only document
-update is required to rebind the mission; it still does not prove hosted
-staging, owner approval, compliance, or buyer validation.
+This receipt proves repository verification only. The evidence-only document update `853f7eee` is bound by run `40294701772`; all
+four jobs succeeded. Artifact `12638082780`, digest
+`sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`.
+This still does not prove hosted staging, owner approval, compliance, or buyer
+validation.
 
 ## Snapshot identity
 

@@ -30,9 +30,11 @@ buyer proof.
 
 **Current code-bearing verification source (2026-10-26):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` is bound to
 CI run `40292290033` (head SHA exact). `lint-typecheck`, `test`, and
-`build-and-smoke` succeeded; `evidence-binding` is the expected stale-document
-signal until this mission is rebound. Artifact `12637053422`, GitHub digest
-`sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54`. This is repository proof only; staging and pilot remain STOP.
+`build-and-smoke` succeeded; its evidence-binding staleness signal was resolved
+by evidence-only docs `853f7eee` / run `40294701772`, where all four jobs
+succeeded. Artifact `12638082780`, GitHub digest
+`sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`.
+This is repository proof only; staging and pilot remain STOP.
 
 The safe execution scope before owner gates is repository inspection, evidence
 reconciliation, read-only testing, documentation, and preparation of owner
@@ -111,7 +113,7 @@ the mission must rebind its documents before claiming current status.
 | Current code-bearing verification subject | `3941e1d` / run `40292290033` | verification jobs successful; evidence-binding stale-document signal |
 | Prior code-bearing CI subject | `a460a82` / run `40071166986` | Historical CI-verified binding-gate change; evidence-binding was the staleness signal |
 | Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
-| Current documentation subject | evidence-only update pending after `3941e1d` | document rebind pending |
+| Current documentation subject | evidence-only `853f7eee` / run `40294701772` | CI-verified; all four jobs successful |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
 | Canonical current CI | [run 40289040356](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40289040356) | GitHub job conclusions |
 | Current artifact receipt | `12637053422`, digest `sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54` | GitHub artifact API; local ZIP rehash not claimed |
@@ -121,7 +123,7 @@ the mission must rebind its documents before claiming current status.
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
 | Local overlay | HEAD `fc133bc`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
-| Current document risk | docs still name `464b01e0`; rebind to `3941e1d` is required | Hosted proof and owner gates remain open |
+| Current document risk | source `3941e1d` and evidence-only docs `853f7eee` are reconciled | Hosted proof and owner gates remain open |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
 | Replacement-project security snapshot | Fresh MCP at `2026-10-26T08:37:53Z`: 23 view ERRORs, 1 RLS-disabled ERROR, 107 RLS-no-policy INFOs, 4 extension WARNs, 5 materialized-view WARNs, 11+11 execution WARNs | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
