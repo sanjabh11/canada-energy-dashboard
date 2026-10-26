@@ -7,22 +7,22 @@ not a staging, deployment, production, compliance, or buyer-validation receipt.
 The repository remains under the controlled-pilot mission and all hosted and
 human gates remain stop-gated.
 
-## Current exact-head CI receipt — 2026-10-26
+## Current code-bearing CI verification receipt — 2026-10-26
 
-- Bound source: `464b01e0ba054bf823940d1b98c8c17526159286`
-- CI run: `40289040356` (head SHA exact)
-- Verification jobs: `lint-typecheck`, `test`, `evidence-binding`, and
-  `build-and-smoke` all succeeded
-- Artifact: `12636557860`
-- GitHub artifact digest: `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda`
-- The run includes the `execute_readonly_sql` privilege-hardening migration
-  and embedded-Postgres regression tests.
-- Local ZIP rehash: not performed because the approved command path blocked
-  network egress; no local byte-level verification is claimed
+- Code-bearing source: `3941e1dabc7904e48826dc6eccd1c2105bb795be`
+- CI run: `40292290033` (head SHA exact)
+- Verification jobs: `lint-typecheck`, `test`, and `build-and-smoke` succeeded
+- `evidence-binding`: failed only because the documents still named the
+  previous source; this is the designed stale-document signal
+- Artifact: `12637053422`
+- GitHub artifact digest: `sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54`
+- The run includes readonly-SQL privilege hardening, fail-closed rate
+  protection, and service-role-only API rate accounting changes.
+- Local ZIP rehash is not claimed.
 
-This receipt supersedes the earlier snapshot for repository CI identity. It
-still does not prove hosted staging, owner approval, compliance, or buyer
-validation.
+This receipt proves repository verification only. The evidence-only document
+update is required to rebind the mission; it still does not prove hosted
+staging, owner approval, compliance, or buyer validation.
 
 ## Snapshot identity
 
@@ -60,15 +60,34 @@ The authoritative incident register records INC-001 as owner-recorded
 `INVALIDATED-BY-DELETION` on 2026-10-24 because the leak-site project was
 deleted or outside the owner's account. The historical credential remains in
 public Git history; the leak-site project must never be restored. The forward
-project is `qktgjpbifknqjpvrgkrj`. Read-only dashboard inventory showed
-migrations and five visible Edge Functions, no Storage buckets/objects, and no
-Free-plan scheduled backups. Those observations do not prove hosted RLS,
-function behavior, retention, logging, rollback, or backup recovery.
+project is `qktgjpbifknqjpvrgkrj`.
 
-The project-scoped read-only MCP token displayed on 2026-10-25 was revoked and
-was not printed here. The CLI OAuth MCP remains the preferred read-only path;
-the in-chat connector still needs an account refresh before it can query the
-replacement project.
+A fresh read-only MCP observation at `2026-10-26T08:37:53Z` returned 123 applied migrations
+(ending at `20261023094758`) and five ACTIVE Edge Functions:
+`lead-capture`, `whop-verify-access`, `whop-webhook`,
+`calibration-cron`, and `storage-dispatch-scheduler`. The repository
+migrations `20261026001` and `20261026002` are not live. Security advisors
+still report 23 security-definer-view ERRORs, one RLS-disabled ERROR, 107
+RLS-no-policy INFOs, four extension WARNs, five materialized-view WARNs, and
+11+11 executable security-definer WARNs. No hosted migration, function
+deployment, storage upload, backup, restore, or rollback was performed.
+
+The authenticated account token inventory contains no matching CEIP or Devin
+project-scoped token. No unrelated token was deleted; the CLI OAuth MCP remains
+the preferred read-only path. Inventory absence is not treated as a direct
+audit-event receipt.
+
+## Repository security overlay
+
+The repository changes are present and locally tested, and the verification
+jobs for `3941e1dabc7904e48826dc6eccd1c2105bb795be` passed in CI:
+- `20261026001_harden_readonly_sql_privileges`
+- `20261026002_harden_api_key_rate_functions`
+- fail-closed rate-protection behavior and service-role-only API accounting
+
+These migrations remain repository-only until an owner applies them to the
+replacement project and runs the negative RLS/direct-write, rate-limit, and
+service-role staging checks. No hosted mutation was performed by this agent.
 
 ## Required next proof
 

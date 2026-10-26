@@ -13,14 +13,14 @@
 > project's hosted controls, named owner approvals, and buyer evidence exist.
 > Never infer closure from code presence or an unrun test.
 
-**Current bound source (2026-10-26):** bound HEAD `464b01e0ba054bf823940d1b98c8c17526159286` — CI run
-> `40289040356` (source head SHA exact; `lint-typecheck`, `test`,
-> `evidence-binding`, and `build-and-smoke` all succeeded). Artifact
-> `12636557860`, GitHub digest
-> `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda`.
-> GitHub job conclusions are authoritative; the manifest jobs field remains
-> an honest sentinel. This receipt proves repository CI only, not staging or
-> pilot readiness.
+**Current code-bearing verification source (2026-10-26):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` — CI run
+> `40292290033` (head SHA exact; `lint-typecheck`, `test`, and
+> `build-and-smoke` succeeded). The `evidence-binding` job failed only
+> because these documents still referenced the previous source; that is the
+> designed stale-document signal, not a source-test failure. Artifact
+> `12637053422`, GitHub digest
+> `sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54`. This receipt proves repository verification only, not staging or
+> pilot readiness. The evidence-only document update is the next binding step.
 
 **Audit snapshot (2026-10-26; captured before this documentation update; not CI proof):**
 
@@ -34,9 +34,10 @@
   evidence shows migrations and five visible Edge Functions, no Storage
   buckets/objects, and no Free-plan scheduled backups. Hosted behavior remains
   unverified.
-- The displayed project-scoped MCP token has been revoked. The CLI OAuth MCP
-  remains the preferred read-only path; the in-chat connector still requires
-  account refresh before it can query the replacement project.
+- The current authenticated account inventory contains no matching CEIP or Devin
+  project-scoped token. No unrelated token was deleted; the CLI OAuth MCP remains
+  the preferred read-only path. A direct revocation event is not claimed from
+  inventory absence alone.
 - The authoritative incident register records INC-001 closed by deletion or
   third-party ownership of the leak-site project. The residual risk is the
   historical credential in public Git history; the leak-site project must not
@@ -48,7 +49,7 @@
 |---|---|---|---|
 | P0 — incident and preservation | complete | owner-recorded | retain closure evidence and preserve dirty overlay |
 | P1 — goal/evidence binding | complete | committed CI | `464b01e0` / run `40289040356`; artifact `12636557860`; digest recorded above |
-| P2 — repository security/billing | ci-verified remotely | committed CI | verify replacement-project grants, RLS and function behavior in staging |
+| P2 — repository security/billing | ci-verified remotely | committed CI | repository hardening is verified; replacement-project grants, RLS and function behavior remain staging-gated |
 | P8 — replacement-project staging | blocked | none | backup/export, migration order, RLS, rate limits, retention, rollback |
 | P9 — buyer validation | blocked | none | CASL/privacy approval followed by 11 paid experiments |
 
@@ -119,22 +120,26 @@ but its evidence-binding job was the intended staleness signal.
 ## Current replacement-project read-only observation — 2026-10-26
 
 - Project URL: `https://qktgjpbifknqjpvrgkrj.supabase.co`.
-- Supabase MCP returned 123 migrations and 230 public tables; only
-  `public.spatial_ref_sys` was reported without RLS.
+- Supabase MCP returned 123 applied migrations and 230 public tables at
+  `2026-10-26T08:37:53Z`; the live list ends at `20261023094758`. Repository migrations
+  `20261026001_harden_readonly_sql_privileges` and
+  `20261026002_harden_api_key_rate_functions` are not applied to the
+  replacement project.
 - Five Edge Functions are ACTIVE: `lead-capture`, `whop-verify-access`,
-  `whop-webhook`, `calibration-cron`, and `storage-dispatch-scheduler`.
-  The pilot allowlist remains the first three; the two scheduler functions
-  require owner classification before staging.
-- Security advisors observed 23 security-definer-view ERRORs, one
+  `whop-webhook`, `calibration-cron`, and
+  `storage-dispatch-scheduler`. The pilot allowlist remains the first three;
+  the two scheduler functions require owner classification before staging.
+- Security advisors at `2026-10-26T08:37:53Z`: 23 security-definer-view ERRORs, one
   RLS-disabled ERROR, 107 RLS-no-policy INFO findings, four extension WARNs,
   five materialized-view WARNs, and 11 anonymous plus 11 authenticated
-  security-definer execution WARNs at `2026-10-26T07:53:45Z`.
-- Performance advisors observed 23 unindexed-FK INFOs, 100 auth-RLS-initplan
-  WARNs, 449 unused-index INFOs, 247 multiple-permissive-policy WARNs, and
-  seven duplicate-index WARNs at the same observation time.
-
-This is read-only control-plane evidence. It does not prove hosted RLS,
-retention, logging, backup, rollback, deployment or owner approval.
+  security-definer execution WARNs.
+- Performance advisors at `2026-10-26T08:37:53Z`: 23 unindexed-FK INFOs, 100
+  auth-RLS-initplan WARNs, 449 unused-index INFOs, 247
+  multiple-permissive-policy WARNs, and seven duplicate-index WARNs.
+- No hosted migration, function deployment, storage upload, backup, restore,
+  or rollback was performed by this agent. This is read-only control-plane
+  evidence and does not prove hosted RLS, retention, logging, deployment, or
+  owner approval.
 
 ## Proof-layer definitions
 
@@ -150,6 +155,17 @@ retention, logging, backup, rollback, deployment or owner approval.
 A code change is not CI evidence; CI is not staging evidence; staging is not
 owner approval or buyer validation.
 
+## Current repository security overlay
+
+The repository now contains two additional hardening migrations:
+`20261026001_harden_readonly_sql_privileges` and
+`20261026002_harden_api_key_rate_functions`. Local tests, typecheck,
+migration verification, and the exact-head CI verification jobs passed for these
+changes. They are not hosted proof: the replacement project still ends at
+migration `20261023094758`, so anonymous/authenticated denial, rate-limit
+fail-closed behavior, and service-role-only execution remain owner-run staging
+checks.
+
 ## Phase tracking
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
@@ -161,7 +177,7 @@ owner approval or buyer validation.
 | P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `fc133bc` / run `40214413753` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
 | P5 — CASL approval and buyer experiments | blocked | local tests | — | suppression registry enforced; cross-dir opt-out test | human | CASL sign-off; 11 priced experiments | 0/11 |
 | P6 — Automated quality green; manual WCAG/perf | partial | committed CI | `fc133bc` / run `40214413753` | automated axe+reflow and browser evidence retained (automated coverage only) | repo → owner | manual keyboard/focus/SR review; deployed perf | manual WCAG + hosted perf open |
-| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `fc133bc` / run `40214413753` | complete manifest, sidecar, 11 hashed payload files, external four-job success | repo → CI | independent clean-clone lcov and hosted staging | local lcov deletion remains intentional; hosted proof absent |
+| P7 — CI green; reproduction + manifest completeness | partial | committed CI | `3941e1d` / run `40292290033` | verification jobs green; evidence-binding stale-document signal; fresh artifact retained | repo → CI | evidence-only rebind, then independent clean-clone lcov and hosted staging | local lcov deletion remains intentional; hosted proof absent |
 | P8 — Replacement Supabase staging and named-owner approvals | blocked | — | — | — | owner | backup/export, migration order, RLS, rate limits, retention, rollback and named approvals | all hosted evidence absent |
 | P9 — Buyer validation | blocked | — | — | `.positioning-audit/experiments.json` (0/11) | owner | business decision | commercial readiness unverifiable |
 

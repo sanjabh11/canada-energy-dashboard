@@ -28,10 +28,11 @@ This snapshot does not upgrade hosted staging, manual quality, compliance, or
 buyer proof.
 
 
-**Current source receipt (2026-10-26):** `464b01e0ba054bf823940d1b98c8c17526159286` is bound by CI run
-`40289040356`. All four verification jobs succeeded. Artifact `12636557860` and
-GitHub digest `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda` are recorded. This is repository proof only;
-staging and pilot remain STOP.
+**Current code-bearing verification source (2026-10-26):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` is bound to
+CI run `40292290033` (head SHA exact). `lint-typecheck`, `test`, and
+`build-and-smoke` succeeded; `evidence-binding` is the expected stale-document
+signal until this mission is rebound. Artifact `12637053422`, GitHub digest
+`sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54`. This is repository proof only; staging and pilot remain STOP.
 
 The safe execution scope before owner gates is repository inspection, evidence
 reconciliation, read-only testing, documentation, and preparation of owner
@@ -40,22 +41,26 @@ runbooks. No phase plan or mock runner output changes the current decision.
 ## Current replacement-project read-only observation — 2026-10-26
 
 - Project URL: `https://qktgjpbifknqjpvrgkrj.supabase.co`.
-- Supabase MCP returned 123 migrations and 230 public tables; only
-  `public.spatial_ref_sys` was reported without RLS.
+- Supabase MCP returned 123 applied migrations and 230 public tables at
+  `2026-10-26T08:37:53Z`; the live list ends at `20261023094758`. Repository migrations
+  `20261026001_harden_readonly_sql_privileges` and
+  `20261026002_harden_api_key_rate_functions` are not applied to the
+  replacement project.
 - Five Edge Functions are ACTIVE: `lead-capture`, `whop-verify-access`,
-  `whop-webhook`, `calibration-cron`, and `storage-dispatch-scheduler`.
-  The pilot allowlist remains the first three; the two scheduler functions
-  require owner classification before staging.
-- Security advisors observed 23 security-definer-view ERRORs, one
+  `whop-webhook`, `calibration-cron`, and
+  `storage-dispatch-scheduler`. The pilot allowlist remains the first three;
+  the two scheduler functions require owner classification before staging.
+- Security advisors at `2026-10-26T08:37:53Z`: 23 security-definer-view ERRORs, one
   RLS-disabled ERROR, 107 RLS-no-policy INFO findings, four extension WARNs,
   five materialized-view WARNs, and 11 anonymous plus 11 authenticated
-  security-definer execution WARNs at `2026-10-26T07:53:45Z`.
-- Performance advisors observed 23 unindexed-FK INFOs, 100 auth-RLS-initplan
-  WARNs, 449 unused-index INFOs, 247 multiple-permissive-policy WARNs, and
-  seven duplicate-index WARNs at the same observation time.
-
-This is read-only control-plane evidence. It does not prove hosted RLS,
-retention, logging, backup, rollback, deployment or owner approval.
+  security-definer execution WARNs.
+- Performance advisors at `2026-10-26T08:37:53Z`: 23 unindexed-FK INFOs, 100
+  auth-RLS-initplan WARNs, 449 unused-index INFOs, 247
+  multiple-permissive-policy WARNs, and seven duplicate-index WARNs.
+- No hosted migration, function deployment, storage upload, backup, restore,
+  or rollback was performed by this agent. This is read-only control-plane
+  evidence and does not prove hosted RLS, retention, logging, deployment, or
+  owner approval.
 
 ## Decision question
 
@@ -103,26 +108,27 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Current exact-head source/CI subject | `464b01e0` / run `40289040356` | CI-verified; all four jobs successful |
+| Current code-bearing verification subject | `3941e1d` / run `40292290033` | verification jobs successful; evidence-binding stale-document signal |
 | Prior code-bearing CI subject | `a460a82` / run `40071166986` | Historical CI-verified binding-gate change; evidence-binding was the staleness signal |
 | Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
-| Current documentation subject | evidence-only descendant of `464b01e0`; source receipt run `40289040356` | CI-verified source binding |
+| Current documentation subject | evidence-only update pending after `3941e1d` | document rebind pending |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
 | Canonical current CI | [run 40289040356](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40289040356) | GitHub job conclusions |
-| Current artifact receipt | `12636557860`, digest `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda` | GitHub artifact API; local ZIP rehash not claimed |
-| CI jobs | `lint-typecheck`, `test`, `evidence-binding`, `build-and-smoke`: success | CI-verified |
+| Current artifact receipt | `12637053422`, digest `sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54` | GitHub artifact API; local ZIP rehash not claimed |
+| CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success; `evidence-binding` awaits document rebind | CI-verified for verification jobs |
 | Manifest | `complete=true`, 9 required core evidence files plus 2 manual-assist payloads (11 hashed payloads), `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
 | Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
 | Local overlay | HEAD `fc133bc`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
-| Current document risk | source `464b01e0` is current; older receipts remain historical | Hosted proof and owner gates remain open |
+| Current document risk | docs still name `464b01e0`; rebind to `3941e1d` is required | Hosted proof and owner gates remain open |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
-| Replacement-project security snapshot | `SUPABASE_SECURITY_BASELINE_2026-10-23.md`; 26 ERROR and 73 WARN findings plus 108 INFO findings | External observation; disposition and staging proof open |
+| Replacement-project security snapshot | Fresh MCP at `2026-10-26T08:37:53Z`: 23 view ERRORs, 1 RLS-disabled ERROR, 107 RLS-no-policy INFOs, 4 extension WARNs, 5 materialized-view WARNs, 11+11 execution WARNs | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
 
-The current repository subject for CI proof is `464b01e0`, and its exact-head
-receipt is run `40289040356`. The earlier `e5261b2`/`40207778791` and
+The current repository code subject for CI verification is `3941e1d`, and its
+exact-head verification run is `40292290033`; the evidence-only document update
+must rebind the mission before claiming a current all-green evidence chain. The earlier `e5261b2`/`40207778791` and
 `389dad3`/`40073506314` receipts are
 retained as historical evidence. The local checkout still carries the
 intentional lcov deletion and zero-byte dump stubs; those dirty files are not
