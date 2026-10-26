@@ -43,6 +43,7 @@ describe('evidence-binding gate — negative fixtures', () => {
         'goal.md',
         'mission.md',
         'docs/remediation/CEIP_AUDIT_ADDENDUM_2026-10-22.md',
+        'docs/security/SECRET_EXPOSURE_INCIDENTS.md',
         'docs/staging/FOUR_TABLE_DECISIONS.md',
         'docs/staging/FUNCTION_DEPLOYMENT_MANIFEST.md',
         'docs/staging/MIGRATION_REPLAY_COMPARISON.md',
