@@ -13,12 +13,11 @@
 > project's hosted controls, named owner approvals, and buyer evidence exist.
 > Never infer closure from code presence or an unrun test.
 
-**Current bound source (2026-10-26):** bound HEAD `180a1e5d745d961d7b1b48d8c14f7b82dd3e746a` — CI run
-> `40282361170` (source head SHA exact; `lint-typecheck`, `test`, and
-> `build-and-smoke` successful; the `evidence-binding` job is the expected
-> staleness signal for the preceding unbound code commit). Artifact
-> `12634400722`, GitHub digest
-> `sha256:a6553839f6f73e3d8174be3a949123e60ff3507ddfeb141b864137c730e849ff`.
+**Current bound source (2026-10-26):** bound HEAD `464b01e0ba054bf823940d1b98c8c17526159286` — CI run
+> `40289040356` (source head SHA exact; `lint-typecheck`, `test`,
+> `evidence-binding`, and `build-and-smoke` all succeeded). Artifact
+> `12636557860`, GitHub digest
+> `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda`.
 > GitHub job conclusions are authoritative; the manifest jobs field remains
 > an honest sentinel. This receipt proves repository CI only, not staging or
 > pilot readiness.
@@ -48,7 +47,7 @@
 | Phase | Status | Highest proof layer | Next checkpoint |
 |---|---|---|---|
 | P0 — incident and preservation | complete | owner-recorded | retain closure evidence and preserve dirty overlay |
-| P1 — goal/evidence binding | complete | committed CI | `180a1e5` / run `40282361170` | three verification jobs green; artifact `12634400722`; GitHub digest recorded above; binding gate staleness signal documented | repo | keep hosted gates blocked and preserve receipt |
+| P1 — goal/evidence binding | complete | committed CI | `464b01e0` / run `40289040356`; artifact `12636557860`; digest recorded above |
 | P2 — repository security/billing | ci-verified remotely | committed CI | verify replacement-project grants, RLS and function behavior in staging |
 | P8 — replacement-project staging | blocked | none | backup/export, migration order, RLS, rate limits, retention, rollback |
 | P9 — buyer validation | blocked | none | CASL/privacy approval followed by 11 paid experiments |
@@ -117,6 +116,26 @@ but its evidence-binding job was the intended staleness signal.
 > `a460a82`/`40071166986` receipt. The current `e5261b2` run independently
 > executed the secret, hygiene, and client-environment scans successfully.
 
+## Current replacement-project read-only observation — 2026-10-26
+
+- Project URL: `https://qktgjpbifknqjpvrgkrj.supabase.co`.
+- Supabase MCP returned 123 migrations and 230 public tables; only
+  `public.spatial_ref_sys` was reported without RLS.
+- Five Edge Functions are ACTIVE: `lead-capture`, `whop-verify-access`,
+  `whop-webhook`, `calibration-cron`, and `storage-dispatch-scheduler`.
+  The pilot allowlist remains the first three; the two scheduler functions
+  require owner classification before staging.
+- Security advisors observed 23 security-definer-view ERRORs, one
+  RLS-disabled ERROR, 107 RLS-no-policy INFO findings, four extension WARNs,
+  five materialized-view WARNs, and 11 anonymous plus 11 authenticated
+  security-definer execution WARNs at `2026-10-26T07:53:45Z`.
+- Performance advisors observed 23 unindexed-FK INFOs, 100 auth-RLS-initplan
+  WARNs, 449 unused-index INFOs, 247 multiple-permissive-policy WARNs, and
+  seven duplicate-index WARNs at the same observation time.
+
+This is read-only control-plane evidence. It does not prove hosted RLS,
+retention, logging, backup, rollback, deployment or owner approval.
+
 ## Proof-layer definitions
 
 | Layer | Meaning |
@@ -136,7 +155,7 @@ owner approval or buyer validation.
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|
 | P0 — Preservation and INC-001 owner separation | complete | owner-recorded | leak-site deletion/third-party ownership recorded in incident register; intentional dirty overlay preserved | incident register closure; lcov deletion and zero-byte stubs remain classified | repo/owner | retain closure evidence; never restore leak-site project | historical credential remains in public Git history |
-| P1 — Current-tree addendum and evidence binding | in progress | committed CI | bound source `fc133bc` / run `40214413753` | artifact `12607099570`; digest `sha256:e826aba042a8c589ea17165e16782c24ac83765363cd987297fa376d0ec205f7`; manifest/sidecar/11 payload hashes verified | repo | retain current receipt and historical distinction | manifest jobs field is explicitly not-recorded; hosted proof remains absent |
+| P1 — Current-tree addendum and evidence binding | complete | committed CI | bound source `464b01e0` / run `40289040356` | artifact `12636557860`; digest `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda`; all four jobs green | repo | retain receipt; keep hosted gates blocked | hosted proof absent |
 | P2 — Repository security and billing code | partial | local tests + committed CI | `10ab812` (contains `ad44494`) | inversion + JWT-fuzz suites; secret scan in CI; exact-commit clean-clone + CI-bound | repo | hosted RLS + contract verification | hosted denial owner-gated |
 | P3 — Stale economics suppressed | partial | local tests + committed CI | `fc133bc` / run `40214413753` | `tierPricing` provenance + stale_inputs; allocator `available`-only; landfill screening-labeled | repo | buyer-grade rate evidence | DI undetermined pending official Standard |
 | P4 — Whop legacy path and deployment proof | partial | local tests + committed CI | `fc133bc` / run `40214413753` | server-verified identity/entitlement; acquisition surfaces removed | repo | deployed copy + membership journey after edge deploy | `/v5/me` + env config owner-gated |
@@ -170,5 +189,5 @@ run is reused as proof for this newer head.
 
 **Replacement-project security baseline:** the read-only snapshot in
 [`SUPABASE_SECURITY_BASELINE_2026-10-23.md`](docs/remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md)
-records 26 ERROR, 73 WARN, and 108 INFO findings. This is an open staging
+records the 2026-10-26 read-only observation: 23 security-definer-view ERRORs, one RLS-disabled ERROR, 107 RLS-no-policy INFO findings, four extension WARNs, five materialized-view WARNs, and 11+11 execution WARNs. This is an open staging
 gate, not a security-clearance claim.

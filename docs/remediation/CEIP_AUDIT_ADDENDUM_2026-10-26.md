@@ -9,13 +9,14 @@ human gates remain stop-gated.
 
 ## Current exact-head CI receipt — 2026-10-26
 
-- Bound source: `180a1e5d745d961d7b1b48d8c14f7b82dd3e746a`
-- CI run: `40282361170` (head SHA exact)
-- Verification jobs: `lint-typecheck`, `test`, and `build-and-smoke` all succeeded
-- Evidence-binding job: failed as the designed staleness signal for the prior
-  unbound code commit; it does not invalidate the three verification jobs
-- Artifact: `12634400722`
-- GitHub artifact digest: `sha256:a6553839f6f73e3d8174be3a949123e60ff3507ddfeb141b864137c730e849ff`
+- Bound source: `464b01e0ba054bf823940d1b98c8c17526159286`
+- CI run: `40289040356` (head SHA exact)
+- Verification jobs: `lint-typecheck`, `test`, `evidence-binding`, and
+  `build-and-smoke` all succeeded
+- Artifact: `12636557860`
+- GitHub artifact digest: `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda`
+- The run includes the `execute_readonly_sql` privilege-hardening migration
+  and embedded-Postgres regression tests.
 - Local ZIP rehash: not performed because the approved command path blocked
   network egress; no local byte-level verification is claimed
 
@@ -71,10 +72,11 @@ replacement project.
 
 ## Required next proof
 
-1. Preserve this dirty overlay and reconcile the duplicate local/remote commit
-   histories without reset or force-push.
-2. Bind the resulting documentation commit to a fresh exact-head CI run and
-   retain its run, artifact, digest, manifest, sidecar, and job conclusions.
+1. Preserve the dirty overlay and keep the tracked `coverage/lcov.info`
+   deletion and zero-byte dump stubs out of commits.
+2. Keep the replacement-project security findings open until every ERROR has
+   an owner, object-level disposition and tested migration; do not apply this
+   new privilege migration remotely from the agent lane.
 3. Keep replacement-project staging blocked until the owner supplies project
    identity, backup/export, migration order, RLS/direct-write denial,
    rate-limit, retention, redacted-log, monitoring, restore, rollback, and

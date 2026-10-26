@@ -28,17 +28,34 @@ This snapshot does not upgrade hosted staging, manual quality, compliance, or
 buyer proof.
 
 
-**Current source receipt (2026-10-26):** `180a1e5` is bound by CI run
-`40282361170`. The three verification jobs succeeded; the evidence-binding
-job failed only because the preceding code commit had not yet been covered.
-Artifact `12634400722` and GitHub digest
-`sha256:a6553839f6f73e3d8174be3a949123e60ff3507ddfeb141b864137c730e849ff`
-are recorded. This remains repository proof only; staging and pilot remain
-STOP.
+**Current source receipt (2026-10-26):** `464b01e0ba054bf823940d1b98c8c17526159286` is bound by CI run
+`40289040356`. All four verification jobs succeeded. Artifact `12636557860` and
+GitHub digest `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda` are recorded. This is repository proof only;
+staging and pilot remain STOP.
 
 The safe execution scope before owner gates is repository inspection, evidence
 reconciliation, read-only testing, documentation, and preparation of owner
 runbooks. No phase plan or mock runner output changes the current decision.
+
+## Current replacement-project read-only observation — 2026-10-26
+
+- Project URL: `https://qktgjpbifknqjpvrgkrj.supabase.co`.
+- Supabase MCP returned 123 migrations and 230 public tables; only
+  `public.spatial_ref_sys` was reported without RLS.
+- Five Edge Functions are ACTIVE: `lead-capture`, `whop-verify-access`,
+  `whop-webhook`, `calibration-cron`, and `storage-dispatch-scheduler`.
+  The pilot allowlist remains the first three; the two scheduler functions
+  require owner classification before staging.
+- Security advisors observed 23 security-definer-view ERRORs, one
+  RLS-disabled ERROR, 107 RLS-no-policy INFO findings, four extension WARNs,
+  five materialized-view WARNs, and 11 anonymous plus 11 authenticated
+  security-definer execution WARNs at `2026-10-26T07:53:45Z`.
+- Performance advisors observed 23 unindexed-FK INFOs, 100 auth-RLS-initplan
+  WARNs, 449 unused-index INFOs, 247 multiple-permissive-policy WARNs, and
+  seven duplicate-index WARNs at the same observation time.
+
+This is read-only control-plane evidence. It does not prove hosted RLS,
+retention, logging, backup, rollback, deployment or owner approval.
 
 ## Decision question
 
@@ -86,26 +103,26 @@ the mission must rebind its documents before claiming current status.
 
 | Item | Current value | Proof layer |
 |---|---|---|
-| Current exact-head source/CI subject | `fc133bc` / run `40214413753` | CI-verified; all four jobs successful |
+| Current exact-head source/CI subject | `464b01e0` / run `40289040356` | CI-verified; all four jobs successful |
 | Prior code-bearing CI subject | `a460a82` / run `40071166986` | Historical CI-verified binding-gate change; evidence-binding was the staleness signal |
 | Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
-| Current documentation subject | `fc133bc` / run `40214413753` | CI-verified exact-head receipt |
+| Current documentation subject | evidence-only descendant of `464b01e0`; source receipt run `40289040356` | CI-verified source binding |
 | Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
-| Canonical current CI | [run 40214413753](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40214413753) | GitHub job conclusions |
-| Current artifact receipt | `12604898756`, digest `sha256:47f1b93bb27063ccd2791e95adb97f804f94694e906c63977336949ef9c08bea` | GitHub artifact API + downloaded ZIP digest + internal hash checks |
+| Canonical current CI | [run 40289040356](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40289040356) | GitHub job conclusions |
+| Current artifact receipt | `12636557860`, digest `sha256:0fc5a1c282fc16888221a1c85a6e3c4751f038790b04c927ad12893247754dda` | GitHub artifact API; local ZIP rehash not claimed |
 | CI jobs | `lint-typecheck`, `test`, `evidence-binding`, `build-and-smoke`: success | CI-verified |
 | Manifest | `complete=true`, 9 required core evidence files plus 2 manual-assist payloads (11 hashed payloads), `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
 | Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
 | CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
 | Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
 | Local overlay | HEAD `fc133bc`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
-| Current document risk | `fc133bc` exact-head receipt is current; `e5261b2` and `389dad3` remain historical | Hosted proof and owner gates remain open |
+| Current document risk | source `464b01e0` is current; older receipts remain historical | Hosted proof and owner gates remain open |
 | Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
 | Replacement-project security snapshot | `SUPABASE_SECURITY_BASELINE_2026-10-23.md`; 26 ERROR and 73 WARN findings plus 108 INFO findings | External observation; disposition and staging proof open |
 | Buyer state | 0/11 experiments run | Human-gated |
 
-The current repository subject for CI proof is `fc133bc`, and its exact-head
-receipt is run `40214413753`. The earlier `e5261b2`/`40207778791` and
+The current repository subject for CI proof is `464b01e0`, and its exact-head
+receipt is run `40289040356`. The earlier `e5261b2`/`40207778791` and
 `389dad3`/`40073506314` receipts are
 retained as historical evidence. The local checkout still carries the
 intentional lcov deletion and zero-byte dump stubs; those dirty files are not
