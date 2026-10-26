@@ -5,14 +5,14 @@
 **bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run
 > `40307916382`**
 
-The exact-head run completed with `lint-typecheck`, `test`, and `build-and-smoke` successful. Its `evidence-binding` job failed only because this document set still named the preceding receipt; that is the designed stale-document signal, not a source-test failure. The run's merge checkout was `2a302ccb48ac209d590db68c779406511b4ec271`. Evidence artifact `12645175367` has GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; its manifest is complete, has no missing files, and its 11 listed payload hashes and sizes plus the manifest sidecar were independently verified. This proves repository CI only; it does not prove hosted staging, owner approval, or pilot readiness.
+The exact-head run completed with `lint-typecheck`, `test`, and `build-and-smoke` successful. Its `evidence-binding` job failed only because this document set still named the preceding receipt; that is the designed stale-document signal, not a source-test failure. Evidence-only document update `175e9621c588094ecf3018173a7190f881894c13` is bound by CI run `40310996497`; all four jobs succeeded. Its artifact is `12646021152` with GitHub digest `sha256:08779d3dca9477db9eaa65011dceff906bf390338126096f586a4b5be05f6cc7`. The manifest is complete with no missing files, and its 11 payload hashes/sizes plus sidecar were independently verified. The run's merge checkout was `2a302ccb48ac209d590db68c779406511b4ec271`. Evidence artifact `12645175367` has GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; its manifest is complete, has no missing files, and its 11 listed payload hashes and sizes plus the manifest sidecar were independently verified. This proves repository CI only; it does not prove hosted staging, owner approval, or pilot readiness.
 
 This receipt supersedes older “current” paragraphs below. The source change is `20261026003_restrict_legacy_entitlement_helpers.sql`, which removes `anon` and `authenticated` EXECUTE grants from four unused SECURITY DEFINER helpers, pins their search path, and retains service-role execution for an explicitly reviewed server path. The replacement project still has the prior migration frontier, so the hosted helpers remain exposed until an owner applies and verifies this migration in staging.
 
 | Phase | Status | Highest proof layer | Next checkpoint |
 |---|---|---|---|
 | P0 incident/preservation | complete | owner-recorded | retain incident closure and preserve the intentional dirty overlay |
-| P1 evidence binding | in progress | CI-verified source; docs rebind pending | run the evidence-only document update and verify its binding job |
+| P1 evidence binding | complete | committed CI | retain bound source `3cc92a5` / run `40307916382` and docs receipt `175e962` / run `40310996497` |
 | P2 repository security | complete for this overlay | CI-verified | apply migration and test hosted grants/RLS in owner-run staging |
 | P8 replacement-project staging | blocked | none | backup, migration order, RLS/direct-write denial, rate limits, retention, restore and rollback |
 | P9 buyer validation | blocked | none | privacy/CASL approval, then 11 paid experiments |
@@ -188,7 +188,7 @@ migration `20261023094758`, so anonymous/authenticated denial, rate-limit
 fail-closed behavior, and service-role-only execution remain owner-run staging
 checks.
 
-## Phase tracking
+## Historical phase tracking (superseded by the authoritative phase table above)
 
 | Phase | Status | Proof layer | Commit/tree ID | Artifact / run ID | Owner | Next checkpoint | Remaining risk |
 |---|---|---|---|---|---|---|---|

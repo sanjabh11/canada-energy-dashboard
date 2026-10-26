@@ -117,3 +117,8 @@ service-role staging checks. No hosted mutation was performed by this agent.
 - Token boundary: the active browser account `sanjabh11@gmail.com` has no matching CEIP/Devin token. No unrelated token was revoked; OAuth MCP remains preferred until the owner account exposes the intended token.
 
 **Decision:** repository security overlay is CI-verified; hosted staging and pilot remain STOP.
+
+
+## Rebind completion receipt — 2026-10-26
+
+The evidence-only docs commit `175e9621c588094ecf3018173a7190f881894c13` ran as CI `40310996497` with `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding` all successful. Artifact `12646021152` (GitHub digest `sha256:08779d3dca9477db9eaa65011dceff906bf390338126096f586a4b5be05f6cc7`) was downloaded; its manifest was complete, had no missing files, and its 11 payload hashes/sizes plus sidecar verified. This closes the repository evidence rebind only; hosted staging and pilot remain STOP.
