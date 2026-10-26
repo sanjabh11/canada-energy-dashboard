@@ -2,36 +2,33 @@
 
 ## Current authoritative receipt — 2026-10-26
 
-**bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run
-> `40307916382`**
+**bound HEAD `9739270d6c12ee14e5fac27b3cea64c5be288944` — CI run
+> `40322016962`**
 
-The exact-head run completed with `lint-typecheck`, `test`, and `build-and-smoke` successful. Its `evidence-binding` job failed only because this document set still named the preceding receipt; that is the designed stale-document signal, not a source-test failure. Evidence-only document update `175e9621c588094ecf3018173a7190f881894c13` is bound by CI run `40310996497`; all four jobs succeeded. Its artifact is `12646021152` with GitHub digest `sha256:08779d3dca9477db9eaa65011dceff906bf390338126096f586a4b5be05f6cc7`. The manifest is complete with no missing files, and its 11 payload hashes/sizes plus sidecar were independently verified. The run's merge checkout was `2a302ccb48ac209d590db68c779406511b4ec271`. Evidence artifact `12645175367` has GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; its manifest is complete, has no missing files, and its 11 listed payload hashes and sizes plus the manifest sidecar were independently verified. This proves repository CI only; it does not prove hosted staging, owner approval, or pilot readiness.
+The exact-head run completed with all four jobs successful: `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding`. The CI artifact is `12650517571` with GitHub digest `sha256:869dc37a52b04dd622c91284b6ce916e7b641467c3bb1e5c8a3890b85edb8966`. Its manifest is `complete=true`, `missing_files=[]`, `file_count=11`, and `jobs: not-recorded`; GitHub job conclusions are authoritative for job success. The manifest sidecar passed `shasum -a 256 -c`, and all 11 manifest-listed payload hashes and byte counts matched the downloaded artifact. Browser receipts were 35/35 Phase 0, 80/80 Phase 6, 80/80 wedge, 110/110 automated a11y, and 12 expected with 4 skipped and 0 unexpected in the manual-assist suite. This proves the repository and evidence-packaging layer only; it does not prove hosted staging, owner approval, manual WCAG conformance, performance, or buyer validation.
 
-This receipt supersedes older “current” paragraphs below. The source change is `20261026003_restrict_legacy_entitlement_helpers.sql`, which removes `anon` and `authenticated` EXECUTE grants from four unused SECURITY DEFINER helpers, pins their search path, and retains service-role execution for an explicitly reviewed server path. The replacement project still has the prior migration frontier, so the hosted helpers remain exposed until an owner applies and verifies this migration in staging.
+The current source hardening is migration `20261026003_restrict_legacy_entitlement_helpers.sql`, which removes anonymous and authenticated EXECUTE grants from four unused SECURITY DEFINER helpers, pins their search paths, and retains service-role execution pending an explicitly reviewed server caller. The replacement project has not received this migration. The main checkout remains a separate dirty overlay; its local files are not evidence for this receipt.
 
-| Phase | Status | Highest proof layer | Next checkpoint |
-|---|---|---|---|
-| P0 incident/preservation | complete | owner-recorded | retain incident closure and preserve the intentional dirty overlay |
-| P1 evidence binding | complete | committed CI | retain bound source `3cc92a5` / run `40307916382` and docs receipt `175e962` / run `40310996497` |
-| P2 repository security | complete for this overlay | CI-verified | apply migration and test hosted grants/RLS in owner-run staging |
-| P8 replacement-project staging | blocked | none | backup, migration order, RLS/direct-write denial, rate limits, retention, restore and rollback |
-| P9 buyer validation | blocked | none | privacy/CASL approval, then 11 paid experiments |
+## Revised goal
 
-The currently authenticated Supabase account is `sanjabh11@gmail.com`; its token inventory contains no matching CEIP/Devin token, so no unrelated token was revoked. OAuth MCP remains the read-only path. Do not claim token revocation without the owner account and a matching token record.
+> Bring CEIP to an evidence-backed controlled-pilot decision for the replacement Supabase project. Produce six linked deliverables: an exact-tree repository evidence packet; a security and data-integrity staging proof; an allowlisted function, storage and legacy-Whop access proof; named privacy, CASL, billing, accessibility and performance approvals; observed paid buyer experiment evidence; and a final continue, pivot or stop decision. Keep staging, production, checkout enablement, outreach and pilot status STOP until each required proof layer exists. Preserve the incident record without restoring the leak-site project, keep Whop acquisition disabled, and never infer closure from code presence, a test definition, CI, or an unrun check.
 
+## 3C status summary
 
-> Bring CEIP to an evidence-backed controlled-pilot decision. Close
-> repository-owned security, data-integrity, calculation, claims, quality,
-> and evidence-packaging gaps; verify the exact final tree through
-> reproducible tests and approved CI; preserve verified access for existing
-> Whop customers while removing Whop acquisition and channel priority.
-> Continue repository work while the replacement Supabase project is under
-> controlled preparation. INC-001 is closed at the owner-recorded incident
-> layer because the leak-site project was deleted or is outside the owner's
-> account; preserve that historical evidence and never restore the leak-site
-> project. Keep staging, production, and pilot blocked until the replacement
-> project's hosted controls, named owner approvals, and buyer evidence exist.
-> Never infer closure from code presence or an unrun test.
+The detailed Context, Constraints, Verification and Composition brief is in `mission.md`. The current score uses 5 = closed at the required proof layer, 4 = repository/CI-ready with an external layer open, 3 = partial preparation, 2 = runbook or evidence plan only, 1 = unverified/open, and 0 = blocked or no evidence.
+
+| Deliverable | Score | Highest proven layer | Current next checkpoint |
+|---|---:|---|---|
+| Exact-tree repository and evidence packet | 4/5 | CI-verified | retain the 9739270/40322016962 artifact receipt and rebind only after future writes |
+| Repository security migration and negative tests | 4/5 | CI-verified | owner applies 20261026003 and verifies grants/RLS in staging |
+| Replacement-project hosted controls | 0/5 | read-only observation | migration order, RLS, direct-write denial, rate limits, retention, logging, restore and rollback |
+| Data stewardship and migration ledger | 2/5 | preparation packets | steward decisions for four excluded tables and 89 withheld rows |
+| Allowlisted functions, storage and Whop legacy access | 2/5 | deployment/runbook preparation | owner deploys and verifies only approved functions and storage assets |
+| Privacy, CASL, accessibility and performance | 1/5 | automated checks and draft controls | named approvals plus manual WCAG and deployed Web Vitals |
+| Paid buyer validation | 0/5 | pre-registration only | run 11 priced experiments after all preceding gates |
+| Final pilot decision | 0/5 | STOP contract | independent judge and owner decision record |
+
+The current overall decision is `BLOCKED_OWNER_GATE`: repository remediation is defensible at the CI layer, but staging and pilot remain STOP.
 
 **Historical code-bearing verification source (superseded by the authoritative receipt above):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` — CI run
 > `40292290033` (head SHA exact; `lint-typecheck`, `test`, and

@@ -2,13 +2,56 @@
 
 ## Authoritative update — 2026-10-26
 
-**bound HEAD `3cc92a5a6e7ce872efd052d654b09f413686e3ff` — CI run
-> `40307916382`**
+**bound HEAD `9739270d6c12ee14e5fac27b3cea64c5be288944` — CI run
+> `40322016962`**
 
-The exact-head verification jobs `lint-typecheck`, `test`, and `build-and-smoke` succeeded. The evidence-binding job was red because the mission still referenced the previous source; this is the intended stale-document stop signal. The evidence-only update `175e9621c588094ecf3018173a7190f881894c13` then ran as `40310996497`; all four jobs succeeded and the binding gate passed. Artifact `12646021152`, digest `sha256:08779d3dca9477db9eaa65011dceff906bf390338126096f586a4b5be05f6cc7`. Merge checkout: `2a302ccb48ac209d590db68c779406511b4ec271`. Artifact `12645175367`, GitHub digest `sha256:64232da414622e19c12c1ee9c13ec02f3aeb5e1ec6642d069cc8e94e1f4a67c4`; manifest complete with no missing files, 11 payloads and a verified sidecar. This is repository proof only. The new legacy-helper privilege migration is not applied to Supabase; hosted staging, named approvals, manual WCAG/performance and buyer validation remain STOP.
+The exact-head run is green across `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding`. Artifact `12650517571` has GitHub digest `sha256:869dc37a52b04dd622c91284b6ce916e7b641467c3bb1e5c8a3890b85edb8966`; its manifest is complete, has no missing files, contains 11 required payloads, and its sidecar plus all payload hashes and byte counts were independently verified. The retained browser receipts are 35/35, 80/80, 80/80, 110/110, and manual-assist 12 expected, 4 skipped, 0 unexpected. `jobs: not-recorded` remains an honest manifest sentinel; external GitHub job conclusions establish success. This is repository proof only. The replacement Supabase project has not received the legacy-helper migration, and staging, named approvals, manual WCAG/performance and buyer validation remain STOP.
 
-This section supersedes older current-source paragraphs below. The objective and finish line remain unchanged.
+## 3C execution brief
 
+### Context
+
+CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The reviewed repository evidence is bound to exact commit `9739270d6c12ee14e5fac27b3cea64c5be288944` and run `40322016962`. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
+
+### Your task
+
+Produce and maintain the six-part controlled-pilot decision package: exact-tree repository evidence, hosted security/data proof, allowlisted deployment/access proof, named compliance and quality approvals, paid buyer evidence, and a final continue/pivot/stop decision.
+
+### Constraints
+
+- Never read, print, copy, rotate or persist credential values; if a token inventory has no matching owner-account record, report revocation as unverified and do not revoke an unrelated token.
+- Preserve the dirty checkout and the intentional `coverage/lcov.info` deletion and dump stubs; never reset, clean, overwrite or restore them.
+- Repository writes must be atomic, single-writer and followed by an exact-head CI run. A run proves only its own `head_sha`; a stale or red evidence-binding job is a document-staleness signal, not a source pass.
+- Do not unpause or mutate Supabase, apply migrations, deploy functions, create storage objects, enable cron, enable checkout, contact buyers or send outreach from an agent lane.
+- Keep Whop acquisition disabled and preserve only server-verified existing-customer access.
+- Use only synthetic data for owner-run staging; do not fabricate withheld fields or buyer outcomes.
+- Keep proof layers separate: implemented, locally-tested, CI-verified, staging-verified, owner-approved and buyer-validated.
+
+### Verification
+
+Do not declare a deliverable complete until the corresponding evidence exists:
+
+1. Recompute the exact tree, branch, dirty overlay and CI `head_sha`; verify artifact digest, manifest completeness, sidecar, all payload hashes and external job conclusions.
+2. Run the repository migration/type/test/claim gates on the exact tree; retain negative security, JWT-fuzz, RLS-policy and evidence-binding results.
+3. For hosted staging, record migration-before-function order, grant/RLS denial, positive intake, deduplication, rate limits, retention, redacted logs, monitoring, backup/restore and rollback receipts.
+4. For functions/storage/Whop, retain deployment IDs, environment/allowlist evidence, object hashes/readback and an existing-customer journey; never count a plan or route as deployment proof.
+5. For privacy/CASL/quality, retain named approvals plus manual keyboard/focus/screen-reader/zoom and deployed performance evidence; automated axe/reflow is partial evidence.
+6. For buyers, retain the pre-registered segment, quoted price, paid-commitment measure, stop rule and access-controlled outcomes for all 11 experiments. A free pilot or positive reply is not paid validation.
+7. State explicitly what was not verified. Any missing external evidence leaves the mission `BLOCKED_OWNER_GATE` or `STOP_EVIDENCE_MISMATCH`.
+
+### Composition
+
+Return a structured handoff with:
+
+- a done/pending table using the 0–5 proof-layer score;
+- a ten-step execution queue with owner, artifact, dependency and exit gate;
+- changed files and exact tree/CI identity;
+- commands, exit codes and artifact links;
+- unresolved risks and stop/reopen conditions;
+- separate verdicts for repository, staging and pilot;
+- an adherence rating and remaining-work estimate.
+
+This brief is an execution contract, not authorization to mutate hosted systems or to contact buyers.
 
 **Mission type:** Tier 3, evidence-bound, security and deployment-sensitive
 controlled-pilot decision
