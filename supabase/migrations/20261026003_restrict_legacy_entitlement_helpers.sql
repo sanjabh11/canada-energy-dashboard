@@ -25,8 +25,8 @@ ALTER FUNCTION public.increment_ai_queries(uuid)
 GRANT EXECUTE ON FUNCTION public.increment_ai_queries(uuid) TO service_role;
 
 REVOKE ALL ON FUNCTION public.award_badge_if_eligible(uuid, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.award_badge_if_eligible(uuid) FROM anon, authenticated;
-ALTER FUNCTION public.award_badge_if_eligible(uuid)
+REVOKE ALL ON FUNCTION public.award_badge_if_eligible(uuid, text) FROM anon, authenticated;
+ALTER FUNCTION public.award_badge_if_eligible(uuid, text)
   SET search_path = pg_catalog, public;
 GRANT EXECUTE ON FUNCTION public.award_badge_if_eligible(uuid, text) TO service_role;
 
