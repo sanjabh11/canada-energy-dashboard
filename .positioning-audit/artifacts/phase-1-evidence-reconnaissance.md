@@ -92,7 +92,7 @@
 | Lazy-loaded components | 68 | EV-005 |
 | Component files | 208 | EV-005 |
 | Lib files | 220 | EV-005 |
-| Documentation files | 265 | EV-005 |
+| Documentation files | 266 | EV-005 |
 | Edge Functions | 110 | EV-010 |
 | Active commercial wedges | 10 | EV-003 |
 | Reserve wedges | 6 | EV-003 |

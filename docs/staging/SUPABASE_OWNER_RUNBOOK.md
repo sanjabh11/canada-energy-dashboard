@@ -6,8 +6,9 @@ set secrets, enable cron workflows, or upload Storage objects.
 
 ## Preconditions
 
-- INC-001 is invalidated or the old project is decommissioned, and access-log
-  review is recorded.
+- The authoritative incident register records INC-001 closed by leak-site
+  deletion or third-party ownership, and the historical access-log/closure
+  evidence is retained. Never restore the leak-site project.
 - The authoritative replacement project is confirmed as
   `qktgjpbifknqjpvrgkrj`.
 - The old project remains frozen; no production traffic is redirected yet.
@@ -57,8 +58,13 @@ RLS policy snapshot, negative direct-write tests, and rollback result.
 ## Gate 3 — security-advisor disposition
 
 Use [the current security baseline](../remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md).
-Before exposure, the owner must classify every ERROR and WARN, then re-run the
-advisor after the reviewed fixes. Do not apply aggregate or generated blanket
+The replacement-project read-only MCP snapshot on 2026-10-26 reports 23
+security-definer views, one public table without RLS, five materialized views
+visible to the API, and eleven security-definer functions executable by both
+`anon` and `authenticated` roles (plus extension-related findings). Before
+exposure, the owner must classify every ERROR and WARN by object, caller,
+intended role, API exposure, owner and disposition, then re-run the advisor
+after the reviewed fixes. Do not apply aggregate or generated blanket
 revocations. Preserve an allowlist for any function or view that must remain
 API-visible and test it with the intended role only.
 
@@ -69,6 +75,12 @@ Deploy only the pilot allowlist, in this order:
 1. `lead-capture`
 2. `whop-verify-access`
 3. `whop-webhook`
+
+The replacement project currently reports five active functions. Reconcile
+`calibration-cron` and `storage-dispatch-scheduler` before staging: keep them
+disabled or classify and test them explicitly. All listed functions currently
+report `verify_jwt=false`, so each must be proven to enforce its own intended
+authentication or signature contract before exposure.
 
 For each function:
 
