@@ -77,5 +77,5 @@ if [ -n "$CRON_SECRET" ]; then
   echo "CRON_SECRET is present locally and can be used for other cron-protected endpoints."
 else
   echo
-  echo "CRON_SECRET is not set locally. This proof run succeeded without it because the function accepts the service-role authorization path used by the GitHub cron workflow."
+  echo "CRON_SECRET is not set locally. This owner-run proof used the configured service-role authorization path; scheduled GitHub workflows use CRON_SECRET."
 fi
