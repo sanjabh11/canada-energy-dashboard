@@ -14,6 +14,7 @@
 - Artifact boundary: the GitHub API digest and run metadata are retained; a fresh local ZIP byte rehash was not claimed because the approved JEV network guard blocked the download command. The artifact manifest/sidecar must not be described as independently rehashed in this pass.
 - Local boundary: the working checkout remains dirty with intentional `D coverage/lcov.info` and untracked dump/cache files; those files were not restored, staged or used as CI proof.
 - Decision: repository verification is CI-verified for this exact remote head after the document rebind; hosted migration/RLS/function/storage/backup/rollback, owner approvals, manual WCAG/performance, CASL and buyer validation remain STOP.
+- Evidence-only rebind: commit `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` / CI run `40464886557`; all four jobs succeeded, including `evidence-binding`.
 
 ## Scope and proof boundary
 

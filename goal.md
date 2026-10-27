@@ -19,7 +19,7 @@ The detailed Context, Constraints, Verification and Composition brief is in `mis
 
 | Deliverable | Score | Highest proven layer | Current next checkpoint |
 |---|---:|---|---|
-| Exact-tree repository and evidence packet | 4/5 | CI-verified | retain the 8d6096a4/40462474909 artifact receipt; complete this evidence-only rebind and keep the ZIP rehash boundary explicit |
+| Exact-tree repository and evidence packet | 4/5 | CI-verified | retain the 8d6096a4/40462474909 source receipt; document rebind eec76f84/40464886557 is green; keep the ZIP rehash boundary explicit |
 | Repository security migration and negative tests | 4/5 | CI-verified | owner applies 20261026003 and verifies grants/RLS in staging |
 | Replacement-project hosted controls | 0/5 | read-only observation | migration order, RLS, direct-write denial, rate limits, retention, logging, restore and rollback |
 | Data stewardship and migration ledger | 2/5 | preparation packets | steward decisions for four excluded tables and 89 withheld rows |

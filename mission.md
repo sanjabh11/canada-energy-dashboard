@@ -11,7 +11,7 @@ The exact-head run is green for `lint-typecheck`, `test`, and `build-and-smoke`.
 
 ### Context
 
-CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The reviewed repository evidence is bound to exact commit `9739270d6c12ee14e5fac27b3cea64c5be288944` and run `40322016962`. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
+CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The reviewed repository evidence is bound to exact commit `8d6096a45ffa08e86519ef24335aee79c6603047` and run `40462474909`. The evidence-only document rebind `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` is covered by CI run `40464886557` with all four jobs successful. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
 
 ### Your task
 
@@ -65,10 +65,7 @@ checks and create reports but must not edit the shared checkout.
 
 **Mission status:** `PLANNED / NOT COMPLETE`
 
-**Current decision:** repository CI evidence is defensible for the recorded
-tree; documentation rebinding, independent reproduction, hosted controls,
-owner approvals, manual quality evidence and buyer validation remain open.
-Staging and pilot are **STOP**. This mission artifact grants no deployment,
+**Current decision:** repository CI evidence is defensible for source `8d6096a45ffa08e86519ef24335aee79c6603047`; the evidence-only document rebind `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` is covered by run `40464886557` with all four jobs successful. Independent reproduction, hosted controls, owner approvals, manual quality evidence and buyer validation remain open. Staging and pilot are **STOP**. This mission artifact grants no deployment,
 restoration, billing, outreach or buyer authority.
 
 **Audit snapshot (2026-10-26; captured before this documentation update):** The authoritative incident register records
