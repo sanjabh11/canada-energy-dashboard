@@ -64,6 +64,13 @@ describe('Cron authorization contract', () => {
     }
   });
 
+  it('the groundsource proof helper uses bearer credentials only', () => {
+    const source = read('scripts/run-groundsource-proof.sh');
+    expect(source).not.toContain('x-supabase-cron');
+    expect(source).toContain('AUTH_TOKEN');
+    expect(source).toContain('Authorization: Bearer \\$AUTH_TOKEN');
+  });
+
   it('every cron-secret function disables the platform JWT check', () => {
     const toml = read('supabase/config.toml');
     for (const fn of CRON_FUNCTIONS) {
