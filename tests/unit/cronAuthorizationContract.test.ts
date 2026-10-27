@@ -52,6 +52,7 @@ describe('Cron authorization contract', () => {
       for (const line of src.split('\n')) {
         if (/Authorization: Bearer/.test(line)) {
           expect(line, `${wf} sends anon key`).not.toContain('SUPABASE_ANON_KEY');
+          expect(line, `${wf} sends service-role key`).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
         }
       }
     }
