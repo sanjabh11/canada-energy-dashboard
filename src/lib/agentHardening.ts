@@ -52,9 +52,11 @@ export const AgentResultSchema = z.object({
   budgetExceeded: z.boolean().default(false),
   /** True if the circuit breaker is open */
   circuitOpen: z.boolean().default(false),
-  meta: z.record(z.unknown()).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
-export type AgentResult<T = unknown> = Omit<z.infer<typeof AgentResultSchema>, 'data'> & { data?: T };
+export type AgentResult<T = unknown> = Omit<z.infer<typeof AgentResultSchema>, 'data'> & {
+  data?: T;
+};
 
 // ── Circuit Breaker ────────────────────────────────────────────────────────────
 
@@ -86,9 +88,7 @@ export class CircuitBreaker {
   get isOpen(): boolean {
     if (this.state === 'open') {
       // Check if recovery window has passed
-      const age = this.lastFailureAt
-        ? (Date.now() - this.lastFailureAt) / 1000
-        : Infinity;
+      const age = this.lastFailureAt ? (Date.now() - this.lastFailureAt) / 1000 : Infinity;
       if (age >= this.config.recoverySeconds) {
         this.state = 'half-open';
         return false;
@@ -142,11 +142,21 @@ export class ToolBudgetTracker {
     this.startTime = Date.now();
   }
 
-  get callsUsed(): number { return this.callCount; }
-  get elapsedSeconds(): number { return (Date.now() - this.startTime) / 1000; }
-  get isCallBudgetExceeded(): boolean { return this.callCount >= this.budgetCalls; }
-  get isTimeBudgetExceeded(): boolean { return this.elapsedSeconds >= this.budgetSeconds; }
-  get isBudgetExceeded(): boolean { return this.isCallBudgetExceeded || this.isTimeBudgetExceeded; }
+  get callsUsed(): number {
+    return this.callCount;
+  }
+  get elapsedSeconds(): number {
+    return (Date.now() - this.startTime) / 1000;
+  }
+  get isCallBudgetExceeded(): boolean {
+    return this.callCount >= this.budgetCalls;
+  }
+  get isTimeBudgetExceeded(): boolean {
+    return this.elapsedSeconds >= this.budgetSeconds;
+  }
+  get isBudgetExceeded(): boolean {
+    return this.isCallBudgetExceeded || this.isTimeBudgetExceeded;
+  }
 
   tick(): void {
     this.callCount++;
@@ -323,7 +333,9 @@ export async function hardenedCall<T>(
     // Try fallback chain if provided
     if (fallback) {
       const result = await withFallback<T>({
-        live: () => { throw err; }, // already failed
+        live: () => {
+          throw err;
+        }, // already failed
         stale: fallback.stale,
         demo: fallback.demo,
         onFallback: fallback.onFallback,

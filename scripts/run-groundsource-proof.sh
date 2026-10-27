@@ -20,14 +20,15 @@ load_env_file "$ROOT_DIR/.env"
 SUPABASE_URL="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
 SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
 CRON_SECRET="${CRON_SECRET:-}"
+AUTH_TOKEN="${CRON_SECRET:-$SUPABASE_SERVICE_ROLE_KEY}"
 
 if [ -z "$SUPABASE_URL" ]; then
   echo "❌ Missing SUPABASE_URL or VITE_SUPABASE_URL" >&2
   exit 1
 fi
 
-if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-  echo "❌ Missing SUPABASE_SERVICE_ROLE_KEY" >&2
+if [ -z "$AUTH_TOKEN" ]; then
+  echo "❌ Missing CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY" >&2
   exit 1
 fi
 
@@ -49,8 +50,7 @@ echo
 echo "Exact curl command:"
 cat <<EOF
 curl -sS -X POST "${ENDPOINT}" \\
-  -H "Authorization: Bearer \$SUPABASE_SERVICE_ROLE_KEY" \\
-  -H "x-supabase-cron: true" \\
+  -H "Authorization: Bearer \$AUTH_TOKEN" \\
   -H "Content-Type: application/json" \\
   --data '$PAYLOAD'
 EOF
@@ -58,8 +58,7 @@ echo
 
 RESPONSE=$(curl -sS -w "\n%{http_code}" \
   -X POST "$ENDPOINT" \
-  -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-  -H "x-supabase-cron: true" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
   --data "$PAYLOAD")
 
@@ -78,5 +77,5 @@ if [ -n "$CRON_SECRET" ]; then
   echo "CRON_SECRET is present locally and can be used for other cron-protected endpoints."
 else
   echo
-  echo "CRON_SECRET is not set locally. This proof run succeeded without it because the function accepts the service-role authorization path used by the GitHub cron workflow."
+  echo "CRON_SECRET is not set locally. This owner-run proof used the configured service-role authorization path; scheduled GitHub workflows use CRON_SECRET."
 fi

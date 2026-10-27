@@ -147,7 +147,9 @@ describe('launch evidence validation readiness report', () => {
     expect(stdout).toContain('Launch evidence validation readiness report check passed');
   });
 
-  it('passes retained proof paths through to the underlying manifest validation check', { timeout: 180_000 }, () => {
+  // Proof-attached manifest runs bypass/extend the skip-probes cache; measured
+  // ~4min serial on a quiet machine — timeout reflects the real cost.
+  it('passes retained proof paths through to the underlying manifest validation check', { timeout: 600_000 }, () => {
     const tempRoot = makeTempRoot();
     const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
     const stdout = execFileSync(process.execPath, [

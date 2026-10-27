@@ -435,9 +435,9 @@ async function fetchSampleRows(datasetPath: string, limit = 50): Promise<any[]> 
   const json = await r.json();
   let out: any[] = Array.isArray(json) ? json.slice(0, limit) : (json.rows || []).slice(0, limit);
   let sampleUrl = '';
-  if (datasetPath === 'hf_electricity_demand') sampleUrl = 'https://qnymbecjgeaoxsfphrti.supabase.co/data/hf_electricity_demand_sample.json';
-  if (datasetPath === 'ontario_demand') sampleUrl = 'https://qnymbecjgeaoxsfphrti.supabase.co/data/ontario_demand_sample.json';
-  if (datasetPath === 'ontario_prices') sampleUrl = 'https://qnymbecjgeaoxsfphrti.supabase.co/data/ontario_prices_sample.json';
+  if (datasetPath === 'hf_electricity_demand') sampleUrl = 'https://qktgjpbifknqjpvrgkrj.supabase.co/data/hf_electricity_demand_sample.json';
+  if (datasetPath === 'ontario_demand') sampleUrl = 'https://qktgjpbifknqjpvrgkrj.supabase.co/data/ontario_demand_sample.json';
+  if (datasetPath === 'ontario_prices') sampleUrl = 'https://qktgjpbifknqjpvrgkrj.supabase.co/data/ontario_prices_sample.json';
   if (!out || out.length === 0) {
     try {
       const resp = await fetch(sampleUrl);

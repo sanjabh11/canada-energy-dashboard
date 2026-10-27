@@ -24,9 +24,10 @@ describe('job execution fallback telemetry', () => {
     vi.unstubAllEnvs();
   });
 
-  it('writes fallback telemetry to job_execution_log with provenance metadata', async () => {
-    mockSupabase.insert.mockResolvedValueOnce({ data: null, error: null });
-
+  it('never writes job_execution_log from the browser client — server-side ops only', async () => {
+    // Security contract (RLS hardening): operational telemetry is written only
+    // by trusted server-side jobs; the browser anon key must never gain write
+    // access. logFallbackEvent must no-op against Supabase even when env is set.
     await logFallbackEvent({
       jobName: 'ml-forecast:dispatch-runtime',
       reason: 'dispatch_runtime_heuristic',
@@ -38,19 +39,8 @@ describe('job execution fallback telemetry', () => {
       },
     });
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('job_execution_log');
-    expect(mockSupabase.insert).toHaveBeenCalledTimes(1);
-    const payload = mockSupabase.insert.mock.calls[0][0];
-    expect(payload.job_type).toBe('fallback');
-    expect(payload.status).toBe('success');
-    expect(payload.metadata).toMatchObject({
-      fallback: true,
-      source: 'local_dispatch_runtime',
-      reason: 'dispatch_runtime_heuristic',
-      domain: 'dispatch',
-      model_version: 'pinn-dispatch-v2',
-      claim_label: 'advisory',
-    });
+    expect(mockSupabase.from).not.toHaveBeenCalled();
+    expect(mockSupabase.insert).not.toHaveBeenCalled();
   });
 
   it('swallows telemetry write failures so fallback paths stay non-blocking', async () => {

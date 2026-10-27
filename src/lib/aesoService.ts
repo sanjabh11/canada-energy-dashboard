@@ -1,13 +1,14 @@
 /**
  * AESO (Alberta Electric System Operator) API Service
- * 
+ *
  * Fetches real-time and historical pool prices from AESO.
  * Data source: AESO ETS (Energy Trading System)
- * 
+ *
  * API Documentation: https://api.aeso.ca/
- * 
+ *
  * Note: AESO provides public data but requires API key for some endpoints.
- * For production, set VITE_AESO_API_KEY environment variable.
+ * Key-authorized calls must go through a Supabase Edge Function — an AESO key
+ * must never be bundled into client JS (no VITE_ env var for it here).
  */
 
 import { fetchActiveRetailerOffers } from './ratesSource';
@@ -60,8 +61,8 @@ export const DATA_SNAPSHOT_LABEL = 'February 2026';
 const AESO_API_BASE = 'https://api.aeso.ca/report/v1.1';
 const AESO_ETS_BASE = 'https://ets.aeso.ca';
 
-// Environment variable for API key (optional for public data)
-const AESO_API_KEY = (import.meta as any)?.env?.VITE_AESO_API_KEY || '';
+// Public endpoints are called without a key. Key-authorized AESO endpoints
+// are proxied through supabase/functions (e.g. stream-aeso-grid-data).
 
 /**
  * Fetch current pool price from AESO
@@ -72,8 +73,7 @@ export async function getCurrentPoolPrice(): Promise<AESOPoolPrice | null> {
     // Try AESO public API (may be blocked by CORS in browser)
     // In production, this should go through an Edge function
     const response = await fetch(`${AESO_API_BASE}/price/poolPrice`, {
-      headers: AESO_API_KEY ? { 'X-API-Key': AESO_API_KEY } : {},
-      signal: AbortSignal.timeout(5000) // 5 second timeout
+      signal: AbortSignal.timeout(5000), // 5 second timeout
     });
 
     if (!response.ok) {
@@ -85,7 +85,7 @@ export async function getCurrentPoolPrice(): Promise<AESOPoolPrice | null> {
     return {
       timestamp: data.timestamp || new Date().toISOString(),
       poolPrice: parseFloat(data.pool_price) || 0,
-      priceType: 'actual'
+      priceType: 'actual',
     };
   } catch (error) {
     // Expected to fail due to CORS in browser - use cached/simulated data
@@ -98,9 +98,7 @@ export async function getCurrentPoolPrice(): Promise<AESOPoolPrice | null> {
  */
 export async function getPoolPriceForecast(hours: number = 24): Promise<AESOPoolPrice[]> {
   try {
-    const response = await fetch(`${AESO_API_BASE}/price/poolPriceForecast?hours=${hours}`, {
-      headers: AESO_API_KEY ? { 'X-API-Key': AESO_API_KEY } : {}
-    });
+    const response = await fetch(`${AESO_API_BASE}/price/poolPriceForecast?hours=${hours}`);
 
     if (!response.ok) {
       return generateForecastFromHistorical();
@@ -111,7 +109,7 @@ export async function getPoolPriceForecast(hours: number = 24): Promise<AESOPool
       timestamp: f.timestamp,
       poolPrice: parseFloat(f.forecast_price),
       forecastPrice: parseFloat(f.forecast_price),
-      priceType: 'forecast' as const
+      priceType: 'forecast' as const,
     }));
   } catch (error) {
     console.warn('Error fetching AESO forecast:', error);
@@ -124,14 +122,11 @@ export async function getPoolPriceForecast(hours: number = 24): Promise<AESOPool
  */
 export async function getHistoricalPoolPrices(
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<AESOPoolPrice[]> {
   try {
     const response = await fetch(
       `${AESO_API_BASE}/price/poolPrice?startDate=${startDate}&endDate=${endDate}`,
-      {
-        headers: AESO_API_KEY ? { 'X-API-Key': AESO_API_KEY } : {}
-      }
     );
 
     if (!response.ok) {
@@ -142,7 +137,7 @@ export async function getHistoricalPoolPrices(
     return (data.prices || []).map((p: any) => ({
       timestamp: p.timestamp,
       poolPrice: parseFloat(p.pool_price),
-      priceType: 'actual' as const
+      priceType: 'actual' as const,
     }));
   } catch (error) {
     console.warn('Error fetching historical prices:', error);
@@ -158,16 +153,16 @@ export async function getCurrentRRORate(): Promise<AESORRORate | null> {
   try {
     // In production, this should scrape or use an API for:
     // https://ucahelps.alberta.ca/regulated-rate-option.aspx
-    
+
     // Static fallback data — see DATA_SNAPSHOT_DATE for vintage
     const currentRRO: AESORRORate = {
       month: new Date().toLocaleString('en-US', { month: 'long' }),
       year: new Date().getFullYear(),
       rroRate: await estimateCurrentRRO(),
       provider: 'Default RRO Provider',
-      effectiveDate: new Date().toISOString().split('T')[0]
+      effectiveDate: new Date().toISOString().split('T')[0],
     };
-    
+
     return currentRRO;
   } catch (error) {
     console.warn('Error fetching RRO rate:', error);
@@ -189,7 +184,7 @@ async function estimateCurrentRRO(): Promise<number> {
     const adminFees = 1.2; // Admin and regulatory charges
     return Math.round((baseRate + transmissionDistribution + adminFees) * 100) / 100;
   }
-  
+
   // Default fallback based on typical Alberta RRO (Feb 2026, source: ucahelps.alberta.ca)
   return 14.95;
 }
@@ -205,18 +200,18 @@ export async function getAllRROProviders(): Promise<AESORRORate[]> {
     { name: 'ATCO Electric', rate: 15.12 },
     { name: 'FortisAlberta (Direct Energy)', rate: 15.05 },
     { name: 'City of Lethbridge', rate: 14.29 },
-    { name: 'City of Red Deer', rate: 14.75 }
+    { name: 'City of Red Deer', rate: 14.75 },
   ];
 
   const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
   const currentYear = new Date().getFullYear();
 
-  return providers.map(p => ({
+  return providers.map((p) => ({
     month: currentMonth,
     year: currentYear,
     rroRate: p.rate,
     provider: p.name,
-    effectiveDate: new Date().toISOString().split('T')[0]
+    effectiveDate: new Date().toISOString().split('T')[0],
   }));
 }
 
@@ -352,7 +347,7 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       observedAt: DATA_SNAPSHOT_DATE,
       active: true,
       claimLabel: 'estimated',
-    }
+    },
   ];
 }
 
@@ -362,20 +357,20 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
 export function calculateSavings(
   currentRRO: number,
   fixedRate: number,
-  monthlyUsageKwh: number = 600 // Average Alberta household
+  monthlyUsageKwh: number = 600, // Average Alberta household
 ): {
   monthlySavings: number;
   yearlySavings: number;
   percentSavings: number;
 } {
-  const monthlySavings = (currentRRO - fixedRate) * monthlyUsageKwh / 100;
+  const monthlySavings = ((currentRRO - fixedRate) * monthlyUsageKwh) / 100;
   const yearlySavings = monthlySavings * 12;
   const percentSavings = ((currentRRO - fixedRate) / currentRRO) * 100;
 
   return {
     monthlySavings: Math.round(monthlySavings * 100) / 100,
     yearlySavings: Math.round(yearlySavings * 100) / 100,
-    percentSavings: Math.round(percentSavings * 10) / 10
+    percentSavings: Math.round(percentSavings * 10) / 10,
   };
 }
 
@@ -399,11 +394,11 @@ function getLatestCachedPoolPrice(): AESOPoolPrice {
 
   // Add some realistic variation
   const variation = (Math.random() - 0.5) * 20;
-  
+
   return {
     timestamp: new Date().toISOString(),
     poolPrice: Math.round((basePrice + variation) * 100) / 100,
-    priceType: 'actual'
+    priceType: 'actual',
   };
 }
 
@@ -413,28 +408,28 @@ function getLatestCachedPoolPrice(): AESOPoolPrice {
 function generateForecastFromHistorical(): AESOPoolPrice[] {
   const forecasts: AESOPoolPrice[] = [];
   const now = new Date();
-  
+
   for (let i = 1; i <= 24; i++) {
     const forecastTime = new Date(now.getTime() + i * 60 * 60 * 1000);
     const hour = forecastTime.getHours();
-    
+
     let basePrice = 85;
     if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 20)) {
       basePrice = 130; // Peak forecast slightly higher
     } else if (hour >= 22 || hour <= 5) {
       basePrice = 50;
     }
-    
+
     const variation = (Math.random() - 0.5) * 15;
-    
+
     forecasts.push({
       timestamp: forecastTime.toISOString(),
       poolPrice: Math.round((basePrice + variation) * 100) / 100,
       forecastPrice: Math.round((basePrice + variation) * 100) / 100,
-      priceType: 'forecast'
+      priceType: 'forecast',
     });
   }
-  
+
   return forecasts;
 }
 
@@ -443,28 +438,41 @@ function generateForecastFromHistorical(): AESOPoolPrice[] {
  */
 function getHistoricalCachedPrices(startDate: string, endDate: string): AESOPoolPrice[] {
   const prices: AESOPoolPrice[] = [];
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
   // Generate monthly averages for the past year
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   const monthlyAverages = [95, 88, 75, 65, 58, 62, 85, 110, 92, 78, 85, 105]; // $/MWh
-  
+
   const current = new Date(start);
   while (current <= end) {
     const monthIndex = current.getMonth();
     const basePrice = monthlyAverages[monthIndex];
     const variation = (Math.random() - 0.5) * 20;
-    
+
     prices.push({
       timestamp: current.toISOString(),
       poolPrice: Math.round((basePrice + variation) * 100) / 100,
-      priceType: 'actual'
+      priceType: 'actual',
     });
-    
+
     current.setDate(current.getDate() + 1);
   }
-  
+
   return prices;
 }
 
@@ -479,20 +487,20 @@ let pollingInterval: NodeJS.Timeout | null = null;
  */
 export function subscribeToPoolPrice(callback: PriceCallback): () => void {
   priceSubscribers.push(callback);
-  
+
   // Start polling if not already running
   if (!pollingInterval) {
     pollingInterval = setInterval(async () => {
       const price = await getCurrentPoolPrice();
       if (price) {
-        priceSubscribers.forEach(cb => cb(price));
+        priceSubscribers.forEach((cb) => cb(price));
       }
     }, 60000); // Poll every minute
   }
-  
+
   // Return unsubscribe function
   return () => {
-    priceSubscribers = priceSubscribers.filter(cb => cb !== callback);
+    priceSubscribers = priceSubscribers.filter((cb) => cb !== callback);
     if (priceSubscribers.length === 0 && pollingInterval) {
       clearInterval(pollingInterval);
       pollingInterval = null;

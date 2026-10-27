@@ -9,7 +9,8 @@ const readinessCheckScriptPath = path.join(process.cwd(), 'scripts/check-buyer-e
 const intakePacketScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
 const tempRoots: string[] = [];
 
-const outreachHeader = 'activity_date,channel,target_label,buyer_lane,proof_pack_id,route,rating,variant_id,caveat_used,artifact_promised,reply_status,response_summary,pain_signal,requested_input,reviewer_role,commercial_commitment_status,next_action,pilot_evidence_register_action,notes';
+const outreachHeader = 'activity_date,channel,target_label,buyer_lane,proof_pack_id,route,rating,variant_id,caveat_used,artifact_promised,reply_status,response_summary,pain_signal,requested_input,reviewer_role,commercial_commitment_status,next_action,pilot_evidence_register_action,notes,consent_basis,consent_source,consent_date,sender_identification_status,unsubscribe_mechanism_status,casl_owner_approval,casl_approval_date,casl_approval_reference,unsubscribe_status';
+const caslRowSuffix = 'express_consent,fixture consent record,2026-01-10,verified,verified,approved,2026-01-12,casl-fixture-review-2026-01-12,none';
 
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-buyer-evidence-readiness-'));
@@ -148,9 +149,15 @@ describe('buyer evidence readiness report', () => {
         'create intake packet and request redacted retained extract',
         'create_intake_packet',
         'No direct identifiers retained in the repo log.',
+        caslRowSuffix,
       ].join(','),
       '',
     ].join('\n'), 'utf8');
+    writeFileSync(
+      path.join(root, 'suppression-registry.csv'),
+      'target_label,suppression_date,source_row,reason\n',
+      'utf8',
+    );
 
     const result = await runNodeScript(readinessScriptPath, ['--root', root]);
 

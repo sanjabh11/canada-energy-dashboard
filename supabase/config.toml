@@ -216,3 +216,68 @@ entrypoint = "./functions/utility-connector-green-button/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/utility-connector-telemetry-ingest/index.ts"
+
+[functions.weather-ingestion-cron]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/weather-ingestion-cron/index.ts"
+
+[functions.data-purge-cron]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/data-purge-cron/index.ts"
+
+[functions.storage-dispatch-engine]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/storage-dispatch-engine/index.ts"
+
+[functions.ops-heartbeat]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ops-heartbeat/index.ts"
+
+[functions.ingest-gas-basis-series]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ingest-gas-basis-series/index.ts"
+
+[functions.ingest-market-spike-series]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ingest-market-spike-series/index.ts"
+
+[functions.ingest-retailer-rate-offers]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ingest-retailer-rate-offers/index.ts"
+
+[functions.ingest-tier-market-rates]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ingest-tier-market-rates/index.ts"
+
+[functions.energy-rag-ingest]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/energy-rag-ingest/index.ts"
+
+[functions.calibration-cron]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/calibration-cron/index.ts"
+
+[functions.aeso-ingestion-cron]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/aeso-ingestion-cron/index.ts"
+
+[functions.alert-export-health]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/alert-export-health/index.ts"
+
+[functions.process-export-jobs]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/process-export-jobs/index.ts"

@@ -7,6 +7,7 @@ on:
 
 jobs:
   trigger-tier-market-rates:
+    if: ${{ vars.CRON_LIVE_INGEST_TIER_MARKET_RATES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger TIER Market Rates Ingestion
@@ -14,9 +15,8 @@ jobs:
           echo "Triggering TIER market rates ingestion..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-tier-market-rates" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "x-supabase-cron: true" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ingest-tier-market-rates" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{}')
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)

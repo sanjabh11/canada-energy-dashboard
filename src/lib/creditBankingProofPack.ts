@@ -9,8 +9,10 @@ import type {
   CreditHolding,
   CreditPortfolioSummary,
 } from './creditBankingSupport';
+import { checkRateFreshness, isPricingStale } from './tierPricing';
 
-export type CreditBankingSourceMode = 'starter_ledger' | 'constructed_commercial_scenario' | 'uploaded_ledger';
+export type CreditBankingSourceMode =
+  'starter_ledger' | 'constructed_commercial_scenario' | 'uploaded_ledger';
 
 function buildArtifact(
   id: string,
@@ -22,6 +24,12 @@ function buildArtifact(
   pricing: TIERPricingConfig,
 ): ProofArtifactDefinition {
   const isConstructed = sourceMode === 'constructed_commercial_scenario';
+  // Stale covers the config-level verification date plus each rate constant's
+  // own asOfDate/maxAgeDays provenance window.
+  const isPricingOutdated =
+    isPricingStale(pricing) ||
+    checkRateFreshness(pricing.fundPriceProvenance).stale ||
+    checkRateFreshness(pricing.marketCreditProvenance).stale;
   return {
     id,
     label,
@@ -38,27 +46,34 @@ function buildArtifact(
           : 'uploaded ledger and liability files'
     }`,
     sourceManifestId: `tier-credit-ledger-${sourceMode}-${pricing.lastVerifiedAt}`,
-    verificationStatus: isConstructed
-      ? 'constructed_scenario'
-      : sourceMode === 'starter_ledger'
-        ? 'needs_buyer_data'
-        : 'owner_supplied_required',
+    verificationStatus: isPricingOutdated
+      ? 'source_stale'
+      : isConstructed
+        ? 'constructed_scenario'
+        : sourceMode === 'starter_ledger'
+          ? 'needs_buyer_data'
+          : 'owner_supplied_required',
     doNotClaim: [
       'Broker quote or trade execution',
       'Registry certification',
       'Legal compliance opinion',
-      'Live market price without refreshed source evidence',
+      'Current market value, savings or remaining market cost: no verified live quote is included',
     ],
     assumptions: [
       'Allocation is deterministic and follows earliest-expiry active lots first.',
-      'This workflow supports audit-ready planning and does not execute broker trades.',
-      'Pricing is a disclosed snapshot and must be refreshed before final purchase approval.',
+      'This workflow creates a draft allocation schedule only; it does not establish compliance, eligibility, or broker execution.',
+      'Market value, savings, and estimated remaining market cost are suppressed until current source evidence is supplied.',
     ],
-    claimLabel: isConstructed ? 'constructed-scenario' : sourceMode === 'starter_ledger' ? 'advisory' : 'owner-supplied',
-    isFallback: sourceMode === 'starter_ledger',
-    freshnessState: pricing.lastVerifiedAt,
+    claimLabel: isConstructed
+      ? 'constructed-scenario'
+      : sourceMode === 'starter_ledger'
+        ? 'advisory'
+        : 'owner-supplied',
+    isFallback: true,
+    freshnessState: `market_quote_unavailable; pricing_review:${pricing.lastVerifiedAt}${isPricingOutdated ? '; stale' : ''}`,
     commercialProofState: isConstructed ? 'constructed_commercial_scenario' : 'standard',
-    boundedClaimsDisclaimer: 'This dashboard supports compliance planning only. It does not provide a broker quote, legal opinion, or registry certification.',
+    boundedClaimsDisclaimer:
+      'This dashboard supports compliance planning only. It does not provide a broker quote, legal opinion, or registry certification.',
     description,
   };
 }
@@ -69,14 +84,15 @@ export function buildCreditBankingProofBundle(
 ): ProofPackBundle {
   return {
     title: 'Credit banking audit pack',
-    summary: 'Export a position memo, allocation schedule, and expiry-risk register tied to the current TIER pricing disclosure.',
+    summary:
+      'Export a draft position memo, unpriced allocation schedule, and expiry-risk register. Market valuation is withheld without a current quote.',
     artifacts: [
       buildArtifact(
         'credit-position-memo',
         'Credit position memo',
         'html',
         `tier_credit_position_${new Date().toISOString().slice(0, 10)}.html`,
-        'Primary audit-ready position summary for compliance and finance review.',
+        'Draft position summary for buyer review; not a compliance or finance approval artifact.',
         sourceMode,
         pricing,
       ),
@@ -85,7 +101,7 @@ export function buildCreditBankingProofBundle(
         'Allocation schedule CSV',
         'csv',
         `tier_credit_allocation_${new Date().toISOString().slice(0, 10)}.csv`,
-        'Compliance-year allocation schedule with estimated remaining market cost.',
+        'Compliance-year allocation schedule with remaining tonnes; market cost is withheld until a current quote is supplied.',
         sourceMode,
         pricing,
       ),
@@ -110,7 +126,7 @@ export function buildCreditPositionDescriptor(args: {
   holdings: CreditHolding[];
 }): ProofDocumentDescriptor {
   const expiringLots = args.holdings
-    .filter((holding) => holding.status !== 'expired')
+    .filter((holding) => holding.status === 'available' || holding.status === 'allocated')
     .sort((left, right) => left.expiryYear - right.expiryYear)
     .slice(0, 4);
 
@@ -120,44 +136,52 @@ export function buildCreditPositionDescriptor(args: {
       'Credit position memo',
       'html',
       `tier_credit_position_${new Date().toISOString().slice(0, 10)}.html`,
-      'Primary memo for the current TIER banking workflow.',
+      'Draft memo for the TIER banking planning workflow.',
       args.sourceMode,
       args.pricing,
     ),
     title: 'TIER credit banking position memo',
-    summary: 'Compliance-year allocation, expiry pressure, and pricing provenance for the current credit ledger.',
+    summary:
+      'Draft compliance-year allocation and expiry arithmetic; current market valuation and savings are unavailable.',
     sections: [
       {
         heading: 'Portfolio summary',
         kind: 'bullet_list',
         body: [
           `Total active credits: ${args.summary.totalCredits.toLocaleString()} tonnes`,
-          `Current portfolio value: CAD ${args.summary.currentValue.toLocaleString()}`,
-          `Average acquisition cost: CAD ${args.summary.avgCost.toFixed(2)} / tonne`,
-          `Fund cost avoided: CAD ${args.summary.fundValueSaved.toLocaleString()}`,
+          `Current portfolio market value: ${args.summary.currentValue === null ? 'not available; current verified quote required' : `CAD ${args.summary.currentValue.toLocaleString()}`}`,
+          `Recorded average acquisition cost: CAD ${args.summary.avgCost.toFixed(2)} / tonne (based on supplied ledger purchase prices)`,
+          `Fund cost comparison: ${args.summary.fundValueSaved === null ? 'withheld; current verified fund rate and comparable lot evidence required' : `CAD ${args.summary.fundValueSaved.toLocaleString()}`}`,
           `Coverage ratio: ${args.summary.coverageRatio.toFixed(0)}%`,
         ],
       },
       {
         heading: 'Compliance-year allocation',
         kind: 'bullet_list',
-        body: args.allocations.map((row) => `${row.year}: ${row.allocated.toLocaleString()}t allocated, ${row.remaining.toLocaleString()}t remaining`),
+        body: args.allocations.map(
+          (row) =>
+            `${row.year}: ${row.allocated.toLocaleString()}t allocated, ${row.remaining.toLocaleString()}t remaining`,
+        ),
       },
       {
         heading: 'Expiry and concentration watch',
         kind: 'bullet_list',
-        body: expiringLots.map((holding) => `${holding.type} vintage ${holding.vintage}: ${holding.quantity.toLocaleString()}t expires in ${holding.expiryYear}`),
+        body: expiringLots.map(
+          (holding) =>
+            `${holding.type} vintage ${holding.vintage}: ${holding.quantity.toLocaleString()}t expires in ${holding.expiryYear}`,
+        ),
       },
       {
         heading: 'No-broker audit guardrails',
         kind: 'bullet_list',
         body: [
           'Use the allocation schedule as planning evidence only; it does not place or recommend a trade.',
-          'Refresh pricing and registry status before CFO approval.',
+          'Obtain dated buyer-approved pricing and verify registry status before any financial or compliance decision.',
           'Keep evidence of ledger source, expiry dates, allocation order, and remaining liability attached to the pilot file.',
         ],
       },
     ],
-    nextStep: 'Replace starter files with the buyer’s registry ledger and compliance liability export, then use the allocation schedule in the pilot review.',
+    nextStep:
+      'Replace starter files with the buyer’s registry ledger and compliance liability export, then use the allocation schedule in the pilot review.',
   };
 }

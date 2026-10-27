@@ -24,6 +24,10 @@ function collectFiles(relativePath, extensions = null) {
     if (!stat) continue;
 
     if (stat.isFile()) {
+      // Skip OS junk and hidden files — they are never committed but inflate
+      // the count on macOS worktrees (.DS_Store) vs clean CI checkouts.
+      const base = path.basename(current);
+      if (base.startsWith('.') || base === '.DS_Store') continue;
       if (!extensions || extensions.has(path.extname(current))) files.push(current);
       continue;
     }

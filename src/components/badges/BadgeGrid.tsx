@@ -11,7 +11,7 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
   const [filter, setFilter] = useState<'all' | 'earned' | 'in_progress' | 'locked'>('all');
 
   // Filter badges
-  const filteredBadges = badgeProgress.filter(bp => {
+  const filteredBadges = badgeProgress.filter((bp) => {
     switch (filter) {
       case 'earned':
         return bp.earned;
@@ -25,10 +25,10 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
   });
 
   // Calculate stats
-  const earnedCount = badgeProgress.filter(bp => bp.earned).length;
+  const earnedCount = badgeProgress.filter((bp) => bp.earned).length;
   const totalCount = badgeProgress.length;
   const totalPoints = badgeProgress
-    .filter(bp => bp.earned)
+    .filter((bp) => bp.earned)
     .reduce((sum, bp) => sum + bp.badge.points, 0);
 
   return (
@@ -43,9 +43,7 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
         </div>
 
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 text-center">
-          <div className="text-4xl font-bold text-purple-400 mb-2">
-            {totalPoints}
-          </div>
+          <div className="text-4xl font-bold text-purple-400 mb-2">{totalPoints}</div>
           <div className="text-sm text-slate-400">Total Points</div>
         </div>
 
@@ -63,9 +61,10 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
           onClick={() => setFilter('all')}
           className={`
             px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap
-            ${filter === 'all'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            ${
+              filter === 'all'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }
           `}
         >
@@ -75,9 +74,10 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
           onClick={() => setFilter('earned')}
           className={`
             px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap
-            ${filter === 'earned'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            ${
+              filter === 'earned'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }
           `}
         >
@@ -87,25 +87,28 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
           onClick={() => setFilter('in_progress')}
           className={`
             px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap
-            ${filter === 'in_progress'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            ${
+              filter === 'in_progress'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }
           `}
         >
-          In Progress ({badgeProgress.filter(bp => !bp.earned && bp.progress.percentage > 0).length})
+          In Progress (
+          {badgeProgress.filter((bp) => !bp.earned && bp.progress.percentage > 0).length})
         </button>
         <button
           onClick={() => setFilter('locked')}
           className={`
             px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap
-            ${filter === 'locked'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            ${
+              filter === 'locked'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }
           `}
         >
-          Locked ({badgeProgress.filter(bp => !bp.earned && bp.progress.percentage === 0).length})
+          Locked ({badgeProgress.filter((bp) => !bp.earned && bp.progress.percentage === 0).length})
         </button>
       </div>
 
@@ -122,12 +125,13 @@ export function BadgeGrid({ badgeProgress, onBadgeClick }: BadgeGridProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredBadges.map(bp => (
+          {filteredBadges.map((bp) => (
             <BadgeCard
               key={bp.badge.id}
               badge={bp.badge}
               earned={bp.earned}
               earnedAt={bp.earnedAt}
+              tracked={bp.tracked}
               progress={bp.progress}
               onClick={() => onBadgeClick?.(bp)}
             />

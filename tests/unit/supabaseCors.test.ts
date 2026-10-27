@@ -47,7 +47,7 @@ describe('shared Supabase CORS helper', () => {
   it('returns a browser-ok preflight for the production Netlify dashboard origin', () => {
     setCorsEnv(undefined);
 
-    const response = handleCorsOptions(new Request('https://qnymbecjgeaoxsfphrti.functions.supabase.co/llm-lite/transition-kpis', {
+    const response = handleCorsOptions(new Request('https://qktgjpbifknqjpvrgkrj.functions.supabase.co/llm-lite/transition-kpis', {
       method: 'OPTIONS',
       headers: {
         origin: 'https://canada-energy.netlify.app',

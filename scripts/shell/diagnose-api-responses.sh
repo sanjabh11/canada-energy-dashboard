@@ -2,7 +2,7 @@
 # Diagnostic script to see actual API responses
 set -e
 
-PROJECT_REF="qnymbecjgeaoxsfphrti"
+PROJECT_REF="qktgjpbifknqjpvrgkrj"
 BASE_URL="https://${PROJECT_REF}.functions.supabase.co"
 
 echo "=========================================="

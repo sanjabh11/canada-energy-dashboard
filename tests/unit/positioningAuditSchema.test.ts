@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -84,11 +85,35 @@ describe('positioning audit schema validity', () => {
 
   it('experiments items have required schema fields', () => {
     const exps = (experiments.experiments ?? []) as Record<string, unknown>[];
-    const required = ['experiment_id', 'hypothesis_id', 'claim_being_tested', 'owner', 'fidelity', 'method', 'sample_size', 'success_threshold', 'failure_threshold', 'decision_rule', 'risk_check', 'instrumentation', 'status'];
+    const required = ['experiment_id', 'hypothesis_id', 'claim_being_tested', 'owner', 'fidelity', 'experiment_class', 'method', 'sample_size', 'success_threshold', 'failure_threshold', 'decision_rule', 'risk_check', 'instrumentation', 'status', 'quoted_price', 'paid_commitment_measure'];
     for (const exp of exps) {
       for (const field of required) {
         expect(exp[field]).toBeDefined();
       }
+    }
+  });
+
+  it('experiments experiment_class is one of demand, usability, wtp, channel', () => {
+    const exps = (experiments.experiments ?? []) as Record<string, unknown>[];
+    const allowed = new Set(['demand', 'usability', 'wtp', 'channel']);
+    for (const exp of exps) {
+      expect(allowed.has(String(exp.experiment_class)), `${exp.experiment_id} experiment_class`).toBe(true);
+    }
+  });
+
+  it('wtp-class experiments require a paid commitment, not positive replies', () => {
+    const exps = (experiments.experiments ?? []) as Record<string, unknown>[];
+    const wtpExps = exps.filter((exp) => exp.experiment_class === 'wtp');
+    // At least one experiment should exist so this guard is meaningful.
+    expect(wtpExps.length).toBeGreaterThan(0);
+    for (const exp of wtpExps) {
+      const threshold = String(exp.success_threshold);
+      expect(threshold, `${exp.experiment_id} success_threshold`).toMatch(/paid/i);
+      expect(threshold, `${exp.experiment_id} success_threshold`).toContain('paid_commitment_measure');
+      // A reply is a demand signal, never a willingness-to-pay signal.
+      expect(String(exp.decision_rule), `${exp.experiment_id} decision_rule`).not.toMatch(
+        /If ≥\d+ positive responses?, proceed/i,
+      );
     }
   });
 
@@ -182,7 +207,6 @@ describe('positioning audit gate semantics', () => {
 
 describe('positioning audit verifier negative fixtures', () => {
   function runVerifier(): { warning_count: number; checks: Array<{ id: string; status: string; detail: string }> } {
-    const { execSync } = require('node:child_process');
     const output = execSync('node scripts/verify-positioning-audit.mjs', {
       cwd: process.cwd(),
       encoding: 'utf8',

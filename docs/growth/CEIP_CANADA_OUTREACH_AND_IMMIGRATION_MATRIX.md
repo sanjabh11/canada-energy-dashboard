@@ -311,6 +311,15 @@ Output format:
 - include 20 rows per lane
 ```
 
+## CASL and Suppression Requirements
+
+Cold email, LinkedIn, WhatsApp, and forum outreach from this matrix are commercial electronic messages (or carry CEM risk). Before any send:
+
+1. Record the CASL `consent_basis`, `consent_source`, and `consent_date`; confirm accurate `sender` identity (name, organization, physical mailing address) and a functional `unsubscribe` mechanism — see the full checklist in [templates/OUTREACH_AND_PILOT_TEMPLATES.md](./templates/OUTREACH_AND_PILOT_TEMPLATES.md#consent-basis-checklist-required-for-every-send).
+2. Check every recipient email/domain against the canonical suppression registry [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) — the single workspace-wide suppression source (`email,domain,reason,source,suppressed_at,suppressed_by`). A suppressed contact must not receive further messages; if systems disagree, the stricter state wins.
+3. Append every opt-out to `SUPPRESSION_REGISTRY_LIVE.csv` immediately and mirror it in the anonymized outreach response log.
+4. Do not send anything until the designated CASL owner approves the channel, basis, and message. These are scaffolds, not evidence of CASL compliance.
+
 ## Recommended Execution Order
 
 1. Use the target tables in `CEIP_OUTREACH_CAMPAIGN_ASSETS.md` as the starting list.

@@ -1,7 +1,7 @@
 -- =========================================================================
 -- CRITICAL FIXES - Run in Supabase SQL Editor
 -- =========================================================================
--- URL: https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/sql/new
+-- URL: https://supabase.com/dashboard/project/qktgjpbifknqjpvrgkrj/sql/new
 -- =========================================================================
 
 -- FIX 1: Update existing curtailment events to use "historical_replay" instead of "mock"

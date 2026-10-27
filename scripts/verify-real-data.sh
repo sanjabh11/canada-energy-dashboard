@@ -37,7 +37,7 @@ echo -e "${BLUE}=================================${NC}\n"
 ###############################################################################
 echo -e "${YELLOW}📊 Checking Ontario Demand Data...${NC}"
 
-DEMAND_RESPONSE=$(curl -s "https://qnymbecjgeaoxsfphrti.functions.supabase.co/api-v2-analytics-trends" \
+DEMAND_RESPONSE=$(curl -s "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api-v2-analytics-trends" \
   -H "Authorization: Bearer $SUPABASE_KEY")
 
 DEMAND_COUNT=$(echo "$DEMAND_RESPONSE" | jq -r '.demand_sample_count // 0')
@@ -56,7 +56,7 @@ fi
 echo -e "\n${YELLOW}💰 Checking Ontario Price Data...${NC}"
 
 # Query latest HOEP price
-PRICE_RESPONSE=$(curl -s "https://qnymbecjgeaoxsfphrti.functions.supabase.co/api-v2-analytics-provincial-metrics" \
+PRICE_RESPONSE=$(curl -s "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api-v2-analytics-provincial-metrics" \
   -H "Authorization: Bearer $SUPABASE_KEY")
 
 LATEST_PRICE=$(echo "$PRICE_RESPONSE" | jq -r '.latest_hoep // "N/A"')
@@ -73,7 +73,7 @@ fi
 ###############################################################################
 echo -e "\n${YELLOW}⚡ Checking Provincial Generation Data...${NC}"
 
-PROVINCIAL_RESPONSE=$(curl -s "https://qnymbecjgeaoxsfphrti.functions.supabase.co/api-v2-analytics-provincial-metrics" \
+PROVINCIAL_RESPONSE=$(curl -s "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api-v2-analytics-provincial-metrics" \
   -H "Authorization: Bearer $SUPABASE_KEY")
 
 TOP_SOURCE=$(echo "$PROVINCIAL_RESPONSE" | jq -r '.top_source // "unknown"')
@@ -103,7 +103,7 @@ echo -e "   Provinces: ON, AB, BC, QC, MB, SK, NS, NB"
 ###############################################################################
 echo -e "\n${YELLOW}🔋 Checking Storage Dispatch Data...${NC}"
 
-STORAGE_RESPONSE=$(curl -s "https://qnymbecjgeaoxsfphrti.functions.supabase.co/api-v2-storage-dispatch/status" \
+STORAGE_RESPONSE=$(curl -s "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/api-v2-storage-dispatch/status" \
   -H "Authorization: Bearer $SUPABASE_KEY")
 
 SOC=$(echo "$STORAGE_RESPONSE" | jq -r '.soc_percent // 0')
@@ -122,7 +122,7 @@ fi
 ###############################################################################
 echo -e "\n${YELLOW}💓 Checking System Health...${NC}"
 
-OPS_RESPONSE=$(curl -s "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ops-health" \
+OPS_RESPONSE=$(curl -s "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ops-health" \
   -H "Authorization: Bearer $SUPABASE_KEY")
 
 MONITORING_STATUS=$(echo "$OPS_RESPONSE" | jq -r '.monitoring_status // "Unknown"')

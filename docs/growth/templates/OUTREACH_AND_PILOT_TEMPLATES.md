@@ -2,11 +2,81 @@
 
 ## Proof-Pack Positioning
 
-CEIP should be described as Canadian utility and TIER proof packs that turn forecasts, filings, benchmarks, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance savings, credit ledgers, asset decisions, security review, and billing checks into buyer-ready artifacts.
+CEIP should be described as a desk-research-only Alberta TIER scenario pilot hypothesis, with utility forecasting as the documented fallback. Artifacts are drafts for buyer review; no buyer outcome, savings, procurement eligibility, or willingness to pay has been validated.
 
 Use these templates only when the named proof pack can be shown on the current route. Do not imply utility production onboarding, deployed customer history, real-time TIER price feeds, certified Indigenous data-sovereignty infrastructure, AI superiority, GPU superiority, or regulator approval.
 
 Indigenous and AICEI reporting remain reserve/support outreach until a partner-backed dataset or governance review exists.
+
+## CASL Compliance Footer (append to all sends)
+
+Canada's Anti-Spam Legislation (CASL) may apply to commercial electronic messages (CEMs), including email and electronic social messages. These are drafts only. Do not send until the designated CASL owner approves the message, channel, consent basis, sender identification, working unsubscribe path, and suppression check.
+
+```text
+—
+{Sender full name} | {Organization name}
+{Physical mailing address: street, city, province, postal code}
+{Sender email} | {Sender phone or website}
+Unsubscribe: {working unsubscribe instructions or functional link}
+
+You are receiving this message because {consent basis — e.g. "you gave
+express consent", "we have an existing business relationship from your
+inquiry dated {date}", or "your business contact address is
+conspicuously published and this message is relevant to your role"
+(CASL s.10(9) implied consent)}.
+
+Consent note: {how and when consent was obtained, or the documented
+implied-consent basis — keep proof on file}.
+
+Reply STOP or UNSUBSCRIBE to opt out — honoured within 10 business days.
+—
+```
+
+CASL sending rules for this repo's outreach:
+
+- Do not send or initiate outreach where the CASL owner has not approved the channel, consent basis, identity/footer, and suppression process. A LinkedIn request or message is not an automatic workaround. When in doubt, stop and ask the owner to review the case.
+- Sender identification (name, organization, physical mailing address) must be accurate in every send — the placeholders above are mandatory, not optional.
+- The unsubscribe mechanism must be functional and honoured promptly, and in all cases within 10 business days of the request.
+- Record the consent basis and any opt-out in the outreach response log; an opted-out contact must not receive further CEMs.
+
+### Consent-Basis Logging Columns
+
+[OUTREACH_RESPONSE_LOG_TEMPLATE.csv](./OUTREACH_RESPONSE_LOG_TEMPLATE.csv) carries four CASL columns appended after `notes` (kept last so the scripted row appender stays column-aligned):
+
+- `consent_basis` — `express_consent`, `existing_business_relationship`, `existing_non_business_relationship`, `implied_consent_conspicuously_published_address`, `casl_exemption`, or `none` (a `none` row must not be sent a CEM; the owner verifies statutory applicability and any time limit).
+- `consent_source` — where the basis came from (e.g. `public_business_contact_listing`, `buyer_inquiry`, `event_exchange`); keep the underlying proof in the external outreach system, not in this repo.
+- `consent_date` — ISO date the basis was established (`YYYY-MM-DD`); use it to check statutory implied-consent windows before sending.
+- `sender_identification_status` and `unsubscribe_mechanism_status` — both must be `verified` before a sent CEM row can validate. The validator records the check; it does not independently test the real-world sender identity or unsubscribe path.
+- `casl_owner_approval`, `casl_approval_date`, and `casl_approval_reference` — sent CEM rows require approved status, a prior date, and an external review reference. Do not put personal contact details in the reference.
+- `unsubscribe_status` — `none`, `opted_out`, or `suppressed`; any non-`none` value is a hard stop for that `target_label`.
+
+The generator creates a per-workspace `suppression-registry.csv` (anonymized `target_label` rows) used by the scripted appender/validator. The **canonical workspace-wide suppression source of truth is [docs/growth/SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv)** (columns: `email,domain,reason,source,suppressed_at,suppressed_by`). Every opt-out must be recorded in that canonical file before the next send; pass `--suppression-file` pointing at the generated workspace registry so scripted checks stay in force, and reconcile the two so the stricter state always wins (suppress). The tools do not send messages, verify legal sufficiency, or provide a reactivation override.
+
+### Consent-Basis Checklist (required for every send)
+
+No template below may be sent unless every field is filled and the designated CASL owner has approved the send:
+
+- [ ] `consent_basis` recorded — `express_consent`, `existing_business_relationship`, `existing_non_business_relationship`, `implied_consent_conspicuously_published_address`, `casl_exemption`; a `none` row must not be sent a CEM.
+- [ ] `consent_source` recorded — where the basis came from, with proof kept in the external outreach system.
+- [ ] `consent_date` recorded — ISO `YYYY-MM-DD`; statutory implied-consent windows checked before sending.
+- [ ] Sender identity complete — accurate sender name, organization, and physical mailing address in the footer.
+- [ ] Unsubscribe mechanism verified — a functional opt-out path honoured within 10 business days.
+- [ ] Suppression check run — the recipient email/domain is not in [docs/growth/SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv), and no `unsubscribe_status` other than `none` exists for the `target_label`.
+
+### Suppression Handling
+
+The canonical suppression registry for all outreach workspaces is [docs/growth/SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv). It is the single source of truth: every opt-out, complaint, or owner suppression is appended there with `email` (or `*` for a domain-wide suppression), `domain`, `reason`, `source`, `suppressed_at`, and `suppressed_by`. Keep direct identifiers out of other repo logs — this file is the only repo location that may hold suppressed addresses, and only because CASL requires an honoured suppression list.
+
+Opt-outs are honored before the next send, not just within the 10-business-day statutory ceiling:
+
+1. When a reply opts out (STOP, UNSUBSCRIBE, or equivalent), append a row to `docs/growth/SUPPRESSION_REGISTRY_LIVE.csv` immediately AND log a row with `reply_status=unsubscribe` and `unsubscribe_status=opted_out` for that `target_label`.
+2. Before every send batch, the owner checks each recipient email/domain against `docs/growth/SUPPRESSION_REGISTRY_LIVE.csv` AND filters the log for `unsubscribe_status` values other than `none`, removing those `target_label` entries from the send list — suppression is checked before each send, not only at campaign setup.
+3. The external outreach system holds the direct identifier; the canonical registry and the anonymized log are the repo-side suppression records. If any system disagrees, the stricter state wins (suppress).
+4. A suppressed contact may only return to sends if new express consent is recorded with a fresh `consent_basis`, `consent_source`, and `consent_date`, and the canonical registry row is annotated by the owner.
+
+### Campaign Window Status
+
+The July 2026 outreach campaign window referenced by earlier growth planning is **expired** (today is 2026-10-05). No send should go out under the old campaign assumptions: every new CEM requires owner CASL review of the consent basis, suppression check, and footer fields before sending. This scaffolding supports that review; it does not claim CASL compliance is achieved.
 
 ## Current Sellability Ratings
 
@@ -19,7 +89,7 @@ These are current sellability-confidence ratings from the active strategy audit,
 | 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 | Lead when the pain is preparing or reviewing filing evidence. |
 | 4 | Ontario GA/ICI 5CP decision-support pack | Ontario Class A industrials, energy managers, advisors | `/ga-ici-5cp` | 4.2/5 | Lead when the buyer owns Ontario peak-risk or ICI exposure questions. |
 | 5 | Privacy-preserving BYO-CSV proof generator | Utility privacy, security, procurement, planning reviewers | `/byo-csv-proof` | 4.1/5 | Attach before asking for sensitive files or connector approval. |
-| 6 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 | Lead when the buyer owns Alberta compliance cost decisions. |
+| 6 | TIER scenario memo (desk-research hypothesis) | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 | Discuss only after CASL owner approval; savings and buyer fit are unvalidated. |
 | 7 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 | Pair with the TIER CFO memo when credits, expiries, or liability coverage are in scope. |
 | 8 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead for CSV-first replace/defer and capex prioritization discussions. |
 | 9 | Utility security procurement pack | Security/procurement reviewers | `/utility-security` | 4.0/5 | Attach when sharing load data or connector review is discussed. |
@@ -41,6 +111,8 @@ Would a 20-minute review of `/utility-demand-forecast` be useful?
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## Regulatory Filing Outreach
 
 Subject: OEB/AUC filing evidence pack
@@ -54,6 +126,8 @@ The useful part is not another dashboard. It is a structured pack that can suppo
 Would you be open to a short walkthrough of `/regulatory-filing` and the attached forecast benchmark appendix?
 
 - Sanjay
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 ## Benchmark / Provenance Outreach
 
@@ -69,6 +143,8 @@ Would a quick look at `/forecast-benchmarking` help your team evaluate whether t
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## Asset Capex Outreach
 
 Subject: CSV-first asset replace/defer pack
@@ -82,6 +158,8 @@ The output is an executive capex summary and prioritized replacement CSV.
 Would a 20-minute walkthrough of `/asset-health` be useful for one asset class or feeder-area example?
 
 - Sanjay
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 ## Ontario GA/ICI 5CP Outreach
 
@@ -99,6 +177,8 @@ Would a short walkthrough of `/ga-ici-5cp` be useful?
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## BYO-CSV Privacy Proof Outreach
 
 Subject: Local CSV proof before sharing sensitive utility files
@@ -115,19 +195,23 @@ Would a short walkthrough of `/byo-csv-proof` be useful before any data request?
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## TIER CFO Memo Outreach
 
-Subject: Source-dated TIER savings memo
+Subject: Source-dated TIER scenario memo
 
 Hi {FirstName},
 
-CEIP includes a TIER savings pack that compares fund payment, market-credit assumptions, and direct-investment assumptions in a CFO-readable memo.
+CEIP is exploring a desk-research TIER scenario memo that compares fund payment, market-credit assumptions, and an explicitly undetermined direct-investment pathway. The artifact is planning-only; pricing, buyer fit, and savings are not validated.
 
 The current version is a scenario tool, not trading advice or a real-time credit-price feed. The useful pilot is replacing starter assumptions with one facility's numbers.
 
 Would you be open to reviewing `/roi-calculator` against one facility scenario?
 
 - Sanjay
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 ## TIER Credit Banking Outreach
 
@@ -143,6 +227,8 @@ Would a short review of `/credit-banking` alongside `/roi-calculator` be useful 
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## Utility Security Outreach
 
 Subject: Utility security review pack for a forecast pilot
@@ -156,6 +242,8 @@ It is a diligence artifact, not a certification claim.
 Would a review of `/utility-security` help determine whether a forecast pilot is worth scoping?
 
 - Sanjay
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 ## Shadow Billing Outreach
 
@@ -171,6 +259,8 @@ Would a walkthrough of `/shadow-billing` against one anonymized bill set be usef
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## Indigenous Reporting Outreach
 
 Subject: Funder reporting workflow for energy projects
@@ -184,6 +274,8 @@ I am careful not to claim certified sovereignty infrastructure. This is a report
 Would a bounded walkthrough of `/funder-reporting` or `/aicei` be useful?
 
 - Sanjay
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 ## Consultant/API Outreach
 
@@ -199,6 +291,8 @@ Would you be open to reviewing `/api-docs` after we pick one concrete analysis t
 
 - Sanjay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 ## Large-Load Overlay Outreach
 
 Subject: Large-load planning overlay, not engineering approval
@@ -212,6 +306,8 @@ It is not a power-flow engine or engineering approval tool.
 Would a short walkthrough of `/ai-datacentres` and `/utility-demand-forecast` help frame a pilot?
 
 - Sanjay
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this sign-off and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](../SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 ## Proof-Pack 14-Day Pilot Scope Template
 

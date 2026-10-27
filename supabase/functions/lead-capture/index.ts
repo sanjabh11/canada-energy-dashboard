@@ -72,6 +72,23 @@ serve(async (req: Request) => {
       return jsonResponse(req, 400, { error: 'Validation failed', details: validationErrors }, rl.headers);
     }
 
+    // Idempotent dedup: one lead per normalized email (DB unique index is the backstop)
+    const { data: existing, error: lookupError } = await supabase
+      .from('contact_leads')
+      .select('id')
+      .eq('email', email)
+      .limit(1);
+
+    if (lookupError) {
+      // Fail closed: a broken dedup lookup must not fall through to insert
+      console.error('lead-capture dedup lookup error:', lookupError);
+      return jsonResponse(req, 500, { error: 'Failed to save lead' }, rl.headers);
+    }
+
+    if (existing && existing.length > 0) {
+      return jsonResponse(req, 200, { success: true, duplicate: true }, rl.headers);
+    }
+
     // Insert into contact_leads table
     const { error: insertError } = await supabase
       .from('contact_leads')
@@ -87,6 +104,9 @@ serve(async (req: Request) => {
       });
 
     if (insertError) {
+      if (insertError.code === '23505') {
+        return jsonResponse(req, 200, { success: true, duplicate: true }, rl.headers);
+      }
       console.error('lead-capture insert error:', insertError);
       await logApiUsage({
         endpoint: 'lead-capture',

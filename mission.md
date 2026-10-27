@@ -1,0 +1,596 @@
+# CEIP Fable 5 Controlled-Pilot Mission
+
+## Authoritative update — 2026-10-27
+
+**bound HEAD `8d6096a45ffa08e86519ef24335aee79c6603047` — CI run
+> `40462474909`**
+
+The exact-head run is green for `lint-typecheck`, `test`, and `build-and-smoke`. The `evidence-binding` job was red only because the prior documents named an older receipt; this update is the evidence-only rebind. GitHub artifact `12715637536` (`ci-evidence-7ba2344931812b205125d554d12dca4e5eb95345`) reports digest `sha256:33a936157c113df8b6d417779c3a57903fa8545ea22bb325c869310126512da2`. The test job reports 190/190 files and 1,382/1,382 tests, with critical-path coverage floors successful. Build-and-smoke completed its build, all configured browser/a11y/manual-assist steps, completeness check and artifact upload. A local ZIP byte rehash is not claimed because the approved network guard blocked the download path. These results establish repository/CI proof only; replacement-project staging, owner approvals, manual WCAG, deployed performance and buyer validation remain STOP. The dirty local overlay is not part of this CI receipt.
+
+## 3C execution brief
+
+### Context
+
+CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The reviewed repository evidence is bound to exact commit `8d6096a45ffa08e86519ef24335aee79c6603047` and run `40462474909`. The evidence-only document rebind `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` is covered by CI run `40464886557` with all four jobs successful. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
+
+### Your task
+
+Produce and maintain the six-part controlled-pilot decision package: exact-tree repository evidence, hosted security/data proof, allowlisted deployment/access proof, named compliance and quality approvals, paid buyer evidence, and a final continue/pivot/stop decision.
+
+### Constraints
+
+- Never read, print, copy, rotate or persist credential values; if a token inventory has no matching owner-account record, report revocation as unverified and do not revoke an unrelated token.
+- Preserve the dirty checkout and the intentional `coverage/lcov.info` deletion and dump stubs; never reset, clean, overwrite or restore them.
+- Repository writes must be atomic, single-writer and followed by an exact-head CI run. A run proves only its own `head_sha`; a stale or red evidence-binding job is a document-staleness signal, not a source pass.
+- Do not unpause or mutate Supabase, apply migrations, deploy functions, create storage objects, enable cron, enable checkout, contact buyers or send outreach from an agent lane.
+- Keep Whop acquisition disabled and preserve only server-verified existing-customer access.
+- Use only synthetic data for owner-run staging; do not fabricate withheld fields or buyer outcomes.
+- Keep proof layers separate: implemented, locally-tested, CI-verified, staging-verified, owner-approved and buyer-validated.
+
+### Verification
+
+Do not declare a deliverable complete until the corresponding evidence exists:
+
+1. Recompute the exact tree, branch, dirty overlay and CI `head_sha`; verify artifact digest, manifest completeness, sidecar, all payload hashes and external job conclusions.
+2. Run the repository migration/type/test/claim gates on the exact tree; retain negative security, JWT-fuzz, RLS-policy and evidence-binding results.
+3. For hosted staging, record migration-before-function order, grant/RLS denial, positive intake, deduplication, rate limits, retention, redacted logs, monitoring, backup/restore and rollback receipts.
+4. For functions/storage/Whop, retain deployment IDs, environment/allowlist evidence, object hashes/readback and an existing-customer journey; never count a plan or route as deployment proof.
+5. For privacy/CASL/quality, retain named approvals plus manual keyboard/focus/screen-reader/zoom and deployed performance evidence; automated axe/reflow is partial evidence.
+6. For buyers, retain the pre-registered segment, quoted price, paid-commitment measure, stop rule and access-controlled outcomes for all 11 experiments. A free pilot or positive reply is not paid validation.
+7. State explicitly what was not verified. Any missing external evidence leaves the mission `BLOCKED_OWNER_GATE` or `STOP_EVIDENCE_MISMATCH`.
+
+### Composition
+
+Return a structured handoff with:
+
+- a done/pending table using the 0–5 proof-layer score;
+- a ten-step execution queue with owner, artifact, dependency and exit gate;
+- changed files and exact tree/CI identity;
+- commands, exit codes and artifact links;
+- unresolved risks and stop/reopen conditions;
+- separate verdicts for repository, staging and pilot;
+- an adherence rating and remaining-work estimate.
+
+This brief is an execution contract, not authorization to mutate hosted systems or to contact buyers.
+
+**Mission type:** Tier 3, evidence-bound, security and deployment-sensitive
+controlled-pilot decision
+
+**Mission owner:** Architect/integrator (Codex)
+
+**Repository writer:** Devin, one writer at a time; read-only auditors may run
+checks and create reports but must not edit the shared checkout.
+
+**Created:** 2026-10-22
+
+**Mission status:** `PLANNED / NOT COMPLETE`
+
+**Current decision:** repository CI evidence is defensible for source `8d6096a45ffa08e86519ef24335aee79c6603047`; the evidence-only document rebind `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` is covered by run `40464886557` with all four jobs successful. Independent reproduction, hosted controls, owner approvals, manual quality evidence and buyer validation remain open. Staging and pilot are **STOP**. This mission artifact grants no deployment,
+restoration, billing, outreach or buyer authority.
+
+**Audit snapshot (2026-10-26; captured before this documentation update):** The authoritative incident register records
+INC-001 closed because the leak-site project was deleted or is outside the
+owner's account. The forward project is `qktgjpbifknqjpvrgkrj`; its dashboard
+inventory is read-only evidence and does not prove hosted behavior. The latest
+remote PR head at capture was `5ba25d9` on CI run `40216410789`, while the
+local checkout at capture was `de11fa4` with an intentional dirty overlay.
+This snapshot does not upgrade hosted staging, manual quality, compliance, or
+buyer proof.
+
+
+**Historical code-bearing verification source (superseded by the authoritative update above):** `3941e1dabc7904e48826dc6eccd1c2105bb795be` is bound to
+CI run `40292290033` (head SHA exact). `lint-typecheck`, `test`, and
+`build-and-smoke` succeeded; its evidence-binding staleness signal was resolved
+by evidence-only docs `853f7eee` / run `40294701772`, where all four jobs
+succeeded. Artifact `12638082780`, GitHub digest
+`sha256:36ea1519bff4013863be89aaa9a89715ac8a412cd4faefd23e0ca18621d7fab9`.
+This is repository proof only; staging and pilot remain STOP.
+
+The safe execution scope before owner gates is repository inspection, evidence
+reconciliation, read-only testing, documentation, and preparation of owner
+runbooks. No phase plan or mock runner output changes the current decision.
+
+## Current replacement-project read-only observation — 2026-10-26
+
+- Project URL: `https://qktgjpbifknqjpvrgkrj.supabase.co`.
+- Supabase MCP returned 123 applied migrations and 230 public tables at
+  `2026-10-26T08:37:53Z`; the live list ends at `20261023094758`. Repository migrations
+  `20261026001_harden_readonly_sql_privileges` and
+  `20261026002_harden_api_key_rate_functions` are not applied to the
+  replacement project.
+- Five Edge Functions are ACTIVE: `lead-capture`, `whop-verify-access`,
+  `whop-webhook`, `calibration-cron`, and
+  `storage-dispatch-scheduler`. The pilot allowlist remains the first three;
+  the two scheduler functions require owner classification before staging.
+- Security advisors at `2026-10-26T08:37:53Z`: 23 security-definer-view ERRORs, one
+  RLS-disabled ERROR, 107 RLS-no-policy INFO findings, four extension WARNs,
+  five materialized-view WARNs, and 11 anonymous plus 11 authenticated
+  security-definer execution WARNs.
+- Performance advisors at `2026-10-26T08:37:53Z`: 23 unindexed-FK INFOs, 100
+  auth-RLS-initplan WARNs, 449 unused-index INFOs, 247
+  multiple-permissive-policy WARNs, and seven duplicate-index WARNs.
+- No hosted migration, function deployment, storage upload, backup, restore,
+  or rollback was performed by this agent. This is read-only control-plane
+  evidence and does not prove hosted RLS, retention, logging, deployment, or
+  owner approval.
+
+## Decision question
+
+Can CEIP move from repository remediation to a controlled-pilot decision on the
+exact reviewed tree, with independently reproducible engineering evidence,
+named owner approval for hosted and compliance controls, and observed buyer
+evidence?
+
+The acceptable decision is **continue**, **pivot**, or **stop**. A green CI run
+alone is not pilot approval.
+
+## Finish line
+
+The mission is complete only when all of the following are true:
+
+1. The reviewed Git tree, dirty overlay, CI run, artifact ID, artifact digest,
+   manifest, sidecar, and external job conclusions are mutually consistent.
+2. Repository-owned security, data-integrity, calculation, billing, claims,
+   quality, evidence-packaging, and positioning controls are implemented and
+   verified at the proof layer claimed.
+3. A clean-clone reproduction has regenerated the required coverage and
+   browser evidence, or the inability to reproduce is explicitly recorded as
+   an unresolved risk.
+4. The incident register records INC-001 closed by deletion or third-party
+   ownership of the leak-site project, and the replacement project identity is
+   confirmed before hosted testing; the leak-site project is never restored.
+5. Hosted migration order, RLS, direct-write denial, rate limits, retention,
+   redacted logs, monitoring, backup/restore, rollback, Whop legacy access,
+   and billing kill-switches are verified with synthetic data.
+6. Privacy, CASL, billing, dependency, operations, and manual accessibility
+   owners provide named approvals where required.
+7. The eleven pre-registered buyer experiments have either produced their
+   defined paid-commitment evidence or are honestly recorded as unrun,
+   negative, inconclusive, or stopped.
+8. G1–G23 and all 29 Fable dimensions have a current status, proof layer,
+   evidence link, owner, and residual risk.
+9. An independent judge finds no stale identity, proof-layer collapse,
+   unsupported public claim, hidden critical failure, or unauthorized external
+   action.
+
+## Historical baseline and authoritative evidence (superseded by the authoritative update above)
+
+These values are the starting snapshot for this mission. If any value changes,
+the mission must rebind its documents before claiming current status.
+
+| Item | Current value | Proof layer |
+|---|---|---|
+| Current code-bearing verification subject | `3941e1d` / run `40292290033` | verification jobs successful; evidence-binding stale-document signal |
+| Prior code-bearing CI subject | `a460a82` / run `40071166986` | Historical CI-verified binding-gate change; evidence-binding was the staleness signal |
+| Last completed exact-HEAD receipt before the current implementation overlay | `4967b72` / run `39990265678` | CI-verified predecessor; all four jobs successful |
+| Current documentation subject | evidence-only `853f7eee` / run `40294701772` | CI-verified; all four jobs successful |
+| Prior externally reviewed subject | `10ab812` / run `39641749404` | Historical independent review |
+| Canonical current CI | [run 40289040356](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40289040356) | GitHub job conclusions |
+| Current artifact receipt | `12637053422`, digest `sha256:41d9c8dfbb726ec7027860d18cadedf397b9c1dec6a93928a1e5d4a60e602d54` | GitHub artifact API; local ZIP rehash not claimed |
+| CI jobs | `lint-typecheck`, `test`, `build-and-smoke`: success; `evidence-binding` awaits document rebind | CI-verified for verification jobs |
+| Manifest | `complete=true`, 9 required core evidence files plus 2 manual-assist payloads (11 hashed payloads), `missing_files=[]`, `jobs: not-recorded` | Artifact-verified; external jobs are authoritative |
+| Manifest jobs field | `not-recorded`; external job results are authoritative | Explicit partial field |
+| CI test evidence | 177 files, 1,329 tests, 22.55% lines | CI-verified |
+| Browser evidence | Phase 0 35, Phase 6 80, wedge 80, a11y 110; zero unexpected across five projects | CI-verified |
+| Local overlay | HEAD `fc133bc`; `coverage/lcov.info` deleted and zero-byte dump stubs remain untracked | Dirty worktree; intentionally preserved |
+| Current document risk | source `3941e1d` and evidence-only docs `853f7eee` are reconciled | Hosted proof and owner gates remain open |
+| Hosted state | Supabase paused; project-ref mismatch unresolved | Owner-gated |
+| Replacement-project security snapshot | Fresh MCP at `2026-10-26T08:37:53Z`: 23 view ERRORs, 1 RLS-disabled ERROR, 107 RLS-no-policy INFOs, 4 extension WARNs, 5 materialized-view WARNs, 11+11 execution WARNs | External observation; disposition and staging proof open |
+| Buyer state | 0/11 experiments run | Human-gated |
+
+The current repository code subject for CI verification is `3941e1d`, and its
+exact-head verification run is `40292290033`; the evidence-only document update
+must rebind the mission before claiming a current all-green evidence chain. The earlier `e5261b2`/`40207778791` and
+`389dad3`/`40073506314` receipts are
+retained as historical evidence. The local checkout still carries the
+intentional lcov deletion and zero-byte dump stubs; those dirty files are not
+included in the CI proof and must remain preserved.
+
+The incident register at `docs/security/SECRET_EXPOSURE_INCIDENTS.md` is the
+authoritative security record. Do not inspect or print credential values.
+
+The identity precedence is: Git objects and current worktree → GitHub job and
+artifact records → current addendum → historical addenda. A proof applies only
+to the commit and overlay it names. Never infer that a documentation descendant
+inherits a source change's proof unless its own CI run covers it. Do not multiply
+test counts across browsers unless the retained reports explicitly support that
+calculation.
+
+## Proof-layer vocabulary
+
+Every status must use exactly one highest-proven layer:
+
+`implemented` → `locally-tested` → `ci-verified` → `staging-verified` →
+`owner-approved` → `buyer-validated`
+
+The following are not interchangeable:
+
+- Code presence is not a test result.
+- A test definition is not a passing test.
+- CI is not staging.
+- Staging is not owner approval.
+- Owner approval is not buyer validation.
+- A free pilot, interview, or positive reply is not paid willingness-to-pay.
+
+## Independent judge contract
+
+The judge is a fresh-context reviewer or deterministic script that did not
+author the evidence under review. It must:
+
+1. Recompute the exact tree identity from Git objects and the dirty overlay.
+2. Retrieve the CI artifact through GitHub, compare the GitHub digest with the
+   downloaded ZIP, verify the manifest sidecar, and verify every listed file
+   hash and size.
+3. Check that the workflow's completeness gate fails for a partial artifact.
+4. Re-run or independently reproduce the required test and browser evidence
+   where the environment permits.
+5. Attempt assertion inversion for fail-closed Whop identity, HMAC rejection,
+   suppression, checkout kill-switch, and anonymous database writes.
+6. Fuzz JWT shape and trust-boundary inputs.
+7. Treat automated axe/reflow as partial WCAG evidence; require manual review
+   for keyboard, focus, target size, forms/errors and screen-reader behavior.
+8. Search the merged diff and active documents for stale bindings, generated
+   artifact coupling, unsupported claims, test-only production paths, and
+   contradictory status language.
+9. Refuse to close hosted Supabase, Whop deployment, CASL, manual WCAG,
+   performance, or buyer gates without the named external evidence. Treat
+   INC-001 as closed only at the incident-register proof layer and never infer
+   that closure from a new-project dashboard state.
+10. Check binary obligations rather than treating a subjective confidence
+    percentage as completion: all dimensions dispositioned, all critical/high
+    findings challenged, identities valid, and every unresolved item assigned
+    a stop/reopen rule.
+11. Emit separate verdicts for audit completeness, repository remediation,
+    staging eligibility, and pilot eligibility, then emit
+    `JUDGE_PASS`, `JUDGE_REVISE`, or `JUDGE_STOP` for the mission as a whole.
+
+## Non-negotiable boundaries
+
+- Never read, print, copy, rotate, or persist credential values.
+- Never reset, clean, revert, overwrite, or restore the dirty checkout without
+  explicit owner approval.
+- Never unpause Supabase, apply hosted migrations, deploy, enable checkout,
+  contact buyers, or send outreach from an agent lane.
+- Keep Whop de-prioritized for acquisition; preserve only verified existing-
+  customer access and billing management.
+- Keep all external owner gates visibly open until their evidence exists.
+- If a lane discovers a new critical defect, stop promotion and append the
+  finding before starting another change.
+
+## Fable 5 completeness contract
+
+The repository Fable prompt is used as a coverage framework, with these
+additional controls required by this mission:
+
+| Fable area | Required evidence in this mission |
+|---|---|
+| Phase 0 calibration | Stack/config baseline, project rules, current tree identity |
+| Phase 0.5 tooling | Tool inventory, missing-tool limits, CI/local distinction |
+| Phase 1 quantitative discovery | Size, churn, gravity wells, orphan tests, top 15 features, segments |
+| Phase 2 audit | Fifteen mandatory dimensions, file/line citations, refuter tally |
+| Phase 3 market alignment | Segment fit, competitor sources, seller proposition, non-fixes |
+| Phase 4 implementation plan | Self-contained tasks, runnable acceptance, rollback, dependencies |
+| Phase 5 success verification | Exit checklist, completeness check, feature ratings, confidence and open questions |
+| Extra CEIP controls | G1–G23 ledger, 29 dimensions, owner gates, artifact chain, buyer protocol |
+
+No phase may be marked complete merely because its checklist was written.
+
+## Multi-agent execution topology
+
+The loop may use parallel **read-only** lanes, followed by a serialized write
+lane and a separate judge:
+
+| Lane | Role | Allowed output | Must not do |
+|---|---|---|---|
+| A | Evidence/repro auditor | Git/CI/artifact receipts, reproducibility results | Edit source or hosted state |
+| B | Security/hosted-boundary auditor | Threat model, negative tests, owner runbook | Read secrets, unpause or migrate |
+| C | Economics/Whop/claims auditor | Claim ledger, route checks, source register | Enable acquisition or billing |
+| D | Quality/compliance auditor | WCAG/performance/CASL gap report | Contact buyers or approve legal gates |
+| R | Adversarial refuter | Refuted, downgraded, survived findings | Author its own finding as sole proof |
+| W | Devin write lane | One scoped repository change at a time | Overlap with another writer |
+| I | Architect/integrator | Merge evidence, update plan and status | Upgrade an external gate without owner proof |
+| J | Fresh-context judge | Final verdict and proof index | Reuse unverified claims from addenda |
+
+Parallel lanes may read concurrently. Only W writes the shared checkout, and
+only after I confirms file ownership and a checkpoint. A later phase may not
+consume a failed or stale predecessor artifact as if it passed.
+
+## Persistent Fable loop state
+
+The loop state is append-only at:
+
+`.phase-loop/ceip-controlled-pilot-mission.jsonl`
+
+The local Fable runner's `--mock` mode is an orchestration smoke test only. It
+does not prove this repository's tests, hosted state, compliance, or buyer
+outcomes. If a verified real runner is unavailable, use this state file and the
+phase ledger as the execution adapter and label all missing external evidence.
+
+Each iteration records:
+
+```json
+{
+  "iteration": 0,
+  "phase": "P0",
+  "baseline": "...",
+  "one_change": "...",
+  "checks": [{"command": "...", "status": "pass|fail|blocked|unverified"}],
+  "evidence": ["path or external receipt"],
+  "delta": "...",
+  "reflection": "...",
+  "decision": "continue|revise|stop|blocked_owner_gate",
+  "next_adjustment": "...",
+  "tree_identity": "...",
+  "writer": "Devin|none"
+}
+```
+
+One loop iteration makes one atomic change or one evidence operation. The
+default maximum is 12 iterations per phase. The loop stops immediately on:
+
+- `STOP_EVIDENCE_MISMATCH`
+- `STOP_SECRET_OR_SECURITY_AMBIGUITY`
+- `STOP_UNAUTHORIZED_EXTERNAL_ACTION`
+- `BLOCKED_OWNER_GATE`
+- `JUDGE_STOP`
+- a failed critical CI/security/data-integrity gate
+- a tree change not re-bound to a fresh CI run
+
+The loop may close only with `MISSION_COMPLETE` after `JUDGE_PASS`; otherwise
+the final state remains `BLOCKED_OWNER_GATE`, `UNVERIFIED`, or `STOP`.
+
+## Phase plan
+
+### P0 — Preserve and calibrate
+
+1. Record `HEAD`, branch, status, tracked deletion, modified ledger, untracked
+   inventory and current tree fingerprint without reading secrets.
+2. Read `AGENTS.md`, the incident register, `goal.md`, current addenda, package
+   and CI configuration, and this mission.
+3. Classify the lcov deletion and phase-ledger modification; do not restore or
+   discard either.
+4. Inventory available tools and record JEV-blocked commands as blocked rather
+   than passed.
+
+**Checkpoint:** a preservation receipt exists and no unrelated file changed.
+
+**Stop rule:** any request to reset, clean, expose a secret, or mutate a
+hosted service stops the mission.
+
+### P1 — Rebind current evidence
+
+1. Update `goal.md` and the current audit addendum to the exact current HEAD,
+   CI run, merge SHA, artifact ID/digest, tree fingerprint and manifest hash.
+2. Record the dependency/source proof separately for `3766ca6`/`39726844686`,
+   the documentation proof for `a460a82`/`40071166986`, and the older external
+   review for `10ab812`/`39641749404`.
+3. Mark `jobs: not-recorded` as a manifest limitation and cite external job
+   conclusions separately.
+4. Replace any statement that a locally blocked scan passed locally with its
+   actual CI proof layer.
+5. Preserve all historical runs as historical; do not rewrite them as current.
+6. Add a stale-binding check that fails when active documents cite an older
+   current milestone.
+
+**Checkpoint:** active documents and current CI identity match; historical
+records remain distinguishable.
+
+**Stop rule:** any identity mismatch or missing artifact leaves P1 open.
+
+### P2 — Independently reproduce the repository evidence
+
+1. Create an isolated clean clone at the exact reviewed SHA.
+2. Install with `pnpm install --frozen-lockfile` and documented synthetic,
+   non-secret environment values only.
+3. Run serial Vitest coverage into a unique output directory and verify the
+   generated lcov is new and complete.
+4. Run all five Playwright projects and retain JSON/report artifacts.
+5. Compare deterministic hashes with CI; record expected nondeterminism rather
+   than forcing byte equality.
+
+**Checkpoint:** a clean-clone receipt links commands, exit codes, tree identity
+and artifacts.
+
+**Stop rule:** any unexplained test, coverage, browser or environment drift.
+
+### P3 — Preserve and refute repository controls
+
+1. Retain the artifact completeness gate, sidecar, negative partial-run
+   fixture, assertion-inversion suite and JWT fuzz suite.
+2. Verify the five highest-risk fail-closed properties using actual negative
+   inputs, not only happy paths.
+3. Confirm direct anonymous/authenticated lead writes are denied by migration
+   policy while the server path remains valid.
+4. Confirm dependency audit exceptions have owner, reachability, control and
+   expiry evidence.
+5. Run local checks only when permitted; otherwise cite exact CI results.
+
+**Checkpoint:** every repository claim has a test, source contract, CI result,
+or an explicit unverified label.
+
+**Stop rule:** any security assertion is weakened, skipped, or made green by
+raising a timeout or reducing coverage.
+
+### P4 — Resolve the Supabase and hosted boundary
+
+1. Resolved (2026-10-23): owner provisioned `qktgjpbifknqjpvrgkrj` as the
+   authoritative replacement; 122+6 migrations replayed, 6,797 rows
+   imported, 0 edge functions deployed. The `qnymb…`/`cwij…` question is
+   superseded for the forward path; the register keeps `qnymb…` as the
+   leak-site project of record.
+2. INC-001 is recorded closed (2026-10-24) because the leak-site project was
+   deleted or is outside the owner's account. Preserve the register and do not
+   restore that project; if it resurfaces, the owner must rotate/revoke the key
+   and review access logs before any use.
+3. Remaining on the new project: `.env` anon key, edge-function deploy
+   allowlist, hosted RLS/migration-order/rate-limit/retention/rollback
+   proofs, the current advisor-finding disposition in
+   `docs/remediation/SUPABASE_SECURITY_BASELINE_2026-10-23.md`, and real
+   backup exports.
+4. Only then apply migrations before functions in a controlled staging project.
+5. Verify RLS, direct-write denial, deduplication, rate limits, retention,
+   provider region, redacted logs, monitoring, backup/restore and rollback
+   using synthetic data.
+
+**Checkpoint:** named owner evidence covers key invalidation, project identity,
+migration order, data handling and rollback.
+
+**Stop rule:** unresolved project identity, missing log review, or a request to
+unpause/migrate from an agent lane.
+
+### P5 — Keep Whop, billing, economics and claims honest
+
+1. Verify existing-customer Whop identity and entitlements server-side; keep
+   acquisition routes, listings, default provider behavior and new checkout
+   disabled.
+2. Verify `WHOP_CEIP_*` configuration and the edge deployment only through an
+   owner-run hosted record.
+3. Keep Direct Investment undetermined until a current official source exists.
+4. Apply freshness and provenance to rates, currency, FX, exports, rankings and
+   CTAs; preserve nulls instead of zero-filling unknown values.
+5. Keep methane/landfill outputs screening-only until protocol conformance is
+   evidenced.
+6. Sweep public, SEO, sales and competitor copy for unsupported profit,
+   timing, sellability, board-ready and capability claims.
+
+**Checkpoint:** route, claim, calculation and currency tests show no unsupported
+public outcome or buyer CTA.
+
+**Stop rule:** stale or estimated inputs produce confident savings, ranking or
+acquisition behavior.
+
+### P6 — Complete human quality evidence
+
+1. Retain the wording “automated axe + reflow audit.”
+2. Run manual keyboard, focus order/visibility, target-size, forms/errors,
+   contrast, screen-reader and 320/375/768/1280px reflow checks.
+3. Measure deployed Web Vitals and bundle budgets, including the Redoc chunk.
+4. Exercise public entry, ROI, notice, intake, confirmation, legacy Whop
+   management and support journeys.
+
+**Checkpoint:** an independent accessibility/performance report states exactly
+what was tested and what remains untested.
+
+**Stop rule:** no full WCAG 2.2 AA or performance claim from automated tests
+alone.
+
+### P7 — Obtain compliance and buyer evidence
+
+1. Enforce one workspace-wide suppression registry and consent schema.
+2. Obtain named CASL/privacy approval for basis, sender identity, unsubscribe,
+   retention and templates before any outreach.
+3. Keep all experiments pre-registered with segment, sample, quoted price,
+   paid-commitment measure, stop rule and protected evidence handling.
+4. A human business owner runs the experiments; agents do not contact buyers.
+5. Record positive, negative, inconclusive and stopped outcomes without
+   upgrading claims beyond the observed evidence.
+
+**Checkpoint:** owner-approved compliance record and observed experiment records
+exist; otherwise status remains blocked or 0/11.
+
+**Stop rule:** missing consent evidence, suppressed contact, unapproved copy, or
+free/positive responses being labelled paid validation.
+
+### P8 — Judge, close out and decide
+
+1. Re-run the exact-tree evidence and stale-binding checks after the final
+   repository write.
+2. Update G1–G23, the 29-dimension register, the proof-layer matrix and
+   residual-risk register.
+3. Have the fresh-context judge issue separate verdicts for audit completeness,
+   repository remediation, staging eligibility and pilot eligibility, followed
+   by `JUDGE_PASS`, `JUDGE_REVISE`, or `JUDGE_STOP`.
+4. Record `continue`, `pivot`, or `stop` with owner, evidence and next review
+   date.
+
+**Checkpoint:** final decision is reproducible from the evidence index.
+
+**Stop rule:** any critical evidence is stale, missing, self-referential or
+contradicted by the hosted control plane.
+
+## G1–G23 completion map
+
+| Group | Current state | Required proof before closure |
+|---|---|---|
+| G1–G3 evidence/ledger/preservation | Partial | Current-tree rebinding, overlay receipt, independent reproduction |
+| G4 secrets/incident | CI-verified; owner open | INC-001 invalidation, project identity and logs |
+| G5–G7 billing/intake/privacy | Partial/hosted | Server allowlists, RLS, migration order, owner notice/retention approval |
+| G8 report promise | Source-closed | Deployed-copy verification |
+| G9–G11 economics/currency | Partial/open | Fresh authoritative rates, allocation state, currency/procurement proof |
+| G12–G13 Whop/positioning | Partial/high | Existing-customer hosted journey and public-copy verification |
+| G14–G15 buyer/CASL | Open/owner | Approval plus observed paid experiments |
+| G16 claims/competitors | Partial/high | Dated primary sources and qualified copy |
+| G17 dependency exception | CI-verified/maintenance | Named owner, reachability, controls and expiry |
+| G18–G21 coverage/content/tracking/quality | CI-verified or partial | Clean-clone proof, exact parity, manual WCAG and deployed performance |
+| G22 staging | Blocked | Owner-run staging, rollback and monitoring evidence |
+| G23 audit scope | Partial | Evidence or bounded SHALLOW reason for every dimension |
+
+## Fable 360-degree dimension coverage
+
+The final judge must explicitly account for all 29 dimensions:
+
+1. Business/product — success metric and buyer outcome.
+2. User/customer — journey, device, localization and accessibility.
+3. Architecture/layering — repository boundaries and data flows.
+4. Code quality — complexity, dead code and error handling.
+5. Security — threat model, trust boundaries and hosted controls.
+6. Testing — assertion quality, coverage and reproduction.
+7. Performance — deployed Web Vitals and bundle budgets.
+8. Dependencies/supply chain — advisories, exceptions and licenses.
+9. DevEx/operations — monitoring, alerts, backups and rollback.
+10. Documentation/reality — current identities and claim ceilings.
+11. WCAG 2.2 AA — automated plus manual evidence.
+12. Future-proofing — extensibility and sustainability.
+13. Ethical/safety — privacy, retention and harm review.
+14. Legal/compliance — PIPA, CASL, procurement and owners.
+15. Market alignment — segment fit and seller proposition.
+16. Marketing/positioning — public and SEO consistency.
+17. Outreach/engagement — consent, suppression and execution control.
+18. Pricing/monetization — currency, provenance and WTP.
+19. Customer discovery — observed experiments.
+20. SOC 2/ISO governance — bounded control map, no certification claim.
+21. Outreach positioning — cross-channel copy.
+22. Outreach operations — executable approval path.
+23. Outreach pricing — competitive paid evidence.
+24. Buyer journey — awareness through expansion.
+25. Sales enablement — qualified artifacts and claims.
+26. GTM readiness — segment, workflow and owner approval.
+27. Outreach validation — campaign outcomes.
+28. Presales lifecycle — qualification through onboarding.
+29. Competitive intelligence — three primary-source comparisons.
+
+Each dimension must be labelled `DEEP`, `SHALLOW`, or `DEEP/PARTIAL`, with a
+reason, evidence link, owner and next action. `DEEP` means examined, not passed.
+
+## Primary research anchors
+
+These sources establish the external standards used by the mission. They are
+not substitutes for project-specific owner or deployment evidence.
+
+- [Supabase legacy key rotation and revocation](https://supabase.com/kb/troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd): legacy secrets require explicit migration/rotation/revocation; pausing a project is not treated as permanent invalidation.
+- [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security): grants and RLS policies must be assessed together.
+- [W3C WCAG 2.2 conformance](https://www.w3.org/WAI/WCAG22/Understanding/conformance): conformance testing combines automated and human evaluation.
+- [CRTC CASL guidance](https://crtc.gc.ca/eng/com500/guide.htm): commercial electronic messages require consent, sender identification and unsubscribe handling.
+- [GitHub Actions artifacts API](https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10): artifact retrieval and digest metadata provide an external evidence oracle.
+
+## Final handoff package
+
+The integrator must deliver:
+
+- current `goal.md` and this `mission.md` bound to the same tree and CI run;
+- dated audit addendum and append-only Fable loop state;
+- G1–G23 ledger and 29-dimension register;
+- exact tree fingerprint, CI run IDs, artifact ID/digest, manifest and sidecar;
+- clean-clone and browser/coverage receipts;
+- owner-gated evidence list with responsible person and expiry;
+- unresolved risks, false-positive log and rollback path;
+- adherence rating and remaining-work estimate;
+- final judge verdict and `continue/pivot/stop` decision.
+
+## Mission-level success and failure semantics
+
+`MISSION_COMPLETE` means the finish line and judge criteria passed. It does not
+mean production launch. `BLOCKED_OWNER_GATE` is the correct result when the
+repository is ready but a human, hosted, legal, accessibility or buyer gate is
+missing. `STOP_EVIDENCE_MISMATCH` is the correct result when the tree, docs,
+CI, artifact, control plane or claims disagree.

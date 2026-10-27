@@ -12,7 +12,7 @@ Usage:
 
 Environment Variables Required:
     SUPABASE_URL: Your Supabase project URL
-    SUPABASE_KEY: Your Supabase service role key
+    SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key
 """
 
 import os
@@ -43,10 +43,10 @@ CANADIAN_ENERGY_TICKERS = [
 def get_supabase_client() -> Client:
     """Initialize Supabase client"""
     url = os.getenv('SUPABASE_URL') or os.getenv('VITE_SUPABASE_URL')
-    key = os.getenv('SUPABASE_KEY') or os.getenv('VITE_SUPABASE_ANON_KEY')
+    key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
     
     if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY environment variables required")
+        print("Error: SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY must be set")
         sys.exit(1)
     
     return create_client(url, key)

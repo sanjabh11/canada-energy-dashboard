@@ -76,23 +76,17 @@ test.describe('Utility demand forecasting lane', () => {
     await expect(page.getByTestId('utility-forecast-benchmark-card')).toContainText('Fallback: no');
   });
 
-  test('supports the local disconnect workflow for Ontario Green Button runtime validation', async ({ page }) => {
+  test('keeps the local Green Button starter explicitly non-connected', async ({ page }) => {
     await page.goto(`${BASE_URL}/utility-demand-forecast`);
 
     await page.getByText('Secondary connector, onboarding, and submission readiness').click();
     await page.getByRole('button', { name: 'Load Ontario Green Button starter' }).click();
 
     const connectorCard = page.getByTestId('utility-connection-card-ontario_green_button_cmd');
-    await expect(connectorCard.getByRole('button', { name: 'Disconnect Utility' })).toBeVisible();
-
-    await connectorCard.getByRole('button', { name: 'Disconnect Utility' }).click();
-    await expect(connectorCard.getByText('failed')).toBeVisible();
-    await expect(connectorCard.getByRole('link', { name: 'Manage connections' })).toBeVisible();
-    await expect(connectorCard.getByRole('button', { name: 'Confirm disconnect' })).toBeVisible();
-
-    await connectorCard.getByRole('button', { name: 'Confirm disconnect' }).click();
-    await expect(connectorCard.getByText('revoked')).toBeVisible();
-    await expect(connectorCard.getByText('Stored token material has been purged.')).toBeVisible();
+    await expect(connectorCard.getByText('pending auth')).toBeVisible();
+    await expect(connectorCard.getByText('Last sync: none')).toBeVisible();
+    await expect(connectorCard.getByRole('button', { name: 'Disconnect Utility' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Connect London Hydro' })).toBeVisible();
   });
 
   test('loads a constructed Ontario planning case and keeps the disclosure visible', async ({ page }) => {

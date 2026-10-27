@@ -47,8 +47,8 @@ export const BuildScenarioDraftInput = z.object({
   jurisdiction: z.string().describe('Canadian province or "Canada" for national scope'),
   horizonYears: z.array(z.number().int().min(2024).max(2070)).min(1).max(10),
   sectors: z.array(z.string()).min(1),
-  policyLevers: z.record(z.unknown()).optional(),
-  macroAssumptions: z.record(z.unknown()).optional(),
+  policyLevers: z.record(z.string(), z.unknown()).optional(),
+  macroAssumptions: z.record(z.string(), z.unknown()).optional(),
   description: z.string().optional(),
 });
 
@@ -69,7 +69,9 @@ export const FindEvidenceInput = z.object({
   query: z.string().min(3).max(500),
   topK: z.number().int().min(1).max(20).default(5),
   domains: z.array(z.string()).optional().describe('Optional domain filter e.g. ["statcan","cer"]'),
-  minTrustTier: z.enum(['official_historical', 'official_projection', 'proxy', 'simulated', 'demo', 'stale']).optional(),
+  minTrustTier: z
+    .enum(['official_historical', 'official_projection', 'proxy', 'simulated', 'demo', 'stale'])
+    .optional(),
 });
 
 export const IdentifyConflictsInput = z.object({
@@ -103,7 +105,7 @@ export interface CopilotToolDefinition {
   budgetCost: number;
   /** Primary trust tier of data consumed by this tool */
   provenanceTier: 'official_historical' | 'official_projection' | 'proxy' | 'simulated' | 'demo';
-  inputSchema: z.ZodTypeAny;
+  inputSchema: z.ZodType;
   /** Human-readable parameter list for API documentation */
   parameters: Array<{ name: string; type: string; required: boolean; description: string }>;
 }
@@ -119,10 +121,25 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     inputSchema: BuildScenarioDraftInput,
     parameters: [
       { name: 'jurisdiction', type: 'string', required: true, description: 'Province or "Canada"' },
-      { name: 'horizonYears', type: 'number[]', required: true, description: 'Forecast years e.g. [2030, 2040, 2050]' },
+      {
+        name: 'horizonYears',
+        type: 'number[]',
+        required: true,
+        description: 'Forecast years e.g. [2030, 2040, 2050]',
+      },
       { name: 'sectors', type: 'string[]', required: true, description: 'Energy sectors to model' },
-      { name: 'policyLevers', type: 'object', required: false, description: 'Policy lever overrides' },
-      { name: 'macroAssumptions', type: 'object', required: false, description: 'GDP/population overrides' },
+      {
+        name: 'policyLevers',
+        type: 'object',
+        required: false,
+        description: 'Policy lever overrides',
+      },
+      {
+        name: 'macroAssumptions',
+        type: 'object',
+        required: false,
+        description: 'GDP/population overrides',
+      },
       { name: 'description', type: 'string', required: false, description: 'Free-text context' },
     ],
   },
@@ -136,8 +153,18 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     inputSchema: ExplainPathwayInput,
     parameters: [
       { name: 'pathwayId', type: 'string', required: true, description: 'Policy graph node ID' },
-      { name: 'detailLevel', type: 'enum', required: false, description: 'summary | detailed | technical' },
-      { name: 'includeConflicts', type: 'boolean', required: false, description: 'Include conflict detection' },
+      {
+        name: 'detailLevel',
+        type: 'enum',
+        required: false,
+        description: 'summary | detailed | technical',
+      },
+      {
+        name: 'includeConflicts',
+        type: 'boolean',
+        required: false,
+        description: 'Include conflict detection',
+      },
     ],
   },
   compare_scenarios: {
@@ -150,9 +177,24 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     inputSchema: CompareScenariosInput,
     parameters: [
       { name: 'scenarioIdA', type: 'string', required: true, description: 'Reference scenario ID' },
-      { name: 'scenarioIdB', type: 'string', required: true, description: 'Comparison scenario ID' },
-      { name: 'metrics', type: 'string[]', required: false, description: 'Metrics to compare (empty = all)' },
-      { name: 'confidenceLevel', type: 'number', required: false, description: 'Statistical confidence (default 0.95)' },
+      {
+        name: 'scenarioIdB',
+        type: 'string',
+        required: true,
+        description: 'Comparison scenario ID',
+      },
+      {
+        name: 'metrics',
+        type: 'string[]',
+        required: false,
+        description: 'Metrics to compare (empty = all)',
+      },
+      {
+        name: 'confidenceLevel',
+        type: 'number',
+        required: false,
+        description: 'Statistical confidence (default 0.95)',
+      },
     ],
   },
   find_evidence: {
@@ -164,10 +206,30 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     provenanceTier: 'official_historical',
     inputSchema: FindEvidenceInput,
     parameters: [
-      { name: 'query', type: 'string', required: true, description: 'Natural-language search query' },
-      { name: 'topK', type: 'number', required: false, description: 'Number of results (default 5)' },
-      { name: 'domains', type: 'string[]', required: false, description: 'Connector domain filter' },
-      { name: 'minTrustTier', type: 'enum', required: false, description: 'Minimum trust tier filter' },
+      {
+        name: 'query',
+        type: 'string',
+        required: true,
+        description: 'Natural-language search query',
+      },
+      {
+        name: 'topK',
+        type: 'number',
+        required: false,
+        description: 'Number of results (default 5)',
+      },
+      {
+        name: 'domains',
+        type: 'string[]',
+        required: false,
+        description: 'Connector domain filter',
+      },
+      {
+        name: 'minTrustTier',
+        type: 'enum',
+        required: false,
+        description: 'Minimum trust tier filter',
+      },
     ],
   },
   identify_conflicts: {
@@ -179,8 +241,18 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     provenanceTier: 'official_historical',
     inputSchema: IdentifyConflictsInput,
     parameters: [
-      { name: 'policyIds', type: 'string[]', required: true, description: 'Policy IDs to check (min 2)' },
-      { name: 'includeTransitive', type: 'boolean', required: false, description: 'Include transitive conflicts' },
+      {
+        name: 'policyIds',
+        type: 'string[]',
+        required: true,
+        description: 'Policy IDs to check (min 2)',
+      },
+      {
+        name: 'includeTransitive',
+        type: 'boolean',
+        required: false,
+        description: 'Include transitive conflicts',
+      },
     ],
   },
   summarize_uncertainty: {
@@ -193,9 +265,19 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     inputSchema: SummarizeUncertaintyInput,
     parameters: [
       { name: 'scenarioId', type: 'string', required: true, description: 'Scenario to analyse' },
-      { name: 'numSamples', type: 'number', required: false, description: 'MC sample count (100–5000)' },
+      {
+        name: 'numSamples',
+        type: 'number',
+        required: false,
+        description: 'MC sample count (100–5000)',
+      },
       { name: 'outputMetric', type: 'string', required: true, description: 'Metric to quantify' },
-      { name: 'confidenceLevel', type: 'number', required: false, description: 'Confidence interval level' },
+      {
+        name: 'confidenceLevel',
+        type: 'number',
+        required: false,
+        description: 'Confidence interval level',
+      },
     ],
   },
   generate_policy_memo: {
@@ -208,10 +290,25 @@ export const COPILOT_TOOL_REGISTRY: Record<CopilotToolName, CopilotToolDefinitio
     inputSchema: GeneratePolicyMemoInput,
     parameters: [
       { name: 'scenarioId', type: 'string', required: true, description: 'Scenario to summarise' },
-      { name: 'audience', type: 'enum', required: false, description: 'regulator | executive | technical | public' },
+      {
+        name: 'audience',
+        type: 'enum',
+        required: false,
+        description: 'regulator | executive | technical | public',
+      },
       { name: 'jurisdiction', type: 'string', required: true, description: 'Province or Canada' },
-      { name: 'includeUncertainty', type: 'boolean', required: false, description: 'Include P5–P95 range' },
-      { name: 'maxWords', type: 'number', required: false, description: 'Target word count (100–2000)' },
+      {
+        name: 'includeUncertainty',
+        type: 'boolean',
+        required: false,
+        description: 'Include P5–P95 range',
+      },
+      {
+        name: 'maxWords',
+        type: 'number',
+        required: false,
+        description: 'Target word count (100–2000)',
+      },
     ],
   },
 };
@@ -289,7 +386,7 @@ export async function dispatchCopilotTool<TOutput = unknown>(
 
   // Execution
   try {
-    const data = await handler(parsed.data) as TOutput;
+    const data = (await handler(parsed.data)) as TOutput;
     return {
       tool: toolName,
       success: true,

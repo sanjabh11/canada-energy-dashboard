@@ -52,7 +52,9 @@ export default defineConfig({
     video: 'on-first-retry',
   },
 
-  // Configure projects for major browsers
+  // All five projects run in every environment including CI — the audit
+  // requires full-matrix evidence, not Chromium-only CI. For a fast local
+  // slice use `npx playwright test --project=chromium`.
   projects: [
     {
       name: 'chromium',
@@ -61,38 +63,32 @@ export default defineConfig({
         viewport: { width: 1280, height: 720 },
       },
     },
-    ...(
-      process.env.CI
-        ? []
-        : [
-            {
-              name: 'firefox',
-              use: {
-                ...devices['Desktop Firefox'],
-                viewport: { width: 1280, height: 720 },
-              },
-            },
-            {
-              name: 'webkit',
-              use: {
-                ...devices['Desktop Safari'],
-                viewport: { width: 1280, height: 720 },
-              },
-            },
-            {
-              name: 'Mobile Chrome',
-              use: {
-                ...devices['Pixel 5'],
-              },
-            },
-            {
-              name: 'Mobile Safari',
-              use: {
-                ...devices['iPhone 12'],
-              },
-            },
-          ]
-    ),
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 1280, height: 720 },
+      },
+    },
+    {
+      name: 'webkit',
+      use: {
+        ...devices['Desktop Safari'],
+        viewport: { width: 1280, height: 720 },
+      },
+    },
+    {
+      name: 'Mobile Chrome',
+      use: {
+        ...devices['Pixel 5'],
+      },
+    },
+    {
+      name: 'Mobile Safari',
+      use: {
+        ...devices['iPhone 12'],
+      },
+    },
   ],
   // Run local preview server unless a hosted/deployed URL is being tested.
   webServer: skipWebServer ? undefined : {
@@ -105,6 +101,15 @@ export default defineConfig({
       VITE_TRAINED_PV_FAULT_ENABLED: 'true',
       VITE_SUPABASE_URL: baseUrl,
       VITE_SUPABASE_ANON_KEY: 'test-key',
+      // Test-only lead-intake disclosure so form journeys exercise the enabled
+      // path. These are preview-server values, never real collection settings.
+      VITE_ENABLE_LEAD_INTAKE: 'true',
+      VITE_PRIVACY_NOTICE_APPROVED: 'true',
+      VITE_PRIVACY_CONTACT_NAME: 'CEIP Preview Privacy Contact',
+      VITE_PRIVACY_CONTACT_EMAIL: 'privacy-test@example.com',
+      VITE_PRIVACY_POLICIES_URL: 'https://example.com/privacy-test',
+      VITE_PRIVACY_PROCESSING_LOCATIONS: 'Playwright preview (no real collection)',
+      VITE_PRIVACY_RETENTION_SUMMARY: 'Test-only retention disclosure',
     },
     url: baseUrl,
     reuseExistingServer: false,

@@ -89,8 +89,8 @@ describe('Phase 3.1: Five-scenario baseline suite (BEFORE skill changes)', () =>
     const checks = result.checks as Array<{ id: string; status: string; detail: string }>;
     const countCheck = checks.find((c) => c.id === 'count-consistency');
     expect(countCheck?.status).toBe('PASS');
-    expect(countCheck?.detail).toContain('state=10');
-    expect(countCheck?.detail).toContain('file=10');
+    expect(countCheck?.detail).toContain('state=11');
+    expect(countCheck?.detail).toContain('file=11');
   });
 
   it('Scenario 5: Stale artifact detection — no artifacts have drifted from canonical state', () => {

@@ -225,7 +225,7 @@ SELECT cron.schedule(
   '*/5 * * * *',                        -- Cron expression (every 5 minutes)
   $$
   SELECT net.http_post(
-    url := 'https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/stream-aeso-grid-data',
+    url := 'https://qktgjpbifknqjpvrgkrj.supabase.co/functions/v1/stream-aeso-grid-data',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || current_setting('app.supabase_service_role_key')

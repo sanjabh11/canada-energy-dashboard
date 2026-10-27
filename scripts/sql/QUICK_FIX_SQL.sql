@@ -2,7 +2,7 @@
 -- QUICK FIX: Seed Forecast Performance Data
 -- =========================================================================
 -- Run this in Supabase SQL Editor:
--- https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/sql/new
+-- https://supabase.com/dashboard/project/qktgjpbifknqjpvrgkrj/sql/new
 -- =========================================================================
 
 -- 1. Create INSERT policy (if missing)

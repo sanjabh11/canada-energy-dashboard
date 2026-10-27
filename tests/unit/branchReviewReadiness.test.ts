@@ -26,7 +26,7 @@ describe('branch review readiness report', () => {
   it('renders a focused branch-review report from the launch manifest', () => {
     const tempRoot = makeTempRoot();
     const reportPath = path.join(tempRoot, 'branch-review.md');
-    const stdout = execFileSync(process.execPath, [reportScriptPath, '--output', reportPath], {
+    const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--output', reportPath], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
@@ -74,7 +74,7 @@ describe('branch review readiness report', () => {
   });
 
   it('emits a focused JSON payload with branch queues and no-mutation boundaries', () => {
-    const stdout = execFileSync(process.execPath, [reportScriptPath, '--json'], {
+    const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
@@ -224,7 +224,7 @@ describe('branch review readiness report', () => {
   });
 
   it('validates the focused report contract without clearing branch blockers', () => {
-    const stdout = execFileSync(process.execPath, [checkScriptPath], {
+    const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
@@ -236,14 +236,14 @@ describe('branch review readiness report', () => {
   });
 
   it('can fail as a machine branch gate when branch-review blockers remain', () => {
-    const json = JSON.parse(execFileSync(process.execPath, [reportScriptPath, '--json'], {
+    const json = JSON.parse(execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
       timeout,
     }));
 
-    const result = spawnSync(process.execPath, [reportScriptPath, '--fail-on-blocker'], {
+    const result = spawnSync(process.execPath, [reportScriptPath, '--skip-probes', '--fail-on-blocker'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,

@@ -11,6 +11,13 @@ type ApiKeyRow = {
   last_used_at: string | null;
 };
 
+type RateLimitResult = {
+  allowed: boolean;
+  remaining: number;
+  dailyLimit: number;
+  unavailable?: boolean;
+};
+
 export interface ApiKeyAccessResult {
   allowed: boolean;
   status: number;
@@ -53,52 +60,64 @@ function getCredentialFromRequest(req: Request): { value: string; source: string
 async function fallbackCheckRateLimit(
   supabase: SupabaseClient,
   keyRow: ApiKeyRow,
-): Promise<{ allowed: boolean; remaining: number; dailyLimit: number }> {
+): Promise<RateLimitResult> {
   const dailyLimit = Math.max(0, Number(keyRow.daily_limit ?? 100));
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase
-    .from("api_usage")
-    .select("request_count")
-    .eq("api_key_id", keyRow.id)
-    .eq("date", today);
+  try {
+    const { data, error } = await supabase
+      .from("api_usage")
+      .select("request_count")
+      .eq("api_key_id", keyRow.id)
+      .eq("date", today);
 
-  if (error) {
-    return { allowed: true, remaining: dailyLimit, dailyLimit };
+    if (error) {
+      return { allowed: false, remaining: 0, dailyLimit, unavailable: true };
+    }
+
+    const used = (data ?? []).reduce((sum, row) => sum + Number((row as { request_count?: number }).request_count ?? 0), 0);
+    return {
+      allowed: used < dailyLimit,
+      remaining: Math.max(0, dailyLimit - used),
+      dailyLimit,
+    };
+  } catch {
+    return { allowed: false, remaining: 0, dailyLimit, unavailable: true };
   }
-
-  const used = (data ?? []).reduce((sum, row) => sum + Number((row as { request_count?: number }).request_count ?? 0), 0);
-  return {
-    allowed: used < dailyLimit,
-    remaining: Math.max(0, dailyLimit - used),
-    dailyLimit,
-  };
 }
 
 async function fallbackRecordUsage(
   supabase: SupabaseClient,
   keyRow: ApiKeyRow,
   endpoint: string,
-): Promise<void> {
+): Promise<boolean> {
   const today = new Date().toISOString().slice(0, 10);
-  await supabase
-    .from("api_usage")
-    .upsert({
-      api_key_id: keyRow.id,
-      endpoint,
-      date: today,
-      request_count: 1,
-    }, {
-      onConflict: "api_key_id,endpoint,date",
-      ignoreDuplicates: false,
-    });
+  try {
+    const { error: usageError } = await supabase
+      .from("api_usage")
+      .upsert({
+        api_key_id: keyRow.id,
+        endpoint,
+        date: today,
+        request_count: 1,
+      }, {
+        onConflict: "api_key_id,endpoint,date",
+        ignoreDuplicates: false,
+      });
 
-  await supabase
-    .from("api_keys")
-    .update({
-      last_used_at: new Date().toISOString(),
-      usage_count: Number(keyRow.usage_count ?? 0) + 1,
-    })
-    .eq("id", keyRow.id);
+    if (usageError) return false;
+
+    const { error: keyError } = await supabase
+      .from("api_keys")
+      .update({
+        last_used_at: new Date().toISOString(),
+        usage_count: Number(keyRow.usage_count ?? 0) + 1,
+      })
+      .eq("id", keyRow.id);
+
+    return !keyError;
+  } catch {
+    return false;
+  }
 }
 
 export async function validateApiKeyAccess(
@@ -157,7 +176,7 @@ export async function validateApiKeyAccess(
     };
   }
 
-  let limitResult: { allowed: boolean; remaining: number; dailyLimit: number } | null = null;
+  let limitResult: RateLimitResult | null = null;
 
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc("check_api_rate_limit", {
@@ -180,6 +199,15 @@ export async function validateApiKeyAccess(
     limitResult = await fallbackCheckRateLimit(supabase, keyRow);
   }
 
+  if (limitResult.unavailable) {
+    return {
+      allowed: false,
+      status: 503,
+      error: "Rate limit unavailable",
+      message: "Request protection is temporarily unavailable",
+    };
+  }
+
   if (!limitResult.allowed) {
     return {
       allowed: false,
@@ -194,6 +222,7 @@ export async function validateApiKeyAccess(
     };
   }
 
+  let usageRecorded = true;
   try {
     const { error: recordError } = await supabase.rpc("record_api_usage", {
       p_api_key: credential.value,
@@ -201,10 +230,19 @@ export async function validateApiKeyAccess(
     });
 
     if (recordError) {
-      await fallbackRecordUsage(supabase, keyRow, endpoint);
+      usageRecorded = await fallbackRecordUsage(supabase, keyRow, endpoint);
     }
   } catch {
-    await fallbackRecordUsage(supabase, keyRow, endpoint);
+    usageRecorded = await fallbackRecordUsage(supabase, keyRow, endpoint);
+  }
+
+  if (!usageRecorded) {
+    return {
+      allowed: false,
+      status: 503,
+      error: "Rate limit unavailable",
+      message: "Request protection is temporarily unavailable",
+    };
   }
 
   return {

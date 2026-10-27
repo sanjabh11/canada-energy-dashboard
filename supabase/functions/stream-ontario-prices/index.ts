@@ -5,6 +5,7 @@ import { getOntarioPricesSample, paginateSampleData } from "../_shared/sampleDat
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
 import { buildDataProvenance } from "../_shared/dataProvenance.ts";
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 
 type OntarioPriceRow = {
   datetime: string;
@@ -105,6 +106,21 @@ Deno.serve(async (req: Request) => {
 
   if (req.method === 'OPTIONS') {
     return handleCorsOptions(req);
+  }
+
+  const requestUrl = new URL(req.url);
+  const persistMode = requestUrl.searchParams.get('mode') === 'persist';
+  if (persistMode && (req.method !== 'POST' || !isCronAuthorized(req))) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: req.method === 'POST' ? 401 : 405,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
+  if (req.method === 'POST' && !persistMode) {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
   }
 
   if (!supabase) {

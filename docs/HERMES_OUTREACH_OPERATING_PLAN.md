@@ -10,7 +10,7 @@
 - OpenClaw is optional support only for browser-side inspection and draft review.
 - The active business lane is **proof-pack pilot outreach**.
 - All sending remains **manual and human-approved**.
-- CEIP leads with buyer-ready proof packs, not broad dashboards, generic AI, or production connector claims.
+- CEIP tests draft proof-pack hypotheses, not buyer-validated offers; outreach must not describe them as ready for sale. The lane stays bounded away from broad dashboards, generic AI, and production connector claims.
 
 ## Daily Workflow
 

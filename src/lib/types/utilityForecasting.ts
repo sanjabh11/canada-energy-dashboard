@@ -7,6 +7,7 @@
 // ============================================================================
 
 import type { ForecastMetrics } from '../demandForecaster';
+import type { FreshnessStatus } from '../foundation';
 import type {
   LiveSurfaceContract,
   LiveSurfaceSourceKind,
@@ -200,6 +201,14 @@ export interface UtilityInputProvenanceSummary {
   gross_reconstitution_applied: boolean;
   source_systems: string[];
   total_quality_flags: number;
+}
+
+export interface UtilitySourceTrustContext {
+  owner_bound: boolean;
+  freshness_status: FreshnessStatus;
+  fetched_at: string | null;
+  observed_at: string | null;
+  connector_account_id?: string;
 }
 
 export interface UtilityRegulatoryExports {

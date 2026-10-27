@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -19,9 +19,13 @@ function writeFixture(root: string, relativePath: string, content: string) {
   writeFileSync(filePath, content, 'utf8');
 }
 
-function runClientEnvSafety(root: string) {
+function makeSyntheticJwtCanary() {
+  return ['eyJhbGciOiJub25lIn0', 'eyJzdWIiOiJjYW5hcnkifQ', 'synthetic-canary'].join('.');
+}
+
+function runClientEnvSafety(root: string, args: string[] = []) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(process.execPath, [scriptPath, '--root', root], {
+    const child = spawn(process.execPath, [scriptPath, '--root', root, ...args], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -125,5 +129,37 @@ describe('client env safety guard', () => {
     expect(result.stderr).toContain('VITE_DATABASE_URL');
     expect(result.stderr).not.toContain('$STRIPE_WEBHOOK_SECRET');
     expect(result.stderr).not.toContain('$DATABASE_URL');
+  });
+
+  it('scans Netlify functions and built output without echoing synthetic canaries', async () => {
+    const root = makeTempRoot();
+    const canary = makeSyntheticJwtCanary();
+    writeFixture(root, 'netlify/functions/canary.ts', `const token = '${canary}';\nconst envName = 'VITE_STRIPE_WEBHOOK_SECRET';`);
+    writeFixture(root, 'dist/assets/bundle.js', `const copied = '${canary}';`);
+
+    const result = await runClientEnvSafety(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('netlify/functions/canary.ts');
+    expect(result.stderr).toContain('dist/assets/bundle.js');
+    expect(result.stderr).toContain('JWT-like literal');
+    expect(result.stderr).toContain('VITE_STRIPE_WEBHOOK_SECRET');
+    expect(result.stderr).not.toContain(canary);
+  });
+
+  it('scans reachable Git history when explicitly requested', async () => {
+    const root = makeTempRoot();
+    const canary = makeSyntheticJwtCanary();
+    writeFixture(root, 'netlify/functions/archived-canary.ts', `const archived = '${canary}';`);
+    execFileSync('git', ['init', '--quiet'], { cwd: root });
+    execFileSync('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'add', '.'], { cwd: root });
+    execFileSync('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'commit', '--quiet', '-m', 'synthetic scanner fixture'], { cwd: root });
+
+    const result = await runClientEnvSafety(root, ['--history']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('git history:netlify/functions/archived-canary.ts');
+    expect(result.stderr).toContain('JWT-like literal');
+    expect(result.stderr).not.toContain(canary);
   });
 });

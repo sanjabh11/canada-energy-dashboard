@@ -1,8 +1,9 @@
 # CEIP Top 20 Sellable Features for Energy and Utilities
 
+> **Positioning status:** Every "sellable" / "buyer-ready" statement in this file is a desk-research hypothesis — buyer validation pending. Sellability ratings do not claim market acceptance until accepted buyer evidence lands in the pilot evidence register.
 > **Last Audited:** May 30, 2026
 > **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
-> **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
+> **Purpose of this file:** keep CEIP focused on Canadian energy and utility proof packs hypothesized to be sellable (desk research only — buyer validation pending), not a loose collection of dashboards.
 > **Commercial source of truth:** [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md).
 > **Confidence note:** See [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md). Current desk-research strategy-direction confidence is 95/100; 95% market confidence requires buyer-supplied pilot evidence.
 > **Pilot evidence checklist:** [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
@@ -11,7 +12,7 @@
 
 CEIP's defensible USP is:
 
-**Canadian utility and TIER proof packs that turn forecasts, filings, benchmarks, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance savings, credit ledgers, asset decisions, security review, and billing checks into buyer-ready artifacts.**
+**Canadian utility and TIER proof packs that turn forecasts, filings, benchmarks, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance savings, credit ledgers, asset decisions, security review, and billing checks into artifacts designed to be buyer-ready (desk-research hypothesis — buyer validation pending).**
 
 CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage, or production connector claims. Best-in-class vendors already own operational AI/weather/API forecasting and deep grid-planning engines. CEIP should win by being narrower, Canadian, evidence-driven, exportable, and faster to pilot.
 
@@ -23,7 +24,7 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 4. TIER CFO and credit-banking packs make Alberta industrial compliance decisions source-dated and audit-ready without implying trading advice.
 5. GA/ICI and BYO-CSV packs add narrow, defensible proof wedges without requiring SCADA, ADMS, production utility connectors, or enterprise integrations.
 
-## Top 10 sellable features
+## Top 10 sellable features (desk-research hypotheses — buyer validation pending)
 
 | Rank | Feature | Primary buyer | Current implementation status | Exact gap to keep closing | Priority score |
 |---:|---|---|---|---|---:|

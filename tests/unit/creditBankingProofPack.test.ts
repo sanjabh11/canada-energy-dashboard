@@ -28,7 +28,7 @@ describe('creditBanking proof workflow', () => {
     ].join('\n'));
 
     const allocations = allocateCreditsToLiabilities(holdings, liabilities);
-    const summary = summarizeCreditPortfolio(holdings, liabilities, DEFAULT_TIER_PRICING.marketCreditPrice, DEFAULT_TIER_PRICING.fundPrice);
+    const summary = summarizeCreditPortfolio(holdings, liabilities);
     const bundle = buildCreditBankingProofBundle('uploaded_ledger', DEFAULT_TIER_PRICING);
     const descriptor = buildCreditPositionDescriptor({
       sourceMode: 'uploaded_ledger',
@@ -41,15 +41,25 @@ describe('creditBanking proof workflow', () => {
     expect(bundle.artifacts[0].claimLabel).toBe('owner-supplied');
     expect(allocations[0].allocated).toBe(2500);
     expect(descriptor.sections[1].body).toContain('2026: 2,500t allocated, 0t remaining');
-    expect(buildCreditAllocationCsv(allocations, DEFAULT_TIER_PRICING.marketCreditPrice)).toContain('allocated_lots');
+    const allocationCsv = buildCreditAllocationCsv(allocations);
+    expect(allocationCsv).toContain('allocated_lots');
+    expect(allocationCsv).toContain('Estimated market cost suppressed');
+    expect(allocationCsv.split('\n').find((line) => line.startsWith('2027,'))).toContain('2027,1500,500,1000,,');
+    expect(summary.currentValue).toBeNull();
+    expect(summary.fundValueSaved).toBeNull();
+    const body = descriptor.sections[0].body;
+    const bodyText = Array.isArray(body) ? body.join('\n') : body;
+    expect(bodyText).toContain('Current portfolio market value: not available');
   });
 
   it('keeps starter ledger bundles advisory', () => {
     const holdings = buildStarterCreditHoldings();
     const liabilities = buildStarterComplianceYears();
-    const summary = summarizeCreditPortfolio(holdings, liabilities, DEFAULT_TIER_PRICING.marketCreditPrice, DEFAULT_TIER_PRICING.fundPrice);
+    const summary = summarizeCreditPortfolio(holdings, liabilities);
 
     expect(summary.totalCredits).toBeGreaterThan(0);
+    expect(summary.currentValue).toBeNull();
+    expect(summary.fundValueSaved).toBeNull();
     expect(buildCreditBankingProofBundle('starter_ledger', DEFAULT_TIER_PRICING).artifacts[0].claimLabel).toBe('advisory');
   });
 });

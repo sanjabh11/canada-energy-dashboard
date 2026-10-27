@@ -19,8 +19,9 @@
     "counter": 14,
     "validation": 0
   },
-  "beachhead": "Alberta TIER Facility Compliance CFO Memo",
+  "beachhead": "Alberta TIER Facility Compliance CFO Memo (current focused pilot hypothesis — desk-research validated only)",
   "beachhead_score": 51,
+  "beachhead_note": "TIER = current focused pilot hypothesis (desk-research validated only); utility forecasting = documented fallback pending buyer evidence.",
   "hypotheses": [
     {"id": "H-TIER-1", "text": "Alberta large emitters will pay $1,500/mo for TIER compliance CFO memo tool", "status": "unresolved", "load_bearing_claims": ["LC-1", "LC-2", "LC-3", "LC-4"], "evidence": ["EV-003", "EV-005", "EV-007", "EV-008"]},
     {"id": "H-TIER-2", "text": "Alberta TIER compliance consultants will adopt CEIP as client-serving tool at $149/mo", "status": "unresolved", "load_bearing_claims": ["LC-5", "LC-6", "LC-7"], "evidence": ["EV-003", "EV-011"]},
@@ -30,11 +31,11 @@
     {"id": "H-CREDIT-2", "text": "Credit banking audit is natural cross-sell from TIER CFO memo", "status": "unresolved", "load_bearing_claims": ["LC-9"], "evidence": []},
     {"id": "H-CONTRA-1", "text": "Anti-spreadsheet positioning resonates more than Canadian energy compliance positioning", "status": "unresolved", "load_bearing_claims": ["LC-12"], "evidence": []}
   ],
-  "experiments_designed": 10,
+  "experiments_designed": 11,
   "experiments_executed": 0,
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
   "evidence_types_missing": ["customer_outcome", "user_quote", "behavioral_observation", "support_ticket", "analytics_data", "sales_data"],
-  "evidence_limitations": ["Zero direct buyer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted"],
+  "evidence_limitations": ["Zero direct buyer evidence", "All hypotheses Unresolved", "Experiments designed but unexecuted", "Pilot evidence register blocked by template placeholder row"],
   "phases_completed": ["phase-0", "phase-1", "phase-2", "phase-3", "phase-4", "phase-5", "phase-6", "phase-7"],
   "gates_passed": [
     {"gate": "gate-0", "decision": "CONDITIONAL_GO", "timestamp": "2026-07-13T17:49:00Z"},
@@ -52,9 +53,10 @@
     "p1": ["research-question trees persisted for phases 0-7", "H-DI-1 and H-CREDIT-2 linked to experiments", "check:positioning-audit script", "audit verifier in CI", "inventory snapshot automation"],
     "p2": ["esbuild upgraded to >=0.28.1", "@babel/core upgraded to >=7.29.6", "CI parallelized into 3 jobs", "soak tests verified passing"]
   },
+  "pilot_evidence_blocked": true,
   "next_audit": "2026-10-13 or after EXP-004",
   "audit_version": "v2",
   "previous_audit": "2026-06-04-v1",
-  "last_updated": "2026-07-16T10:30:00Z",
+  "last_updated": "2026-07-21T15:40:00Z",
   "schema_version": "v7"
 }

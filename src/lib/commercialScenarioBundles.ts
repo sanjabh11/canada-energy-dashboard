@@ -10,36 +10,91 @@ function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
-function buildUtilityRows(jurisdiction: UtilityJurisdiction, variant: 'ontario_ldc' | 'alberta_municipal'): UtilityHistoricalLoadRow[] {
+function buildUtilityRows(
+  jurisdiction: UtilityJurisdiction,
+  variant: 'ontario_ldc' | 'alberta_municipal',
+): UtilityHistoricalLoadRow[] {
   const rows: UtilityHistoricalLoadRow[] = [];
   const startYear = 2024;
   const baseDemand = variant === 'ontario_ldc' ? 84 : 69;
   const monthlyGrowth = variant === 'ontario_ldc' ? 0.007 : 0.009;
   const shockMonth = variant === 'ontario_ldc' ? 14 : 11;
-  const feeders = variant === 'ontario_ldc'
-    ? [
-        { geography_id: 'ON-LDC-SUB-1', customer_class: 'residential', share: 0.37, customerCount: 6900 },
-        { geography_id: 'ON-LDC-SUB-2', customer_class: 'commercial', share: 0.33, customerCount: 2100 },
-        { geography_id: 'ON-LDC-SUB-3', customer_class: 'industrial', share: 0.30, customerCount: 310 },
-      ]
-    : [
-        { geography_id: 'AB-MUNI-SUB-1', customer_class: 'residential', share: 0.32, customerCount: 5400 },
-        { geography_id: 'AB-MUNI-SUB-2', customer_class: 'commercial', share: 0.29, customerCount: 1750 },
-        { geography_id: 'AB-MUNI-SUB-3', customer_class: 'industrial', share: 0.39, customerCount: 160 },
-      ];
+  const feeders =
+    variant === 'ontario_ldc'
+      ? [
+          {
+            geography_id: 'ON-LDC-SUB-1',
+            customer_class: 'residential',
+            share: 0.37,
+            customerCount: 6900,
+          },
+          {
+            geography_id: 'ON-LDC-SUB-2',
+            customer_class: 'commercial',
+            share: 0.33,
+            customerCount: 2100,
+          },
+          {
+            geography_id: 'ON-LDC-SUB-3',
+            customer_class: 'industrial',
+            share: 0.3,
+            customerCount: 310,
+          },
+        ]
+      : [
+          {
+            geography_id: 'AB-MUNI-SUB-1',
+            customer_class: 'residential',
+            share: 0.32,
+            customerCount: 5400,
+          },
+          {
+            geography_id: 'AB-MUNI-SUB-2',
+            customer_class: 'commercial',
+            share: 0.29,
+            customerCount: 1750,
+          },
+          {
+            geography_id: 'AB-MUNI-SUB-3',
+            customer_class: 'industrial',
+            share: 0.39,
+            customerCount: 160,
+          },
+        ];
 
   for (let monthIndex = 0; monthIndex < 24; monthIndex += 1) {
-    const timestamp = new Date(Date.UTC(startYear + Math.floor(monthIndex / 12), monthIndex % 12, 1)).toISOString();
-    const seasonal = 1 + Math.sin(((monthIndex % 12) / 12) * Math.PI * 2) * (variant === 'ontario_ldc' ? 0.08 : 0.06);
-    const trend = 1 + (monthIndex * monthlyGrowth);
+    const timestamp = new Date(
+      Date.UTC(startYear + Math.floor(monthIndex / 12), monthIndex % 12, 1),
+    ).toISOString();
+    const seasonal =
+      1 +
+      Math.sin(((monthIndex % 12) / 12) * Math.PI * 2) * (variant === 'ontario_ldc' ? 0.08 : 0.06);
+    const trend = 1 + monthIndex * monthlyGrowth;
     const growthShock = monthIndex >= shockMonth ? (variant === 'ontario_ldc' ? 1.065 : 1.082) : 1;
-    const weatherStress = variant === 'ontario_ldc'
-      ? (monthIndex === 1 || monthIndex === 13 ? 1.07 : monthIndex === 7 ? 1.03 : 1)
-      : (monthIndex === 0 || monthIndex === 12 ? 1.06 : monthIndex === 6 ? 1.04 : 1);
+    const weatherStress =
+      variant === 'ontario_ldc'
+        ? monthIndex === 1 || monthIndex === 13
+          ? 1.07
+          : monthIndex === 7
+            ? 1.03
+            : 1
+        : monthIndex === 0 || monthIndex === 12
+          ? 1.06
+          : monthIndex === 6
+            ? 1.04
+            : 1;
     const efficiencyOffset = variant === 'ontario_ldc' ? 0.985 : 0.99;
 
     for (const feeder of feeders) {
-      const demandMw = round(baseDemand * feeder.share * seasonal * trend * growthShock * weatherStress * efficiencyOffset);
+      const demandMw = round(
+        baseDemand *
+          feeder.share *
+          seasonal *
+          trend *
+          growthShock *
+          weatherStress *
+          efficiencyOffset,
+      );
       rows.push({
         timestamp,
         geography_level: 'substation',
@@ -75,10 +130,14 @@ export const UTILITY_CONSTRUCTED_SCENARIOS: UtilityConstructedScenarioBundle[] =
     title: 'Ontario LDC DSP planning case',
     buyerType: 'Ontario LDC planning director or Chapter 5 consultant',
     jurisdiction: 'Ontario',
-    summary: '24 months of substation-level monthly history with winter peaking, electrification growth, and one medium-voltage load step-up.',
-    realisticBasis: 'Built to resemble a rebasing-cycle Ontario LDC case under OEB Chapter 5 and IESO 2026 demand-growth conditions, including one visible load-growth shock and seasonal weather pressure.',
-    expectedArtifact: 'Board-ready planning memo, benchmark appendix, OEB scenario matrix, and utility-security attachment.',
-    disclosure: 'Constructed commercial scenario. Based on realistic Ontario utility-planning assumptions, but not a customer file, production approval artifact, or audited utility record.',
+    summary:
+      '24 months of substation-level monthly history with winter peaking, electrification growth, and one medium-voltage load step-up.',
+    realisticBasis:
+      'Built to resemble a rebasing-cycle Ontario LDC case under OEB Chapter 5 and IESO 2026 demand-growth conditions, including one visible load-growth shock and seasonal weather pressure.',
+    expectedArtifact:
+      'Draft planning memo, benchmark appendix, OEB scenario matrix, and utility-security attachment for buyer review.',
+    disclosure:
+      'Constructed commercial scenario. Based on realistic Ontario utility-planning assumptions, but not a customer file, production approval artifact, or audited utility record.',
     loadLabel: 'Load Ontario DSP case',
     downloads: [
       {
@@ -108,10 +167,14 @@ export const UTILITY_CONSTRUCTED_SCENARIOS: UtilityConstructedScenarioBundle[] =
     title: 'Alberta municipal / utility planning case',
     buyerType: 'Municipal utility manager, REA planner, or Alberta distribution consultant',
     jurisdiction: 'Alberta',
-    summary: '24 months of substation-level monthly history with winter demand, electrification growth, one treatment-plant step load, and moderate DER offsets.',
-    realisticBasis: 'Built to resemble an Alberta municipal or regional utility planning file under current Alberta load-growth and large-load discussion conditions, with one explicit planning shock and stable monthly reporting cadence.',
-    expectedArtifact: 'Planning memo PDF/HTML, benchmark appendix, AUC DSP data schedule, and utility-security attachment.',
-    disclosure: 'Constructed commercial scenario. Based on realistic Alberta utility-planning assumptions, but not a customer file, production approval artifact, or audited engineering study.',
+    summary:
+      '24 months of substation-level monthly history with winter demand, electrification growth, one treatment-plant step load, and moderate DER offsets.',
+    realisticBasis:
+      'Built to resemble an Alberta municipal or regional utility planning file under current Alberta load-growth and large-load discussion conditions, with one explicit planning shock and stable monthly reporting cadence.',
+    expectedArtifact:
+      'Planning memo PDF/HTML, benchmark appendix, AUC DSP data schedule, and utility-security attachment.',
+    disclosure:
+      'Constructed commercial scenario. Based on realistic Alberta utility-planning assumptions, but not a customer file, production approval artifact, or audited engineering study.',
     loadLabel: 'Load Alberta municipal case',
     downloads: [
       {
@@ -143,10 +206,13 @@ export const SHADOW_BILLING_CONSTRUCTED_SCENARIO: ConstructedScenarioBundle = {
   title: 'Alberta municipal invoice comparison case',
   buyerType: 'Municipal facilities lead or public-sector energy manager',
   jurisdiction: 'Alberta',
-  summary: '12 months of energy-supply invoice history with stable fixed charges, RoLR reference rates, and a visible savings gap in several winter months.',
-  realisticBasis: 'Designed to resemble a small-public-sector bill file where the first paid question is supply-cost delta versus Alberta RoLR, not a full rider reconstruction project.',
+  summary:
+    '12 months of energy-supply invoice history with stable fixed charges, RoLR reference rates, and a visible savings gap in several winter months.',
+  realisticBasis:
+    'Designed to resemble a small-public-sector bill file where the first paid question is supply-cost delta versus Alberta RoLR, not a full rider reconstruction project.',
   expectedArtifact: 'Invoice comparison memo, monthly delta CSV, and CFO summary.',
-  disclosure: 'Constructed commercial scenario. Based on realistic Alberta municipal billing assumptions. It is not a customer invoice book, full tariff reconstruction, or audited procurement record.',
+  disclosure:
+    'Constructed commercial scenario. Based on realistic Alberta municipal billing assumptions. It is not a customer invoice book, full tariff reconstruction, or audited procurement record.',
   loadLabel: 'Load municipal billing case',
   downloads: [
     {
@@ -178,10 +244,14 @@ export const CREDIT_BANKING_CONSTRUCTED_SCENARIO: ConstructedScenarioBundle = {
   title: 'Alberta industrial TIER credit-banking case',
   buyerType: 'Industrial compliance lead or CFO',
   jurisdiction: 'Alberta',
-  summary: 'Constructed registry holdings with expiring lots and a three-year liability stack that leaves a visible coverage gap after allocation.',
-  realisticBasis: 'Designed to mirror a medium-complexity Alberta industrial facility deciding whether to bank, allocate, or top up credits under current TIER planning conditions.',
-  expectedArtifact: 'Credit position memo, compliance-year allocation schedule, and expiry-risk register.',
-  disclosure: 'Constructed commercial scenario. Based on realistic Alberta TIER compliance assumptions. It is not a registry extract, broker quote, or verified compliance ledger.',
+  summary:
+    'Constructed registry holdings with expiring lots and a three-year liability stack that leaves a visible coverage gap after allocation.',
+  realisticBasis:
+    'Designed to mirror a medium-complexity Alberta industrial facility deciding whether to bank, allocate, or top up credits under current TIER planning conditions.',
+  expectedArtifact:
+    'Credit position memo, compliance-year allocation schedule, and expiry-risk register.',
+  disclosure:
+    'Constructed commercial scenario. Based on realistic Alberta TIER compliance assumptions. It is not a registry extract, broker quote, or verified compliance ledger.',
   loadLabel: 'Load industrial banking case',
   downloads: [
     {
@@ -202,12 +272,7 @@ export const CREDIT_BANKING_CONSTRUCTED_SCENARIO: ConstructedScenarioBundle = {
       label: 'Download liability CSV',
       filename: 'constructed_credit_liabilities.csv',
       mimeType: 'text/csv;charset=utf-8;',
-      content: [
-        'year,liability',
-        '2026,3200',
-        '2027,4100',
-        '2028,4900',
-      ].join('\n'),
+      content: ['year,liability', '2026,3200', '2027,4100', '2028,4900'].join('\n'),
     },
   ],
 };
@@ -256,7 +321,8 @@ const aiceiJsonRows = [
     participants_count: 5,
     participants_hours: 8,
     community_approval_status: 'owner_supplied',
-    owner_supplied_notes: 'Reporting gap left visible on purpose to demonstrate approval and activity checklist behavior.',
+    owner_supplied_notes:
+      'Reporting gap left visible on purpose to demonstrate approval and activity checklist behavior.',
   },
 ];
 
@@ -265,10 +331,13 @@ export const AICEI_CONSTRUCTED_SCENARIO: ConstructedScenarioBundle = {
   title: 'Constructed AICEI Alberta portfolio',
   buyerType: 'Indigenous clean-energy project manager or grant coordinator',
   jurisdiction: 'Alberta',
-  summary: 'Three-project Alberta reporting cycle with one approved project, one pending approval, and one visible reporting gap.',
-  realisticBasis: 'Designed to mirror quarterly AICEI reporting pressure: generation, GHG reduction, training, and governance review in one Alberta-specific pack.',
+  summary:
+    'Three-project Alberta reporting cycle with one approved project, one pending approval, and one visible reporting gap.',
+  realisticBasis:
+    'Designed to mirror quarterly AICEI reporting pressure: generation, GHG reduction, training, and governance review in one Alberta-specific pack.',
   expectedArtifact: 'Quarterly report PDF/HTML, metrics CSV, and missing-approvals checklist.',
-  disclosure: 'Constructed commercial scenario. Based on realistic Alberta Indigenous clean-energy reporting assumptions. It is not a Nation-owned project file or approved community governance record.',
+  disclosure:
+    'Constructed commercial scenario. Based on realistic Alberta Indigenous clean-energy reporting assumptions. It is not a Nation-owned project file or approved community governance record.',
   loadLabel: 'Load AICEI reporting case',
   downloads: [
     {
@@ -285,21 +354,23 @@ export const AICEI_CONSTRUCTED_SCENARIO: ConstructedScenarioBundle = {
       mimeType: 'text/csv;charset=utf-8;',
       content: [
         'id,name,reporting_period,community,technology,generation_kwh,baseline_ghg,actual_ghg,capacity_building_activities,participants_count,participants_hours,community_approval_status,owner_supplied_notes',
-        ...aiceiJsonRows.map((row) => [
-          row.id,
-          `"${row.name}"`,
-          row.reporting_period,
-          `"${row.community}"`,
-          row.technology,
-          row.generation_kwh,
-          row.baseline_ghg,
-          row.actual_ghg,
-          `"${row.capacity_building_activities.join('|')}"`,
-          row.participants_count,
-          row.participants_hours,
-          row.community_approval_status,
-          `"${row.owner_supplied_notes ?? ''}"`,
-        ].join(',')),
+        ...aiceiJsonRows.map((row) =>
+          [
+            row.id,
+            `"${row.name}"`,
+            row.reporting_period,
+            `"${row.community}"`,
+            row.technology,
+            row.generation_kwh,
+            row.baseline_ghg,
+            row.actual_ghg,
+            `"${row.capacity_building_activities.join('|')}"`,
+            row.participants_count,
+            row.participants_hours,
+            row.community_approval_status,
+            `"${row.owner_supplied_notes ?? ''}"`,
+          ].join(','),
+        ),
       ].join('\n'),
     },
   ],
@@ -368,10 +439,13 @@ export const FUNDER_REPORTING_CONSTRUCTED_SCENARIO: ConstructedScenarioBundle = 
   title: 'Constructed Wah-ila-toos reporting case',
   buyerType: 'Community energy team or Wah-ila-toos reporting lead',
   jurisdiction: 'Canada',
-  summary: 'Two-project Wah-ila-toos-first reporting set with visible FPIC, budget, milestone, and next-quarter fields ready for a quarterly review cycle.',
-  realisticBasis: 'Designed to resemble the quarterly narrative and milestone pressure facing Indigenous clean-energy teams that need one clean report pack without adopting a full grant CRM.',
+  summary:
+    'Two-project Wah-ila-toos-first reporting set with visible FPIC, budget, milestone, and next-quarter fields ready for a quarterly review cycle.',
+  realisticBasis:
+    'Designed to resemble the quarterly narrative and milestone pressure facing Indigenous clean-energy teams that need one clean report pack without adopting a full grant CRM.',
   expectedArtifact: 'Funder-ready quarterly report plus outreach-ready cover note.',
-  disclosure: 'Constructed commercial scenario. Based on realistic clean-energy reporting assumptions, but not a community-approved submission package or official program-officer record.',
+  disclosure:
+    'Constructed commercial scenario. Based on realistic clean-energy reporting assumptions, but not a community-approved submission package or official program-officer record.',
   loadLabel: 'Load Wah-ila-toos case',
   downloads: [
     {
@@ -389,10 +463,13 @@ export const LARGE_LOAD_CONSTRUCTED_SCENARIO = {
   title: 'Constructed Alberta large-load readiness case',
   buyerType: 'Large-load sponsor, site-selection lead, or utility planner',
   jurisdiction: 'Alberta',
-  summary: 'One Alberta screening case sized for a large industrial or data-centre conversation with on-site generation and BYOP/storage offsets.',
-  realisticBasis: 'Aligned to the current AESO large-load context where queue pressure, interim limits, and owner-entered assumptions shape the earliest commercial conversation.',
+  summary:
+    'One Alberta screening case sized for a large industrial or data-centre conversation with on-site generation and BYOP/storage offsets.',
+  realisticBasis:
+    'Aligned to the current AESO large-load context where queue pressure, interim limits, and owner-entered assumptions shape the earliest commercial conversation.',
   expectedArtifact: 'Readiness summary and backlog checklist for one Alberta scenario.',
-  disclosure: 'Constructed commercial scenario. This is a planning narrative only, not an engineering approval, queue position, or utility commitment.',
+  disclosure:
+    'Constructed commercial scenario. This is a planning narrative only, not an engineering approval, queue position, or utility commitment.',
   loadLabel: 'Reload Alberta screening case',
   input: {
     requestedMw: 220,
@@ -406,12 +483,16 @@ export const LARGE_LOAD_CONSTRUCTED_SCENARIO = {
       label: 'Download scenario assumptions',
       filename: 'constructed_large_load_scenario.json',
       mimeType: 'application/json;charset=utf-8;',
-      content: JSON.stringify({
-        requested_mw: 220,
-        timeline_band: '12-24 months',
-        on_site_generation_mw: 40,
-        byop_storage_contribution_mw: 25,
-      }, null, 2),
+      content: JSON.stringify(
+        {
+          requested_mw: 220,
+          timeline_band: '12-24 months',
+          on_site_generation_mw: 40,
+          byop_storage_contribution_mw: 25,
+        },
+        null,
+        2,
+      ),
     },
   ],
 };
