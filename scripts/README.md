@@ -177,8 +177,6 @@ Validates storage dispatch and enhanced forecast APIs.
 | `deploy-production.sh` | Pre-deployment checks + production deploy (approval-gated). |
 | `deploy-edge-functions.sh` | Deploys Supabase edge functions for real data streaming. |
 | `final-deployment-check.sh` | Comprehensive validation pass before deploying. |
-| `run-migrations-direct.mjs` | Runs SQL migrations via the Supabase client directly. |
-| `run-migrations-via-supabase.mjs` | Alternative migration runner (Supabase JS instead of psql). |
 | `verify-supabase-migrations.mjs` | Verifies `supabase/migrations/` contents apply cleanly. |
 | `fix-cors-for-development.sh` | Loosens edge-function CORS to allow localhost + production origins. |
 | `fix-cors-wildcard.sh` | Replaces `*` CORS with specific allowed origins in edge functions. |

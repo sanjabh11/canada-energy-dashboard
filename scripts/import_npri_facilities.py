@@ -9,7 +9,7 @@ Usage (preferred):
     python scripts/import_npri_facilities.py --csv path/to/npri.csv --year 2023 --province AB
 
 Environment:
-    SUPABASE_URL, SUPABASE_KEY (or VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY)
+    SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY
 
 Notes:
 - This script intentionally focuses on the core path (CSV -> facility_emissions)
@@ -49,9 +49,9 @@ MIN_EMISSIONS_TONNES = 10_000  # keep only material facilities
 
 def get_supabase_client() -> Client:
     url = os.getenv('SUPABASE_URL') or os.getenv('VITE_SUPABASE_URL')
-    key = os.getenv('SUPABASE_KEY') or os.getenv('VITE_SUPABASE_ANON_KEY')
+    key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
     if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY (or VITE_*) must be set")
+        print("Error: SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY must be set")
         sys.exit(1)
     return create_client(url, key)
 
