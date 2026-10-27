@@ -1,5 +1,20 @@
 # CEIP audit addendum — 2026-10-26
 
+
+## Current exact-head CI receipt — 2026-10-27
+
+- Remote PR source/head: `8d6096a45ffa08e86519ef24335aee79c6603047`
+- CI run: [`40462474909`](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/40462474909)
+- Verification jobs: `lint-typecheck`, `test`, and `build-and-smoke` succeeded.
+- `evidence-binding`: failed only because the goal, mission and addendum still named the previous receipt; this was the intended stale-document signal.
+- Test receipt: 190/190 files and 1,382/1,382 tests; critical-path coverage floors completed successfully.
+- Build-and-smoke receipt: build, configured browser smoke, automated axe/reflow, manual-assist, evidence-completeness and upload steps completed successfully.
+- Artifact: `12715637536` (`ci-evidence-7ba2344931812b205125d554d12dca4e5eb95345`)
+- GitHub artifact digest: `sha256:33a936157c113df8b6d417779c3a57903fa8545ea22bb325c869310126512da2`
+- Artifact boundary: the GitHub API digest and run metadata are retained; a fresh local ZIP byte rehash was not claimed because the approved JEV network guard blocked the download command. The artifact manifest/sidecar must not be described as independently rehashed in this pass.
+- Local boundary: the working checkout remains dirty with intentional `D coverage/lcov.info` and untracked dump/cache files; those files were not restored, staged or used as CI proof.
+- Decision: repository verification is CI-verified for this exact remote head after the document rebind; hosted migration/RLS/function/storage/backup/rollback, owner approvals, manual WCAG/performance, CASL and buyer validation remain STOP.
+
 ## Scope and proof boundary
 
 This addendum records a local planning and evidence-reconciliation pass. It is

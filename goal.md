@@ -1,13 +1,13 @@
 # goal.md — CEIP controlled-pilot objective
 
-## Current authoritative receipt — 2026-10-26
+## Current authoritative receipt — 2026-10-27
 
-**bound HEAD `9739270d6c12ee14e5fac27b3cea64c5be288944` — CI run
-> `40322016962`**
+**bound HEAD `8d6096a45ffa08e86519ef24335aee79c6603047` — CI run
+> `40462474909`**
 
-The exact-head run completed with all four jobs successful: `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding`. The CI artifact is `12650517571` with GitHub digest `sha256:869dc37a52b04dd622c91284b6ce916e7b641467c3bb1e5c8a3890b85edb8966`. Its manifest is `complete=true`, `missing_files=[]`, `file_count=11`, and `jobs: not-recorded`; GitHub job conclusions are authoritative for job success. The manifest sidecar passed `shasum -a 256 -c`, and all 11 manifest-listed payload hashes and byte counts matched the downloaded artifact. Browser receipts were 35/35 Phase 0, 80/80 Phase 6, 80/80 wedge, 110/110 automated a11y, and 12 expected with 4 skipped and 0 unexpected in the manual-assist suite. This proves the repository and evidence-packaging layer only; it does not prove hosted staging, owner approval, manual WCAG conformance, performance, or buyer validation.
+The exact-head CI run completed the three verification jobs successfully: `lint-typecheck`, `test`, and `build-and-smoke`. The `evidence-binding` job failed because these documents still named the previous receipt; that is the designed stale-document signal, not a source-test failure. The GitHub artifact API reports artifact `12715637536` (`ci-evidence-7ba2344931812b205125d554d12dca4e5eb95345`) with digest `sha256:33a936157c113df8b6d417779c3a57903fa8545ea22bb325c869310126512da2`. The test job reported 190/190 test files and 1,382/1,382 tests, with the critical-path coverage-floor step successful. The build-and-smoke job completed the production build, browser smoke, automated axe/reflow, manual-assist, evidence-completeness and artifact-upload steps. This is repository/CI evidence only; a fresh local ZIP byte rehash was not independently claimed in this pass because the approved network guard blocked the download command. It does not prove hosted staging, owner approval, manual WCAG conformance, performance, or buyer validation.
 
-The current source hardening is migration `20261026003_restrict_legacy_entitlement_helpers.sql`, which removes anonymous and authenticated EXECUTE grants from four unused SECURITY DEFINER helpers, pins their search paths, and retains service-role execution pending an explicitly reviewed server caller. The replacement project has not received this migration. The main checkout remains a separate dirty overlay; its local files are not evidence for this receipt.
+The current remote source includes the unified cron-authorisation surface and service-role-only import/backfill contracts. The replacement project has not been treated as hosted proof: no migration, function deployment, storage upload, backup, restore or rollback is inferred from this receipt. The local checkout remains a separate dirty overlay; its deletion of `coverage/lcov.info` and untracked dump/cache files are preserved and are not CI evidence.
 
 ## Revised goal
 
@@ -19,7 +19,7 @@ The detailed Context, Constraints, Verification and Composition brief is in `mis
 
 | Deliverable | Score | Highest proven layer | Current next checkpoint |
 |---|---:|---|---|
-| Exact-tree repository and evidence packet | 4/5 | CI-verified | retain the 9739270/40322016962 artifact receipt and rebind only after future writes |
+| Exact-tree repository and evidence packet | 4/5 | CI-verified | retain the 8d6096a4/40462474909 artifact receipt; complete this evidence-only rebind and keep the ZIP rehash boundary explicit |
 | Repository security migration and negative tests | 4/5 | CI-verified | owner applies 20261026003 and verifies grants/RLS in staging |
 | Replacement-project hosted controls | 0/5 | read-only observation | migration order, RLS, direct-write denial, rate limits, retention, logging, restore and rollback |
 | Data stewardship and migration ledger | 2/5 | preparation packets | steward decisions for four excluded tables and 89 withheld rows |

@@ -1,11 +1,11 @@
 # CEIP Fable 5 Controlled-Pilot Mission
 
-## Authoritative update — 2026-10-26
+## Authoritative update — 2026-10-27
 
-**bound HEAD `9739270d6c12ee14e5fac27b3cea64c5be288944` — CI run
-> `40322016962`**
+**bound HEAD `8d6096a45ffa08e86519ef24335aee79c6603047` — CI run
+> `40462474909`**
 
-The exact-head run is green across `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding`. Artifact `12650517571` has GitHub digest `sha256:869dc37a52b04dd622c91284b6ce916e7b641467c3bb1e5c8a3890b85edb8966`; its manifest is complete, has no missing files, contains 11 required payloads, and its sidecar plus all payload hashes and byte counts were independently verified. The retained browser receipts are 35/35, 80/80, 80/80, 110/110, and manual-assist 12 expected, 4 skipped, 0 unexpected. `jobs: not-recorded` remains an honest manifest sentinel; external GitHub job conclusions establish success. This is repository proof only. The replacement Supabase project has not received the legacy-helper migration, and staging, named approvals, manual WCAG/performance and buyer validation remain STOP.
+The exact-head run is green for `lint-typecheck`, `test`, and `build-and-smoke`. The `evidence-binding` job was red only because the prior documents named an older receipt; this update is the evidence-only rebind. GitHub artifact `12715637536` (`ci-evidence-7ba2344931812b205125d554d12dca4e5eb95345`) reports digest `sha256:33a936157c113df8b6d417779c3a57903fa8545ea22bb325c869310126512da2`. The test job reports 190/190 files and 1,382/1,382 tests, with critical-path coverage floors successful. Build-and-smoke completed its build, all configured browser/a11y/manual-assist steps, completeness check and artifact upload. A local ZIP byte rehash is not claimed because the approved network guard blocked the download path. These results establish repository/CI proof only; replacement-project staging, owner approvals, manual WCAG, deployed performance and buyer validation remain STOP. The dirty local overlay is not part of this CI receipt.
 
 ## 3C execution brief
 
