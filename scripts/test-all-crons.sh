@@ -4,12 +4,11 @@
 
 set -e
 
-if [ -z "${VITE_SUPABASE_ANON_KEY:-}" ]; then
-  echo "Missing required environment variable: VITE_SUPABASE_ANON_KEY" >&2
+if [ -z "${CRON_SECRET:-}" ]; then
+  echo "Missing required environment variable: CRON_SECRET" >&2
   exit 1
 fi
 
-ANON_KEY="${VITE_SUPABASE_ANON_KEY}"
 BASE_URL="${VITE_SUPABASE_EDGE_BASE:-https://qktgjpbifknqjpvrgkrj.functions.supabase.co}"
 
 echo "🧪 Testing All Cron Functions"
@@ -19,7 +18,7 @@ echo ""
 # Test 1: Weather Ingestion
 echo "1️⃣  Testing weather-ingestion-cron..."
 WEATHER_RESULT=$(curl -s "${BASE_URL}/weather-ingestion-cron" \
-  -H "Authorization: Bearer ${ANON_KEY}")
+  -H "Authorization: Bearer ${CRON_SECRET}")
 
 WEATHER_SUCCESS=$(echo "$WEATHER_RESULT" | jq -r '.success // false')
 if [ "$WEATHER_SUCCESS" = "true" ]; then
@@ -33,7 +32,7 @@ echo ""
 # Test 2: Storage Dispatch
 echo "2️⃣  Testing storage-dispatch-engine..."
 STORAGE_RESULT=$(curl -s "${BASE_URL}/storage-dispatch-engine?province=ON" \
-  -H "Authorization: Bearer ${ANON_KEY}")
+  -H "Authorization: Bearer ${CRON_SECRET}")
 
 STORAGE_SUCCESS=$(echo "$STORAGE_RESULT" | jq -r '.success // false')
 if [ "$STORAGE_SUCCESS" = "true" ]; then
@@ -50,7 +49,7 @@ echo ""
 # Test 3: Data Purge
 echo "3️⃣  Testing data-purge-cron..."
 PURGE_RESULT=$(curl -s "${BASE_URL}/data-purge-cron" \
-  -H "Authorization: Bearer ${ANON_KEY}")
+  -H "Authorization: Bearer ${CRON_SECRET}")
 
 PURGE_SUCCESS=$(echo "$PURGE_RESULT" | jq -r '.success // false')
 if [ "$PURGE_SUCCESS" = "true" ]; then
@@ -66,7 +65,7 @@ echo ""
 # Test 4: Award Evidence API
 echo "4️⃣  Testing award-evidence API..."
 AWARD_RESULT=$(curl -s "${BASE_URL}/api-v2-renewable-forecast/award-evidence?province=ON" \
-  -H "Authorization: Bearer ${ANON_KEY}")
+  -H "Authorization: Bearer ${CRON_SECRET}")
 
 CURTAILMENT=$(echo "$AWARD_RESULT" | jq -r '.monthly_curtailment_avoided_mwh // 0')
 STORAGE_EFF=$(echo "$AWARD_RESULT" | jq -r '.avg_round_trip_efficiency_percent // 0')

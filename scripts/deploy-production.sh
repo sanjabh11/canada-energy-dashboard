@@ -139,7 +139,8 @@ read -p "Run provincial generation backfill? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
   node scripts/backfill-provincial-generation.mjs || {
-    echo -e "${YELLOW}⚠️  Backfill failed (non-critical)${NC}"
+    echo -e "${RED}❌ Backfill failed; refusing to continue with deployment${NC}"
+    exit 1
   }
   echo -e "${GREEN}✅ Backfill completed${NC}"
 else
@@ -158,6 +159,7 @@ fi
 REQUIRED_VARS=(
   "VITE_SUPABASE_URL"
   "VITE_SUPABASE_ANON_KEY"
+  "SUPABASE_SERVICE_ROLE_KEY"
 )
 
 for var in "${REQUIRED_VARS[@]}"; do

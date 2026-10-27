@@ -1,3 +1,4 @@
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
@@ -7,7 +8,6 @@ import { createGeminiEmbedding, EMBEDDING_MODEL, isEmbeddingProviderConfigured, 
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
@@ -25,10 +25,7 @@ function jsonResponse(req: Request, status: number, body: unknown, extraHeaders:
 }
 
 function isAuthorized(req: Request): boolean {
-  const authHeader = req.headers.get("Authorization");
-  return authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-    || authHeader === `Bearer ${CRON_SECRET}`
-    || req.headers.get("x-supabase-cron") === "true";
+  return isCronAuthorized(req);
 }
 
 async function logOpsRun(status: "success" | "failure", metadata: Record<string, unknown>, startedAt: number) {

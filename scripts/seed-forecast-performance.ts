@@ -6,21 +6,21 @@
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Validate environment variables
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('❌ Error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ Error: VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
   console.error('');
-  console.error('Set them in .env.local or export as environment variables:');
+  console.error('Set them in your process environment or export them before running:');
   console.error('  export VITE_SUPABASE_URL=https://your-project.supabase.co');
-  console.error('  export VITE_SUPABASE_ANON_KEY=your-anon-key');
+  console.error('  export SUPABASE_SERVICE_ROLE_KEY=your-service-role-key');
   console.error('');
   console.error('Then run: npm run seed-forecast-performance');
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function seedForecastPerformance() {
   console.log('🌱 Seeding forecast performance metrics...');

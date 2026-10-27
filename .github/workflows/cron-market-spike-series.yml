@@ -16,8 +16,7 @@ jobs:
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
             "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ingest-market-spike-series" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "x-supabase-cron: true" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"days":730}')
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)

@@ -25,7 +25,6 @@ jobs:
             -X POST \
             "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/groundsource-miner/ingest" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "x-supabase-cron: true" \
             -H "Content-Type: application/json" \
             -d '{"source_group":"${{ matrix.source_group }}","scheduled_run":true,"max_items":15,"max_events":100,"allow_indigenous_consent":false}')
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)

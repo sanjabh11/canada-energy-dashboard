@@ -8,6 +8,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 // Province coordinates (major cities for weather data)
 const PROVINCE_COORDS: Record<string, { lat: number; lon: number; city: string }> = {
   ON: { lat: 43.65, lon: -79.38, city: 'Toronto' },
@@ -36,6 +37,13 @@ serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST' || !isCronAuthorized(req)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: req.method === 'POST' ? 401 : 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {

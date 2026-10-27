@@ -1,10 +1,10 @@
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { floorToUtcHour } from "../_shared/exportTelemetry.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
 const EXPORT_BLOCK_ALERT_THRESHOLD = Number(Deno.env.get("EXPORT_BLOCK_ALERT_THRESHOLD") || "3");
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
@@ -14,13 +14,7 @@ const ALERT_FROM_NAME = Deno.env.get("ALERT_FROM_NAME") || "CEIP Export Monitor"
 const EXPORT_ALERT_EMAIL_TO = Deno.env.get("EXPORT_ALERT_EMAIL_TO") || Deno.env.get("ALERT_TO_EMAIL") || "";
 
 function isAuthorized(req: Request): boolean {
-  const authHeader = req.headers.get("authorization");
-  const xCron = req.headers.get("x-supabase-cron");
-  if (xCron === "true") return true;
-  if (!authHeader) return false;
-  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) return true;
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) return true;
-  return false;
+  return isCronAuthorized(req);
 }
 
 function getRecipients(): string[] {

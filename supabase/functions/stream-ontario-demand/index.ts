@@ -9,6 +9,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { getOntarioDemandSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 import {
   buildObservedGridStatusRow,
@@ -449,6 +450,37 @@ serve(async (req: Request) => {
     return handleCorsOptions(req);
   }
 
+  const requestUrl = new URL(req.url);
+  const persistMode = requestUrl.searchParams.get('mode') === 'persist';
+  if (persistMode) {
+    if (req.method !== 'POST' || !isCronAuthorized(req)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: req.method === 'POST' ? 401 : 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    try {
+      const { rows, metadata, hadError } = await fetchAndPersistIESOData({ skipFilter: true });
+      return new Response(JSON.stringify({
+        success: !hadError,
+        rows_persisted: rows.length,
+        metadata,
+      }), {
+        status: hadError ? 502 : 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
   // Handle health check or static snapshot requests
   const sinceTimestamp = handleSinceParameter(req);
   if (req.method === 'GET' && req.url.includes('health')) {
@@ -588,6 +620,13 @@ serve(async (req: Request) => {
         status: 500
       });
     }
+  }
+
+  if (!isCronAuthorized(req)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   // Create SSE stream for real-time requests

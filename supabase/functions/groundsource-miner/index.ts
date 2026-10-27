@@ -1,4 +1,5 @@
 declare const Deno: { env: { get(name: string): string | undefined } };
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
@@ -14,7 +15,6 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const GROUNDSOURCE_DAILY_TOKEN_BUDGET = Number(Deno.env.get("GROUNDSOURCE_DAILY_TOKEN_BUDGET") ?? 180000);
 const GROUNDSOURCE_MAX_DURATION_MS = Number(Deno.env.get("GROUNDSOURCE_MAX_DURATION_MS") ?? 120000);
 const GROUNDSOURCE_MAX_EVENTS_PER_DAY = 200;
@@ -252,10 +252,7 @@ async function extractStructuredEvents(
 }
 
 function isAuthorized(req: Request): boolean {
-  const authHeader = req.headers.get("Authorization");
-  return authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-    || authHeader === `Bearer ${CRON_SECRET}`
-    || req.headers.get("x-supabase-cron") === "true";
+  return isCronAuthorized(req);
 }
 
 function normalizeRequestPath(url: string): string {

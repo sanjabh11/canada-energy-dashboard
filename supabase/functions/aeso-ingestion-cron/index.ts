@@ -3,6 +3,7 @@
 // Runs every 5 minutes to keep Alberta grid data fresh
 // Critical for tracking 10GW+ AI data centre queue impact
 
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const AESO_STREAM_FUNCTION = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, '') + '/functions/v1/stream-aeso-grid-data';
@@ -10,13 +11,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "
 
 serve(async (req: Request) => {
   // Verify this is a cron request (Supabase adds this header)
-  const authHeader = req.headers.get('Authorization');
-  const cronSecret = Deno.env.get('CRON_SECRET') || '';
-
-  // Allow both service role key and cron secret
-  const isAuthorized = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` ||
-                       authHeader === `Bearer ${cronSecret}` ||
-                       req.headers.get('x-supabase-cron') === 'true';
+  const isAuthorized = isCronAuthorized(req);
 
   if (!isAuthorized) {
     return new Response(
