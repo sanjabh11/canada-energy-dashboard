@@ -117,6 +117,33 @@ export function buildMeta(params: {
   return meta;
 }
 
+// Regulated TIER credit use limit by compliance year: credits may satisfy at
+// most this share of the obligation; the remainder is owed to the TIER fund
+// regardless of market price. Mirrors src/lib/tierPricing.ts
+// getTierCreditUseLimit — keep schedules in sync (60%/2023, 70%/2024,
+// 80%/2025, 90%/2026+; earlier years clamp to the earliest step).
+const TIER_CREDIT_USE_LIMIT_SCHEDULE: ReadonlyArray<{
+  fromYear: number;
+  maxCreditShare: number;
+}> = [
+  { fromYear: 2023, maxCreditShare: 0.6 },
+  { fromYear: 2024, maxCreditShare: 0.7 },
+  { fromYear: 2025, maxCreditShare: 0.8 },
+  { fromYear: 2026, maxCreditShare: 0.9 },
+];
+
+function getTierCreditUseLimit(complianceYear?: number): number {
+  const year =
+    typeof complianceYear === 'number' && Number.isFinite(complianceYear)
+      ? Math.floor(complianceYear)
+      : new Date().getUTCFullYear();
+  let share = TIER_CREDIT_USE_LIMIT_SCHEDULE[0].maxCreditShare;
+  for (const step of TIER_CREDIT_USE_LIMIT_SCHEDULE) {
+    if (year >= step.fromYear) share = step.maxCreditShare;
+  }
+  return share;
+}
+
 export function calculateTierScenario(input: any) {
   const asOfDate = input.asOfDate ?? new Date().toISOString().slice(0, 10);
   const assumptions = input.creditAssumptions ?? {};
@@ -128,8 +155,20 @@ export function calculateTierScenario(input: any) {
   const lastVerifiedAt = assumptions.lastVerifiedAt ?? assumptions.last_verified_at ?? '2026-02-01';
   const creditedTonnes = fundPrice > 0 ? Math.min(exceedance, (capex * creditRate) / fundPrice) : 0;
   const residualTonnes = Math.max(0, exceedance - creditedTonnes);
+
+  const complianceYearRaw = input.complianceYear ?? input.compliance_year;
+  const complianceYear =
+    typeof complianceYearRaw === 'number' && Number.isInteger(complianceYearRaw)
+      ? complianceYearRaw
+      : new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear();
+  const creditUseLimit = getTierCreditUseLimit(complianceYear);
+  const creditEligibleTonnes = exceedance * creditUseLimit;
+  const fundRemainderTonnes = exceedance - creditEligibleTonnes;
+
   const fundPaymentCost = round(exceedance * fundPrice);
-  const marketCreditsCost = round(exceedance * marketPrice);
+  const marketCreditsCost = round(
+    creditEligibleTonnes * marketPrice + fundRemainderTonnes * fundPrice,
+  );
   const directInvestmentCost = round(capex + residualTonnes * fundPrice);
   const candidates = [
     ['fund_payment', fundPaymentCost],
@@ -146,7 +185,13 @@ export function calculateTierScenario(input: any) {
     benchmarkExceedanceTonnes: exceedance,
     pathways: {
       fundPayment: { costCad: fundPaymentCost, priceCadPerTonne: fundPrice },
-      marketCredits: { costCad: marketCreditsCost, priceCadPerTonne: marketPrice },
+      marketCredits: {
+        costCad: marketCreditsCost,
+        priceCadPerTonne: marketPrice,
+        creditUseLimit,
+        creditEligibleTonnes: round(creditEligibleTonnes, 3),
+        fundRemainderTonnes: round(fundRemainderTonnes, 3),
+      },
       directInvestment: {
         costCad: directInvestmentCost,
         capexCad: capex,
@@ -163,7 +208,7 @@ export function calculateTierScenario(input: any) {
       confidenceScore: warnings.length ? 0.74 : 0.9,
       dataSources: [{ name: 'Alberta TIER pricing assumptions', url: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation', lastUpdated: lastVerifiedAt }],
       isFallback: false,
-      methodology: 'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
+      methodology: 'Deterministic compliance pathway cost comparison; market credits blend credits up to the regulated credit use limit with a fund payment on the remainder; estimates are not binding financial advice.',
       warnings,
       generatedAt: `${asOfDate}T00:00:00.000Z`,
       claimLabel: 'estimated',

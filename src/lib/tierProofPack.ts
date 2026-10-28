@@ -212,10 +212,14 @@ export function buildTierAssumptions(snapshot: TierProofSnapshot): string[] {
     .map(({ year, priceCadPerTonne }) => `${year}: CAD ${priceCadPerTonne}/t`)
     .join('; ');
 
+  const creditBlend = creditBlendDetail(snapshot.results);
+
   return [
     `Fund price basis is CAD ${snapshot.pricing.fundPrice}/t effective ${snapshot.pricing.effectiveDate}.`,
     `Market credit pricing is ${snapshot.liveTierMarketRateSource ? 'source-dated' : 'fallback'} at CAD ${snapshot.marketPrice}/t; the memo does not claim real-time pricing.`,
-    'Credits may satisfy at most the regulated credit use limit of the compliance-year obligation (60% in 2023, 70% in 2024, 80% in 2025, 90% in 2026 and later); the remainder is paid to the TIER fund at the fund price. The market-credits pathway blends credits up to the limit with a fund payment on the remainder.',
+    creditBlend
+      ? `Credits may satisfy at most the regulated credit use limit of the compliance-year obligation (60% in 2023, 70% in 2024, 80% in 2025, 90% in 2026 and later); the remainder is paid to the TIER fund at the fund price. The market-credits pathway blends credits up to the limit with a fund payment on the remainder: ${creditBlend}.`
+      : 'This snapshot does not carry regulated credit-use-limit fields; treat the market-credits figure as an unbounded market-price comparison, not a regulated blend, until the scenario is regenerated.',
     `Direct investment credit treatment is undetermined because the current publication status of the Alberta Direct Investment Standard has not been verified. The memo shows a bounded cost range and never presents it as eligible. The Canada–Alberta agreement limits eligible investment to 50% of eligible capital and up to 50% of attributable operating costs net of public support.`,
     `Official headline price schedule carried for scenario context: ${headlineSchedule}.`,
     `Minimum transfer-price floor schedule begins in 2030 for future-year planning context: ${priceFloorSchedule}.`,
@@ -429,7 +433,7 @@ export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {
     '',
     '## Scenario pathway values (not recommendations)',
     `- Fund payment: CAD ${snapshot.results.fundPayment.toLocaleString()}`,
-    `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()} (blended: credits up to the regulated credit use limit for the compliance year — 60%/2023, 70%/2024, 80%/2025, 90%/2026+ — plus a fund payment on the remainder${creditBlend ? `; this scenario: ${creditBlend}` : ''})`,
+    `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()} (${creditBlend ? `blended: credits up to the regulated credit use limit for the compliance year — 60%/2023, 70%/2024, 80%/2025, 90%/2026+ — plus a fund payment on the remainder; this scenario: ${creditBlend}` : 'credit-use-limit fields absent from this snapshot — treat as an unbounded market-price comparison, not a regulated blend'})`,
     `- Direct investment: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
     `- CEIP fee: ${feeLine}`,
     `- Net savings / ROI: ${savingsLine}`,

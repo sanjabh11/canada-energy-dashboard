@@ -134,13 +134,14 @@ export function msSinceLanding(): number | null {
  * must never carry raw customer data or filenames.
  */
 export function trackFirstArtifact(artifact: string, props: Record<string, unknown> = {}): void {
+  // Dedupe is per browser session (tab-scoped sessionStorage): a genuinely
+  // new visit may produce a new first artifact. The marker is written after
+  // the emit so a failed emit does not permanently suppress retries.
   if (typeof window !== 'undefined') {
     try {
       if (window.sessionStorage.getItem(FIRST_ARTIFACT_STORAGE_KEY)) return;
-      window.sessionStorage.setItem(FIRST_ARTIFACT_STORAGE_KEY, '1');
     } catch {
-      // sessionStorage unavailable (private mode, test stubs): emit
-      // best-effort rather than silently drop the funnel event.
+      // sessionStorage unreadable — emit best-effort.
     }
   }
   trackEvent('first_artifact', {
@@ -148,6 +149,13 @@ export function trackFirstArtifact(artifact: string, props: Record<string, unkno
     ms_since_landing: msSinceLanding(),
     ...props,
   });
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.setItem(FIRST_ARTIFACT_STORAGE_KEY, '1');
+    } catch {
+      // persistence unavailable — dedupe is best-effort for this session.
+    }
+  }
 }
 
 // Alias for PricingPage.tsx compatibility
