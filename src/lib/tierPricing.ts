@@ -123,6 +123,50 @@ export const TIER_FUND_RATE_MAX_AGE_DAYS = 90;
 /** Market-credit rate freshness window: matches the 30-day market evidence gate. */
 export const TIER_MARKET_RATE_MAX_AGE_DAYS = 30;
 
+/**
+ * TIER credit use limit — the maximum share of a facility's compliance
+ * obligation that may be met with credits (emission offsets, emission
+ * performance credits, sequestration credits). The remainder of the
+ * obligation must be met by a TIER fund payment. The limit rises 10
+ * percentage points per year: 60% (2023), 70% (2024), 80% (2025),
+ * 90% (2026 and later).
+ *
+ * Source: Alberta Environment and Protected Areas, "TIER Compliance
+ * Workshop 2025" (official deck, credit use limit schedule slide):
+ * https://www.alberta.ca/system/files/epa-tier-compliance-workshop-2025.pdf
+ */
+export const TIER_CREDIT_USE_LIMIT_SOURCE_URL =
+  'https://www.alberta.ca/system/files/epa-tier-compliance-workshop-2025.pdf';
+
+export const TIER_CREDIT_USE_LIMIT_SCHEDULE: ReadonlyArray<{
+  fromYear: number;
+  maxCreditShare: number;
+}> = [
+  { fromYear: 2023, maxCreditShare: 0.6 },
+  { fromYear: 2024, maxCreditShare: 0.7 },
+  { fromYear: 2025, maxCreditShare: 0.8 },
+  { fromYear: 2026, maxCreditShare: 0.9 },
+];
+
+/**
+ * Maximum share of a compliance obligation payable with credits for a given
+ * compliance year. Years after the last scheduled step keep the last step
+ * (90% from 2026); years before the first scheduled step clamp to the
+ * earliest entry so savings are never overstated by an assumed 100% credit
+ * coverage.
+ */
+export function getTierCreditUseLimit(complianceYear?: number): number {
+  const year =
+    typeof complianceYear === 'number' && Number.isFinite(complianceYear)
+      ? Math.floor(complianceYear)
+      : new Date().getUTCFullYear();
+  let share = TIER_CREDIT_USE_LIMIT_SCHEDULE[0].maxCreditShare;
+  for (const step of TIER_CREDIT_USE_LIMIT_SCHEDULE) {
+    if (year >= step.fromYear) share = step.maxCreditShare;
+  }
+  return share;
+}
+
 export interface TIERPricingConfig {
   /** TIER fund price in $/tonne (compliance payment to Alberta government) */
   fundPrice: number;
@@ -378,17 +422,25 @@ export function getTIERPricingProvenance(
  */
 export interface CompliancePathwayCosts {
   fundPayment: number;
+  /** Blended cost: credits up to the regulated use limit plus fund payment on the remainder. */
   marketCredits: number;
   arbitrageSavings: number;
   savingsPercentage: number;
+  /** Regulated credit use limit applied (fraction of obligation, e.g. 0.9). */
+  creditUseLimit: number;
 }
 
 export function calculateComplianceCosts(
   benchmarkExceedanceTonnes: number,
   config: TIERPricingConfig = DEFAULT_TIER_PRICING,
+  complianceYear?: number,
 ): CompliancePathwayCosts {
-  const fundPayment = benchmarkExceedanceTonnes * config.fundPrice;
-  const marketCredits = benchmarkExceedanceTonnes * config.marketCreditPrice;
+  const exceedance = Math.max(0, benchmarkExceedanceTonnes);
+  const creditUseLimit = getTierCreditUseLimit(complianceYear);
+  const fundPayment = exceedance * config.fundPrice;
+  const marketCredits =
+    exceedance * creditUseLimit * config.marketCreditPrice +
+    exceedance * (1 - creditUseLimit) * config.fundPrice;
   const arbitrageSavings = fundPayment - marketCredits;
   const savingsPercentage = (arbitrageSavings / fundPayment) * 100;
 
@@ -397,5 +449,6 @@ export function calculateComplianceCosts(
     marketCredits,
     arbitrageSavings,
     savingsPercentage,
+    creditUseLimit,
   };
 }

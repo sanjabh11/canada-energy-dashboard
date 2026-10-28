@@ -43,9 +43,11 @@ export function bootstrapFunnelAttribution(): AttributionContext | null {
   if (typeof window === 'undefined') return null;
 
   const params = new URLSearchParams(window.location.search);
-  const source = params.get('utm_source') || params.get('source') || params.get('oc_source') || undefined;
+  const source =
+    params.get('utm_source') || params.get('source') || params.get('oc_source') || undefined;
   const medium = params.get('utm_medium') || params.get('oc_medium') || undefined;
-  const campaign = params.get('utm_campaign') || params.get('campaign') || params.get('oc_campaign') || undefined;
+  const campaign =
+    params.get('utm_campaign') || params.get('campaign') || params.get('oc_campaign') || undefined;
   const content = params.get('utm_content') || undefined;
   const term = params.get('utm_term') || undefined;
 
@@ -107,6 +109,32 @@ export function trackEvent(event: string, props: Record<string, unknown> = {}): 
     event,
     props: mergedProps,
     at: new Date().toISOString(),
+  });
+}
+
+/**
+ * Milliseconds since the current page load began, used to measure
+ * time-to-artifact from landing. `performance.now()` is navigation-relative,
+ * so this is landing-relative even after client-side route changes.
+ */
+export function msSinceLanding(): number | null {
+  if (typeof performance === 'undefined' || typeof performance.now !== 'function') {
+    return null;
+  }
+  return Math.round(performance.now());
+}
+
+/**
+ * Shared activation event: a visitor produced a downloadable proof artifact.
+ * Fired alongside pack-specific export events so a single Plausible goal can
+ * measure "landing → first artifact" across the product. Props must never
+ * carry raw customer data or filenames.
+ */
+export function trackFirstArtifact(artifact: string, props: Record<string, unknown> = {}): void {
+  trackEvent('first_artifact', {
+    artifact,
+    ms_since_landing: msSinceLanding(),
+    ...props,
   });
 }
 

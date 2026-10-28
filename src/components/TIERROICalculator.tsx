@@ -20,7 +20,7 @@ import {
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
 import { isLeadIntakeEnabled, persistLeadIntake } from '../lib/leadIntake';
-import { trackEvent } from '../lib/analytics';
+import { trackEvent, trackFirstArtifact } from '../lib/analytics';
 import { validateEmail } from '../lib/formValidation';
 import { PrivacyCollectionNotice } from './PrivacyCollectionNotice';
 import {
@@ -400,6 +400,7 @@ export const TIERROICalculator: React.FC = () => {
         ...pdfArtifact,
         onDownload: () => {
           trackEvent('tier_memo_export', { format: 'pdf' });
+          trackFirstArtifact('tier_cfo_memo', { format: 'pdf' });
           downloadPdfArtifact(memoDescriptor);
         },
       },
@@ -407,6 +408,7 @@ export const TIERROICalculator: React.FC = () => {
         ...htmlArtifact,
         onDownload: () => {
           trackEvent('tier_memo_export', { format: 'html' });
+          trackFirstArtifact('tier_cfo_memo', { format: 'html' });
           downloadTextArtifact(
             htmlArtifact,
             renderHtmlProofDocument({ ...memoDescriptor, definition: htmlArtifact }),
@@ -418,6 +420,7 @@ export const TIERROICalculator: React.FC = () => {
         ...appendixArtifact,
         onDownload: () => {
           trackEvent('tier_memo_export', { format: 'appendix-md' });
+          trackFirstArtifact('tier_cfo_memo', { format: 'appendix-md' });
           downloadTextArtifact(appendixArtifact, appendixMarkdown, 'text/markdown;charset=utf-8;');
         },
       },
@@ -425,6 +428,7 @@ export const TIERROICalculator: React.FC = () => {
         ...sourceCurrencyArtifact,
         onDownload: () => {
           trackEvent('tier_memo_export', { format: 'source-currency-md' });
+          trackFirstArtifact('tier_cfo_memo', { format: 'source-currency-md' });
           downloadTextArtifact(
             sourceCurrencyArtifact,
             sourceCurrencyMarkdown,
@@ -760,7 +764,13 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="min-w-0">
                       <div className="text-sm text-emerald-400">Market Credits Pathway</div>
                       <div className="text-xs text-slate-300">
-                        {benchmarkExceedance.toLocaleString()} t × {formatCad(MARKET_PRICE)}/t
+                        {results.pathways.marketCredits.creditEligibleTonnes.toLocaleString()} t ×{' '}
+                        {formatCad(MARKET_PRICE)}/t (credits,{' '}
+                        {Math.round(results.pathways.marketCredits.creditUseLimit * 100)}% use
+                        limit)
+                        {results.pathways.marketCredits.fundRemainderTonnes > 0
+                          ? ` + ${results.pathways.marketCredits.fundRemainderTonnes.toLocaleString()} t fund remainder`
+                          : ''}
                       </div>
                     </div>
                     <div className="min-w-0 text-2xl font-bold text-emerald-400">

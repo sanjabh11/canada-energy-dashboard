@@ -22,7 +22,7 @@
  */
 
 import type { TierRoiResults } from './tierProofPack';
-import { checkRateFreshness } from './tierPricing';
+import { checkRateFreshness, getTierCreditUseLimit } from './tierPricing';
 import type { TierRateFreshness, TierRateProvenance } from './tierPricing';
 
 /** Official Alberta TIER regulation page (Direct Investment Standard status). */
@@ -75,6 +75,11 @@ export interface TierRoiInputs {
    * suppresses positive-savings, ranking, and CTA outputs ('stale_inputs').
    */
   marketCreditProvenance?: TierRateProvenance | null;
+  /**
+   * TIER compliance year used to apply the regulated credit use limit
+   * (60%/2023 rising to 90%/2026+). Defaults to the evaluation year (`asOf`).
+   */
+  complianceYear?: number;
 }
 
 export interface TierRoiOptions {
@@ -183,9 +188,20 @@ export interface TierRoiComputation {
   feeCurrency: typeof CEIP_FEE_CURRENCY;
   /** The disclosed planning FX actually used for CAD-equivalent fee math. */
   usdToCadPlanningRate: number | null;
+  /** Compliance year used for the regulated credit use limit. */
+  complianceYear: number;
   pathways: {
     fundPayment: { costCad: number; priceCadPerTonne: number };
-    marketCredits: { costCad: number; priceCadPerTonne: number };
+    marketCredits: {
+      costCad: number;
+      priceCadPerTonne: number;
+      /** Regulated maximum share of the obligation payable with credits. */
+      creditUseLimit: number;
+      /** Tonnes coverable with credits under the use limit. */
+      creditEligibleTonnes: number;
+      /** Tonnes that must be paid to the TIER fund above the use limit. */
+      fundRemainderTonnes: number;
+    };
     directInvestment: TierDirectInvestmentScenario;
   };
   /** All three pathways, for the UI comparison. */
@@ -252,9 +268,17 @@ const TIER_STALE_RATE_NOTE =
   'freshness window or lacks a dated source. Savings, pathway ranking, ROI, and buyer CTAs ' +
   'are withheld until dated rate evidence is refreshed.';
 
+const TIER_CREDIT_USE_LIMIT_NOTE =
+  'Credits may satisfy at most the regulated credit use limit of the compliance ' +
+  'obligation for the compliance year (60% in 2023, 70% in 2024, 80% in 2025, ' +
+  '90% in 2026 and later); the remainder must be paid to the TIER fund at the ' +
+  'fund price. The market-credits pathway therefore blends credits up to the ' +
+  'limit with a fund payment on the remainder.';
+
 export const TIER_SCENARIO_BOUNDARY_NOTES: string[] = [
   'Values are scenario estimates for planning only — not compliance, legal, tax, or trading advice.',
   TIER_DI_NOTE,
+  TIER_CREDIT_USE_LIMIT_NOTE,
   'CEIP fees are billed in USD; CAD-equivalent figures and net savings are suppressed unless current, sourced USD-to-CAD evidence is provided.',
 ];
 
@@ -338,8 +362,27 @@ export function computeTierRoiScenario(
     isFiniteNumber(inputs.marketCreditPriceCadPerTonne) ? inputs.marketCreditPriceCadPerTonne : 0,
   );
 
+  const complianceYear =
+    isFiniteNumber(inputs.complianceYear ?? Number.NaN) && Number.isInteger(inputs.complianceYear)
+      ? (inputs.complianceYear as number)
+      : asOf.getUTCFullYear();
+
+  // Regulated credit use limit: credits may cover at most `creditUseLimit` of
+  // the obligation; the remainder is owed to the TIER fund regardless. The
+  // market-credits pathway is therefore a blend, never 100% credits.
+  const creditUseLimit = getTierCreditUseLimit(complianceYear);
+  const creditEligibleTonnes = exceedance * creditUseLimit;
+  const fundRemainderTonnes = exceedance - creditEligibleTonnes;
+
   const fundPaymentCad = exceedance * fundPrice;
-  const marketCreditsCad = exceedance * marketPrice;
+  const marketCreditsCad = creditEligibleTonnes * marketPrice + fundRemainderTonnes * fundPrice;
+  const marketCreditsPathway = {
+    costCad: marketCreditsCad,
+    priceCadPerTonne: marketPrice,
+    creditUseLimit,
+    creditEligibleTonnes,
+    fundRemainderTonnes,
+  };
 
   // Direct Investment: no credit rate is assumed. The bounded envelope runs
   // from "investment alone" (if a future Standard credits the full exceedance)
@@ -376,9 +419,10 @@ export function computeTierRoiScenario(
       pathwayCurrency: TIER_PATHWAY_CURRENCY,
       feeCurrency: CEIP_FEE_CURRENCY,
       usdToCadPlanningRate: fx,
+      complianceYear,
       pathways: {
         fundPayment: { costCad: fundPaymentCad, priceCadPerTonne: fundPrice },
-        marketCredits: { costCad: marketCreditsCad, priceCadPerTonne: marketPrice },
+        marketCredits: marketCreditsPathway,
         directInvestment,
       },
       comparison,
@@ -460,9 +504,10 @@ export function computeTierRoiScenario(
     pathwayCurrency: TIER_PATHWAY_CURRENCY,
     feeCurrency: CEIP_FEE_CURRENCY,
     usdToCadPlanningRate: fx,
+    complianceYear,
     pathways: {
       fundPayment: { costCad: fundPaymentCad, priceCadPerTonne: fundPrice },
-      marketCredits: { costCad: marketCreditsCad, priceCadPerTonne: marketPrice },
+      marketCredits: marketCreditsPathway,
       directInvestment,
     },
     comparison,

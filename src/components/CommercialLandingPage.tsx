@@ -119,29 +119,32 @@ export function CommercialLandingPage() {
                   Desk-research hypotheses • buyer validation pending
                 </div>
                 <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-slate-50 md:text-6xl">
-                  Test a focused TIER scenario workflow and a utility forecasting fallback.
+                  Get a source-dated TIER pathway memo, or check your energy CSV for privacy risk —
+                  in minutes.
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-                  CEIP groups ten proposed energy-workflow proof-pack concepts for review. TIER is
-                  the current desk-research pilot hypothesis; utility forecasting is the documented
-                  fallback. Buyer demand, delivery time, pricing, savings, and procurement fit have
-                  not been validated. These concepts are not a sale or a commitment to deliver a
-                  pilot.
+                  CEIP is testing two working proofs for Canadian energy teams: a 3-pathway Alberta
+                  TIER scenario memo for industrial facilities, and a browser-only privacy screen
+                  for messy load data. Everything else stays a labeled research preview. Buyer
+                  demand, delivery time, pricing, savings, and procurement fit have not been
+                  validated. These concepts are not a sale or a commitment to deliver a pilot.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                   <Link
-                    to="/solutions"
+                    to="/roi-calculator"
+                    onClick={() => trackEvent('hero_cta_click', { destination: '/roi-calculator' })}
                     className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
                   >
-                    Review proposed workflows
+                    Build a TIER scenario memo
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
-                    to="/pilot-readiness"
+                    to="/byo-csv-proof"
+                    onClick={() => trackEvent('hero_cta_click', { destination: '/byo-csv-proof' })}
                     className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-slate-50 transition hover:border-emerald-300/40 hover:bg-white/5"
                   >
-                    Check pilot evidence gates
+                    Screen my CSV privately
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -154,6 +157,9 @@ export function CommercialLandingPage() {
               </div>
 
               <div className="grid gap-4 self-start">
+                <div className="text-xs uppercase tracking-[0.24em] text-slate-400">
+                  Research previews — ratings are desk-research hypotheses, not buyer validation
+                </div>
                 {topCommercialWedges.map((wedge) => (
                   <Link
                     key={wedge.id}

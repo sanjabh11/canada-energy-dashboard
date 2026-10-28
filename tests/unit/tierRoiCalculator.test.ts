@@ -34,6 +34,7 @@ const BASE_INPUTS: TierRoiInputs = {
     sourceUrl: 'https://example.test/market',
     maxAgeDays: 30,
   },
+  complianceYear: 2026,
 };
 
 const FIXTURE_FX_FOR_MATH_TESTS = 1.36;
@@ -113,6 +114,43 @@ describe('computeTierRoiScenario — pathway comparison', () => {
   });
 });
 
+describe('computeTierRoiScenario — regulated credit use limit', () => {
+  it('blends credits up to the 90% limit with a fund payment on the remainder (2026)', () => {
+    const result = compute({ complianceYear: 2026 });
+    expect(result.complianceYear).toBe(2026);
+    expect(result.pathways.marketCredits.creditUseLimit).toBe(0.9);
+    expect(result.pathways.marketCredits.creditEligibleTonnes).toBe(18_000);
+    expect(result.pathways.marketCredits.fundRemainderTonnes).toBe(2_000);
+    // 18,000 t × $25 credits + 2,000 t × $95 fund remainder
+    expect(result.pathways.marketCredits.costCad).toBe(640_000);
+    expect(result.grossSavingsCad).toBe(1_900_000 - 640_000);
+  });
+
+  it('applies the 80% limit for the 2025 compliance year', () => {
+    const result = compute({ complianceYear: 2025 });
+    expect(result.pathways.marketCredits.creditUseLimit).toBe(0.8);
+    // 16,000 t × $25 + 4,000 t × $95
+    expect(result.pathways.marketCredits.costCad).toBe(780_000);
+    expect(result.grossSavingsCad).toBe(1_120_000);
+  });
+
+  it('defaults the compliance year to the evaluation year', () => {
+    const result = computeTierRoiScenario(
+      { ...BASE_INPUTS, complianceYear: undefined },
+      FEE_CONFIG_FOR_MATH_TESTS,
+      { asOf: new Date('2025-06-15T00:00:00.000Z') },
+    );
+    expect(result.complianceYear).toBe(2025);
+    expect(result.pathways.marketCredits.creditUseLimit).toBe(0.8);
+  });
+
+  it('returns zero pathway cost for zero exceedance', () => {
+    const result = compute({ benchmarkExceedanceTonnes: 0 });
+    expect(result.pathways.marketCredits.costCad).toBe(0);
+    expect(result.grossSavingsCad).toBe(0);
+  });
+});
+
 describe('TIER pilot-request gate', () => {
   const candidate = {
     pricingEvidenceFresh: true,
@@ -167,9 +205,10 @@ describe('computeTierRoiScenario — fees and ROI suppression', () => {
   });
 
   it('floors net savings at zero when fees exceed modeled savings', () => {
-    // Gross savings: 100 t × (95 - 90) = CAD 500 — far below the USD fee.
+    // Gross savings at the 90% credit use limit: 90 t × $90 + 10 t × $95 = 9,050
+    // vs fund baseline 100 t × $95 = 9,500 → CAD 450 — far below the USD fee.
     const result = compute({ benchmarkExceedanceTonnes: 100, marketCreditPriceCadPerTonne: 90 });
-    expect(result.grossSavingsCad).toBe(500);
+    expect(result.grossSavingsCad).toBe(450);
     expect(result.netSavingsCad).toBe(0);
     expect(result.netSavingsCad).toBeGreaterThanOrEqual(0);
     expect(result.fees.totalUsd).not.toBeNull();
@@ -190,8 +229,8 @@ describe('computeTierRoiScenario — fees and ROI suppression', () => {
     const result = compute();
     expect(result.roiPercent).not.toBeNull();
     expect(result.roiPercent!).toBeGreaterThanOrEqual(0);
-    // sanity: gross = 20,000 × (95-25) = CAD 1.4M; net > 0
-    expect(result.grossSavingsCad).toBe(1_400_000);
+    // sanity: gross = 1.9M fund - (18,000 × $25 + 2,000 × $95) = CAD 1.26M; net > 0
+    expect(result.grossSavingsCad).toBe(1_260_000);
     expect(result.netSavingsCad!).toBeGreaterThan(0);
   });
 });
@@ -245,7 +284,7 @@ describe('currency labeling (audit G11)', () => {
     expect(result.netSavingsCad).toBeNull();
     expect(result.roiPercent).toBeNull();
     // Same-currency pathway figures remain available.
-    expect(result.grossSavingsCad).toBe(1_400_000);
+    expect(result.grossSavingsCad).toBe(1_260_000);
   });
 
   it('does not rank pathways or present ROI from the default configuration without FX evidence', () => {
@@ -300,7 +339,7 @@ describe('boundary notes and proof-pack projection', () => {
     const result = compute();
     const view = toTierRoiResultsView(result);
     expect(view.fundPayment).toBe(1_900_000);
-    expect(view.marketCredits).toBe(500_000);
+    expect(view.marketCredits).toBe(640_000);
     // DI projected at its conservative upper bound, never the attractive end.
     expect(view.directInvestment).toBe(500_000 + 1_900_000);
     // DI can never be exported as the recommended option while undetermined.
@@ -413,7 +452,7 @@ describe('computeTierRoiScenario — rate freshness gate (audit G9a)', () => {
     });
     expect(fresh.ratesStale).toBe(false);
     expect(fresh.recommendation).toEqual({ kind: 'market_credits' });
-    expect(fresh.grossSavingsCad).toBe(1_400_000);
+    expect(fresh.grossSavingsCad).toBe(1_260_000);
 
     const aged = computeTierRoiScenario(inputs, feeAt(new Date('2026-07-05T00:00:00.000Z')), {
       asOf: new Date('2026-07-05T00:00:00.000Z'), // market rate now >30 days old

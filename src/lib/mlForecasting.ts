@@ -43,6 +43,7 @@ import {
   type WeatherFeatureConfig,
   DEFAULT_WEATHER_FEATURE_CONFIG,
 } from './weatherFeatures';
+import { getTierCreditUseLimit } from './tierPricing';
 import {
   AdwinDriftDetector,
   createDemandForecastDriftDetector,
@@ -579,6 +580,8 @@ export interface TierScenarioInput {
   };
   discountRate: number;
   asOfDate?: string;
+  /** TIER compliance year for the regulated credit use limit; defaults to the asOfDate year. */
+  complianceYear?: number;
 }
 
 export interface TierScenarioResult {
@@ -586,7 +589,13 @@ export interface TierScenarioResult {
   benchmarkExceedanceTonnes: number;
   pathways: {
     fundPayment: { costCad: number; priceCadPerTonne: number };
-    marketCredits: { costCad: number; priceCadPerTonne: number };
+    marketCredits: {
+      costCad: number;
+      priceCadPerTonne: number;
+      creditUseLimit: number;
+      creditEligibleTonnes: number;
+      fundRemainderTonnes: number;
+    };
     directInvestment: {
       costCad: number;
       capexCad: number;
@@ -610,8 +619,20 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
   const creditedTonnes = fundPrice > 0 ? Math.min(exceedance, (capex * creditRate) / fundPrice) : 0;
   const residualTonnes = Math.max(0, exceedance - creditedTonnes);
 
+  const complianceYear =
+    typeof input.complianceYear === 'number' && Number.isInteger(input.complianceYear)
+      ? input.complianceYear
+      : new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear();
+  // Credits may cover at most the regulated use limit of the obligation; the
+  // remainder is owed to the TIER fund regardless of market price.
+  const creditUseLimit = getTierCreditUseLimit(complianceYear);
+  const creditEligibleTonnes = exceedance * creditUseLimit;
+  const fundRemainderTonnes = exceedance - creditEligibleTonnes;
+
   const fundPaymentCost = round(exceedance * fundPrice);
-  const marketCreditsCost = round(exceedance * marketPrice);
+  const marketCreditsCost = round(
+    creditEligibleTonnes * marketPrice + fundRemainderTonnes * fundPrice,
+  );
   const directInvestmentCost = round(capex + residualTonnes * fundPrice);
 
   const candidates = [
@@ -637,7 +658,13 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
     benchmarkExceedanceTonnes: exceedance,
     pathways: {
       fundPayment: { costCad: fundPaymentCost, priceCadPerTonne: fundPrice },
-      marketCredits: { costCad: marketCreditsCost, priceCadPerTonne: marketPrice },
+      marketCredits: {
+        costCad: marketCreditsCost,
+        priceCadPerTonne: marketPrice,
+        creditUseLimit,
+        creditEligibleTonnes: round(creditEligibleTonnes, 3),
+        fundRemainderTonnes: round(fundRemainderTonnes, 3),
+      },
       directInvestment: {
         costCad: directInvestmentCost,
         capexCad: capex,
@@ -661,7 +688,7 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
       ],
       isFallback: false,
       methodology:
-        'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
+        'Deterministic compliance pathway cost comparison; market credits blend credits up to the regulated credit use limit with a fund payment on the remainder; estimates are not binding financial advice.',
       warnings,
       generatedAt: `${asOfDate}T00:00:00.000Z`,
       claimLabel: 'estimated',

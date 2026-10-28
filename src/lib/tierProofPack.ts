@@ -398,7 +398,7 @@ export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {
     '',
     '## Scenario pathway values (not recommendations)',
     `- Fund payment: CAD ${snapshot.results.fundPayment.toLocaleString()}`,
-    `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()}`,
+    `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()} (blended: credits up to the regulated credit use limit for the compliance year — 60%/2023, 70%/2024, 80%/2025, 90%/2026+ — plus a fund payment on the remainder)`,
     `- Direct investment: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
     `- CEIP fee: ${feeLine}`,
     `- Net savings / ROI: ${savingsLine}`,

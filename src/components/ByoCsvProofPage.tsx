@@ -16,6 +16,7 @@ import {
   byoCsvProofReportToMarkdown,
   type ByoCsvColumnProfile,
 } from '../lib/byoCsvProofGenerator';
+import { trackEvent, trackFirstArtifact } from '../lib/analytics';
 
 const CLEAN_SAMPLE = [
   'timestamp,feeder_id,demand_mw,temperature_c',
@@ -90,6 +91,9 @@ export function ByoCsvProofPage() {
       setSourceLabel(file.name);
       setRoute('/byo-csv-proof');
       setFileStatus(`${file.name} loaded locally (${formatBytes(file.size)})`);
+      // Byte size only — filenames can identify the customer and must never
+      // leave the browser.
+      trackEvent('byo_csv_upload', { file_bytes: file.size });
     } catch {
       setFileError('Unable to read the selected local file.');
       setFileStatus('File read failed');
@@ -101,6 +105,8 @@ export function ByoCsvProofPage() {
   }
 
   function downloadMarkdownReport() {
+    trackEvent('byo_csv_report_download');
+    trackFirstArtifact('byo_csv_proof_report');
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -295,6 +301,7 @@ export function ByoCsvProofPage() {
                       setSourceLabel('buyer-redacted-load.csv');
                       setRoute('/byo-csv-proof');
                       setCsvText(CLEAN_SAMPLE);
+                      trackEvent('byo_csv_sample_run', { sample: 'redacted' });
                     }}
                     className="inline-flex items-center gap-2 rounded-lg border border-emerald-300/30 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200"
                   >
@@ -310,6 +317,7 @@ export function ByoCsvProofPage() {
                       setSourceLabel('raw-customer-load.csv');
                       setRoute('/byo-csv-proof');
                       setCsvText(IDENTIFIER_RISK_SAMPLE);
+                      trackEvent('byo_csv_sample_run', { sample: 'identifier_risk' });
                     }}
                     className="inline-flex items-center gap-2 rounded-lg border border-amber-300/30 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200"
                   >
@@ -325,6 +333,7 @@ export function ByoCsvProofPage() {
                       setSourceLabel('formula-risk-load.csv');
                       setRoute('/byo-csv-proof');
                       setCsvText(FORMULA_RISK_SAMPLE);
+                      trackEvent('byo_csv_sample_run', { sample: 'formula_risk' });
                     }}
                     className="inline-flex items-center gap-2 rounded-lg border border-amber-300/30 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200"
                   >
