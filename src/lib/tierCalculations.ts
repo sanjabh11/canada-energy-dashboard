@@ -363,7 +363,9 @@ export function computeTierRoiScenario(
   );
 
   const complianceYear =
-    isFiniteNumber(inputs.complianceYear ?? Number.NaN) && Number.isInteger(inputs.complianceYear)
+    isFiniteNumber(inputs.complianceYear ?? Number.NaN) &&
+    Number.isInteger(inputs.complianceYear) &&
+    (inputs.complianceYear as number) >= 2000
       ? (inputs.complianceYear as number)
       : asOf.getUTCFullYear();
 

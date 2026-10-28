@@ -204,7 +204,9 @@ export const TIERROICalculator: React.FC = () => {
   // blank or malformed values fall back to the evaluation year in the engine.
   const trimmedComplianceYear = complianceYear.trim();
   const parsedComplianceYear =
-    trimmedComplianceYear !== '' && Number.isInteger(Number(trimmedComplianceYear))
+    trimmedComplianceYear !== '' &&
+    Number.isInteger(Number(trimmedComplianceYear)) &&
+    Number(trimmedComplianceYear) >= 2000
       ? Number(trimmedComplianceYear)
       : undefined;
 

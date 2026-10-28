@@ -144,9 +144,26 @@ function getTierCreditUseLimit(complianceYear?: number): number {
   return share;
 }
 
+/**
+ * Normalize a caller-supplied compliance year. Accepts integers >= 2000 and
+ * clean four-digit strings (coerced); anything else — 0, 1999, malformed
+ * strings, non-integers — falls back to `fallbackYear` so a malformed value
+ * can never silently price the wrong schedule step. Mirrors the local
+ * normalizer in src/lib/mlForecasting.ts — keep in sync.
+ */
+function normalizeTierComplianceYear(raw: unknown, fallbackYear: number): number {
+  const candidate =
+    typeof raw === 'number'
+      ? raw
+      : typeof raw === 'string' && /^\d{4}$/.test(raw.trim())
+        ? Number(raw.trim())
+        : Number.NaN;
+  return Number.isInteger(candidate) && candidate >= 2000 ? candidate : fallbackYear;
+}
+
 export function calculateTierScenario(input: any) {
-  const asOfDate = input.asOfDate ?? new Date().toISOString().slice(0, 10);
-  const assumptions = input.creditAssumptions ?? {};
+  const asOfDate = input.asOfDate ?? input.as_of_date ?? new Date().toISOString().slice(0, 10);
+  const assumptions = input.creditAssumptions ?? input.credit_assumptions ?? {};
   const exceedance = Math.max(0, Number(input.benchmarkExceedanceTonnes ?? input.benchmark_exceedance_tonnes ?? 0));
   const capex = Math.max(0, Number(input.directInvestmentCapexCad ?? input.direct_investment_capex_cad ?? 0));
   const fundPrice = Math.max(0, Number(assumptions.fundPriceCadPerTonne ?? assumptions.fund_price_cad_per_tonne ?? 95));
@@ -156,11 +173,10 @@ export function calculateTierScenario(input: any) {
   const creditedTonnes = fundPrice > 0 ? Math.min(exceedance, (capex * creditRate) / fundPrice) : 0;
   const residualTonnes = Math.max(0, exceedance - creditedTonnes);
 
-  const complianceYearRaw = input.complianceYear ?? input.compliance_year;
-  const complianceYear =
-    typeof complianceYearRaw === 'number' && Number.isInteger(complianceYearRaw)
-      ? complianceYearRaw
-      : new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear();
+  const complianceYear = normalizeTierComplianceYear(
+    input.complianceYear ?? input.compliance_year,
+    new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear(),
+  );
   const creditUseLimit = getTierCreditUseLimit(complianceYear);
   const creditEligibleTonnes = exceedance * creditUseLimit;
   const fundRemainderTonnes = exceedance - creditEligibleTonnes;

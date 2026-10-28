@@ -491,6 +491,23 @@ function generateHorizonPointForecast(
   return forecast;
 }
 
+/**
+ * Normalize a caller-supplied compliance year. Accepts integers >= 2000 and
+ * clean four-digit strings (coerced); anything else falls back to
+ * `fallbackYear` so a malformed value can never silently price the wrong
+ * schedule step. Mirrors the Edge normalizer in
+ * supabase/functions/_shared/mlForecasting.ts — keep in sync.
+ */
+function normalizeTierComplianceYear(raw: unknown, fallbackYear: number): number {
+  const candidate =
+    typeof raw === 'number'
+      ? raw
+      : typeof raw === 'string' && /^\d{4}$/.test(raw.trim())
+        ? Number(raw.trim())
+        : Number.NaN;
+  return Number.isInteger(candidate) && candidate >= 2000 ? candidate : fallbackYear;
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function clamp(value: number, min = 0, max = 1): number {
@@ -619,10 +636,10 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
   const creditedTonnes = fundPrice > 0 ? Math.min(exceedance, (capex * creditRate) / fundPrice) : 0;
   const residualTonnes = Math.max(0, exceedance - creditedTonnes);
 
-  const complianceYear =
-    typeof input.complianceYear === 'number' && Number.isInteger(input.complianceYear)
-      ? input.complianceYear
-      : new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear();
+  const complianceYear = normalizeTierComplianceYear(
+    input.complianceYear,
+    new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear(),
+  );
   // Credits may cover at most the regulated use limit of the obligation; the
   // remainder is owed to the TIER fund regardless of market price.
   const creditUseLimit = getTierCreditUseLimit(complianceYear);

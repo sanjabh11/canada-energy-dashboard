@@ -190,15 +190,26 @@ function buildArtifact(
  * snapshots still render without the detail.
  */
 function creditBlendDetail(results: TierRoiResults): string {
+  const { creditUseLimit, creditEligibleTonnes, fundRemainderTonnes } = results;
   if (
-    results.creditUseLimit == null ||
-    results.creditEligibleTonnes == null ||
-    results.fundRemainderTonnes == null
+    creditUseLimit == null ||
+    creditEligibleTonnes == null ||
+    fundRemainderTonnes == null ||
+    !Number.isFinite(creditUseLimit) ||
+    creditUseLimit <= 0 ||
+    creditUseLimit > 1 ||
+    !Number.isFinite(creditEligibleTonnes) ||
+    creditEligibleTonnes < 0 ||
+    !Number.isFinite(fundRemainderTonnes) ||
+    fundRemainderTonnes < 0
   ) {
     return '';
   }
-  const pct = Math.round(results.creditUseLimit * 100);
-  const year = results.complianceYear ?? 'current';
+  const pct = Math.round(creditUseLimit * 100);
+  const year =
+    Number.isInteger(results.complianceYear) && (results.complianceYear as number) >= 2000
+      ? results.complianceYear
+      : 'current';
   const eligible = Math.round(results.creditEligibleTonnes).toLocaleString();
   const remainder = Math.round(results.fundRemainderTonnes).toLocaleString();
   return `${eligible} t credits (${pct}% ${year} compliance-year use limit) + ${remainder} t TIER fund remainder`;
