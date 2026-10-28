@@ -559,6 +559,8 @@ export function formatTierAmount(value: number, currency: 'CAD' | 'USD'): string
  * - `bestOption` maps `bestDeterminedPathway`: 'market_credits' | 'fund_payment'
  *   | 'none'. 'direct_investment' is deliberately never produced until the
  *   current Alberta Standard status and buyer eligibility are verified.
+ * - Credit-limit fields pass through so exported memo artifacts can explain
+ *   the credits/fund blend behind the market-credits figure.
  */
 export function toTierRoiResultsView(computation: TierRoiComputation): TierRoiResults {
   return {
@@ -572,5 +574,9 @@ export function toTierRoiResultsView(computation: TierRoiComputation): TierRoiRe
       computation.recommendation.kind === 'none'
         ? 'none'
         : (computation.bestDeterminedPathway ?? 'none'),
+    creditUseLimit: computation.pathways.marketCredits.creditUseLimit,
+    complianceYear: computation.complianceYear,
+    creditEligibleTonnes: computation.pathways.marketCredits.creditEligibleTonnes,
+    fundRemainderTonnes: computation.pathways.marketCredits.fundRemainderTonnes,
   };
 }

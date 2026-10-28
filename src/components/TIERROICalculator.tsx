@@ -200,6 +200,14 @@ export const TIERROICalculator: React.FC = () => {
     setDirectInvestCapex(DEFAULT_SCENARIO_INPUTS.directInvestCapex);
   };
 
+  // Optional compliance-year input drives the regulated credit use limit;
+  // blank or malformed values fall back to the evaluation year in the engine.
+  const trimmedComplianceYear = complianceYear.trim();
+  const parsedComplianceYear =
+    trimmedComplianceYear !== '' && Number.isInteger(Number(trimmedComplianceYear))
+      ? Number(trimmedComplianceYear)
+      : undefined;
+
   // Pathway economics live in src/lib/tierCalculations.ts (pure, unit-tested).
   // Direct Investment remains undetermined until the current Alberta Standard
   // status is verified; no credit conversion rate is assumed.
@@ -223,6 +231,7 @@ export const TIERROICalculator: React.FC = () => {
               maxAgeDays: TIER_MARKET_RATE_MAX_AGE_DAYS,
             }
           : tierPricing.marketCreditProvenance,
+        complianceYear: parsedComplianceYear,
       }),
     [
       annualEmissions,
@@ -233,8 +242,15 @@ export const TIERROICalculator: React.FC = () => {
       tierPricing.fundPriceProvenance,
       tierPricing.marketCreditProvenance,
       liveTierMarketRateSource,
+      parsedComplianceYear,
     ],
   );
+
+  // The headline per-tonne spread must respect the regulated credit use
+  // limit: only that share of the obligation prices at the market rate; the
+  // remainder pays the fund price, so the effective blended spread is lower.
+  const creditUseLimit = results.pathways.marketCredits.creditUseLimit;
+  const effectiveSpreadPerTonne = creditUseLimit * ARBITRAGE_SPREAD;
 
   useEffect(() => {
     let cancelled = false;
@@ -242,6 +258,7 @@ export const TIERROICalculator: React.FC = () => {
       annualEmissionsTonnes: annualEmissions,
       benchmarkExceedanceTonnes: benchmarkExceedance,
       directInvestmentCapexCad: directInvestCapex,
+      complianceYear: parsedComplianceYear,
       creditAssumptions: {
         fundPriceCadPerTonne: FUND_PRICE,
         marketCreditPriceCadPerTonne: MARKET_PRICE,
@@ -263,6 +280,7 @@ export const TIERROICalculator: React.FC = () => {
     annualEmissions,
     benchmarkExceedance,
     directInvestCapex,
+    parsedComplianceYear,
     FUND_PRICE,
     MARKET_PRICE,
     tierPricing.lastVerifiedAt,
@@ -351,7 +369,7 @@ export const TIERROICalculator: React.FC = () => {
               annual_emissions: annualEmissions,
               benchmark_exceedance: benchmarkExceedance,
               direct_invest_capex: directInvestCapex,
-              compliance_year: complianceYear ? Number(complianceYear) : undefined,
+              compliance_year: parsedComplianceYear,
             }
           : {}),
       },
@@ -659,6 +677,27 @@ export const TIERROICalculator: React.FC = () => {
                     verified.
                   </p>
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="tier-compliance-year"
+                    className="block text-sm text-slate-300 mb-2"
+                  >
+                    Compliance Year (optional)
+                  </label>
+                  <input
+                    id="tier-compliance-year"
+                    type="number"
+                    value={complianceYear}
+                    onChange={(e) => setComplianceYear(e.target.value)}
+                    placeholder={String(new Date().getFullYear())}
+                    className="w-full px-4 py-3 bg-slate-800/80 border border-slate-600 rounded-lg text-slate-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <p className="text-sm text-slate-300 mt-1">
+                    Sets the regulated credit use limit ({Math.round(creditUseLimit * 100)}% for{' '}
+                    {results.complianceYear}). Blank defaults to the current year.
+                  </p>
+                </div>
               </div>
 
               <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
@@ -698,7 +737,7 @@ export const TIERROICalculator: React.FC = () => {
                   <span className="text-sm bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">
                     {pricingFreshnessGate.blocksStrongSavingsClaim
                       ? 'CAD spread withheld until pricing evidence is current and validated'
-                      : `CAD ${ARBITRAGE_SPREAD}/tonne scenario spread under current inputs`}
+                      : `CAD ${effectiveSpreadPerTonne.toFixed(0)}/t effective spread after ${Math.round(creditUseLimit * 100)}% credit-use limit`}
                   </span>
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -764,12 +803,14 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="min-w-0">
                       <div className="text-sm text-emerald-400">Market Credits Pathway</div>
                       <div className="text-xs text-slate-300">
-                        {results.pathways.marketCredits.creditEligibleTonnes.toLocaleString()} t ×{' '}
-                        {formatCad(MARKET_PRICE)}/t (credits,{' '}
+                        {Math.round(
+                          results.pathways.marketCredits.creditEligibleTonnes,
+                        ).toLocaleString()}{' '}
+                        t × {formatCad(MARKET_PRICE)}/t (credits,{' '}
                         {Math.round(results.pathways.marketCredits.creditUseLimit * 100)}% use
-                        limit)
+                        limit, {results.complianceYear} year)
                         {results.pathways.marketCredits.fundRemainderTonnes > 0
-                          ? ` + ${results.pathways.marketCredits.fundRemainderTonnes.toLocaleString()} t fund remainder`
+                          ? ` + ${Math.round(results.pathways.marketCredits.fundRemainderTonnes).toLocaleString()} t fund remainder`
                           : ''}
                       </div>
                     </div>
@@ -1085,24 +1126,10 @@ export const TIERROICalculator: React.FC = () => {
                     placeholder="John Smith"
                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3"
                   />
-                  <label
-                    htmlFor="tier-compliance-year"
-                    className="block text-sm text-slate-300 mb-1"
-                  >
-                    Compliance Year
-                  </label>
-                  <input
-                    id="tier-compliance-year"
-                    type="text"
-                    value={complianceYear}
-                    onChange={(e) => setComplianceYear(e.target.value)}
-                    placeholder="e.g. 2026"
-                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-50 placeholder-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3"
-                  />
                   <p className="text-xs text-slate-300">
-                    Your facility emissions ({annualEmissions.toLocaleString()} tCO₂e) and benchmark
-                    exceedance ({benchmarkExceedance.toLocaleString()} tCO₂e) will be included in
-                    the pilot request.
+                    Your facility emissions ({annualEmissions.toLocaleString()} tCO₂e), benchmark
+                    exceedance ({benchmarkExceedance.toLocaleString()} tCO₂e), and compliance year (
+                    {results.complianceYear}) will be included in the pilot request.
                   </p>
                 </div>
               )}

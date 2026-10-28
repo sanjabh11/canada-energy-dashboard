@@ -23,6 +23,7 @@ declare global {
 
 const ATTRIBUTION_STORAGE_KEY = 'ceip_funnel_attribution';
 const EVENT_LOG_STORAGE_KEY = 'ceip_funnel_events';
+const FIRST_ARTIFACT_STORAGE_KEY = 'ceip_first_artifact_fired';
 const MAX_STORED_EVENTS = 250;
 
 function safeParse<T>(raw: string | null, fallback: T): T {
@@ -127,10 +128,21 @@ export function msSinceLanding(): number | null {
 /**
  * Shared activation event: a visitor produced a downloadable proof artifact.
  * Fired alongside pack-specific export events so a single Plausible goal can
- * measure "landing → first artifact" across the product. Props must never
- * carry raw customer data or filenames.
+ * measure "landing → first artifact" across the product. Emitted at most once
+ * per browser session — repeated artifact downloads still fire their
+ * pack-specific export events but must not double-count activation. Props
+ * must never carry raw customer data or filenames.
  */
 export function trackFirstArtifact(artifact: string, props: Record<string, unknown> = {}): void {
+  if (typeof window !== 'undefined') {
+    try {
+      if (window.sessionStorage.getItem(FIRST_ARTIFACT_STORAGE_KEY)) return;
+      window.sessionStorage.setItem(FIRST_ARTIFACT_STORAGE_KEY, '1');
+    } catch {
+      // sessionStorage unavailable (private mode, test stubs): emit
+      // best-effort rather than silently drop the funnel event.
+    }
+  }
   trackEvent('first_artifact', {
     artifact,
     ms_since_landing: msSinceLanding(),

@@ -55,6 +55,29 @@ describe('trackFirstArtifact — shared activation event', () => {
     expect(props.sample).toBe('identifier_risk');
     expect(props.artifact).toBe('byo_csv_proof_report');
   });
+
+  it('emits at most once per browser session', () => {
+    const plausible = vi.fn();
+    const sessionStore = new Map<string, string>();
+    vi.stubGlobal('window', {
+      plausible,
+      sessionStorage: {
+        getItem: (key: string) => sessionStore.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          sessionStore.set(key, value);
+        },
+      },
+    });
+
+    trackFirstArtifact('tier_cfo_memo', { format: 'pdf' });
+    trackFirstArtifact('tier_cfo_memo', { format: 'html' });
+    trackFirstArtifact('byo_csv_proof_report');
+
+    expect(plausible).toHaveBeenCalledTimes(1);
+    expect(plausible.mock.calls[0][0]).toBe('first_artifact');
+    const log = getFunnelEventLog();
+    expect(log.filter((record) => record.event === 'first_artifact').length).toBe(1);
+  });
 });
 
 describe('msSinceLanding', () => {

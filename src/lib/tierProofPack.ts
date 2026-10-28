@@ -14,6 +14,14 @@ export interface TierRoiResults {
   netSavings: number | null;
   roiPercent: number | null;
   bestOption: 'market_credits' | 'direct_investment' | 'fund_payment' | 'none';
+  /** Regulated credit use limit applied to the market-credits pathway (0–1). */
+  creditUseLimit?: number;
+  /** Compliance year the credit use limit was evaluated for. */
+  complianceYear?: number;
+  /** Tonnes that may be covered by credits under the use limit. */
+  creditEligibleTonnes?: number;
+  /** Tonnes owed to the TIER fund above the credit use limit. */
+  fundRemainderTonnes?: number;
 }
 
 export interface TierProofSnapshot {
@@ -176,6 +184,26 @@ function buildArtifact(
   };
 }
 
+/**
+ * Compact description of the credit/fund blend applied to the market-credits
+ * pathway. Empty when the snapshot predates credit-limit plumbing, so older
+ * snapshots still render without the detail.
+ */
+function creditBlendDetail(results: TierRoiResults): string {
+  if (
+    results.creditUseLimit == null ||
+    results.creditEligibleTonnes == null ||
+    results.fundRemainderTonnes == null
+  ) {
+    return '';
+  }
+  const pct = Math.round(results.creditUseLimit * 100);
+  const year = results.complianceYear ?? 'current';
+  const eligible = Math.round(results.creditEligibleTonnes).toLocaleString();
+  const remainder = Math.round(results.fundRemainderTonnes).toLocaleString();
+  return `${eligible} t credits (${pct}% ${year} compliance-year use limit) + ${remainder} t TIER fund remainder`;
+}
+
 export function buildTierAssumptions(snapshot: TierProofSnapshot): string[] {
   const headlineSchedule = snapshot.pricing.headlinePriceSchedule
     .map(({ year, priceCadPerTonne }) => `${year}: CAD ${priceCadPerTonne}/t`)
@@ -187,6 +215,7 @@ export function buildTierAssumptions(snapshot: TierProofSnapshot): string[] {
   return [
     `Fund price basis is CAD ${snapshot.pricing.fundPrice}/t effective ${snapshot.pricing.effectiveDate}.`,
     `Market credit pricing is ${snapshot.liveTierMarketRateSource ? 'source-dated' : 'fallback'} at CAD ${snapshot.marketPrice}/t; the memo does not claim real-time pricing.`,
+    'Credits may satisfy at most the regulated credit use limit of the compliance-year obligation (60% in 2023, 70% in 2024, 80% in 2025, 90% in 2026 and later); the remainder is paid to the TIER fund at the fund price. The market-credits pathway blends credits up to the limit with a fund payment on the remainder.',
     `Direct investment credit treatment is undetermined because the current publication status of the Alberta Direct Investment Standard has not been verified. The memo shows a bounded cost range and never presents it as eligible. The Canada–Alberta agreement limits eligible investment to 50% of eligible capital and up to 50% of attributable operating costs net of public support.`,
     `Official headline price schedule carried for scenario context: ${headlineSchedule}.`,
     `Minimum transfer-price floor schedule begins in 2030 for future-year planning context: ${priceFloorSchedule}.`,
@@ -252,6 +281,7 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
     !pricingGate.blocksStrongSavingsClaim &&
     (snapshot.results.bestOption === 'market_credits' ||
       snapshot.results.bestOption === 'fund_payment');
+  const creditBlend = creditBlendDetail(snapshot.results);
   const feeLine = pricingGate.blocksStrongSavingsClaim
     ? 'CEIP success fee and CAD-equivalent amounts withheld pending current pricing and sourced FX evidence'
     : snapshot.results.ceipFee === null
@@ -289,7 +319,7 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
         kind: 'bullet_list',
         body: [
           `Fund payment: CAD ${snapshot.results.fundPayment.toLocaleString()}`,
-          `Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()}`,
+          `Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()}${creditBlend ? ` (${creditBlend})` : ''}`,
           `Direct investment pathway: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
           feeLine,
           savingsLine,
@@ -393,12 +423,13 @@ export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {
     snapshot.results.roiPercent === null
       ? 'withheld pending current pricing and sourced FX evidence'
       : `CAD ${snapshot.results.netSavings.toLocaleString()} / ${snapshot.results.roiPercent.toFixed(0)}%`;
+  const creditBlend = creditBlendDetail(snapshot.results);
   return [
     '# TIER scenario appendix',
     '',
     '## Scenario pathway values (not recommendations)',
     `- Fund payment: CAD ${snapshot.results.fundPayment.toLocaleString()}`,
-    `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()} (blended: credits up to the regulated credit use limit for the compliance year — 60%/2023, 70%/2024, 80%/2025, 90%/2026+ — plus a fund payment on the remainder)`,
+    `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()} (blended: credits up to the regulated credit use limit for the compliance year — 60%/2023, 70%/2024, 80%/2025, 90%/2026+ — plus a fund payment on the remainder${creditBlend ? `; this scenario: ${creditBlend}` : ''})`,
     `- Direct investment: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
     `- CEIP fee: ${feeLine}`,
     `- Net savings / ROI: ${savingsLine}`,
