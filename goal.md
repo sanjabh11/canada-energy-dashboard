@@ -6,9 +6,14 @@
 
 **Sprint branch:** `codex/product-value-spine-2026-11-27`
 
-**Proof layer:** local implementation plus an exact-head CI receipt whose
-required verification jobs are green. The workflow's overall conclusion still
-includes the designed stale-document `evidence-binding` failure; hosted,
+**bound HEAD `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` — CI run
+> `45984013531`**
+
+**Proof layer:** local implementation plus exact-head CI verification. The
+required verification jobs (`lint-typecheck`, `test`, and `build-and-smoke`)
+are green for this bound source. The workflow conclusion is failure only
+because the pre-rebind documents produced the designed stale-document
+`evidence-binding` signal; this docs commit is the rebind. Hosted,
 owner-approved, and buyer-validated evidence remain unclaimed.
 
 **Excluded local artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
@@ -28,9 +33,10 @@ add the non-validated CAD pilot/white-label catalog and zero-backend inquiry CTA
 refresh TIER provenance conservatively; update MCCAC and procurement language;
 and synchronize the experiment registry to 13 designed / 0 executed.
 
-**Push status:** owner-approved branch push completed. The workflow evidence
-handoff fix is exact-head verified for the required jobs below. No production
-deploy or hosted mutation was performed.
+**Push status:** owner-approved branch push completed for code commit
+`5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47`. No production deploy or hosted
+mutation was performed. The docs-only rebind and PDF are the next evidence
+commit; a fresh run must make `evidence-binding` green.
 
 ## Product-value sprint local verification — 2026-11-27
 
@@ -43,24 +49,49 @@ legal, or buyer evidence.
 - **Code and build:** `tsc -b` passed; lint passed with 0 errors and 1,696
   warnings (below the 1,742 baseline); lint-baseline passed; production build
   passed.
-- **Focused tests:** the expanded product/pricing/Whop/TIER/positioning slice
-  passed 105/105 tests; wedge prototype browser tests passed 16/16 in Chromium.
+- **Focused tests:** the expanded product/pricing/Whop/TIER/positioning and
+  unit-aware proof slice passed 132/132 tests; wedge prototype browser tests
+  passed 16/16 in Chromium.
 - **Product-value smoke:** the browser-local three-step workflow passed 2/2
   Chromium tests, including sample load, privacy/schema blocking, printable
   output, JSON/CSV downloads, no raw CSV request body, and no console/page
   errors.
-- **Sample artifact:** `/tmp/ceip-product-value-sprint/535d7e6/forecast-benchmark-appendix.pdf`
-  is a 12,575-byte PDF beginning with `%PDF-`; SHA-256 is
-  `583a323b766efe44064337e206584a6d25c658b5c0ee37f0fb9d29460c263e02`.
+- **Sample artifact:** `.positioning-audit/artifacts/forecast-benchmark-appendix.pdf`
+  is a non-empty PDF beginning with `%PDF-`; SHA-256 is
+  `ddbe499e56b64241fd97644b2693f169f145bf827c9ac3c2b3bde81577bb0e22`.
+- **Timestamp policy:** local-clock `kWh`/`kW` timestamps are accepted with a
+  visible `timezone_ambiguous` warning by default and are rejected by the
+  explicit `strictTimezone` option. Date-only, duplicate, non-monotonic,
+  irregular, negative, and non-finite energy rows remain blocked.
 - **Scope guard:** the sprint diff from checkpoint `535d7e6` contains no changes
   under `supabase/`, `src/components/whop/`, or `.github/workflows/`.
 - **Excluded artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
   `schema.sql` remain untracked and were not staged. The pushed code receipt is
-  `ab8665aa80784ddc607e189a14b91e6971c24360`.
+  `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47`.
 
-## Exact-head CI receipt — 2026-11-27
+## Exact-head CI receipt — 2026-11-27 (code commit `5f26fa9`)
 
-The exact-head run for code commit `ab8665aa80784ddc607e189a14b91e6971c24360`
+The exact-head [run 45984013531](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45984013531)
+verified the code commit. Its required verification jobs are green; the
+workflow conclusion is failure only because the pre-rebind goal/mission
+documents named an older receipt.
+
+| Job | Conclusion | Evidence |
+| --- | --- | --- |
+| `lint-typecheck` | success | typecheck, lint, dependency, security, claim and positioning gates |
+| `test` | success | serial unit tests, coverage and critical-path floors |
+| `build-and-smoke` | success | build, five-project browser suites, WCAG/manual-assist and completeness |
+| `evidence-binding` | failure | expected stale-document signal before this rebind |
+
+CI evidence artifact: `15191817955`, digest
+`sha256:14900d9e218584c3fe31dadb8f324e71aa1c2ab56a7d56a9ee1889b871b01e86`.
+Coverage artifact: `15191335629`, digest
+`sha256:1a3bbdc5caf6d0769ba518f727fff7771802482f7edafe9681a7c799edf7be9c`.
+The PR produced no Netlify Deploy Preview in this run.
+
+## Prior exact-head CI receipt — 2026-11-27
+
+The earlier exact-head run for code commit `ab8665aa80784ddc607e189a14b91e6971c24360`
 was [run 45968420427](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45968420427)
 and concluded **failure**. This is retained as the authoritative receipt for
 that commit; it must not be described as an all-green run.

@@ -1,17 +1,17 @@
 # CEIP Fable 5 Controlled-Pilot Mission
 
-## Authoritative update — 2026-10-27
+## Authoritative update — 2026-11-27 (Product-Value Sprint)
 
-**bound HEAD `8d6096a45ffa08e86519ef24335aee79c6603047` — CI run
-> `40462474909`**
+**bound HEAD `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` — CI run
+> `45984013531`**
 
-The exact-head run is green for `lint-typecheck`, `test`, and `build-and-smoke`. The `evidence-binding` job was red only because the prior documents named an older receipt; this update is the evidence-only rebind. GitHub artifact `12715637536` (`ci-evidence-7ba2344931812b205125d554d12dca4e5eb95345`) reports digest `sha256:33a936157c113df8b6d417779c3a57903fa8545ea22bb325c869310126512da2`. The test job reports 190/190 files and 1,382/1,382 tests, with critical-path coverage floors successful. Build-and-smoke completed its build, all configured browser/a11y/manual-assist steps, completeness check and artifact upload. A local ZIP byte rehash is not claimed because the approved network guard blocked the download path. These results establish repository/CI proof only; replacement-project staging, owner approvals, manual WCAG, deployed performance and buyer validation remain STOP. The dirty local overlay is not part of this CI receipt.
+The exact-head run is green for `lint-typecheck`, `test`, and `build-and-smoke`. The `evidence-binding` job was red only because the prior documents named an older receipt; this document update is the evidence-only rebind. GitHub artifact `15191817955` reports digest `sha256:14900d9e218584c3fe31dadb8f324e71aa1c2ab56a7d56a9ee1889b871b01e86`; the coverage artifact is `15191335629` with digest `sha256:1a3bbdc5caf6d0769ba518f727fff7771802482f7edafe9681a7c799edf7be9c`. The run completed the build, all configured browser/a11y/manual-assist steps, completeness check and artifact upload. These results establish repository/CI proof only; replacement-project staging, owner approvals, manual WCAG, deployed performance and buyer validation remain STOP. The dirty local overlay is not part of this CI receipt.
 
 ## 3C execution brief
 
 ### Context
 
-CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The reviewed repository evidence is bound to exact commit `8d6096a45ffa08e86519ef24335aee79c6603047` and run `40462474909`. The evidence-only document rebind `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` is covered by CI run `40464886557` with all four jobs successful. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
+CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The current product-value evidence is bound to exact commit `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` and run `45984013531`; this docs-only rebind must receive its own exact-head run before the mission can report four green jobs. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
 
 ### Your task
 
@@ -65,7 +65,7 @@ checks and create reports but must not edit the shared checkout.
 
 **Mission status:** `PLANNED / NOT COMPLETE`
 
-**Current decision:** repository CI evidence is defensible for source `8d6096a45ffa08e86519ef24335aee79c6603047`; the evidence-only document rebind `eec76f84d2d4e88c5a60f2c74ebfde95cdad9f45` is covered by run `40464886557` with all four jobs successful. Independent reproduction, hosted controls, owner approvals, manual quality evidence and buyer validation remain open. Staging and pilot are **STOP**. This mission artifact grants no deployment,
+**Current decision:** repository CI evidence is defensible for source `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` / run `45984013531` at the three-verification-job layer; the docs-only rebind is pending its exact-head four-job run. Independent reproduction, hosted controls, owner approvals, manual quality evidence and buyer validation remain open. Staging and pilot are **STOP**. This mission artifact grants no deployment,
 restoration, billing, outreach or buyer authority.
 
 **Audit snapshot (2026-10-26; captured before this documentation update):** The authoritative incident register records
