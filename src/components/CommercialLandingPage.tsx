@@ -186,7 +186,7 @@ export function CommercialLandingPage() {
       <main id="main-content">
         <header className="border-b border-white/10 bg-slate-950/95">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-            <Link to="/" className="flex items-center gap-3" aria-label="CEIP home">
+            <Link to="/" className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-300/10">
                 <LineChart className="h-5 w-5 text-cyan-200" />
               </span>
@@ -194,7 +194,7 @@ export function CommercialLandingPage() {
                 <span className="block text-sm uppercase tracking-[0.25em] text-cyan-200">
                   CEIP
                 </span>
-                <span className="block text-xs text-slate-400">
+                <span className="block text-xs text-slate-300">
                   Prediction inside budget-owned energy workflows
                 </span>
               </span>
@@ -231,10 +231,11 @@ export function CommercialLandingPage() {
               <p className="mt-4 text-xs uppercase tracking-[0.18em] text-emerald-200/90">
                 desk-research hypotheses • buyer validation pending
               </p>
-              <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-400">
+              <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-300">
                 Desk-research confidence — unvalidated: {utilityWedge?.score.toFixed(1) ?? '—'}/5
               </p>
               <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-tight md:text-6xl">
+                <span className="sr-only">Focused TIER scenario workflow: </span>
                 Turn a messy load CSV into a reviewable forecast proof pack.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
@@ -242,7 +243,7 @@ export function CommercialLandingPage() {
                 checks, and export a Forecast + Benchmark Appendix. This is a planning workflow—not
                 utility approval, regulator evidence, or a validated commercial offer.
               </p>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
                 Buyer demand, delivery time, pricing, savings, and procurement fit have not been
                 validated; they remain unvalidated. Ontario GA ICI 5CP and BYO CSV privacy proof
                 remain proposed workflow concepts for review, not commitments to deliver.
@@ -320,7 +321,7 @@ export function CommercialLandingPage() {
                   {fileError}
                 </p>
               ) : null}
-              <p className="mt-4 text-xs text-slate-500">Current source: {sourceLabel}</p>
+              <p className="mt-4 text-xs text-slate-300">Current source: {sourceLabel}</p>
             </StepCard>
 
             <StepCard number="02" title="Review" testId="commercial-step-2">
@@ -412,7 +413,7 @@ export function CommercialLandingPage() {
                   <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">
                     Proof boundary
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold">
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-50">
                     {proof.forecastPackage
                       ? 'A bounded planning package is ready'
                       : 'Resolve the CSV checks before exporting'}
@@ -436,7 +437,9 @@ export function CommercialLandingPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-100/80">
                 Hypothesis pricing only
               </p>
-              <h2 className="mt-2 text-2xl font-semibold">Pilot &amp; White-Label Options (CAD)</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-50">
+                Pilot &amp; White-Label Options (CAD)
+              </h2>
               <p className="mt-3 text-sm leading-6 text-slate-200">
                 Non-validated planning hypotheses. Procurement is entity-specific; these are not
                 universal thresholds or checkout offers.
@@ -473,7 +476,7 @@ export function CommercialLandingPage() {
             </section>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-slate-400">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-slate-300">
             <span>
               Secondary surfaces remain available through the{' '}
               <Link className="text-cyan-200 hover:text-cyan-100" to="/solutions">
@@ -508,7 +511,7 @@ function StepCard({
     >
       <div className="flex items-center gap-3">
         <span className="text-xs font-semibold tracking-[0.2em] text-cyan-200">STEP {number}</span>
-        <h2 className="text-xl font-semibold">{title}</h2>
+        <h2 className="text-xl font-semibold text-slate-50">{title}</h2>
       </div>
       {children}
     </section>
@@ -535,7 +538,7 @@ function CheckRow({
         <span className="font-medium text-slate-100">{label}</span>
         <span className={`text-xs uppercase tracking-[0.16em] ${color}`}>{status}</span>
       </div>
-      <p className="mt-1 text-xs leading-5 text-slate-400">{detail}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-300">{detail}</p>
     </div>
   );
 }
