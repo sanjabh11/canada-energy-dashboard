@@ -86,6 +86,176 @@ describe('utilityCsvParser format evidence', () => {
     expect(parsed.rows).toHaveLength(2);
   });
 
+  it('converts 15-minute interval kWh to average MW with provenance', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kWh',
+        '2025-01-01T00:00:00.000Z,15',
+        '2025-01-01T00:15:00.000Z,15',
+        '2025-01-01T00:30:00.000Z,15',
+      ].join('\n'),
+    );
+
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.source_unit).toBe('kwh');
+    expect(parsed.inferred_interval_minutes).toBe(15);
+    expect(parsed.conversion_method).toBe('kwh_to_average_kw_to_mw');
+    expect(parsed.rows.map((row) => row.demand_mw)).toEqual([0.06, 0.06, 0.06]);
+  });
+
+  it('converts hourly interval_kwh to average MW', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,interval_kwh',
+        '2025-01-01T00:00:00.000Z,60',
+        '2025-01-01T01:00:00.000Z,60',
+      ].join('\n'),
+    );
+
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.inferred_interval_minutes).toBe(60);
+    expect(parsed.rows[0]?.demand_mw).toBe(0.06);
+  });
+
+  it('converts kW to MW without changing the source unit contract', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kw',
+        '2025-01-01T00:00:00.000Z,1250',
+        '2025-01-01T01:00:00.000Z,1500',
+      ].join('\n'),
+    );
+
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.source_unit).toBe('kw');
+    expect(parsed.inferred_interval_minutes).toBe(60);
+    expect(parsed.conversion_method).toBe('kw_to_mw');
+    expect(parsed.rows.map((row) => row.demand_mw)).toEqual([1.25, 1.5]);
+  });
+
+  it('rejects competing unit columns instead of choosing one silently', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kwh,kw',
+        '2025-01-01T00:00:00.000Z,15,900',
+        '2025-01-01T00:15:00.000Z,15,900',
+      ].join('\n'),
+    );
+
+    expect(parsed.rows).toEqual([]);
+    expect(parsed.errors[0]).toContain('competing load columns');
+  });
+
+  it('rejects irregular energy intervals', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,usage_kwh',
+        '2025-01-01T00:00:00.000Z,15',
+        '2025-01-01T00:15:00.000Z,15',
+        '2025-01-01T00:45:00.000Z,30',
+      ].join('\n'),
+    );
+
+    expect(parsed.errors.some((error) => error.includes('irregular'))).toBe(true);
+  });
+
+  it('warns on local-clock energy timestamps by default and blocks them in strict mode', () => {
+    const csv = [
+      'timestamp,kwh',
+      '2026-07-15 14:00,15',
+      '2026-07-15 14:15,15',
+    ].join('\n');
+    const parsed = parseUtilityHistoricalLoadCsv(csv);
+
+    expect(parsed.rows).toHaveLength(2);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.warnings.join(' ')).toContain('timezone_ambiguous');
+    expect(parsed.rows.every((row) => row.quality_flags?.includes('timezone_ambiguous'))).toBe(true);
+
+    const strict = parseUtilityHistoricalLoadCsv(csv, { strictTimezone: true });
+    expect(strict.rows).toEqual([]);
+    expect(strict.errors.join(' ')).toContain('strict mode');
+
+    const kw = parseUtilityHistoricalLoadCsv(
+      csv.replace('kwh', 'kw').replace(/,15/g, ',900'),
+    );
+    expect(kw.rows).toHaveLength(2);
+    expect(kw.errors).toEqual([]);
+    expect(kw.warnings.join(' ')).toContain('timezone_ambiguous');
+  });
+
+  it('blocks energy inputs with a date-time that has no clock time', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kwh',
+        '2025-01-01,15',
+        '2025-01-02,15',
+      ].join('\n'),
+    );
+
+    expect(parsed.rows).toEqual([]);
+    expect(parsed.errors.join(' ')).toContain('clock time');
+  });
+
+  it('blocks date-only, duplicate, and non-monotonic energy timestamps', () => {
+    const dateOnly = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kwh',
+        '2025-01-01,15',
+        '2025-01-02,15',
+      ].join('\n'),
+    );
+    const duplicate = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kwh',
+        '2025-01-01T00:00:00.000Z,15',
+        '2025-01-01T00:00:00.000Z,15',
+      ].join('\n'),
+    );
+    const nonMonotonic = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kwh',
+        '2025-01-01T01:00:00.000Z,15',
+        '2025-01-01T00:00:00.000Z,15',
+      ].join('\n'),
+    );
+
+    expect(dateOnly.rows).toEqual([]);
+    expect(dateOnly.errors.join(' ')).toContain('explicit timezone');
+    expect(duplicate.rows).toEqual([]);
+    expect(duplicate.errors.join(' ')).toContain('strictly positive');
+    expect(nonMonotonic.rows).toEqual([]);
+    expect(nonMonotonic.errors.join(' ')).toContain('strictly positive');
+  });
+
+  it('rejects negative and non-finite energy values', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,kwh',
+        '2025-01-01T00:00:00.000Z,-1',
+        '2025-01-01T00:15:00.000Z,NaN',
+      ].join('\n'),
+    );
+
+    expect(parsed.rows).toEqual([]);
+    expect(parsed.errors.join(' ')).toMatch(/non-negative|invalid timestamp or kwh value/i);
+  });
+
+  it('preserves the existing demand_mw path', () => {
+    const parsed = parseUtilityHistoricalLoadCsv(
+      [
+        'timestamp,demand_mw',
+        '2025-01-01T00:00:00.000Z,12.5',
+        '2025-01-01T01:00:00.000Z,13.5',
+      ].join('\n'),
+    );
+
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.source_unit).toBe('demand_mw');
+    expect(parsed.conversion_method).toBe('none');
+    expect(parsed.rows.map((row) => row.demand_mw)).toEqual([12.5, 13.5]);
+  });
+
   it('marks timezone-free date-time strings as ambiguous', () => {
     const parsed = parseUtilityHistoricalLoadCsv(
       'timestamp,demand_mw\n2025-01-01T00:00:00,120\n2025-01-01T01:00:00,121',

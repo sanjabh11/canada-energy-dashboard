@@ -16,6 +16,15 @@ import { generateOntarioPublicUtilitySampleRows } from './utilitySampleData';
 
 export type { UtilityCsvFormatEvidence };
 
+export type UtilityCsvSourceUnit = 'unknown' | 'demand_mw' | 'kwh' | 'kw' | 'ieso';
+export type UtilityCsvConversionMethod = 'none' | 'kwh_to_average_kw_to_mw' | 'kw_to_mw';
+
+export interface UtilityCsvInputProvenance {
+  source_unit: UtilityCsvSourceUnit;
+  inferred_interval_minutes: number | null;
+  conversion_method: UtilityCsvConversionMethod;
+}
+
 export const UTILITY_CSV_FORMAT_EVIDENCE_LABELS: Record<UtilityCsvFormatEvidence, string> = {
   bundled_fixture_hash_match:
     'Bundled synthetic CEIP fixture (deterministic fingerprint match); synthetic disclosure applies',
@@ -26,7 +35,15 @@ export const UTILITY_CSV_FORMAT_EVIDENCE_LABELS: Record<UtilityCsvFormatEvidence
 export interface ParsedUtilityCsv {
   rows: UtilityHistoricalLoadRow[];
   errors: string[];
+  warnings: string[];
   format_evidence: UtilityCsvFormatEvidence;
+  source_unit: UtilityCsvSourceUnit;
+  inferred_interval_minutes: number | null;
+  conversion_method: UtilityCsvConversionMethod;
+}
+
+export interface UtilityCsvParseOptions {
+  strictTimezone?: boolean;
 }
 
 export const TEMPLATE_HEADERS = [
@@ -51,6 +68,8 @@ const HEADER_ALIASES: Record<string, string[]> = {
   geography_id: ['geography_id', 'zone', 'zone_id', 'feeder', 'substation', 'system_id'],
   customer_class: ['customer_class', 'class', 'rate_class', 'customer_segment'],
   demand_mw: ['demand_mw', 'mw', 'peak_mw', 'load_mw', 'demand'],
+  kwh: ['kwh', 'interval_kwh', 'usage_kwh'],
+  kw: ['kw', 'load_kw', 'demand_kw'],
   weather_zone: ['weather_zone', 'weather', 'temperature_zone'],
   temperature_c: ['temperature_c', 'temp_c', 'temperature'],
   net_load_mw: ['net_load_mw', 'net_mw'],
@@ -67,6 +86,12 @@ const IESO_DEMAND_HEADER_ALIASES = {
   marketDemand: ['market_demand', 'market_demand_mw', 'total_market_demand'],
   ontarioDemand: ['ontario_demand', 'ontario_demand_mw'],
 } as const;
+
+const UNKNOWN_INPUT_PROVENANCE: UtilityCsvInputProvenance = {
+  source_unit: 'unknown',
+  inferred_interval_minutes: null,
+  conversion_method: 'none',
+};
 
 export const PUBLIC_SOURCE_TRANSFORM_VERSION = 'ieso-apo-derived-transform-v1';
 export const BUNDLED_SYNTHETIC_FIXTURE_VERSION = 'bundled-synthetic-fixture-v1';
@@ -90,7 +115,13 @@ function csvInputLimitError(text: string): string | null {
 }
 
 function rejectedUtilityCsv(error: string): ParsedUtilityCsv {
-  return { rows: [], errors: [error], format_evidence: 'unverified_upload' };
+  return {
+    rows: [],
+    errors: [error],
+    warnings: [],
+    format_evidence: 'unverified_upload',
+    ...UNKNOWN_INPUT_PROVENANCE,
+  };
 }
 
 export const ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST: PublicUtilitySampleManifest = {
@@ -194,7 +225,10 @@ function classifyGenericUploadEvidence(rows: UtilityHistoricalLoadRow[]): Utilit
   return isBundledFixtureContent(rows) ? 'bundled_fixture_hash_match' : 'unverified_upload';
 }
 
-export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
+export function parseUtilityHistoricalLoadCsv(
+  text: string,
+  options: UtilityCsvParseOptions = {},
+): ParsedUtilityCsv {
   const inputLimitError = csvInputLimitError(text);
   if (inputLimitError) return rejectedUtilityCsv(inputLimitError);
 
@@ -210,7 +244,9 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     return {
       rows: [],
       errors: ['CSV must include a header row and at least one data row.'],
+      warnings: [],
       format_evidence: 'unverified_upload',
+      ...UNKNOWN_INPUT_PROVENANCE,
     };
   }
 
@@ -222,6 +258,7 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
 
   const headers = splitCsvLine(lines[0]).map(normalizeHeader);
   const errors: string[] = [];
+  const warnings: string[] = [];
   const rows: UtilityHistoricalLoadRow[] = [];
 
   const columnIndexes = Object.fromEntries(
@@ -231,27 +268,122 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     ]),
   ) as Record<keyof typeof HEADER_ALIASES, number>;
 
-  if (columnIndexes.timestamp < 0 || columnIndexes.demand_mw < 0) {
+  const loadCandidates = (['demand_mw', 'kwh', 'kw'] as const)
+    .filter((unit) => columnIndexes[unit] >= 0)
+    .map((unit) => ({ unit, index: columnIndexes[unit] }));
+
+  if (columnIndexes.timestamp < 0 || loadCandidates.length === 0) {
     return {
       rows: [],
-      errors: ['CSV must include timestamp/datetime and demand_mw/load_mw columns.'],
+      errors: [
+        'CSV must include timestamp/datetime and exactly one load column: demand_mw/load_mw, kwh/interval_kwh/usage_kwh, or kw.',
+      ],
+      warnings: [],
       format_evidence: 'unverified_upload',
+      ...UNKNOWN_INPUT_PROVENANCE,
     };
   }
+
+  if (loadCandidates.length > 1) {
+    return rejectedUtilityCsv(
+      `CSV has competing load columns (${loadCandidates.map(({ unit }) => unit).join(', ')}); provide exactly one unit column.`,
+    );
+  }
+
+  const sourceUnit = loadCandidates[0]?.unit ?? 'unknown';
+  const loadColumnIndex = loadCandidates[0]?.index ?? -1;
+  const strictTimezone = options.strictTimezone === true;
+  const pendingRows: Array<{
+    timestamp: string;
+    timestampMs: number;
+    rawValue: number;
+    columns: string[];
+    seriesKey: string;
+  }> = [];
 
   for (let index = 1; index < lines.length; index += 1) {
     const columns = splitCsvLine(lines[index]);
     const timestamp = readColumn(columns, columnIndexes.timestamp);
-    const demandMw = parseNumeric(readColumn(columns, columnIndexes.demand_mw));
+    const rawValue = parseNumeric(readColumn(columns, loadColumnIndex));
+    const timestampMs = new Date(timestamp).getTime();
 
-    if (
-      !timestamp ||
-      !Number.isFinite(new Date(timestamp).getTime()) ||
-      !Number.isFinite(demandMw)
-    ) {
-      errors.push(`Row ${index + 1} skipped: invalid timestamp or demand value.`);
+    if (!timestamp || !Number.isFinite(timestampMs) || !Number.isFinite(rawValue)) {
+      errors.push(`Row ${index + 1} skipped: invalid timestamp or ${sourceUnit} value.`);
       continue;
     }
+
+    if (sourceUnit !== 'demand_mw' && rawValue < 0) {
+      errors.push(`Row ${index + 1} skipped: ${sourceUnit} values must be non-negative.`);
+      continue;
+    }
+
+    const hasClockTime = /[T ]\d{2}:\d{2}/.test(timestamp);
+    const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp);
+    if (sourceUnit !== 'demand_mw' && !hasExplicitTimezone) {
+      if (!hasClockTime) {
+        errors.push(
+          `Row ${index + 1} skipped: ${sourceUnit} timestamps must include a clock time and explicit timezone.`,
+        );
+      } else if (strictTimezone) {
+        errors.push(
+          `Row ${index + 1} skipped: ${sourceUnit} timestamps must include an explicit timezone in strict mode.`,
+        );
+      } else {
+        warnings.push(
+          `Row ${index + 1}: timezone_ambiguous ${sourceUnit} timestamp; confirm the source timezone before interpreting demand.`,
+        );
+      }
+    }
+
+    const geographyId = readColumn(columns, columnIndexes.geography_id) || 'system';
+    const customerClass = readColumn(columns, columnIndexes.customer_class) || 'mixed';
+    pendingRows.push({
+      timestamp,
+      timestampMs,
+      rawValue,
+      columns,
+      seriesKey: `${geographyId}\u0000${customerClass}`,
+    });
+  }
+
+  const timestampsBySeries = new Map<string, number[]>();
+  for (const pending of pendingRows) {
+    const timestamps = timestampsBySeries.get(pending.seriesKey) ?? [];
+    timestamps.push(pending.timestampMs);
+    timestampsBySeries.set(pending.seriesKey, timestamps);
+  }
+  const intervalResult = inferRegularIntervalMinutes([...timestampsBySeries.values()]);
+  if (sourceUnit !== 'demand_mw' && intervalResult.error) {
+    errors.push(intervalResult.error);
+  }
+  const inferredIntervalMinutes = intervalResult.minutes;
+
+  const conversionMethod =
+    sourceUnit === 'kwh' ? 'kwh_to_average_kw_to_mw' : sourceUnit === 'kw' ? 'kw_to_mw' : 'none';
+  if (sourceUnit !== 'demand_mw' && errors.length > 0) {
+    return {
+      rows: [],
+      errors,
+      warnings,
+      format_evidence: 'unverified_upload',
+      source_unit: sourceUnit,
+      inferred_interval_minutes: inferredIntervalMinutes,
+      conversion_method: conversionMethod,
+    };
+  }
+
+  for (const pending of pendingRows) {
+    const { timestamp, rawValue, columns } = pending;
+    const demandMw =
+      sourceUnit === 'kwh'
+        ? inferredIntervalMinutes && inferredIntervalMinutes > 0
+          ? rawValue / (inferredIntervalMinutes / 60) / 1000
+          : Number.NaN
+        : sourceUnit === 'kw'
+          ? rawValue / 1000
+          : rawValue;
+
+    if (!Number.isFinite(demandMw)) continue;
 
     const geographyId = readColumn(columns, columnIndexes.geography_id) || 'system';
     const geographyLevel = normalizeGeographyLevel(
@@ -262,9 +394,8 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     const netLoad = parseOptionalNumeric(readColumn(columns, columnIndexes.net_load_mw));
     const grossLoad = parseOptionalNumeric(readColumn(columns, columnIndexes.gross_load_mw));
     const qualityFlags: UtilityQualityFlag[] = [];
-    const hasClockTime = /[T ]\d{2}:\d{2}/.test(timestamp);
     const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp);
-    if (hasClockTime && !hasExplicitTimezone) qualityFlags.push('timezone_ambiguous');
+    if (!hasExplicitTimezone) qualityFlags.push('timezone_ambiguous');
     if (demandMw < 0) qualityFlags.push('negative_load');
     if (!Number.isFinite(Number(readColumn(columns, columnIndexes.temperature_c))))
       qualityFlags.push('missing_temperature');
@@ -292,7 +423,15 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
   }
 
   const sortedRows = sortRows(rows);
-  return { rows: sortedRows, errors, format_evidence: classifyGenericUploadEvidence(sortedRows) };
+  return {
+    rows: sortedRows,
+    errors,
+    warnings,
+    format_evidence: classifyGenericUploadEvidence(sortedRows),
+    source_unit: sourceUnit,
+    inferred_interval_minutes: inferredIntervalMinutes,
+    conversion_method: conversionMethod,
+  };
 }
 
 export function parseIesoPublicDemandCsv(text: string): ParsedUtilityCsv {
@@ -305,7 +444,9 @@ export function parseIesoPublicDemandCsv(text: string): ParsedUtilityCsv {
       errors: [
         'CSV must include IESO-style Date, Hour, Ontario Demand, and Market Demand columns.',
       ],
+      warnings: [],
       format_evidence: 'unverified_upload',
+      ...UNKNOWN_INPUT_PROVENANCE,
     }
   );
 }
@@ -372,7 +513,53 @@ function tryParseIesoPublicDemandCsv(text: string): ParsedUtilityCsv | null {
     errors.push('No valid IESO public demand rows were parsed.');
   }
 
-  return { rows: sortRows(rows), errors, format_evidence: 'ieso_format_detected' };
+  return {
+    rows: sortRows(rows),
+    errors,
+    warnings: [],
+    format_evidence: 'ieso_format_detected',
+    source_unit: 'ieso',
+    inferred_interval_minutes: 60,
+    conversion_method: 'none',
+  };
+}
+
+function inferRegularIntervalMinutes(seriesTimestamps: number[][]): {
+  minutes: number | null;
+  error?: string;
+} {
+  if (
+    seriesTimestamps.length === 0 ||
+    seriesTimestamps.some((timestamps) => timestamps.length < 2)
+  ) {
+    return {
+      minutes: null,
+      error: 'At least two timestamped rows are required to infer the interval length.',
+    };
+  }
+
+  const deltas = seriesTimestamps.flatMap((timestamps) =>
+    timestamps.slice(1).map((timestamp, index) => timestamp - timestamps[index]!),
+  );
+  if (deltas.some((delta) => delta <= 0)) {
+    return { minutes: null, error: 'Timestamp deltas must be strictly positive.' };
+  }
+
+  const sortedDeltas = [...deltas].sort((left, right) => left - right);
+  const middle = Math.floor(sortedDeltas.length / 2);
+  const medianMs =
+    sortedDeltas.length % 2 === 0
+      ? (sortedDeltas[middle - 1]! + sortedDeltas[middle]!) / 2
+      : sortedDeltas[middle]!;
+  const toleranceMs = Math.max(60_000, medianMs * 0.01);
+  if (deltas.some((delta) => Math.abs(delta - medianMs) > toleranceMs)) {
+    return {
+      minutes: null,
+      error: 'Timestamp intervals are irregular; provide a consistently sampled kWh/kW series.',
+    };
+  }
+
+  return { minutes: Number((medianMs / 60_000).toFixed(3)) };
 }
 
 function splitCsvLine(line: string): string[] {

@@ -11,10 +11,13 @@ import {
 } from './utilityForecastProofPack';
 import { parseUtilityHistoricalLoadCsv, type ParsedUtilityCsv } from './utilityCsvParser';
 import type { ProofDocumentDescriptor } from './proofPack';
-import { buildUtilityStarterCsv } from './utilitySampleData';
+import { generateUtilityLoadSampleRows } from './utilitySampleData';
+import { utilityRowsToCsv } from './utilityCsvSerializer';
 
 export const PRODUCT_VALUE_PROOF_VERSION = 'ceip-product-value-proof-v1';
-export const PRODUCT_VALUE_SAMPLE_LABEL = 'CEIP synthetic Ontario starter fixture';
+export const PRODUCT_VALUE_SAMPLE_LABEL = 'CEIP synthetic region-neutral starter fixture';
+const REGION_NEUTRAL_SAMPLE_NOTE =
+  'Region context: synthetic demo only; no Ontario or Alberta measurements are represented.';
 
 export interface ProductValueCheck {
   id: 'privacy' | 'schema' | 'formula' | 'linkage' | 'source' | 'freshness';
@@ -82,7 +85,14 @@ export function createProductValueScenario(): UtilityPlanningScenario {
 }
 
 export function buildProductValueSampleCsv(): string {
-  return buildUtilityStarterCsv('Ontario', 'hourly');
+  const rows = generateUtilityLoadSampleRows('Ontario', 'hourly').map((row) => ({
+    ...row,
+    geography_id: row.geography_id.replace(/^ON-/, 'DEMO-'),
+    feeder_id: row.feeder_id?.replace(/^ON-/, 'DEMO-'),
+    substation_id: row.substation_id?.replace(/^ON-/, 'DEMO-'),
+    weather_zone: 'synthetic',
+  }));
+  return utilityRowsToCsv(rows);
 }
 
 function buildChecks(
@@ -93,6 +103,7 @@ function buildChecks(
   const formulaCount = report.spreadsheet_formula_findings.length;
   const linkageCount = report.quasi_identifier_findings.length;
   const sourceReady = parsed.rows.length > 0 && parsed.errors.length === 0;
+  const schemaStatus = sourceReady ? (parsed.warnings.length > 0 ? 'review' : 'pass') : 'blocked';
   const freshnessState = forecastPackage?.input_provenance_summary.live_surfaces.some(
     (surface) => surface.freshness_status === 'stale' || surface.is_fallback,
   )
@@ -110,10 +121,13 @@ function buildChecks(
     {
       id: 'schema',
       label: 'Schema and completeness',
-      status: sourceReady ? 'pass' : 'blocked',
+      status: schemaStatus,
       detail: sourceReady
-        ? `${parsed.rows.length.toLocaleString()} parsed load rows with no parser errors.`
-        : parsed.errors.join(' ') || 'CSV needs timestamp and demand_mw/load_mw columns.',
+        ? `${parsed.rows.length.toLocaleString()} parsed load rows with no parser errors.${
+            parsed.warnings.length > 0 ? ` ${parsed.warnings.join(' ')}` : ''
+          }`
+        : parsed.errors.join(' ') ||
+          'CSV needs timestamp/datetime and exactly one demand_mw/load_mw, kwh/interval_kwh/usage_kwh, or kw column.',
     },
     {
       id: 'formula',
@@ -150,10 +164,77 @@ function buildChecks(
   ];
 }
 
+function inputProvenanceLines(parsed: ParsedUtilityCsv): string[] {
+  return [
+    `Source unit: ${parsed.source_unit}`,
+    `Inferred interval (minutes): ${parsed.inferred_interval_minutes ?? 'not available'}`,
+    `Conversion method: ${parsed.conversion_method}`,
+    ...parsed.warnings.map((warning) => `Warning: ${warning}`),
+  ];
+}
+
+function makeProductValueDescriptor(
+  descriptor: ProofDocumentDescriptor,
+  parsed: ParsedUtilityCsv,
+  isSample: boolean,
+): ProofDocumentDescriptor {
+  const provenanceSection = {
+    heading: 'Input unit provenance',
+    kind: 'bullet_list' as const,
+    body: inputProvenanceLines(parsed),
+  };
+
+  if (!isSample) {
+    return { ...descriptor, sections: [...descriptor.sections, provenanceSection] };
+  }
+
+  return {
+    ...descriptor,
+    title: 'Synthetic utility planning pack (region-neutral)',
+    definition: {
+      ...descriptor.definition,
+      jurisdiction: 'Region-neutral synthetic demo',
+      sourceSummary:
+        'Deterministic synthetic workflow proof only; not Ontario or Alberta utility evidence.',
+      assumptions: descriptor.definition.assumptions.map((assumption) =>
+        assumption.startsWith('Ontario and Alberta exports')
+          ? 'The synthetic demo does not produce jurisdiction-specific filing exports.'
+          : assumption,
+      ),
+    },
+    sections: [
+      ...descriptor.sections.map((section) =>
+        section.heading === 'Current planning run'
+          ? {
+              ...section,
+              body: [
+                ...(Array.isArray(section.body) ? section.body : [section.body]),
+                REGION_NEUTRAL_SAMPLE_NOTE,
+              ],
+            }
+          : section.heading === 'Export path'
+            ? {
+                ...section,
+                body: [
+                  'Synthetic demo exports only; no Ontario or Alberta filing schedule is produced by this browser-local workflow.',
+                  'Use the generic forecast CSV and benchmark appendix only after reviewer validation.',
+                ],
+              }
+            : section,
+      ),
+      provenanceSection,
+    ],
+  };
+}
+
 function buildJsonSidecar(proof: ProductValueProof): string {
+  const isSample = proof.sourceLabel === PRODUCT_VALUE_SAMPLE_LABEL;
   const packageSummary = proof.forecastPackage
     ? {
-        jurisdiction: proof.forecastPackage.jurisdiction,
+        jurisdiction: isSample
+          ? 'Region-neutral synthetic demo'
+          : proof.forecastPackage.jurisdiction,
+        region_context: isSample ? REGION_NEUTRAL_SAMPLE_NOTE : undefined,
         generated_at: proof.forecastPackage.generated_at,
         source_kind: proof.forecastPackage.input_provenance_summary.source_kind,
         source_manifest: proof.forecastPackage.source_manifest,
@@ -168,6 +249,13 @@ function buildJsonSidecar(proof: ProductValueProof): string {
       version: PRODUCT_VALUE_PROOF_VERSION,
       generated_at: proof.generatedAt,
       source_label: proof.sourceLabel,
+      ...(isSample ? { region_context: REGION_NEUTRAL_SAMPLE_NOTE } : {}),
+      input_provenance: {
+        source_unit: proof.parsed.source_unit,
+        inferred_interval_minutes: proof.parsed.inferred_interval_minutes,
+        conversion_method: proof.parsed.conversion_method,
+        warnings: proof.parsed.warnings,
+      },
       retained_raw_values: false,
       checks: proof.checks,
       privacy_report: {
@@ -188,6 +276,22 @@ function buildJsonSidecar(proof: ProductValueProof): string {
   );
 }
 
+function buildProductValueForecastCsv(
+  forecastPackage: UtilityForecastPackage,
+  formatEvidence: ParsedUtilityCsv['format_evidence'],
+  isSample: boolean,
+): string {
+  const csv = buildUtilityGenericCsv(forecastPackage, formatEvidence);
+  if (!isSample) return csv;
+
+  const regionNeutralHeader = [
+    '# Jurisdiction: Region-neutral synthetic demo',
+    `# ${REGION_NEUTRAL_SAMPLE_NOTE}`,
+    '# Filing export: not generated for this browser-local synthetic workflow.',
+  ].join('\n');
+  return csv.replace('# Jurisdiction: Ontario', regionNeutralHeader);
+}
+
 export function buildProductValueProof(params: {
   csvText: string;
   sourceLabel: string;
@@ -195,6 +299,7 @@ export function buildProductValueProof(params: {
 }): ProductValueProof {
   const generatedAt = params.generatedAt ?? new Date().toISOString();
   const parsed = parseUtilityHistoricalLoadCsv(params.csvText);
+  const isSample = params.sourceLabel === PRODUCT_VALUE_SAMPLE_LABEL;
   const report = buildByoCsvProofReport({
     csvText: params.csvText,
     sourceLabel: params.sourceLabel,
@@ -209,11 +314,8 @@ export function buildProductValueProof(params: {
         rows: parsed.rows,
         scenario: createProductValueScenario(),
         sourceLabel: params.sourceLabel,
-        isSampleData: params.sourceLabel === PRODUCT_VALUE_SAMPLE_LABEL,
-        sourceKind:
-          params.sourceLabel === PRODUCT_VALUE_SAMPLE_LABEL
-            ? 'fallback_starter'
-            : 'uploaded_historical',
+        isSampleData: isSample,
+        sourceKind: isSample ? 'fallback_starter' : 'uploaded_historical',
         formatEvidence: parsed.format_evidence,
       });
     } catch {
@@ -222,7 +324,28 @@ export function buildProductValueProof(params: {
   }
 
   const descriptor = forecastPackage
-    ? buildUtilityPlanningDescriptor(forecastPackage, 'standard', parsed.format_evidence)
+    ? makeProductValueDescriptor(
+        buildUtilityPlanningDescriptor(forecastPackage, 'standard', parsed.format_evidence),
+        parsed,
+        isSample,
+      )
+    : null;
+  const baseBenchmarkAppendix = forecastPackage
+    ? buildUtilityBenchmarkAppendixMarkdown(forecastPackage, 'standard', parsed.format_evidence)
+    : null;
+  const benchmarkAppendix = baseBenchmarkAppendix
+    ? [
+        isSample
+          ? baseBenchmarkAppendix.replace(
+              /^# .*$/m,
+              '# Synthetic utility benchmark appendix (region-neutral)',
+            )
+          : baseBenchmarkAppendix,
+        '',
+        '## Input unit provenance',
+        ...inputProvenanceLines(parsed).map((line) => `- ${line}`),
+        ...(isSample ? [`- ${REGION_NEUTRAL_SAMPLE_NOTE}`] : []),
+      ].join('\n')
     : null;
   const proof: ProductValueProof = {
     generatedAt,
@@ -231,15 +354,14 @@ export function buildProductValueProof(params: {
     report,
     forecastPackage,
     descriptor,
-    benchmarkAppendix: forecastPackage
-      ? buildUtilityBenchmarkAppendixMarkdown(forecastPackage, 'standard', parsed.format_evidence)
-      : null,
+    benchmarkAppendix,
     forecastCsv: forecastPackage
-      ? buildUtilityGenericCsv(forecastPackage, parsed.format_evidence)
+      ? buildProductValueForecastCsv(forecastPackage, parsed.format_evidence, isSample)
       : null,
     checks: buildChecks(parsed, report, forecastPackage),
     reviewerChecklist: [
       'Confirm source ownership, consent/basis, and redistribution rights before external sharing.',
+      'Confirm the source unit, inferred interval, and conversion method before interpreting demand values.',
       'Review privacy, formula, linkage, source, and freshness checks above.',
       'Confirm forecast assumptions and benchmark windows with a utility reviewer.',
       'Treat sample/fallback results as workflow proof, not buyer or regulator evidence.',
