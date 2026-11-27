@@ -12,6 +12,7 @@ import {
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
 import { trackEvent } from '../lib/analytics';
+import { topCommercialWedges } from '../lib/commercialPositioning';
 import { ALBERTA_PILOT_SKUS_CAD, formatCadHypothesis } from '../lib/pricingCatalog';
 import {
   buildProductValueProof,
@@ -30,6 +31,7 @@ import {
 const MAX_BROWSER_CSV_BYTES = 1_000_000;
 
 export function CommercialLandingPage() {
+  const utilityWedge = topCommercialWedges.find((wedge) => wedge.id === 'utility-demand-forecast');
   const [csvText, setCsvText] = useState(() => buildProductValueSampleCsv());
   const [sourceLabel, setSourceLabel] = useState(PRODUCT_VALUE_SAMPLE_LABEL);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -193,7 +195,7 @@ export function CommercialLandingPage() {
                   CEIP
                 </span>
                 <span className="block text-xs text-slate-400">
-                  Energy prediction proof, with source boundaries visible
+                  Prediction inside budget-owned energy workflows
                 </span>
               </span>
             </Link>
@@ -226,6 +228,12 @@ export function CommercialLandingPage() {
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-emerald-100">
                 <LockKeyhole className="h-4 w-4" /> Browser-local utility proof
               </div>
+              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-emerald-200/90">
+                desk-research hypotheses • buyer validation pending
+              </p>
+              <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-400">
+                Desk-research confidence — unvalidated: {utilityWedge?.score.toFixed(1) ?? '—'}/5
+              </p>
               <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-tight md:text-6xl">
                 Turn a messy load CSV into a reviewable forecast proof pack.
               </h1>
@@ -233,6 +241,11 @@ export function CommercialLandingPage() {
                 Load a synthetic sample or redacted interval file, inspect privacy and source-risk
                 checks, and export a Forecast + Benchmark Appendix. This is a planning workflow—not
                 utility approval, regulator evidence, or a validated commercial offer.
+              </p>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+                Buyer demand, delivery time, pricing, savings, and procurement fit have not been
+                validated; they remain unvalidated. Ontario GA ICI 5CP and BYO CSV privacy proof
+                remain proposed workflow concepts for review, not commitments to deliver.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm text-slate-300">
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">
@@ -242,7 +255,7 @@ export function CommercialLandingPage() {
                   No raw CSV persistence
                 </span>
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">
-                  13 designed / 0 executed experiments
+                  Proposed workflow concepts: 13 designed / 0 executed experiments
                 </span>
               </div>
             </div>
