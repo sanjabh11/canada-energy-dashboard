@@ -6,9 +6,10 @@
 
 **Sprint branch:** `codex/product-value-spine-2026-11-27`
 
-**Proof layer:** local implementation plus one exact-head CI receipt. The
-receipt is a failure receipt, not a green CI claim; hosted, owner-approved, and
-buyer-validated evidence remain unclaimed.
+**Proof layer:** local implementation plus an exact-head CI receipt whose
+required verification jobs are green. The workflow's overall conclusion still
+includes the designed stale-document `evidence-binding` failure; hosted,
+owner-approved, and buyer-validated evidence remain unclaimed.
 
 **Excluded local artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
 `schema.sql` remain untracked by design. The checkpoint includes the tracked
@@ -27,9 +28,9 @@ add the non-validated CAD pilot/white-label catalog and zero-backend inquiry CTA
 refresh TIER provenance conservatively; update MCCAC and procurement language;
 and synchronize the experiment registry to 13 designed / 0 executed.
 
-**Push status:** owner-approved branch push completed. The exact-head CI
-receipt below is retained without reclassifying its failed evidence-completeness
-job as a pass. No production deploy or hosted mutation was performed.
+**Push status:** owner-approved branch push completed. The workflow evidence
+handoff fix is exact-head verified for the required jobs below. No production
+deploy or hosted mutation was performed.
 
 ## Product-value sprint local verification — 2026-11-27
 
@@ -85,10 +86,37 @@ The remaining `ceip.energy` matches are intentionally deferred legal-page
 placeholders and utility-connector test fixtures; the retired pilot placeholder
 `pilot-inquiry@ceip.energy` has zero matches under `src` and `tests`.
 
-**Still unverified or owner-gated:** a green exact-head CI run, hosted Supabase migration/
-RLS/function/storage/backup/rollback evidence, Whop deployment configuration,
-privacy/CASL approval, manual WCAG review, deployed performance, and all 13
-buyer experiments (0 executed).
+**At that earlier receipt, still unverified or owner-gated:** hosted Supabase
+migration/RLS/function/storage/backup/rollback evidence, Whop deployment
+configuration, privacy/CASL approval, manual WCAG review, deployed performance,
+and all 13 buyer experiments (0 executed).
+
+## CI evidence-handoff remediation receipt — 2026-11-27
+
+Commit `de3ad813a6ce536876e8cb442bb0a744779ff372` transfers the coverage file
+from `test` to `build-and-smoke`, and makes the smoke job depend on `test`.
+Its exact-head [run 45973217349](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45973217349)
+completed with the required verification jobs green. The workflow-level
+conclusion is **failure only because `evidence-binding` reports stale documents**;
+that job is intentionally separate from release verification.
+
+| Job | Conclusion | Relevant receipt |
+| --- | --- | --- |
+| `lint-typecheck` | success | all guardrails completed |
+| `test` | success | coverage generated and `Upload coverage evidence` passed |
+| `build-and-smoke` | success | `Download coverage evidence` and `Verify evidence completeness` passed |
+| `evidence-binding` | failure | expected stale-document signal; no source/build failure |
+
+Evidence artifact: `15186369198`, digest
+`sha256:4832969d8af5027cca1329bdf7eaff2aba76d1c4d17dbf55de1c7392caed9089`.
+Coverage artifact: `15185723653`, digest
+`sha256:d20fce7ddecaedb6b75871137c915300029df5eeb02f879e91f1484a09eb3ddc`.
+The PR checks show no Netlify deployment; preview status is **not generated**.
+
+The remaining `evidence-binding` failure requires a later evidence-only
+document rebind and must not be hidden by this workflow fix. Hosted Supabase,
+Whop, privacy/CASL, manual WCAG, deployed performance, and buyer-validation
+gates remain open.
 
 ## Current authoritative receipt — 2026-10-27
 
