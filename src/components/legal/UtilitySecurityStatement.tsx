@@ -257,20 +257,20 @@ export function UtilitySecurityStatement() {
                 </p>
                 <p className="text-slate-300">
                   <strong>Security:</strong>{' '}
-                  <a href="mailto:security@ceip.energy" className="text-cyan-400 hover:underline">
-                    security@ceip.energy
+                  <a href="mailto:sanjabh11@gmail.com" className="text-cyan-400 hover:underline">
+                    sanjabh11@gmail.com
                   </a>
                 </p>
                 <p className="text-slate-300">
                   <strong>Privacy:</strong>{' '}
-                  <a href="mailto:privacy@ceip.energy" className="text-cyan-400 hover:underline">
-                    privacy@ceip.energy
+                  <a href="mailto:sanjabh11@gmail.com" className="text-cyan-400 hover:underline">
+                    sanjabh11@gmail.com
                   </a>
                 </p>
                 <p className="text-slate-300">
                   <strong>Legal:</strong>{' '}
-                  <a href="mailto:legal@ceip.energy" className="text-cyan-400 hover:underline">
-                    legal@ceip.energy
+                  <a href="mailto:sanjabh11@gmail.com" className="text-cyan-400 hover:underline">
+                    sanjabh11@gmail.com
                   </a>
                 </p>
               </div>

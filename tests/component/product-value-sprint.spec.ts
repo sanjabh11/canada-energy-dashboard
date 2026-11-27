@@ -29,6 +29,8 @@ test.describe('CEIP product-value sprint', () => {
     await expect(page.getByTestId('commercial-proof-ready')).toContainText('A bounded planning package is ready');
     await expect(page.getByTestId('commercial-proof-checks')).toContainText(/freshness/i);
     await expect(page.getByTestId('commercial-proof-checks')).toContainText('review');
+    await expect(page.locator('body')).toContainText('region-neutral synthetic');
+    await expect(page.locator('body')).toContainText('Tax treatment is not determined here');
     await expect(page.getByTestId('pilot-options-card')).toContainText('Non-validated planning hypotheses');
     await expect(page.getByTestId('commercial-pilot-cta')).toHaveAttribute(
       'href',

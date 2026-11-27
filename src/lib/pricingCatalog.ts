@@ -39,12 +39,12 @@ export const ALBERTA_PILOT_SKUS_CAD: Record<AlbertaPilotSkuCode, AlbertaPilotSku
   },
   gst_planning_estimate: {
     code: 'gst_planning_estimate',
-    label: 'GST planning estimate for municipal / waste pilot',
+    label: 'Illustrative tax-planning amount (not a CEIP tax charge)',
     priceCad: 2992.5,
     interval: 'one_time',
     status: 'hypothesis_non_validated',
     procurementNote:
-      'Illustrative tax planning only; confirm treatment with the purchasing entity.',
+      'Tax is not calculated or charged by this hypothesis catalog; confirm treatment with a Canadian tax adviser and the purchasing entity.',
   },
   consultant_white_label: {
     code: 'consultant_white_label',

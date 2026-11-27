@@ -245,8 +245,9 @@ export function CommercialLandingPage() {
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
                 Buyer demand, delivery time, pricing, savings, and procurement fit have not been
-                validated; they remain unvalidated. Ontario GA ICI 5CP and BYO CSV privacy proof
-                remain proposed workflow concepts for review, not commitments to deliver.
+                validated; they remain unvalidated. The starter is a region-neutral synthetic
+                workflow fixture, not Ontario or Alberta utility evidence. BYO CSV privacy proof
+                remains a proposed workflow concept for review, not a commitment to deliver.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm text-slate-300">
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">
@@ -290,8 +291,8 @@ export function CommercialLandingPage() {
           <div className="grid gap-5 lg:grid-cols-3">
             <StepCard number="01" title="Load" testId="commercial-step-1" active>
               <p className="text-sm leading-6 text-slate-300">
-                Start with a deterministic synthetic fixture or choose a redacted CSV. The file is
-                read only in this tab and is never sent to an API.
+                Start with a deterministic, region-neutral synthetic fixture or choose a redacted
+                CSV. The file is read only in this tab and is never sent to an API.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
@@ -453,7 +454,9 @@ export function CommercialLandingPage() {
                   one-time
                 </li>
                 <li>
-                  GST planning estimate —{' '}
+                  Tax treatment is not determined here. This hypothesis display is not a tax charge
+                  or invoice; confirm treatment with a Canadian tax adviser and the purchasing
+                  entity. Illustrative amount —{' '}
                   <strong>
                     {formatCadHypothesis(ALBERTA_PILOT_SKUS_CAD.gst_planning_estimate)}
                   </strong>

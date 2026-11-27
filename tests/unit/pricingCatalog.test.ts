@@ -152,6 +152,10 @@ describe('pricingCatalog', () => {
       expect(ALBERTA_PILOT_SKUS_CAD.consultant_white_label.priceCad).toEqual({ min: 299, max: 500 });
       expect(ALBERTA_PILOT_SKUS_CAD.municipal_waste_pilot.status).toBe('hypothesis_non_validated');
       expect(ALBERTA_PILOT_SKUS_CAD.municipal_waste_pilot.procurementNote).toContain('Entity-specific');
+      expect(ALBERTA_PILOT_SKUS_CAD.gst_planning_estimate.label).toContain('not a CEIP tax charge');
+      expect(ALBERTA_PILOT_SKUS_CAD.gst_planning_estimate.procurementNote).toContain(
+        'Tax is not calculated or charged',
+      );
     });
 
     it('formats CAD hypotheses with explicit currency', () => {

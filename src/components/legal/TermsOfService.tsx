@@ -206,8 +206,8 @@ export function TermsOfService() {
                         </p>
                         <p className="mt-4">
                             <strong>Email:</strong>{' '}
-                            <a href="mailto:legal@ceip.energy" className="text-cyan-400 hover:underline">
-                                legal@ceip.energy
+                            <a href="mailto:sanjabh11@gmail.com" className="text-cyan-400 hover:underline">
+                                sanjabh11@gmail.com
                             </a>
                         </p>
                     </section>
