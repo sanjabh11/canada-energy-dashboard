@@ -6,9 +6,9 @@
 
 **Sprint branch:** `codex/product-value-spine-2026-11-27`
 
-**Proof layer:** local implementation and verification only. No CI, hosted,
-owner-approved, or buyer-validated evidence is claimed until a later exact-head
-run and the required human gates exist.
+**Proof layer:** local implementation plus one exact-head CI receipt. The
+receipt is a failure receipt, not a green CI claim; hosted, owner-approved, and
+buyer-validated evidence remain unclaimed.
 
 **Excluded local artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
 `schema.sql` remain untracked by design. The checkpoint includes the tracked
@@ -27,9 +27,9 @@ add the non-validated CAD pilot/white-label catalog and zero-backend inquiry CTA
 refresh TIER provenance conservatively; update MCCAC and procurement language;
 and synchronize the experiment registry to 13 designed / 0 executed.
 
-**Push stop-gate:** do not push this branch or update exact-head evidence
-bindings until the owner reviews the local handoff and explicitly approves the
-CI run.
+**Push status:** owner-approved branch push completed. The exact-head CI
+receipt below is retained without reclassifying its failed evidence-completeness
+job as a pass. No production deploy or hosted mutation was performed.
 
 ## Product-value sprint local verification — 2026-11-27
 
@@ -54,10 +54,38 @@ legal, or buyer evidence.
 - **Scope guard:** the sprint diff from checkpoint `535d7e6` contains no changes
   under `supabase/`, `src/components/whop/`, or `.github/workflows/`.
 - **Excluded artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
-  `schema.sql` remain untracked and were not staged. No push has occurred; the
-  implementation commit is local-only and awaits owner review.
+  `schema.sql` remain untracked and were not staged. The pushed code receipt is
+  `ab8665aa80784ddc607e189a14b91e6971c24360`.
 
-**Still unverified or owner-gated:** exact-head CI, hosted Supabase migration/
+## Exact-head CI receipt — 2026-11-27
+
+The exact-head run for code commit `ab8665aa80784ddc607e189a14b91e6971c24360`
+was [run 45968420427](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45968420427)
+and concluded **failure**. This is retained as the authoritative receipt for
+that commit; it must not be described as an all-green run.
+
+| Job | Conclusion | Evidence |
+| --- | --- | --- |
+| `lint-typecheck` | success | type/lint/dependency/guard checks completed |
+| `test` | success | serial test and coverage job completed |
+| `build-and-smoke` | failure | `coverage/lcov.info` missing in this job's workspace |
+| `evidence-binding` | failure | expected stale-document signal for the pre-receipt code commit |
+
+The uploaded artifact is `15184832285`, digest
+`sha256:be73912efd9b7c8f34b47e966d0f751a5e0fe0d4ba2e25b2c4964dd1640e187c`.
+The build-and-smoke browser, automated axe/reflow, and manual-assist phases
+completed before the evidence-completeness gate failed. The failure is a
+workflow evidence-packaging defect: the separate `test` job creates
+`coverage/lcov.info`, while `build-and-smoke` requires that file without
+downloading it. Fixing that requires an owner-approved `.github/workflows/`
+change and a fresh exact-head run; it was intentionally not changed in this
+CTA task.
+
+The remaining `ceip.energy` matches are intentionally deferred legal-page
+placeholders and utility-connector test fixtures; the retired pilot placeholder
+`pilot-inquiry@ceip.energy` has zero matches under `src` and `tests`.
+
+**Still unverified or owner-gated:** a green exact-head CI run, hosted Supabase migration/
 RLS/function/storage/backup/rollback evidence, Whop deployment configuration,
 privacy/CASL approval, manual WCAG review, deployed performance, and all 13
 buyer experiments (0 executed).
