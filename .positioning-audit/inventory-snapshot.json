@@ -7,14 +7,14 @@
     "lazyImports": 68,
     "components": 208,
     "libFiles": 221,
-    "docs": 267,
+    "docs": 268,
     "edgeFunctions": 110
   },
   "mismatches": [
     {
       "metric": "docs",
-      "claimed": 266,
-      "actual": 267
+      "claimed": 268,
+      "actual": 268
     }
   ]
 }

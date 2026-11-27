@@ -22,6 +22,16 @@ or buyer evidence.
   `sha256:1a3bbdc5caf6d0769ba518f727fff7771802482f7edafe9681a7c799edf7be9c`.
 - The PR run did not produce a Netlify Deploy Preview.
 
+## Follow-up receipt — documentation inventory correction
+
+- Docs/PDF commit `605a8985a9fb65e6abe9d524bdfc11e1ff47b862` was tested by
+  [run 45987365111](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45987365111).
+- That run is retained as **failure**, not replaced: `test` and the positioning
+  verifier found one real EV-005 drift (`claimed docs=267`, `actual docs=268`)
+  introduced by this addendum itself. The correction changes only positioning
+  evidence artifacts and this receipt; it does not weaken the verifier or alter
+  product code.
+
 ## Product-value implementation evidence
 
 The code-bearing commit added the browser-local three-step proof workflow,

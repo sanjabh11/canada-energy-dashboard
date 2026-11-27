@@ -76,6 +76,13 @@ verified the code commit. Its required verification jobs are green; the
 workflow conclusion is failure only because the pre-rebind goal/mission
 documents named an older receipt.
 
+The first docs/PDF rebind commit `605a8985a9fb65e6abe9d524bdfc11e1ff47b862`
+was then tested by [run 45987365111](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45987365111).
+That run is retained as **failure**: the new audit addendum increased the
+documentation inventory from 267 to 268, while the EV-005 snapshot still said
+267. The positioning artifacts are corrected in the follow-up docs-only
+receipt; no source or product code is being changed for this repair.
+
 | Job | Conclusion | Evidence |
 | --- | --- | --- |
 | `lint-typecheck` | success | typecheck, lint, dependency, security, claim and positioning gates |
