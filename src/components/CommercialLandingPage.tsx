@@ -246,8 +246,9 @@ export function CommercialLandingPage() {
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
                 Buyer demand, delivery time, pricing, savings, and procurement fit have not been
                 validated; they remain unvalidated. The starter is a region-neutral synthetic
-                workflow fixture, not Ontario or Alberta utility evidence. BYO CSV privacy proof
-                remains a proposed workflow concept for review, not a commitment to deliver.
+                workflow fixture, not Ontario or Alberta utility evidence. Ontario GA ICI 5CP and
+                BYO CSV privacy proof remain proposed workflow concepts for review, not a
+                commitment to deliver.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm text-slate-300">
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">
