@@ -30,7 +30,10 @@ test.describe('CEIP product-value sprint', () => {
     await expect(page.getByTestId('commercial-proof-checks')).toContainText(/freshness/i);
     await expect(page.getByTestId('commercial-proof-checks')).toContainText('review');
     await expect(page.getByTestId('pilot-options-card')).toContainText('Non-validated planning hypotheses');
-    await expect(page.getByTestId('commercial-pilot-cta')).toHaveAttribute('href', /^mailto:/);
+    await expect(page.getByTestId('commercial-pilot-cta')).toHaveAttribute(
+      'href',
+      /^mailto:sanjabh11@gmail\.com\?/,
+    );
     await expect(page.getByTestId('commercial-pilot-cta')).not.toHaveAttribute('href', /demand_mw|timestamp|FDR-/i);
 
     const jsonDownload = page.waitForEvent('download');

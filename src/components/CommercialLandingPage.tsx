@@ -453,7 +453,7 @@ export function CommercialLandingPage() {
               <a
                 data-testid="commercial-pilot-cta"
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-200 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-100"
-                href="mailto:pilot-inquiry@ceip.energy?subject=CEIP%20utility%20proof%20pilot%20inquiry&body=I%20would%20like%20to%20discuss%20a%20browser-local%20utility%20proof%20workflow.%20No%20CSV%20data%20is%20included%20in%20this%20inquiry."
+                href="mailto:sanjabh11@gmail.com?subject=CEIP%20utility%20proof%20pilot%20inquiry&body=I%20would%20like%20to%20discuss%20a%20browser-local%20utility%20proof%20workflow.%20No%20CSV%20data%20is%20included%20in%20this%20inquiry."
               >
                 <Mail className="h-4 w-4" /> Discuss a hypothesis
               </a>
