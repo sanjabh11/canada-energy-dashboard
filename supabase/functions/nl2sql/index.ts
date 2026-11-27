@@ -8,7 +8,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
-import { applyRateLimit, getClientId, logApiUsage } from "../_shared/rateLimit.ts";
+import { applyRateLimit, getClientId, logApiUsage, parseClientId } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 import { introspectSchema, formatSchemaForLLM, type SchemaCatalog } from "./schema_discovery.ts";
 import { validateAndSanitizeSQL, type SQLValidationResult } from "./sql_validator.ts";
 import { getDemoDataForQuery } from "./demo_data.ts";
@@ -374,13 +375,18 @@ serve(async (req: Request) => {
   }
 
   const startedAt = Date.now();
-  const clientId = getClientId(req);
-  const apiKey = clientId.startsWith('key:') ? clientId.slice(4) : null;
-  const ipAddress = clientId.startsWith('ip:') ? clientId.slice(3) : null;
+  const { apiKey, ipAddress } = parseClientId(getClientId(req));
 
   try {
-    // Parse request
-    const body = await req.json().catch(() => ({}));
+    // Parse request (bounded — unauthenticated endpoint)
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) {
+      return jsonResponse(req, bodyRead.reason === "too_large" ? 413 : 400, { error: bodyRead.reason === "too_large" ? "Payload too large" : "Malformed JSON body" }, { ...corsHeaders, ...rl.headers });
+    }
+    const body = asJsonObject(bodyRead.json);
+    if (!body) {
+      return jsonResponse(req, 400, { error: "Body must be a JSON object" }, { ...corsHeaders, ...rl.headers });
+    }
     const request: NL2SQLRequest = {
       query: typeof body?.query === 'string' ? body.query.trim() : '',
       maxResults: Math.min(MAX_RESULTS, Math.max(1, Number(body?.maxResults) || 100)),
@@ -487,13 +493,13 @@ serve(async (req: Request) => {
       apiKey,
       ipAddress,
       responseTimeMs: Date.now() - startedAt,
-      extra: { error: String(error) },
+      extra: { error: String(error).slice(0, 300) },
     });
 
     return jsonResponse(
       req,
       500,
-      { error: 'NL2SQL processing failed', message: String(error) },
+      { error: 'NL2SQL processing failed' },
       { ...corsHeaders, ...rl.headers }
     );
   }

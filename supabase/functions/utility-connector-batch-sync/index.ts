@@ -144,8 +144,9 @@ serve(async (req) => {
       source_kind: sourceKind,
     }, 200, corsHeaders);
   } catch (error) {
+    console.error("utility-connector-batch-sync failed:", error instanceof Error ? error.message : String(error));
     return json({
-      error: error instanceof Error ? error.message : "Batch sync failed.",
+      error: "Batch sync failed.",
     }, 500, corsHeaders);
   }
 });

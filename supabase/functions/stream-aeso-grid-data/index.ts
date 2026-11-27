@@ -8,6 +8,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 import {
   buildObservedGridStatusRow,
@@ -284,6 +286,19 @@ serve(async (req: Request) => {
     });
   }
 
+  const rl = applyRateLimit(req, 'stream-aeso-grid-data');
+  if (rl.response) return rl.response;
+
+  // Ingestion triggers upstream AESO calls and service-role writes — cron or
+  // service-role only, never anonymous. aeso-ingestion-cron authorizes via
+  // the service-role bearer it already sends.
+  if (!isCronAuthorized(req)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
   if (!supabase) {
     return new Response(JSON.stringify({
       success: false,
@@ -361,10 +376,10 @@ serve(async (req: Request) => {
 
     console.error(`AESO data collection failed after ${duration}ms:`, message);
 
-    // Log failed ops run
+    // Log failed ops run (ops telemetry — bounded, never caller-facing)
     await logOpsRun('failure', {
       function: 'stream-aeso-grid-data',
-      error: message,
+      error: message.slice(0, 300),
       duration_ms: duration
     }, startedAt);
     const provenance = buildDataProvenance({
@@ -376,7 +391,7 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({
       success: false,
-      error: message,
+      error: 'Internal error',
       timestamp: new Date().toISOString(),
       provenance,
     }), {

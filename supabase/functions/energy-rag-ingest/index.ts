@@ -63,7 +63,7 @@ serve(async (req: Request) => {
       .limit(20);
 
     if (error) {
-      return jsonResponse(req, 500, { error: error.message }, rl.headers);
+      return jsonResponse(req, 500, { error: 'Internal error' }, rl.headers);
     }
 
     return jsonResponse(req, 200, { jobs: data ?? [] }, rl.headers);
@@ -227,7 +227,7 @@ serve(async (req: Request) => {
         .update({
           status: "failed",
           completed_at: new Date().toISOString(),
-          metadata: { error: String(error), forceReembed, sourceIds: documents.map((document) => document.sourceId) },
+          metadata: { error: String(error).slice(0, 300), forceReembed, sourceIds: documents.map((document) => document.sourceId) },
         })
         .eq("id", jobId);
     }
@@ -235,10 +235,10 @@ serve(async (req: Request) => {
     await logOpsRun("failure", {
       jobId,
       sourceIds: documents.map((document) => document.sourceId),
-      error: String(error),
+      error: String(error).slice(0, 300),
       durationMs: Date.now() - startedAt,
     }, startedAt);
 
-    return jsonResponse(req, 500, { error: String(error), jobId }, rl.headers);
+    return jsonResponse(req, 500, { error: 'Internal error', jobId }, rl.headers);
   }
 });

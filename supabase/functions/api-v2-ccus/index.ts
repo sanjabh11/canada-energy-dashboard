@@ -54,7 +54,7 @@ serve(async (req: Request) => {
       'Internal server error',
       500,
       corsHeaders,
-      { error: error.message }
+      { error: 'Internal error' }
     );
   }
 });

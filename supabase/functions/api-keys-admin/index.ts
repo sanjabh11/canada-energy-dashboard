@@ -85,7 +85,6 @@ serve(async (req) => {
         return withCors(
           new Response(JSON.stringify({
             error: "Failed to load API keys",
-            details: (error as any)?.message ?? String(error),
           }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
@@ -139,7 +138,6 @@ serve(async (req) => {
         return withCors(
           new Response(JSON.stringify({
             error: "Failed to create API key",
-            details: (error as any)?.message ?? String(error),
           }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

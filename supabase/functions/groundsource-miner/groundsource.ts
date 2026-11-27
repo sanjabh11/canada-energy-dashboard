@@ -15,7 +15,7 @@ export type GroundsourceRunSummary = {
   heuristic_source_count: number;
   source_count: number;
   event_count: number;
-  claim_label: 'advisory' | 'validated';
+  claim_label: 'advisory' | 'model_extracted';
   warnings: string[];
   provenance_score: number;
 };
@@ -83,7 +83,7 @@ export function normalizeGroundsourceExtractionPayload(value: unknown): Groundso
       : [];
   const sourceConfidence = clamp(Number(parsed.source_confidence ?? parsed.confidence ?? 0.7), 0, 1);
   const provenanceNotes = Array.isArray(parsed.provenance_notes)
-    ? parsed.provenance_notes.map((note) => String(note)).filter(Boolean).slice(0, 5)
+    ? parsed.provenance_notes.map((note) => String(note).slice(0, 500)).filter(Boolean).slice(0, 5)
     : [];
 
   if (rawEvents.length === 0) {
@@ -125,7 +125,10 @@ export function summarizeGroundsourceRun(params: {
       : params.llmSourceCount === 0
         ? 'heuristic'
         : 'mixed';
-  const claim_label: 'advisory' | 'validated' = extraction_mode === 'llm' ? 'validated' : 'advisory';
+  // 'validated' is reserved platform-wide for metric-gated evidence (e.g.
+  // ml-forecast AUC thresholds); LLM extraction alone is model output, not
+  // validated evidence, so it carries the honest 'model_extracted' label.
+  const claim_label: 'advisory' | 'model_extracted' = extraction_mode === 'llm' ? 'model_extracted' : 'advisory';
   const provenance_score = params.provenanceScores?.length
     ? round(params.provenanceScores.reduce((sum, value) => sum + value, 0) / params.provenanceScores.length, 4)
     : 0;

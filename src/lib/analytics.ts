@@ -35,9 +35,24 @@ function safeParse<T>(raw: string | null, fallback: T): T {
   }
 }
 
+function safeGetItem(key: string): string | null {
+  try {
+    return typeof window === 'undefined' ? null : localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined') localStorage.setItem(key, value);
+  } catch {
+    // Storage unavailable (SecurityError/quota) — persistence is best-effort.
+  }
+}
+
 export function getAttributionContext(): AttributionContext | null {
-  if (typeof window === 'undefined') return null;
-  return safeParse<AttributionContext | null>(localStorage.getItem(ATTRIBUTION_STORAGE_KEY), null);
+  return safeParse<AttributionContext | null>(safeGetItem(ATTRIBUTION_STORAGE_KEY), null);
 }
 
 export function bootstrapFunnelAttribution(): AttributionContext | null {
@@ -68,21 +83,27 @@ export function bootstrapFunnelAttribution(): AttributionContext | null {
     capturedAt: new Date().toISOString(),
   };
 
-  localStorage.setItem(ATTRIBUTION_STORAGE_KEY, JSON.stringify(attribution));
+  safeSetItem(ATTRIBUTION_STORAGE_KEY, JSON.stringify(attribution));
   return attribution;
+}
+
+function readStoredEvents(): FunnelEventRecord[] {
+  // JSON.parse succeeding is not enough — a stored `{}`/`123` parses fine but
+  // has no .push, so validate the array shape before trusting it.
+  const stored = safeParse<unknown>(safeGetItem(EVENT_LOG_STORAGE_KEY), []);
+  return Array.isArray(stored) ? (stored as FunnelEventRecord[]) : [];
 }
 
 function persistEvent(record: FunnelEventRecord): void {
   if (typeof window === 'undefined') return;
-  const existing = safeParse<FunnelEventRecord[]>(localStorage.getItem(EVENT_LOG_STORAGE_KEY), []);
+  const existing = readStoredEvents();
   existing.push(record);
   const trimmed = existing.slice(-MAX_STORED_EVENTS);
-  localStorage.setItem(EVENT_LOG_STORAGE_KEY, JSON.stringify(trimmed));
+  safeSetItem(EVENT_LOG_STORAGE_KEY, JSON.stringify(trimmed));
 }
 
 export function getFunnelEventLog(): FunnelEventRecord[] {
-  if (typeof window === 'undefined') return [];
-  return safeParse<FunnelEventRecord[]>(localStorage.getItem(EVENT_LOG_STORAGE_KEY), []);
+  return readStoredEvents();
 }
 
 export function trackEvent(event: string, props: Record<string, unknown> = {}): void {

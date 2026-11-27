@@ -19,7 +19,7 @@ export function computeMetrics(
   seasonal: { mae: number; mape: number; rmse: number },
 ): ForecastMetrics {
   if (actuals.length === 0 || predictions.length === 0) {
-    return zeroMetrics();
+    return unavailableMetrics();
   }
 
   const mae = meanAbsoluteError(actuals, predictions);
@@ -39,8 +39,10 @@ export function computeMetrics(
     seasonal_naive_mae: round(seasonal.mae, 2),
     seasonal_naive_mape: round(seasonal.mape, 2),
     seasonal_naive_rmse: round(seasonal.rmse, 2),
-    skill_score_vs_persistence: persistence.mae > 0 ? round((1 - mae / persistence.mae) * 100, 2) : 0,
-    skill_score_vs_seasonal: seasonal.mae > 0 ? round((1 - mae / seasonal.mae) * 100, 2) : 0,
+    skill_score_vs_persistence:
+      persistence.mae > 0 ? round((1 - mae / persistence.mae) * 100, 2) : Number.NaN,
+    skill_score_vs_seasonal:
+      seasonal.mae > 0 ? round((1 - mae / seasonal.mae) * 100, 2) : Number.NaN,
     r_squared: ssTot > 0 ? round(1 - ssRes / ssTot, 2) : 0,
     sample_size: actuals.length,
   };
@@ -64,22 +66,52 @@ export function zeroMetrics(): ForecastMetrics {
   };
 }
 
+export function unavailableMetrics(): ForecastMetrics {
+  return {
+    mae: Number.NaN,
+    mape: Number.NaN,
+    rmse: Number.NaN,
+    persistence_mae: Number.NaN,
+    persistence_mape: Number.NaN,
+    persistence_rmse: Number.NaN,
+    seasonal_naive_mae: Number.NaN,
+    seasonal_naive_mape: Number.NaN,
+    seasonal_naive_rmse: Number.NaN,
+    skill_score_vs_persistence: Number.NaN,
+    skill_score_vs_seasonal: Number.NaN,
+    r_squared: Number.NaN,
+    sample_size: 0,
+  };
+}
+
 export function meanAbsoluteError(actuals: number[], predictions: number[]): number {
-  return actuals.reduce((sum, actual, index) => sum + Math.abs(actual - predictions[index]), 0) / actuals.length;
+  return (
+    actuals.reduce((sum, actual, index) => sum + Math.abs(actual - predictions[index]), 0) /
+    actuals.length
+  );
 }
 
 export function meanAbsolutePercentageError(actuals: number[], predictions: number[]): number {
+  if (
+    actuals.length === 0 ||
+    actuals.length !== predictions.length ||
+    actuals.some((actual) => actual <= 0)
+  ) {
+    return Number.NaN;
+  }
   return (
-    actuals.reduce((sum, actual, index) => {
-      if (actual === 0) return sum;
+    (actuals.reduce((sum, actual, index) => {
       return sum + Math.abs((actual - predictions[index]) / actual);
-    }, 0) / actuals.length
-  ) * 100;
+    }, 0) /
+      actuals.length) *
+    100
+  );
 }
 
 export function rootMeanSquaredError(actuals: number[], predictions: number[]): number {
   return Math.sqrt(
-    actuals.reduce((sum, actual, index) => sum + (actual - predictions[index]) ** 2, 0) / actuals.length,
+    actuals.reduce((sum, actual, index) => sum + (actual - predictions[index]) ** 2, 0) /
+      actuals.length,
   );
 }
 
@@ -115,15 +147,26 @@ export function buildForecastBenchmarkFailureNotes(benchmark: ForecastMetrics): 
   const baselineCandidates = [
     { label: 'persistence baseline', mae: benchmark.persistence_mae },
     { label: 'seasonal-naive baseline', mae: benchmark.seasonal_naive_mae },
-  ].filter((candidate) => Number.isFinite(candidate.mae) && candidate.mae > 0);
+  ].filter((candidate) => Number.isFinite(candidate.mae) && candidate.mae >= 0);
 
-  if (!Number.isFinite(benchmark.mae) || benchmark.mae <= 0 || benchmark.sample_size <= 0 || baselineCandidates.length === 0) {
+  if (
+    !Number.isFinite(benchmark.mae) ||
+    benchmark.mae <= 0 ||
+    benchmark.sample_size <= 0 ||
+    baselineCandidates.length === 0
+  ) {
     return [];
   }
 
-  const bestBaseline = baselineCandidates.reduce((best, candidate) => (
-    candidate.mae < best.mae ? candidate : best
-  ));
+  const bestBaseline = baselineCandidates.reduce((best, candidate) =>
+    candidate.mae < best.mae ? candidate : best,
+  );
+
+  if (bestBaseline.mae === 0) {
+    return [
+      `Perfect ${bestBaseline.label} scored on the holdout window; skill versus a zero-error baseline is undefined, so accuracy uplift is not measurable.`,
+    ];
+  }
 
   if (benchmark.mae <= bestBaseline.mae) {
     return [];

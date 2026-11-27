@@ -8,15 +8,25 @@
 import type {
   UtilityGeographyLevel,
   UtilityHistoricalLoadRow,
-  UtilityInputGranularity,
-  UtilityJurisdiction,
   UtilityQualityFlag,
   PublicUtilitySampleManifest,
+  UtilityCsvFormatEvidence,
 } from './types/utilityForecasting';
+import { generateOntarioPublicUtilitySampleRows } from './utilitySampleData';
+
+export type { UtilityCsvFormatEvidence };
+
+export const UTILITY_CSV_FORMAT_EVIDENCE_LABELS: Record<UtilityCsvFormatEvidence, string> = {
+  bundled_fixture_hash_match:
+    'Bundled synthetic CEIP fixture (deterministic fingerprint match); synthetic disclosure applies',
+  ieso_format_detected: 'IESO format recognized; upload origin unverified',
+  unverified_upload: 'Unverified upload; no recognized format or bundled-fixture fingerprint',
+};
 
 export interface ParsedUtilityCsv {
   rows: UtilityHistoricalLoadRow[];
   errors: string[];
+  format_evidence: UtilityCsvFormatEvidence;
 }
 
 export const TEMPLATE_HEADERS = [
@@ -59,25 +69,135 @@ const IESO_DEMAND_HEADER_ALIASES = {
 } as const;
 
 export const PUBLIC_SOURCE_TRANSFORM_VERSION = 'ieso-apo-derived-transform-v1';
+export const BUNDLED_SYNTHETIC_FIXTURE_VERSION = 'bundled-synthetic-fixture-v1';
+export const MAX_UTILITY_CSV_BYTES = 25 * 1024 * 1024;
+export const MAX_UTILITY_CSV_DATA_ROWS = 100_000;
+
+function csvInputLimitError(text: string): string | null {
+  if (text.length > MAX_UTILITY_CSV_BYTES) {
+    return `CSV exceeds the ${MAX_UTILITY_CSV_BYTES / (1024 * 1024)} MiB upload limit.`;
+  }
+
+  let byteCount = 0;
+  for (const character of text) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    byteCount += codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4;
+    if (byteCount > MAX_UTILITY_CSV_BYTES) {
+      return `CSV exceeds the ${MAX_UTILITY_CSV_BYTES / (1024 * 1024)} MiB upload limit.`;
+    }
+  }
+  return null;
+}
+
+function rejectedUtilityCsv(error: string): ParsedUtilityCsv {
+  return { rows: [], errors: [error], format_evidence: 'unverified_upload' };
+}
 
 export const ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST: PublicUtilitySampleManifest = {
   id: 'ieso-apo-public-system-sample-2026',
   jurisdiction: 'Ontario',
-  label: 'IESO Hourly Demand Report Ontario public system sample',
+  label: 'Synthetic Ontario system-demand workflow fixture (IESO source reference)',
   source_url: 'https://reports-public.ieso.ca/public/Demand/PUB_Demand_2026.csv',
-  source_document: 'IESO Public Reports Site Hourly Demand Report, with Annual Planning Outlook context for planning use',
+  source_document:
+    'IESO Public Reports Site Hourly Demand Report, listed as a reference for optional raw CSV imports',
   source_file: 'PUB_Demand_2026.csv',
+  synthetic_source_id: 'ceip-synthetic-ieso-public-system-fixture-v1',
+  synthetic_fixture_version: BUNDLED_SYNTHETIC_FIXTURE_VERSION,
   generated_date: '2026-05-29',
-  sample_scope: 'public-system-sample',
-  source_derivation_note: 'CEIP now supports raw IESO Hourly Demand Report CSV transforms for Date, Hour, Market Demand, and Ontario Demand fields. The bundled public-system starter remains workflow proof and must be refreshed from the official source file during pilots.',
-  disclaimer: 'Public-derived workflow proof only. Not customer LDC history, not production utility telemetry, and not a regulator-submitted record.',
+  sample_scope: 'synthetic-public-context',
+  source_derivation_note:
+    'The bundled values are generated locally by CEIP formulas and are not downloaded, transformed, or validated against the referenced IESO CSV. CEIP separately supports parsing raw IESO Date, Hour, Market Demand, and Ontario Demand columns.',
+  disclaimer:
+    'Synthetic CEIP workflow proof only. The rows are not IESO measurements, customer LDC history, production utility telemetry, or a regulator-submitted record.',
+  synthetic_fixture_attribution_note:
+    'Synthetic CEIP fixture: formula-generated values; no IESO observation records are reproduced. The IESO report and terms are linked as references for separate raw-data imports.',
+  attribution:
+    'Copyright © 2004-2022 Independent Electricity System Operator, all rights reserved. This information is subject to the Terms of Use set out in the IESO’s website.',
+  terms_url: 'https://www.ieso.ca/terms-of-use',
 };
 
 export function sortRows(rows: UtilityHistoricalLoadRow[]): UtilityHistoricalLoadRow[] {
-  return [...rows].sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime());
+  return [...rows].sort(
+    (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
+  );
+}
+
+function fnv1aHex(value: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+/**
+ * Stable fingerprint over canonical row content — exact-match, not heuristic.
+ * Field order, separators, and normalization are fixed here; quality flags and
+ * derived fields are excluded because they are recomputed during parsing.
+ */
+export function fingerprintUtilityLoadRows(rows: UtilityHistoricalLoadRow[]): string {
+  // Total-order canonical sort so the fingerprint is independent of row order:
+  // timestamp, then geography, then customer class.
+  const serialized = [...rows]
+    .sort((left, right) => {
+      const byTime = new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime();
+      if (byTime !== 0) return byTime;
+      const byGeography = left.geography_id.localeCompare(right.geography_id);
+      if (byGeography !== 0) return byGeography;
+      return left.customer_class.localeCompare(right.customer_class);
+    })
+    .map((row) =>
+      [
+        row.timestamp,
+        row.geography_level,
+        row.geography_id,
+        row.customer_class,
+        row.demand_mw,
+        row.weather_zone ?? '',
+        row.temperature_c ?? '',
+        row.net_load_mw ?? '',
+        row.gross_load_mw ?? '',
+        row.customer_count ?? '',
+        row.source_system ?? '',
+        row.feeder_id ?? '',
+        row.substation_id ?? '',
+      ].join('|'),
+    )
+    .join('\n');
+  return `fnv1a-${fnv1aHex(`${rows.length}\n${serialized}`)}`;
+}
+
+// Lazily fingerprinted so the fixture generator only runs when an upload is
+// actually parsed; the generator is deterministic, so one computation serves
+// every comparison in the session.
+let bundledFixtureFingerprintCache: string | null = null;
+function getBundledFixtureFingerprint(): string {
+  if (bundledFixtureFingerprintCache === null) {
+    bundledFixtureFingerprintCache = fingerprintUtilityLoadRows(
+      generateOntarioPublicUtilitySampleRows(),
+    );
+  }
+  return bundledFixtureFingerprintCache;
+}
+
+/**
+ * Exact-match check: every canonical field of every parsed row must reproduce
+ * the bundled synthetic fixture. Caller-supplied `source_system` labels alone
+ * never qualify — only the content fingerprint does.
+ */
+export function isBundledFixtureContent(rows: UtilityHistoricalLoadRow[]): boolean {
+  return rows.length > 0 && fingerprintUtilityLoadRows(rows) === getBundledFixtureFingerprint();
+}
+
+function classifyGenericUploadEvidence(rows: UtilityHistoricalLoadRow[]): UtilityCsvFormatEvidence {
+  return isBundledFixtureContent(rows) ? 'bundled_fixture_hash_match' : 'unverified_upload';
 }
 
 export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
+  const inputLimitError = csvInputLimitError(text);
+  if (inputLimitError) return rejectedUtilityCsv(inputLimitError);
+
   const iesoDemandCsv = tryParseIesoPublicDemandCsv(text);
   if (iesoDemandCsv) return iesoDemandCsv;
 
@@ -87,7 +207,17 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     .filter((line) => line.length > 0 && !line.startsWith('#'));
 
   if (lines.length < 2) {
-    return { rows: [], errors: ['CSV must include a header row and at least one data row.'] };
+    return {
+      rows: [],
+      errors: ['CSV must include a header row and at least one data row.'],
+      format_evidence: 'unverified_upload',
+    };
+  }
+
+  if (lines.length - 1 > MAX_UTILITY_CSV_DATA_ROWS) {
+    return rejectedUtilityCsv(
+      `CSV exceeds the ${MAX_UTILITY_CSV_DATA_ROWS.toLocaleString()} data-row limit.`,
+    );
   }
 
   const headers = splitCsvLine(lines[0]).map(normalizeHeader);
@@ -105,6 +235,7 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     return {
       rows: [],
       errors: ['CSV must include timestamp/datetime and demand_mw/load_mw columns.'],
+      format_evidence: 'unverified_upload',
     };
   }
 
@@ -113,21 +244,34 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     const timestamp = readColumn(columns, columnIndexes.timestamp);
     const demandMw = parseNumeric(readColumn(columns, columnIndexes.demand_mw));
 
-    if (!timestamp || !Number.isFinite(new Date(timestamp).getTime()) || !Number.isFinite(demandMw)) {
+    if (
+      !timestamp ||
+      !Number.isFinite(new Date(timestamp).getTime()) ||
+      !Number.isFinite(demandMw)
+    ) {
       errors.push(`Row ${index + 1} skipped: invalid timestamp or demand value.`);
       continue;
     }
 
     const geographyId = readColumn(columns, columnIndexes.geography_id) || 'system';
-    const geographyLevel = normalizeGeographyLevel(readColumn(columns, columnIndexes.geography_level), geographyId);
+    const geographyLevel = normalizeGeographyLevel(
+      readColumn(columns, columnIndexes.geography_level),
+      geographyId,
+    );
     const customerClass = readColumn(columns, columnIndexes.customer_class) || 'mixed';
     const netLoad = parseOptionalNumeric(readColumn(columns, columnIndexes.net_load_mw));
     const grossLoad = parseOptionalNumeric(readColumn(columns, columnIndexes.gross_load_mw));
     const qualityFlags: UtilityQualityFlag[] = [];
+    const hasClockTime = /[T ]\d{2}:\d{2}/.test(timestamp);
+    const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp);
+    if (hasClockTime && !hasExplicitTimezone) qualityFlags.push('timezone_ambiguous');
     if (demandMw < 0) qualityFlags.push('negative_load');
-    if (!Number.isFinite(Number(readColumn(columns, columnIndexes.temperature_c)))) qualityFlags.push('missing_temperature');
-    if (!readColumn(columns, columnIndexes.customer_count)) qualityFlags.push('customer_count_missing');
-    if (netLoad !== null && grossLoad !== null && netLoad > grossLoad) qualityFlags.push('net_exceeds_gross');
+    if (!Number.isFinite(Number(readColumn(columns, columnIndexes.temperature_c))))
+      qualityFlags.push('missing_temperature');
+    if (!readColumn(columns, columnIndexes.customer_count))
+      qualityFlags.push('customer_count_missing');
+    if (netLoad !== null && grossLoad !== null && netLoad > grossLoad)
+      qualityFlags.push('net_exceeds_gross');
 
     rows.push({
       timestamp: new Date(timestamp).toISOString(),
@@ -147,14 +291,23 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     });
   }
 
-  return { rows: sortRows(rows), errors };
+  const sortedRows = sortRows(rows);
+  return { rows: sortedRows, errors, format_evidence: classifyGenericUploadEvidence(sortedRows) };
 }
 
 export function parseIesoPublicDemandCsv(text: string): ParsedUtilityCsv {
-  return tryParseIesoPublicDemandCsv(text) ?? {
-    rows: [],
-    errors: ['CSV must include IESO-style Date, Hour, Ontario Demand, and Market Demand columns.'],
-  };
+  const inputLimitError = csvInputLimitError(text);
+  if (inputLimitError) return rejectedUtilityCsv(inputLimitError);
+
+  return (
+    tryParseIesoPublicDemandCsv(text) ?? {
+      rows: [],
+      errors: [
+        'CSV must include IESO-style Date, Hour, Ontario Demand, and Market Demand columns.',
+      ],
+      format_evidence: 'unverified_upload',
+    }
+  );
 }
 
 function tryParseIesoPublicDemandCsv(text: string): ParsedUtilityCsv | null {
@@ -165,13 +318,21 @@ function tryParseIesoPublicDemandCsv(text: string): ParsedUtilityCsv | null {
 
   const headerIndex = lines.findIndex((line) => {
     const headers = splitCsvLine(line).map(normalizeHeader);
-    return findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.date) >= 0
-      && findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.hour) >= 0
-      && findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.ontarioDemand) >= 0
-      && findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.marketDemand) >= 0;
+    return (
+      findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.date) >= 0 &&
+      findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.hour) >= 0 &&
+      findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.ontarioDemand) >= 0 &&
+      findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.marketDemand) >= 0
+    );
   });
 
   if (headerIndex < 0) return null;
+
+  if (lines.length - headerIndex - 1 > MAX_UTILITY_CSV_DATA_ROWS) {
+    return rejectedUtilityCsv(
+      `CSV exceeds the ${MAX_UTILITY_CSV_DATA_ROWS.toLocaleString()} data-row limit.`,
+    );
+  }
 
   const headers = splitCsvLine(lines[headerIndex]).map(normalizeHeader);
   const dateIndex = findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.date);
@@ -211,7 +372,7 @@ function tryParseIesoPublicDemandCsv(text: string): ParsedUtilityCsv | null {
     errors.push('No valid IESO public demand rows were parsed.');
   }
 
-  return { rows: sortRows(rows), errors };
+  return { rows: sortRows(rows), errors, format_evidence: 'ieso_format_detected' };
 }
 
 function splitCsvLine(line: string): string[] {
@@ -246,7 +407,10 @@ function splitCsvLine(line: string): string[] {
 }
 
 function normalizeHeader(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_');
 }
 
 function findHeaderIndex(headers: string[], aliases: readonly string[]): number {
@@ -259,6 +423,7 @@ function readColumn(columns: string[], index: number): string {
 }
 
 function parseNumeric(value: string): number {
+  if (!value) return Number.NaN;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
@@ -292,8 +457,11 @@ function buildIesoHourEndingTimestamp(dateValue: string, hourEnding: number): st
       ? { year: Number(mdy[3]), month: Number(mdy[1]), day: Number(mdy[2]) }
       : null;
 
-  if (!parsed || parsed.month < 1 || parsed.month > 12 || parsed.day < 1 || parsed.day > 31) return null;
+  if (!parsed || parsed.month < 1 || parsed.month > 12 || parsed.day < 1 || parsed.day > 31)
+    return null;
 
-  const timestamp = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day, normalizedHour - 1, 0, 0));
+  const timestamp = new Date(
+    Date.UTC(parsed.year, parsed.month - 1, parsed.day, normalizedHour - 1, 0, 0),
+  );
   return Number.isFinite(timestamp.getTime()) ? timestamp.toISOString() : null;
 }

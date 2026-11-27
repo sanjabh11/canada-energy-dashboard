@@ -8,7 +8,7 @@
  */
 declare const Deno: { env: { get(name: string): string | undefined } };
 
-function constantTimeEqual(left: string, right: string): boolean {
+export function constantTimeEqual(left: string, right: string): boolean {
   if (!left || !right || left.length !== right.length) return false;
 
   let difference = 0;

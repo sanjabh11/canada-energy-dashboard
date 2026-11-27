@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
-import { applyRateLimit, getClientId, logApiUsage } from "../_shared/rateLimit.ts";
+import { applyRateLimit, getClientId, logApiUsage, parseClientId } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 import { createGeminiEmbedding, EMBEDDING_DIMENSION, isEmbeddingProviderConfigured, vectorLiteral } from "../_shared/ragEmbeddings.ts";
 import { chunkCorpusDocument, getSeedCorpusDocuments } from "../_shared/ragChunking.ts";
 
@@ -103,9 +104,7 @@ serve(async (req: Request) => {
   if (rl.response) return rl.response;
 
   const startedAt = Date.now();
-  const clientId = getClientId(req);
-  const apiKey = clientId.startsWith('key:') ? clientId.slice(4) : null;
-  const ipAddress = clientId.startsWith('ip:') ? clientId.slice(3) : null;
+  const { apiKey, ipAddress } = parseClientId(getClientId(req));
 
   try {
     if (req.method !== 'POST') {
@@ -116,7 +115,14 @@ serve(async (req: Request) => {
       return jsonResponse(req, 503, { error: 'Supabase service configuration missing' }, { ...corsHeaders, ...rl.headers });
     }
 
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) {
+      return jsonResponse(req, bodyRead.reason === "too_large" ? 413 : 400, { error: bodyRead.reason === "too_large" ? "Payload too large" : "Malformed JSON body" }, { ...corsHeaders, ...rl.headers });
+    }
+    const body = asJsonObject(bodyRead.json);
+    if (!body) {
+      return jsonResponse(req, 400, { error: "Body must be a JSON object" }, { ...corsHeaders, ...rl.headers });
+    }
     const query = typeof body?.query === 'string' ? body.query.trim() : '';
     const limit = Math.min(MAX_LIMIT, Math.max(1, Number(body?.limit) || 5));
     const sourceTypes = normalizeSourceTypes(body?.sourceTypes);
@@ -145,7 +151,7 @@ serve(async (req: Request) => {
         mode = 'vector';
         results = data;
       } else {
-        fallbackReason = error?.message ?? 'no_vector_results';
+        fallbackReason = error ? 'vector_search_failed' : 'no_vector_results';
       }
     } else {
       fallbackReason = 'query_embedding_unavailable';
@@ -166,7 +172,7 @@ serve(async (req: Request) => {
           apiKey,
           ipAddress,
           responseTimeMs: Date.now() - startedAt,
-          extra: { queryLength: query.length, limit, fallbackReason: error.message },
+          extra: { queryLength: query.length, limit, fallbackReason: 'lexical_search_failed' },
         });
 
         const localResults = searchSeedCorpus(query, limit, sourceTypes);
@@ -177,7 +183,7 @@ serve(async (req: Request) => {
             results: [],
             meta: {
               usedEmbedding: Boolean(queryEmbedding),
-              fallbackReason: error.message,
+              fallbackReason: 'lexical_search_failed',
               limit,
               resultCount: 0,
               sourceTypes: sourceTypes ?? [],
@@ -186,7 +192,7 @@ serve(async (req: Request) => {
         }
 
         mode = 'lexical';
-        fallbackReason = `${error.message};local_seed_corpus`;
+        fallbackReason = 'lexical_search_failed;local_seed_corpus';
         results = localResults;
       } else {
         results = Array.isArray(data) ? data : [];
@@ -230,9 +236,9 @@ serve(async (req: Request) => {
       apiKey,
       ipAddress,
       responseTimeMs: Date.now() - startedAt,
-      extra: { error: String(error) },
+      extra: { error: String(error).slice(0, 300) },
     });
 
-    return jsonResponse(req, 500, { error: String(error) }, { ...corsHeaders, ...rl.headers });
+    return jsonResponse(req, 500, { error: 'Internal error' }, { ...corsHeaders, ...rl.headers });
   }
 });

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -25,7 +26,15 @@ async function handleSystemState(req: Request, cors: Record<string, string>): Pr
     });
   }
 
-  const body = await req.json().catch(() => ({} as any));
+  const bodyRead = await readBoundedJson(req);
+  if (!bodyRead.ok) {
+    const tooLarge = bodyRead.reason === "too_large";
+    return new Response(JSON.stringify({ error: tooLarge ? "Payload too large" : "Malformed JSON body" }), { status: tooLarge ? 413 : 400, headers: { ...cors, ...jsonHeaders } });
+  }
+  const body = asJsonObject(bodyRead.json);
+  if (!body) {
+    return new Response(JSON.stringify({ error: "Body must be a JSON object" }), { status: 400, headers: { ...cors, ...jsonHeaders } });
+  }
   const regionRaw = (body.region as string | undefined) ?? "canada";
   const region = regionRaw.toLowerCase();
 

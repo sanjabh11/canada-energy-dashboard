@@ -8,10 +8,7 @@
 
 import type { ForecastMetrics } from '../demandForecaster';
 import type { FreshnessStatus } from '../foundation';
-import type {
-  LiveSurfaceContract,
-  LiveSurfaceSourceKind,
-} from '../liveSurfaceContract';
+import type { LiveSurfaceContract, LiveSurfaceSourceKind } from '../liveSurfaceContract';
 import type { ProvenanceMetadata } from './provenance';
 import type {
   AUC_DSP_DataSchedule_Row,
@@ -22,6 +19,8 @@ import type {
 
 export type UtilityJurisdiction = 'Ontario' | 'Alberta';
 export type UtilityInputGranularity = 'hourly' | 'monthly';
+export type UtilityTimeAxisStatus =
+  'regular_hourly' | 'regular_monthly' | 'unsupported' | 'insufficient_history';
 export type UtilityWeatherCase = 'median' | 'extreme';
 export type UtilityGeographyLevel = 'system' | 'substation' | 'feeder';
 export type UtilityInputSourceKind = LiveSurfaceSourceKind;
@@ -41,7 +40,8 @@ export type UtilityQualityFlag =
   | 'vee_edited'
   | 'meter_gap_filled'
   | 'telemetry_outage'
-  | 'upsampled_15min';
+  | 'upsampled_15min'
+  | 'timezone_ambiguous';
 
 export interface UtilityHistoricalLoadRow {
   timestamp: string;
@@ -222,40 +222,125 @@ export interface UtilityRegulatoryExports {
   };
 }
 
+/**
+ * Deterministic evidence about what an uploaded CSV actually is. Emitted by the
+ * parser so upload transports cannot silently lose (or invent) provenance:
+ * - `bundled_fixture_hash_match`: the parsed rows exactly reproduce the bundled
+ *   synthetic CEIP fixture (stable fingerprint over canonical row content).
+ * - `ieso_format_detected`: headers/shape match the IESO public-demand export
+ *   format. Format detection only — the upload origin remains UNVERIFIED.
+ * - `unverified_upload`: everything else.
+ */
+export type UtilityCsvFormatEvidence =
+  'bundled_fixture_hash_match' | 'ieso_format_detected' | 'unverified_upload';
+
 export interface PublicSourceManifest {
   id: string;
   sourceUrl: string;
   sourceFile: string;
-  fetchedAt: string;
+  fetchedAt: string | null;
+  isSyntheticFixture: boolean;
+  sourceAttribution: string | null;
+  sourceTermsUrl: string | null;
   hash: string;
   transformVersion: string;
   sourceKind: UtilityInputSourceKind;
   disclaimer: string;
+  /**
+   * Parser-produced evidence for uploaded CSVs. `null` when the package was
+   * not built from an upload recognized by the parser — it never upgrades
+   * provenance by itself.
+   */
+  formatEvidence: UtilityCsvFormatEvidence | null;
 }
+
+/**
+ * Completeness scope for the canonical geography level selected for forecast
+ * aggregation:
+ * - `complete_system`: a system-level series covers every observed timestamp,
+ *   so the measured total cannot silently omit a child geography.
+ * - `observed_entities`: a feeder/substation level covers every observed
+ *   entity x timestamp slot, but the input carries no authoritative entity
+ *   inventory — a wholly absent feeder/substation would not be detected.
+ * - `unknown`: even the observed entity x timestamp grid has missing slots.
+ */
+export type UtilityHierarchyCompletenessScope = 'complete_system' | 'observed_entities' | 'unknown';
 
 export interface ForecastEvidenceSplit {
   split_id: string;
   train_start: string;
   train_end: string;
+  calibration_start: string | null;
+  calibration_end: string | null;
   test_start: string;
   test_end: string;
   train_count: number;
+  calibration_count: number;
   test_count: number;
+  /** Length of the scored test window in intervals (== test_count). */
+  test_window_steps: number;
+  /**
+   * One-based forecast lead of the first test step, measured from the fit
+   * origin (end of the fit window). Because the predictor is fit before the
+   * calibration tail, a 24-step test window behind a 168-step calibration
+   * tail is forecast at leads 169-192, not 1-24.
+   */
+  forecast_lead_start: number;
+  /** One-based forecast lead of the last test step from the fit origin. */
+  forecast_lead_end: number;
   mae: number;
   mape: number;
   rmse: number;
   persistence_mae: number;
-  seasonal_naive_mae: number;
-  interval_coverage_pct: number;
-  mean_interval_score_mw: number;
+  /**
+   * Null when the seasonal-naive baseline could not be scored on this fold
+   * (e.g. fit window shorter than the seasonal period). Never interpret a
+   * missing baseline as zero error.
+   */
+  seasonal_naive_mae: number | null;
+  /**
+   * `measured` when the seasonal-naive challenger was scored on the fold's
+   * test window; `insufficient_history` when it was unavailable and is
+   * excluded from skill/challenger comparisons.
+   */
+  baseline_status: 'measured' | 'insufficient_history';
+  interval_status: 'measured' | 'insufficient_history';
+  interval_covered_count: number | null;
+  interval_coverage_pct: number | null;
+  interval_width_mw: number | null;
+  mean_interval_score_mw: number | null;
 }
 
 export interface ForecastEvidenceReport {
   model_version: string;
   validation_method: 'rolling_origin_cv';
   rolling_origin_splits: ForecastEvidenceSplit[];
-  conformal_interval_coverage_pct: number;
-  conformal_interval_width_mw: number;
+  time_axis_status: UtilityTimeAxisStatus;
+  time_axis_note: string;
+  /**
+   * `measured` when the primary holdout benchmark scored the seasonal-naive
+   * baseline; `insufficient_history` when the seasonal baseline was
+   * unavailable (its benchmark metrics are non-finite) and it was excluded
+   * from skill scores and champion/challenger comparisons.
+   */
+  baseline_status: 'measured' | 'insufficient_history' | 'unsupported_time_axis';
+  /**
+   * Completeness scope of the canonical geography level that fed forecast
+   * aggregation. UI consumers must not render a "complete" hierarchy claim
+   * unless this is `complete_system`.
+   */
+  hierarchy_completeness_scope: UtilityHierarchyCompletenessScope;
+  interval_status: 'measured' | 'insufficient_history' | 'unsupported_time_axis';
+  interval_method: 'chronological_tail_calibration';
+  interval_method_note: string;
+  interval_target_coverage_pct: number;
+  interval_measured_split_count: number;
+  interval_calibration_sample_count: number;
+  interval_calibration_sample_uses: number;
+  interval_test_sample_count: number;
+  empirical_interval_coverage_pct: number | null;
+  mean_interval_width_mw: number | null;
+  mean_interval_score_mw: number | null;
   benchmark_failure_notes: string[];
   champion_challenger: {
     champion: 'transparent_trend_seasonal';
@@ -306,8 +391,13 @@ export interface PublicUtilitySampleManifest {
   source_url: string;
   source_document: string;
   source_file: string;
+  synthetic_source_id: string;
+  synthetic_fixture_version: string;
   generated_date: string;
   sample_scope: string;
   source_derivation_note: string;
   disclaimer: string;
+  synthetic_fixture_attribution_note: string;
+  attribution: string;
+  terms_url: string;
 }

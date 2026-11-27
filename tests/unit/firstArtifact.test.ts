@@ -6,9 +6,26 @@ import {
 } from '../../src/lib/analytics';
 
 const store = new Map<string, string>();
+const sessionStore = new Map<string, string>();
+
+const stubWindow = (plausible: unknown) =>
+  vi.stubGlobal('window', {
+    plausible,
+    sessionStorage: {
+      getItem: (key: string) => sessionStore.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        sessionStore.set(key, value);
+      },
+      removeItem: (key: string) => {
+        sessionStore.delete(key);
+      },
+      clear: () => sessionStore.clear(),
+    },
+  });
 
 beforeEach(() => {
   store.clear();
+  sessionStore.clear();
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => store.get(key) ?? null,
     setItem: (key: string, value: string) => {
@@ -19,13 +36,14 @@ beforeEach(() => {
     },
     clear: () => store.clear(),
   });
-  vi.stubGlobal('window', { plausible: vi.fn() });
+  stubWindow(vi.fn());
+  vi.stubGlobal('performance', { now: vi.fn(() => 1234) });
 });
 
 describe('trackFirstArtifact — shared activation event', () => {
   it('emits a first_artifact event with artifact name and ms_since_landing', () => {
     const plausible = vi.fn();
-    vi.stubGlobal('window', { plausible });
+    stubWindow(plausible);
 
     trackFirstArtifact('tier_cfo_memo', { format: 'pdf' });
 
@@ -49,7 +67,7 @@ describe('trackFirstArtifact — shared activation event', () => {
 
   it('merges caller props without dropping artifact identity', () => {
     const plausible = vi.fn();
-    vi.stubGlobal('window', { plausible });
+    stubWindow(plausible);
     trackFirstArtifact('byo_csv_proof_report', { sample: 'identifier_risk' });
     const props = plausible.mock.calls[0][1].props;
     expect(props.sample).toBe('identifier_risk');
@@ -78,6 +96,27 @@ describe('trackFirstArtifact — shared activation event', () => {
     const log = getFunnelEventLog();
     expect(log.filter((record) => record.event === 'first_artifact').length).toBe(1);
   });
+
+  it('emits best-effort when sessionStorage throws', () => {
+    // Storage-unavailable semantics: the marker cannot be read or written, so
+    // the event still fires once per call (dedupe degrades, delivery does not).
+    const plausible = vi.fn();
+    vi.stubGlobal('window', {
+      plausible,
+      sessionStorage: {
+        getItem: () => {
+          throw new Error('SecurityError');
+        },
+        setItem: () => {
+          throw new Error('SecurityError');
+        },
+      },
+    });
+
+    trackFirstArtifact('tier_cfo_memo', { format: 'pdf' });
+
+    expect(plausible).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('msSinceLanding', () => {
@@ -85,5 +124,37 @@ describe('msSinceLanding', () => {
     const ms = msSinceLanding();
     expect(ms).not.toBeNull();
     expect(ms!).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('first-artifact timing semantics', () => {
+  const freshSessionStorage = () => {
+    const store = new Map<string, string>();
+    return {
+      getItem: (k: string): string | null => store.get(k) ?? null,
+      setItem: (k: string, v: string): void => {
+        store.set(k, v);
+      },
+    };
+  };
+
+  it('dedupe is session-scoped — a simulated reload (fresh sessionStorage) re-fires once', () => {
+    const plausible = vi.fn();
+    vi.stubGlobal('window', { plausible, sessionStorage: freshSessionStorage() });
+    trackFirstArtifact('tier_cfo_memo');
+    trackFirstArtifact('tier_cfo_memo');
+    expect(plausible).toHaveBeenCalledTimes(1);
+    vi.stubGlobal('window', { plausible, sessionStorage: freshSessionStorage() });
+    trackFirstArtifact('tier_cfo_memo');
+    expect(plausible).toHaveBeenCalledTimes(2);
+  });
+
+  it('ms_since_landing is null, not a crash, when performance is unavailable', () => {
+    const plausible = vi.fn();
+    vi.stubGlobal('performance', undefined);
+    vi.stubGlobal('window', { plausible, sessionStorage: freshSessionStorage() });
+    trackFirstArtifact('tier_cfo_memo');
+    expect(plausible).toHaveBeenCalledTimes(1);
+    expect(plausible.mock.calls[0][1].props.ms_since_landing).toBeNull();
   });
 });

@@ -9,6 +9,7 @@ import {
   buildUtilityBenchmarkAppendixMarkdown,
   buildUtilityForecastProofBundle,
   buildUtilityGenericCsv,
+  buildUtilityJurisdictionCsv,
   buildUtilityPlanningDescriptor,
 } from '../../src/lib/utilityForecastProofPack';
 
@@ -74,7 +75,7 @@ describe('utilityForecastProofPack', () => {
     expect(appendix).toContain('- Rolling-origin splits:');
     expect(appendix).toContain('- Champion model: transparent_trend_seasonal');
     expect(appendix).toContain('## Benchmark failure notes');
-    expect(appendix).toContain('Baseline win: persistence baseline');
+    expect(appendix).toContain('No baseline-win failure note was emitted');
     expect(appendix).toContain('- MAE:');
     expect(appendix).toContain('- MAPE:');
     expect(appendix).toContain('- RMSE:');
@@ -99,7 +100,7 @@ describe('utilityForecastProofPack', () => {
     const csv = buildUtilityGenericCsv(forecastPackage);
 
     expect(bundle.artifacts[0].claimLabel).toBe('advisory');
-    expect(bundle.artifacts[0].isFallback).toBe(false);
+    expect(bundle.artifacts[0].isFallback).toBe(true);
     expect(descriptor.sections[0].body).toContain('Source kind: public_system_sample');
     expect(appendix).toContain(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer);
     expect(csv).toContain('# Source Kind: public_system_sample');
@@ -123,6 +124,53 @@ describe('utilityForecastProofPack', () => {
     expect(bundle.artifacts[0].claimLabel).toBe('constructed-scenario');
     expect(bundle.artifacts[0].commercialProofState).toBe('constructed_commercial_scenario');
     expect(appendix).toContain('constructed commercial scenario');
+  });
+
+  it('carries deterministic upload-format evidence into exported artifact headers', () => {
+    const forecastPackage = buildUtilityForecastPackage({
+      rows: generateOntarioPublicUtilitySampleRows(),
+      scenario: buildScenario('Ontario'),
+      sourceLabel: ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label,
+      isSampleData: false,
+      sourceKind: 'public_system_sample',
+    });
+
+    const bundledCsv = buildUtilityGenericCsv(forecastPackage, 'bundled_fixture_hash_match');
+    expect(bundledCsv).toContain('# Format Evidence: bundled_fixture_hash_match');
+    expect(bundledCsv).toContain('synthetic fixture disclosure applies');
+
+    const iesoCsv = buildUtilityGenericCsv(forecastPackage, 'ieso_format_detected');
+    expect(iesoCsv).toContain('# Format Evidence: ieso_format_detected');
+    expect(iesoCsv).toContain('upload origin unverified');
+    expect(iesoCsv).toContain('https://www.ieso.ca/terms-of-use');
+    expect(iesoCsv).toContain('# Attribution Caveat:');
+
+    const jurisdictionCsv = buildUtilityJurisdictionCsv(forecastPackage, 'unverified_upload');
+    expect(jurisdictionCsv).toContain('# Format Evidence: unverified_upload');
+
+    const noEvidenceCsv = buildUtilityGenericCsv(forecastPackage);
+    expect(noEvidenceCsv).not.toContain('# Format Evidence:');
+
+    const descriptor = buildUtilityPlanningDescriptor(
+      forecastPackage,
+      'standard',
+      'ieso_format_detected',
+    );
+    expect(descriptor.sections[0].body).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Upload format evidence: ieso_format_detected'),
+        expect.stringContaining('Upload origin: unverified'),
+      ]),
+    );
+
+    const appendix = buildUtilityBenchmarkAppendixMarkdown(
+      forecastPackage,
+      'standard',
+      'ieso_format_detected',
+    );
+    expect(appendix).toContain('- Upload format evidence: ieso_format_detected');
+    expect(appendix).toContain('- Attribution caveat:');
+    expect(appendix).toContain('https://www.ieso.ca/terms-of-use');
   });
 
   it('exports baseline-win failure notes in forecast proof artifacts', () => {

@@ -9,6 +9,7 @@
 import {
   ToolCall,
   ToolResult,
+  boundedToolError,
   executeTool,
   getToolSchemasForLLM,
 } from './registry.ts';
@@ -299,7 +300,7 @@ export async function orchestrateWithTools(
   } catch (error) {
     progressCallback?.({
       type: 'error',
-      message: String(error),
+      message: boundedToolError(error),
       iteration: iterations,
     });
 
@@ -308,7 +309,9 @@ export async function orchestrateWithTools(
       toolCalls: allToolCalls,
       iterations,
       success: false,
-      error: String(error),
+      // Raw internal error text must not reach the caller-facing `error`
+      // field — a bounded code preserves the failure signal.
+      error: 'orchestration_failed',
     };
   }
 }

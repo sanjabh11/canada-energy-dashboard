@@ -61,7 +61,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: err.message,
+        error: 'Internal error',
         timestamp: new Date().toISOString(),
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

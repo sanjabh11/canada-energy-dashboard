@@ -5,7 +5,7 @@
  *   - Seasonal naive baseline (same hour last week)
  *   - LightGBM-style structured model with calendar, weather, price features
  *   - Simplified STGCN graph features (spatial adjacency)
- *   - CQR conformal prediction intervals
+ *   - Heuristic forecast intervals (not independently calibrated)
  *
  * References:
  *   - TriCast (2026): tri-modal EV charging demand forecasting
@@ -68,9 +68,9 @@ export interface EvForecastPoint {
   predictedOccupancyPct: number;
   predictedSessionCount: number;
   modelType: EvForecastModel;
-  conformalLower: number;
-  conformalUpper: number;
-  coverageRate: number;
+  intervalLower: number;
+  intervalUpper: number;
+  targetCoverageRate: number;
 }
 
 export interface EvForecastResult {
@@ -81,7 +81,8 @@ export interface EvForecastResult {
     mape: number;
     mae: number;
     rmse: number;
-    coverageRate: number;
+    targetCoverageRate: number;
+    scope: 'training_in_sample';
   };
   featureImportance?: Array<{ feature: string; importance: number }>;
   shapExplanation?: ShapExplanation;
@@ -90,6 +91,7 @@ export interface EvForecastResult {
     nTrainingRecords: number;
     trainingDataProfile: string;
     generatedAt: string;
+    intervalEvidence: 'target_only';
     methodology: string;
   };
 }
@@ -279,9 +281,9 @@ export function forecastEvChargingLoad(input: {
       const occupancyPct = Math.min(1, predictedEnergy / (station.powerKw * station.nPorts));
       const sessionCount = Math.round(occupancyPct * station.nPorts * 0.8);
 
-      // Conformal interval (simplified CQR)
+      // Heuristic interval around the seasonal-naive residual proxy.
       const residual = Math.abs(predictedEnergy - seasonalNaive);
-      const conformalHalfWidth = residual * (1 + alpha * 2);
+      const intervalHalfWidth = residual * (1 + alpha * 2);
       predictions.push({
         stationId: station.id,
         timestamp: forecastTime.toISOString(),
@@ -289,9 +291,9 @@ export function forecastEvChargingLoad(input: {
         predictedOccupancyPct: round(occupancyPct, 4),
         predictedSessionCount: sessionCount,
         modelType: model,
-        conformalLower: round(Math.max(0, predictedEnergy - conformalHalfWidth), 3),
-        conformalUpper: round(predictedEnergy + conformalHalfWidth, 3),
-        coverageRate: round(1 - alpha, 4),
+        intervalLower: round(Math.max(0, predictedEnergy - intervalHalfWidth), 3),
+        intervalUpper: round(predictedEnergy + intervalHalfWidth, 3),
+        targetCoverageRate: round(1 - alpha, 4),
       });
     }
   }
@@ -314,7 +316,8 @@ export function forecastEvChargingLoad(input: {
       mape: round(mape, 4),
       mae: round(mae, 4),
       rmse: round(Math.sqrt(mae * mae + mape * mape), 4),
-      coverageRate: round(1 - alpha, 4),
+      targetCoverageRate: round(1 - alpha, 4),
+      scope: 'training_in_sample',
     },
     featureImportance: computeFeatureImportance(featureNames, trainX, trainY),
     metadata: {
@@ -322,10 +325,11 @@ export function forecastEvChargingLoad(input: {
       nTrainingRecords: features.length,
       trainingDataProfile: 'synthetic-calibrated',
       generatedAt: new Date().toISOString(),
+      intervalEvidence: 'target_only',
       methodology:
         model === 'stgcn_lite'
-          ? 'STGCN-lite: LightGBM with spatial graph features. Seasonal naive baseline with calendar/weather/price covariates. CQR conformal intervals.'
-          : `${model} with calendar, weather, price, and lagged features. CQR conformal intervals at ${(1 - alpha) * 100}% coverage.`,
+          ? 'STGCN-lite: LightGBM with spatial graph features and seasonal-naive/calendar/weather/price covariates. Error metrics are in-sample on training records; interval width is heuristic and its coverage target is not measured.'
+          : `${model} with calendar, weather, price, and lagged features. Error metrics are in-sample on training records; interval width is heuristic and its ${(1 - alpha) * 100}% target is not measured coverage.`,
     },
   };
 }

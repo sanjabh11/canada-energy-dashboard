@@ -308,6 +308,12 @@ function isFiniteNumber(value: number): boolean {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+// Input bounds mirror the engines' MAX_SCENARIO_NUMERIC / MAX_SCENARIO_PRICE
+// (src/lib/mlForecasting.ts, supabase/functions/_shared/mlForecasting.ts) so a
+// huge-but-finite input can't overflow into Infinity where the engines clamp.
+const MAX_SCENARIO_NUMERIC = 1e12;
+const MAX_SCENARIO_PRICE = 1e6;
+
 /**
  * Compute the TIER pathway comparison and CEIP net-ROI scenario.
  *
@@ -345,21 +351,30 @@ export function computeTierRoiScenario(
 
   // Negative inputs are clamped to zero — a negative exceedance simply means
   // no compliance liability for the facility.
-  const exceedance = Math.max(
-    0,
-    isFiniteNumber(inputs.benchmarkExceedanceTonnes) ? inputs.benchmarkExceedanceTonnes : 0,
+  const exceedance = Math.min(
+    Math.max(
+      0,
+      isFiniteNumber(inputs.benchmarkExceedanceTonnes) ? inputs.benchmarkExceedanceTonnes : 0,
+    ),
+    MAX_SCENARIO_NUMERIC,
   );
-  const capex = Math.max(
-    0,
-    isFiniteNumber(inputs.directInvestmentCapexCad) ? inputs.directInvestmentCapexCad : 0,
+  const capex = Math.min(
+    Math.max(
+      0,
+      isFiniteNumber(inputs.directInvestmentCapexCad) ? inputs.directInvestmentCapexCad : 0,
+    ),
+    MAX_SCENARIO_NUMERIC,
   );
-  const fundPrice = Math.max(
-    0,
-    isFiniteNumber(inputs.fundPriceCadPerTonne) ? inputs.fundPriceCadPerTonne : 0,
+  const fundPrice = Math.min(
+    Math.max(0, isFiniteNumber(inputs.fundPriceCadPerTonne) ? inputs.fundPriceCadPerTonne : 0),
+    MAX_SCENARIO_PRICE,
   );
-  const marketPrice = Math.max(
-    0,
-    isFiniteNumber(inputs.marketCreditPriceCadPerTonne) ? inputs.marketCreditPriceCadPerTonne : 0,
+  const marketPrice = Math.min(
+    Math.max(
+      0,
+      isFiniteNumber(inputs.marketCreditPriceCadPerTonne) ? inputs.marketCreditPriceCadPerTonne : 0,
+    ),
+    MAX_SCENARIO_PRICE,
   );
 
   const complianceYear =

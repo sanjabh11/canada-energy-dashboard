@@ -10,6 +10,18 @@ export interface JobLogContext {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Ops telemetry is internal (never reaches a caller response), but error
+ * strings are still bounded so a pathological upstream error cannot write
+ * unbounded text into ops_runs/job_execution_log rows.
+ */
+const OPS_ERROR_MESSAGE_MAX = 500;
+
+function boundErrorMessage(errorMessage: string | null | undefined): string | null {
+  if (errorMessage == null) return null;
+  return String(errorMessage).replace(/\s+/g, " ").trim().slice(0, OPS_ERROR_MESSAGE_MAX);
+}
+
 export async function startOpsRun(
   supabase: SupabaseClient,
   context: JobLogContext,
@@ -55,7 +67,7 @@ export async function finishOpsRun(
     status,
     completed_at: completedAt,
     duration_ms: durationMs,
-    error_message: context.errorMessage ?? null,
+    error_message: boundErrorMessage(context.errorMessage),
     metadata: context.metadata ?? {},
     job_name: context.jobName,
   }).eq("id", runId);
@@ -84,7 +96,7 @@ export async function logJobExecution(
     executed_at: executedAt,
     completed_at: context.completedAt ?? null,
     duration_ms: context.durationMs ?? null,
-    error_message: context.errorMessage ?? null,
+    error_message: boundErrorMessage(context.errorMessage),
     metadata: context.metadata ?? {},
   };
 

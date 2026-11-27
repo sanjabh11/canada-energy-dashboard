@@ -6,7 +6,7 @@
  * - Sample counts and completeness %
  * - Confidence bands
  * - Baseline uplift vs persistence/seasonal
- * - Calibration status (ECCC)
+ * - Calibration status (attribution only when the caller supplies a source)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -93,7 +93,7 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
         baseline_mae: h.baselinePersistencePct,
         baseline_uplift_percent: computeUplift(h.maePct, h.baselinePersistencePct),
         calibrated: h.calibrated,
-        calibration_source: h.calibrationSource || (h.calibrated ? 'ECCC' : undefined),
+        calibration_source: h.calibrationSource,
       }));
 
       const overallQuality =
@@ -194,8 +194,8 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
         confidence_upper: mae * 1.2,
         baseline_mae: baselineMae,
         baseline_uplift_percent: 25 + h * 0.5,
-        calibrated: h <= 12,
-        calibration_source: h <= 12 ? 'ECCC' : undefined,
+        calibrated: false,
+        calibration_source: undefined,
       };
     });
 
@@ -295,7 +295,7 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
           </div>
           {best.calibrated && (
             <div className="text-xs text-green-700 mt-1">
-              ✓ Calibrated by {best.calibration_source}
+              ✓ Calibrated{best.calibration_source ? ` by ${best.calibration_source}` : ''}
             </div>
           )}
         </div>
@@ -322,14 +322,17 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
           </div>
           <DataQualityBadge
             provenance={createProvenance(
-              'historical_archive',
-              'Forecast Performance Metrics',
-              0.92,
+              'mock',
+              'Illustrative forecast metrics (synthetic, not measured)',
+              0.3,
               { completeness: 0.95 },
             )}
             sampleCount={data.horizons.reduce((sum, h) => sum + h.sample_count, 0)}
             showDetails={true}
           />
+        </div>
+        <div className="mt-2 text-xs font-medium text-amber-700">
+          Illustrative synthetic metrics — not measured forecast accuracy.
         </div>
       </div>
 
@@ -389,7 +392,8 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
               {/* Calibration Status */}
               {horizon.calibrated ? (
                 <div className="text-xs text-green-700 font-medium">
-                  ✓ Calibrated by {horizon.calibration_source}
+                  ✓ Calibrated
+                  {horizon.calibration_source ? ` by ${horizon.calibration_source}` : ''}
                 </div>
               ) : (
                 <div className="text-xs text-orange-700 font-medium">⚠️ Wider confidence band</div>
@@ -429,9 +433,10 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
 
         {/* Methodology Note */}
         <div className="mt-4 p-3 border border-blue-200 bg-blue-50 rounded-lg text-xs text-blue-800">
-          <strong>Methodology:</strong> MAE measured against actual generation. Baseline is
-          persistence forecast (current value projected forward). Calibration by ECCC improves
-          short-horizon accuracy. Confidence intervals widen for uncalibrated long horizons.
+          <strong>Methodology:</strong> MAE measures error against actual generation when real
+          metrics are available. Baseline is persistence forecast (current value projected forward).
+          Calibration sources (when present) improve short-horizon accuracy. Confidence intervals
+          widen for uncalibrated horizons.
         </div>
       </div>
     </div>

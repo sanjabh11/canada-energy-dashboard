@@ -132,11 +132,11 @@ describe('TIER pricing evidence gate', () => {
     const appendix = buildTierAppendixMarkdown(snapshot);
 
     expect(memoText).toContain('No pathway ranked');
-    expect(memoText).toContain('Net savings and ROI withheld');
-    expect(memoText).not.toContain('CAD 20,000 (42% ROI)');
+    expect(memoText).toContain('Net savings and savings-vs-CEIP-fee withheld');
+    expect(memoText).not.toContain('(42% of the CEIP fee)');
     expect(appendix).toContain('Freshness gate: stale');
-    expect(appendix).toContain('Net savings / ROI: withheld');
-    expect(appendix).not.toContain('CAD 20,000 / 42%');
+    expect(appendix).toContain('Net savings vs CEIP fee: withheld');
+    expect(appendix).not.toContain('CAD 20,000 (42%');
     expect(memo.nextStep).toContain('Refresh current source pricing');
   });
 });

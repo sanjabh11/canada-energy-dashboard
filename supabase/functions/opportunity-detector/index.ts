@@ -291,7 +291,7 @@ serve(async (req) => {
     console.error('Opportunity detector error:', error);
     return new Response(
       JSON.stringify({
-        error: String(error),
+        error: 'Internal error',
         opportunities: [],
         summary: {
           total_count: 0,

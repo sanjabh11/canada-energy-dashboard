@@ -153,6 +153,6 @@ serve(async (req) => {
       }).catch(() => null);
     }
 
-    return jsonResponse(req, 500, { error: error instanceof Error ? error.message : String(error) }, rl.headers);
+    return jsonResponse(req, 500, { error: 'Internal error' }, rl.headers);
   }
 });

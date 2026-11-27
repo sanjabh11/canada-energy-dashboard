@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { constantTimeEqual } from "./cronAuth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -20,7 +21,7 @@ export function authorizeUtilityConnectorRequest(req: Request): string | null {
     ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
     ?? "";
 
-  return candidate === configuredKey ? null : "Missing or invalid utility connector ingest key.";
+  return constantTimeEqual(candidate, configuredKey) ? null : "Missing or invalid utility connector ingest key.";
 }
 
 export async function sha256Hex(input: string): Promise<string> {

@@ -58,7 +58,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     buyerSegment: 'Utility',
     pain: 'Utilities need scenario-ready forecasts that tie electrification, large loads, DER offsets, and regulatory narratives into one planning package.',
     outcome:
-      'Turns prediction into a board/regulator-ready planning artifact instead of a generic AI claim.',
+      'Turns prediction into a planning artifact structured for board/regulator review instead of a generic AI claim.',
     whyNow:
       'Ontario and Alberta planners are dealing with electrification, data-centre load growth, and more scrutiny around planning assumptions.',
     timelineToValue:
@@ -79,7 +79,7 @@ const activeCommercialWedges: CommercialWedge[] = [
       'Forecast rows, asset rows, reliability notes, and assumptions feeding filing review',
     primaryBuyer: 'Utilities, REAs, small LDCs, planning consultants',
     buyerSegment: 'Utility',
-    pain: 'Distribution utilities still spend manual time converting forecasts, asset evidence, and reliability narratives into regulator-ready formats.',
+    pain: 'Distribution utilities still spend manual time converting forecasts, asset evidence, and reliability narratives into the formats regulators require.',
     outcome:
       'Cuts filing prep time and turns utility planning data into exportable schedules buyers recognize instantly.',
     whyNow:

@@ -56,7 +56,10 @@ serve(async (req) => {
     return withCors(new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: jsonHeaders }), req);
   } catch (e) {
     console.error('LLM function error', e);
-    return withCors(new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: jsonHeaders }), req);
+    if (e instanceof Error && e.message === 'Shared rate limiter unavailable') {
+      return withCors(new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), { status: 503, headers: jsonHeaders }), req);
+    }
+    return withCors(new Response(JSON.stringify({ error: 'Internal error' }), { status: 500, headers: jsonHeaders }), req);
   }
 });
 

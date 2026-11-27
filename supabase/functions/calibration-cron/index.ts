@@ -165,7 +165,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: String(err),
+        error: 'Internal error',
         timestamp: now.toISOString(),
       }),
       { status: 500, headers: { "Content-Type": "application/json" } },

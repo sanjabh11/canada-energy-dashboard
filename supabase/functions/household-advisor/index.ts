@@ -10,6 +10,7 @@ import { fetchGridContext, formatGridContext, analyzeOpportunities } from '../ll
 import { buildHouseholdAdvisorPrompt } from '../llm/prompt_templates.ts';
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 interface HouseholdAdvisorRequest {
   userMessage: string;
   userId: string;
@@ -36,8 +37,22 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request
-    const { userMessage, userId, context }: HouseholdAdvisorRequest = await req.json();
+    // Parse request (bounded — unauthenticated endpoint)
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) {
+      return new Response(
+        JSON.stringify({ error: bodyRead.reason === "too_large" ? "Payload too large" : "Malformed JSON body" }),
+        { status: bodyRead.reason === "too_large" ? 413 : 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', ...rl.headers } }
+      );
+    }
+    const body = asJsonObject(bodyRead.json);
+    if (!body) {
+      return new Response(
+        JSON.stringify({ error: 'Body must be a JSON object' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json', ...rl.headers } }
+      );
+    }
+    const { userMessage, userId, context } = body as unknown as HouseholdAdvisorRequest;
 
     if (!userMessage || !userId) {
       return new Response(
@@ -269,8 +284,7 @@ Limitations: [one sentence]`;
     
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message 
+        error: 'Internal server error'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

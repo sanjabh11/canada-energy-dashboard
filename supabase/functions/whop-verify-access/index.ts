@@ -52,6 +52,11 @@
  * A configured ID with no tier-map entry resolves to 'free' — fail closed.
  */
 
+// NOTE: this module is imported directly by Vitest — keep it free of
+// https://esm.sh imports (rateLimit.ts pulls supabase-js). The Deno.serve
+// adapter lazily imports the rate limiter so production still throttles.
+import { readBoundedBody } from "../_shared/boundedBody.ts";
+
 export interface WhopVerifyAccessConfig {
   /** Server-held Whop API key used for the membership lookup (never exposed). */
   whopApiKey: string;
@@ -389,6 +394,10 @@ export async function handleWhopVerifyAccessRequest(
     return failClosed("verification_unconfigured");
   }
 
+  // Best-effort per-instance throttle is applied in the Deno.serve adapter
+  // below (lazy import keeps this module test-importable); the cost path is
+  // upstream Whop token verification + membership lookup.
+
   // Identity comes ONLY from Whop-issued tokens in request headers — never
   // from the request body and never from URL query params. The Whop iframe
   // injects x-whop-user-token into requests for embedded apps (docs
@@ -408,7 +417,14 @@ export async function handleWhopVerifyAccessRequest(
   // caller-supplied userId is deliberately ignored — it must never substitute
   // identity (Codex audit defect 1).
   let experienceId: string | undefined;
-  const rawBody = await req.text();
+  const bodyRead = await readBoundedBody(req, 8192);
+  if (!bodyRead.ok) {
+    return json(
+      { error: bodyRead.reason === "too_large" ? "payload too large" : "invalid body" },
+      bodyRead.reason === "too_large" ? 413 : 400,
+    );
+  }
+  const rawBody = bodyRead.text ?? "";
   if (rawBody.trim().length > 0) {
     let body: unknown;
     try {
@@ -497,5 +513,12 @@ function configFromDenoEnv(): WhopVerifyAccessConfig {
 }
 
 if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
-  Deno.serve((req: Request) => handleWhopVerifyAccessRequest(req, configFromDenoEnv()));
+  Deno.serve(async (req: Request) => {
+    // Lazy import: rateLimit.ts pulls in esm.sh modules that cannot be
+    // resolved under Vitest, so it only loads inside the Deno runtime.
+    const { applyRateLimit } = await import("../_shared/rateLimit.ts");
+    const rl = applyRateLimit(req, "whop-verify-access");
+    if (rl.response) return rl.response;
+    return handleWhopVerifyAccessRequest(req, configFromDenoEnv());
+  });
 }

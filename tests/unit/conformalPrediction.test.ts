@@ -150,8 +150,10 @@ describe('conformalPrediction', () => {
   describe('ConformalPredictor', () => {
     it('accumulates calibration records and exposes diagnostics', () => {
       const predictor = new ConformalPredictor({ targetAlpha: 0.1 });
-      predictor.recordObservation(qf(90, 110), 100, '2026-10-05T00:00:00.000Z');
-      predictor.recordObservation(qf(90, 110), 130, '2026-10-05T01:00:00.000Z');
+      const firstTimestamp = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const secondTimestamp = new Date().toISOString();
+      predictor.recordObservation(qf(90, 110), 100, firstTimestamp);
+      predictor.recordObservation(qf(90, 110), 130, secondTimestamp);
       const diagnostics = predictor.getDiagnostics();
       expect(diagnostics.calibrationSize).toBe(2);
       expect(diagnostics.empiricalCoverage).toBeCloseTo(0.5);

@@ -12,6 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { constantTimeEqual } from "../_shared/cronAuth.ts";
 
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
 const STRIPE_SECRET_KEY = Deno.env.get("Stripe_SecretKey") || Deno.env.get("STRIPE_SECRET_KEY") || "";
@@ -69,7 +70,7 @@ async function verifyStripeSignature(
             .map((b) => b.toString(16).padStart(2, "0"))
             .join("");
 
-        return expectedSignature === v1Signature;
+        return constantTimeEqual(expectedSignature, v1Signature);
     } catch (error) {
         console.error("Signature verification error:", error);
         return false;

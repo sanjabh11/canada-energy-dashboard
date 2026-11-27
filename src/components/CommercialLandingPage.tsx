@@ -120,7 +120,7 @@ export function CommercialLandingPage() {
                 </div>
                 <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-slate-50 md:text-6xl">
                   Get a source-dated TIER pathway memo, or check your energy CSV for privacy risk —
-                  in minutes.
+                  locally in your browser.
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
                   CEIP is testing two working proofs for Canadian energy teams: a 3-pathway Alberta

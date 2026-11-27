@@ -76,7 +76,8 @@ serve(async (req) => {
 
     return json(result.body, result.status, corsHeaders);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Telemetry ingest failed." }, 500, corsHeaders);
+    console.error("utility-connector-telemetry-ingest failed:", error instanceof Error ? error.message : String(error));
+    return json({ error: "Telemetry ingest failed." }, 500, corsHeaders);
   }
 });
 

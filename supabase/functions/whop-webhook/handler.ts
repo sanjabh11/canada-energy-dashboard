@@ -223,7 +223,7 @@ async function handleMembershipActivated(
 
     if (error) {
         console.error('[whop-webhook] Entitlement upsert failed');
-        return { success: false, message: error.message };
+        return { success: false, message: 'Entitlement activation failed' };
     }
 
     console.log(`[whop-webhook] Membership activated; tier: ${tier}`);
@@ -246,7 +246,7 @@ async function handleMembershipDeactivated(
 
     if (error) {
         console.error('[whop-webhook] Deactivation failed');
-        return { success: false, message: error.message };
+        return { success: false, message: 'Entitlement deactivation failed' };
     }
 
     console.log('[whop-webhook] Membership deactivated');

@@ -576,9 +576,8 @@ const ForecastBenchmarkingPage: React.FC = () => {
           </div>
           <div className="mt-4 pt-4 border-t border-slate-700">
             <p className="text-xs text-slate-300">
-              Baselines computed using forecastBaselines.ts library. Calibration cross-referenced
-              with Environment Canada Climate Data (ECCC). Industry-standard methodology per IEC
-              61400-12 (wind) and IEC 61724 (solar).
+              Baselines computed using forecastBaselines.ts library. Industry-standard methodology
+              per IEC 61400-12 (wind) and IEC 61724 (solar).
             </p>
           </div>
         </div>

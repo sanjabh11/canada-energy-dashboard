@@ -301,7 +301,7 @@ export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
  * @returns Dollar amount per tonne of potential savings
  */
 export function calculateArbitrageSpread(config: TIERPricingConfig = DEFAULT_TIER_PRICING): number {
-  return config.fundPrice - config.marketCreditPrice;
+  return boundedPrice(config.fundPrice) - boundedPrice(config.marketCreditPrice);
 }
 
 /**
@@ -311,7 +311,10 @@ export function calculateArbitrageSpread(config: TIERPricingConfig = DEFAULT_TIE
 export function calculateSavingsPercentage(
   config: TIERPricingConfig = DEFAULT_TIER_PRICING,
 ): number {
-  return ((config.fundPrice - config.marketCreditPrice) / config.fundPrice) * 100;
+  const fundPrice = boundedPrice(config.fundPrice);
+  return fundPrice > 0
+    ? ((fundPrice - boundedPrice(config.marketCreditPrice)) / fundPrice) * 100
+    : 0;
 }
 
 /**
@@ -330,18 +333,26 @@ export function formatPricingWithProvenance(
  * Checks for environment variable overrides (for testing/emergency updates),
  * falls back to DEFAULT_TIER_PRICING.
  */
-export function getTIERPricing(): TIERPricingConfig {
-  // Check for environment overrides
-  const envFundPrice = import.meta.env?.VITE_TIER_FUND_PRICE;
-  const envMarketPrice = import.meta.env?.VITE_TIER_MARKET_PRICE;
+function parsePositiveEnvNumber(raw: string | undefined): number | null {
+  if (!raw) return null;
+  const parsed = parseFloat(raw);
+  // Upper bound matches the engines' MAX_SCENARIO_PRICE so a runaway env
+  // value can't produce Infinity economics downstream.
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= 1_000_000 ? parsed : null;
+}
 
-  if (envFundPrice || envMarketPrice) {
+export function getTIERPricing(): TIERPricingConfig {
+  // Check for environment overrides — only positive finite prices count;
+  // a malformed env value falls back to the default rather than poisoning
+  // the pricing config with NaN.
+  const envFundPrice = parsePositiveEnvNumber(import.meta.env?.VITE_TIER_FUND_PRICE);
+  const envMarketPrice = parsePositiveEnvNumber(import.meta.env?.VITE_TIER_MARKET_PRICE);
+
+  if (envFundPrice != null || envMarketPrice != null) {
     return {
       ...DEFAULT_TIER_PRICING,
-      fundPrice: envFundPrice ? parseFloat(envFundPrice) : DEFAULT_TIER_PRICING.fundPrice,
-      marketCreditPrice: envMarketPrice
-        ? parseFloat(envMarketPrice)
-        : DEFAULT_TIER_PRICING.marketCreditPrice,
+      fundPrice: envFundPrice ?? DEFAULT_TIER_PRICING.fundPrice,
+      marketCreditPrice: envMarketPrice ?? DEFAULT_TIER_PRICING.marketCreditPrice,
       // An environment override is an unverified planning input. Never advance
       // its evidence date just because the app was built or restarted; the
       // provenance keeps the original asOfDate so staleness still trips.
@@ -430,19 +441,33 @@ export interface CompliancePathwayCosts {
   creditUseLimit: number;
 }
 
+/** Magnitude guards mirroring the engines (MAX_SCENARIO_NUMERIC/PRICE): keep
+ * pricing-path arithmetic finite even when a caller bypasses the env parser. */
+const MAX_HELPER_NUMERIC = 1e12;
+const MAX_HELPER_PRICE = 1e6;
+const boundedNumeric = (v: number): number => {
+  const n = typeof v === 'number' ? v : Number(v);
+  return Math.min(Math.max(0, Number.isFinite(n) ? n : 0), MAX_HELPER_NUMERIC);
+};
+const boundedPrice = (v: number): number => {
+  const n = typeof v === 'number' ? v : Number(v);
+  return Math.min(Math.max(0, Number.isFinite(n) ? n : 0), MAX_HELPER_PRICE);
+};
+
 export function calculateComplianceCosts(
   benchmarkExceedanceTonnes: number,
   config: TIERPricingConfig = DEFAULT_TIER_PRICING,
   complianceYear?: number,
 ): CompliancePathwayCosts {
-  const exceedance = Math.max(0, benchmarkExceedanceTonnes);
+  const exceedance = boundedNumeric(benchmarkExceedanceTonnes);
+  const fundPrice = boundedPrice(config.fundPrice);
+  const marketCreditPrice = boundedPrice(config.marketCreditPrice);
   const creditUseLimit = getTierCreditUseLimit(complianceYear);
-  const fundPayment = exceedance * config.fundPrice;
+  const fundPayment = exceedance * fundPrice;
   const marketCredits =
-    exceedance * creditUseLimit * config.marketCreditPrice +
-    exceedance * (1 - creditUseLimit) * config.fundPrice;
+    exceedance * creditUseLimit * marketCreditPrice + exceedance * (1 - creditUseLimit) * fundPrice;
   const arbitrageSavings = fundPayment - marketCredits;
-  const savingsPercentage = (arbitrageSavings / fundPayment) * 100;
+  const savingsPercentage = fundPayment > 0 ? (arbitrageSavings / fundPayment) * 100 : 0;
 
   return {
     fundPayment,

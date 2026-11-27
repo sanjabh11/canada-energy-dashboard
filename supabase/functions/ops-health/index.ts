@@ -213,6 +213,6 @@ serve(async (req: Request) => {
     return jsonResponse(req, 200, opsMetrics, rl.headers);
   } catch (error) {
     console.error('Ops health error:', error);
-    return jsonResponse(req, 500, { error: error instanceof Error ? error.message : String(error) }, rl.headers);
+    return jsonResponse(req, 500, { error: 'Internal error' }, rl.headers);
   }
 });

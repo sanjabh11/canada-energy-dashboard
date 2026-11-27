@@ -52,6 +52,7 @@ import {
   type UtilityPlanningScenario,
 } from '../lib/utilityForecasting';
 import { getPublicAppUrl, getUtilityConnectorBaseUrl } from '../lib/config';
+import { MAX_UTILITY_CSV_BYTES, type UtilityCsvFormatEvidence } from '../lib/utilityCsvParser';
 import {
   buildConnectionHealthCards,
   buildStarterUtilityBatchSnapshot,
@@ -157,6 +158,9 @@ const UtilityDemandForecastPage: React.FC = () => {
   );
   const [isPersistedSource, setIsPersistedSource] = useState(false);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
+  const [uploadFormatEvidence, setUploadFormatEvidence] = useState<UtilityCsvFormatEvidence | null>(
+    null,
+  );
   const [commercialProofState, setCommercialProofState] =
     useState<CommercialProofState>('standard');
   const [draftScenario, setDraftScenario] = useState<UtilityPlanningScenario>(() =>
@@ -195,6 +199,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
     setIsPersistedSource(false);
     setParseErrors(parsed.warnings);
+    setUploadFormatEvidence(null);
     setConnectorAccounts([]);
     setCommercialProofState('standard');
     const defaults = createDefaultScenario('Ontario');
@@ -216,6 +221,7 @@ const UtilityDemandForecastPage: React.FC = () => {
         setSourceObservedAt(result.sourceObservedAt);
         setIsPersistedSource(true);
         setParseErrors(result.warnings);
+        setUploadFormatEvidence(null);
         return;
       }
 
@@ -305,6 +311,7 @@ const UtilityDemandForecastPage: React.FC = () => {
           sourceKind,
           liveSurfaces: publicContext?.live_surfaces ?? [],
           sourceTrust: utilityHistoryRead?.sourceTrust ?? undefined,
+          formatEvidence: uploadFormatEvidence ?? undefined,
         }),
         error: null as string | null,
       };
@@ -321,6 +328,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     rows,
     sourceKind,
     sourceLabel,
+    uploadFormatEvidence,
     utilityHistoryRead?.sourceTrust,
   ]);
 
@@ -337,10 +345,12 @@ const UtilityDemandForecastPage: React.FC = () => {
     const descriptor = buildUtilityPlanningDescriptor(
       forecastState.forecastPackage,
       commercialProofState,
+      uploadFormatEvidence,
     );
     const benchmarkAppendix = buildUtilityBenchmarkAppendixMarkdown(
       forecastState.forecastPackage,
       commercialProofState,
+      uploadFormatEvidence,
     );
 
     return proofBundle.artifacts.map((artifact) => {
@@ -374,7 +384,7 @@ const UtilityDemandForecastPage: React.FC = () => {
           onDownload: () =>
             downloadTextArtifact(
               artifact,
-              buildUtilityGenericCsv(forecastState.forecastPackage!),
+              buildUtilityGenericCsv(forecastState.forecastPackage!, uploadFormatEvidence),
               'text/csv;charset=utf-8;',
             ),
         };
@@ -384,12 +394,12 @@ const UtilityDemandForecastPage: React.FC = () => {
         onDownload: () =>
           downloadTextArtifact(
             artifact,
-            buildUtilityJurisdictionCsv(forecastState.forecastPackage!),
+            buildUtilityJurisdictionCsv(forecastState.forecastPackage!, uploadFormatEvidence),
             'text/csv;charset=utf-8;',
           ),
       };
     });
-  }, [commercialProofState, forecastState.forecastPackage, proofBundle]);
+  }, [commercialProofState, forecastState.forecastPackage, proofBundle, uploadFormatEvidence]);
 
   const chartData = useMemo(() => {
     if (!forecastState.forecastPackage) return [];
@@ -627,6 +637,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSourceObservedAt(nextRows.at(-1)?.timestamp ?? null);
     setIsPersistedSource(false);
     setParseErrors([]);
+    setUploadFormatEvidence(null);
     setConnectorAccounts([]);
     setCommercialProofState('standard');
     const defaults = createDefaultScenario(nextJurisdiction);
@@ -646,6 +657,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSourceObservedAt(snapshot.observed_at);
     setIsPersistedSource(false);
     setParseErrors([]);
+    setUploadFormatEvidence(null);
     setConnectorAccounts([]);
     setCommercialProofState('standard');
     const defaults = createDefaultScenario(nextJurisdiction);
@@ -664,6 +676,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSourceObservedAt(nextRows.at(-1)?.timestamp ?? null);
     setIsPersistedSource(false);
     setParseErrors([ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer]);
+    setUploadFormatEvidence(null);
     setConnectorAccounts([]);
     setCommercialProofState('standard');
     const defaults = createDefaultScenario('Ontario');
@@ -697,6 +710,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSourceObservedAt(snapshot.observed_at);
     setIsPersistedSource(false);
     setParseErrors([]);
+    setUploadFormatEvidence(null);
     setConnectorAccounts([]);
     setCommercialProofState('standard');
     const defaults = createDefaultScenario(nextJurisdiction);
@@ -725,13 +739,44 @@ const UtilityDemandForecastPage: React.FC = () => {
   function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_UTILITY_CSV_BYTES) {
+      setParseErrors([
+        `CSV exceeds the ${MAX_UTILITY_CSV_BYTES / (1024 * 1024)} MiB upload limit.`,
+      ]);
+      event.currentTarget.value = '';
+      return;
+    }
 
     const reader = new FileReader();
+    reader.onerror = () => setParseErrors(['Could not read the selected CSV file.']);
     reader.onload = (loadEvent) => {
       const text = String(loadEvent.target?.result ?? '');
       const parsed = parseUtilityHistoricalLoadCsv(text);
-      setParseErrors(parsed.errors);
       if (parsed.rows.length === 0) {
+        // Failed parse: keep the previous dataset AND its evidence consistent —
+        // do not stamp the rejected file's format_evidence onto prior rows.
+        setParseErrors(parsed.errors);
+        return;
+      }
+      setUploadFormatEvidence(parsed.format_evidence);
+
+      // Only the parser's deterministic fingerprint/format evidence can upgrade
+      // provenance — never a caller-supplied source_system label or filename.
+      if (parsed.format_evidence === 'bundled_fixture_hash_match') {
+        const defaults = createDefaultScenario('Ontario');
+        setJurisdiction('Ontario');
+        setRows(parsed.rows);
+        setSourceLabel(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label);
+        setIsSampleData(false);
+        setSourceKind('public_system_sample');
+        setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
+        setIsPersistedSource(false);
+        setParseErrors([ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer, ...parsed.errors]);
+        setConnectorAccounts([]);
+        setCommercialProofState('standard');
+        setDraftScenario(defaults);
+        setActiveScenario(defaults);
+        setSelectedHorizon(5);
         return;
       }
 
@@ -742,6 +787,12 @@ const UtilityDemandForecastPage: React.FC = () => {
       setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
       setIsPersistedSource(false);
       setCommercialProofState('standard');
+      setParseErrors(parsed.errors);
+      if (parsed.format_evidence === 'ieso_format_detected' && jurisdiction !== 'Ontario') {
+        setJurisdiction('Ontario');
+        setDraftScenario((current) => ({ ...current, jurisdiction: 'Ontario' }));
+        setActiveScenario((current) => ({ ...current, jurisdiction: 'Ontario' }));
+      }
     };
     reader.readAsText(file);
   }
@@ -765,6 +816,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setSourceKind('uploaded_historical');
     setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
     setIsPersistedSource(false);
+    setUploadFormatEvidence(null);
     setConnectorAccounts([]);
     setCommercialProofState('constructed_commercial_scenario');
     setDraftScenario(defaults);
@@ -794,7 +846,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     if (!forecastState.forecastPackage) return;
     downloadTextFile(
       `${jurisdiction.toLowerCase()}_utility_forecast_pack.csv`,
-      buildUtilityGenericCsv(forecastState.forecastPackage),
+      buildUtilityGenericCsv(forecastState.forecastPackage, uploadFormatEvidence),
     );
   };
 
@@ -802,7 +854,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     if (!forecastState.forecastPackage) return;
     downloadTextFile(
       jurisdiction === 'Ontario' ? 'oeb_chapter5_scenario_matrix.csv' : 'auc_dsp_data_schedule.csv',
-      buildUtilityJurisdictionCsv(forecastState.forecastPackage),
+      buildUtilityJurisdictionCsv(forecastState.forecastPackage, uploadFormatEvidence),
     );
   };
 
@@ -815,7 +867,11 @@ const UtilityDemandForecastPage: React.FC = () => {
     downloadTextArtifact(
       planningArtifact,
       renderHtmlProofDocument({
-        ...buildUtilityPlanningDescriptor(forecastState.forecastPackage, commercialProofState),
+        ...buildUtilityPlanningDescriptor(
+          forecastState.forecastPackage,
+          commercialProofState,
+          uploadFormatEvidence,
+        ),
         definition: planningArtifact,
       }),
       'text/html;charset=utf-8;',
@@ -830,7 +886,11 @@ const UtilityDemandForecastPage: React.FC = () => {
     if (!benchmarkArtifact) return;
     downloadTextArtifact(
       benchmarkArtifact,
-      buildUtilityBenchmarkAppendixMarkdown(forecastState.forecastPackage, commercialProofState),
+      buildUtilityBenchmarkAppendixMarkdown(
+        forecastState.forecastPackage,
+        commercialProofState,
+        uploadFormatEvidence,
+      ),
       'text/markdown;charset=utf-8;',
     );
   };
@@ -953,7 +1013,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950">
       <SEOHead
         title="Utility Demand Forecasting | Distribution Planning Lane"
-        description="Utility-focused demand forecasting for Ontario LDCs and Alberta utilities. Upload historical load data, benchmark against persistence and seasonal-naive baselines, and export filing-ready planning packs."
+        description="Utility-focused demand forecasting for Ontario LDCs and Alberta utilities. Upload historical load data, benchmark against persistence and seasonal-naive baselines, and export regulator-format planning pack templates."
         path="/utility-demand-forecast"
         keywords={[
           'utility demand forecasting',
@@ -1014,8 +1074,16 @@ const UtilityDemandForecastPage: React.FC = () => {
         ) : sourceKind === 'public_system_sample' ? (
           <DataTrustNotice
             mode="fallback"
-            title="Ontario public-system sample active"
-            message={`${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label} is public-derived workflow proof. It is not customer LDC history, production utility telemetry, or a regulator-submitted record.`}
+            title={
+              forecastState.forecastPackage?.source_manifest.isSyntheticFixture
+                ? 'Ontario synthetic system-demand fixture active'
+                : 'Ontario public IESO data active'
+            }
+            message={
+              forecastState.forecastPackage?.source_manifest.isSyntheticFixture
+                ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label} uses locally generated formula values. The linked IESO report is a reference only; these rows are not IESO measurements, customer LDC history, production telemetry, or a regulator-submitted record.`
+                : 'Raw IESO system-demand rows are public-source observations, not customer LDC history or production utility telemetry. Verify applicable terms before redistribution.'
+            }
             className="mb-6"
           />
         ) : isSampleData ? (
@@ -1026,6 +1094,34 @@ const UtilityDemandForecastPage: React.FC = () => {
             className="mb-6"
           />
         ) : null}
+
+        {uploadFormatEvidence === 'ieso_format_detected' &&
+          sourceKind === 'uploaded_historical' && (
+            <div
+              data-testid="utility-upload-format-evidence"
+              role="status"
+              className="mb-6 rounded-xl border border-amber-500/30 bg-amber-900/20 p-4 text-sm text-amber-100"
+            >
+              <div className="font-medium">IESO format recognized; upload origin unverified</div>
+              <p className="mt-1 text-xs text-amber-200/90">
+                The uploaded file matches the IESO public-demand export shape, but its origin is
+                unverified. It is not confirmed IESO data, not customer LDC history, and not
+                production telemetry. If it reproduces IESO material, retain the attribution and
+                confirm applicable terms before redistribution.
+              </p>
+              <p className="mt-1 text-xs text-amber-200/90">
+                {ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.attribution}
+              </p>
+              <a
+                href={ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.terms_url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block text-xs text-amber-100 underline hover:text-amber-50"
+              >
+                IESO Terms of Use
+              </a>
+            </div>
+          )}
 
         {jurisdiction === 'Ontario' &&
           utilityHistoryRead &&
@@ -2174,13 +2270,23 @@ const UtilityDemandForecastPage: React.FC = () => {
                   />
                   <MetricCard
                     label="Annual energy"
-                    value={`${forecastState.forecastPackage.summary.baseline_energy_gwh.toFixed(1)} GWh`}
+                    value={
+                      Number.isFinite(forecastState.forecastPackage.summary.baseline_energy_gwh)
+                        ? `${forecastState.forecastPackage.summary.baseline_energy_gwh.toFixed(1)} GWh`
+                        : 'Not available'
+                    }
                     sub={`${forecastState.forecastPackage.summary.customer_classes.length} customer classes`}
                     icon={<BarChart3 className="h-5 w-5 text-emerald-300" />}
                   />
                   <MetricCard
                     label="Benchmark skill"
-                    value={`${forecastState.forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`}
+                    value={
+                      Number.isFinite(
+                        forecastState.forecastPackage.benchmark.skill_score_vs_persistence,
+                      )
+                        ? `${forecastState.forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`
+                        : 'Not measured'
+                    }
                     sub="vs persistence"
                     icon={<TrendingUp className="h-5 w-5 text-sky-300" />}
                   />
@@ -2214,6 +2320,18 @@ const UtilityDemandForecastPage: React.FC = () => {
                         Weather: {forecastState.forecastPackage.scenario.weather_case}
                       </span>
                     </div>
+                  </div>
+
+                  <div
+                    className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-xs text-slate-300"
+                    data-testid="utility-time-axis-status"
+                  >
+                    Time axis:{' '}
+                    {forecastState.forecastPackage.evidence_report.time_axis_status.replace(
+                      /_/g,
+                      ' ',
+                    )}
+                    . {forecastState.forecastPackage.evidence_report.time_axis_note}
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -2261,16 +2379,43 @@ const UtilityDemandForecastPage: React.FC = () => {
                       baselineLabel="target splits"
                       integer
                     />
-                    <BenchmarkStat
-                      label="Interval coverage"
-                      value={
-                        forecastState.forecastPackage.evidence_report
-                          .conformal_interval_coverage_pct
-                      }
-                      baseline={90}
-                      suffix="%"
-                      baselineLabel="coverage target"
-                    />
+                    {forecastState.forecastPackage.evidence_report
+                      .empirical_interval_coverage_pct === null ? (
+                      <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                        <div className="text-xs uppercase tracking-wide text-slate-300">
+                          Empirical interval coverage
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-slate-50">
+                          {forecastState.forecastPackage.evidence_report.interval_status ===
+                          'unsupported_time_axis'
+                            ? 'Time axis unsupported'
+                            : 'Not enough history'}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-300">
+                          Coverage was not measured.{' '}
+                          {forecastState.forecastPackage.evidence_report.time_axis_note} The
+                          interval target is{' '}
+                          {
+                            forecastState.forecastPackage.evidence_report
+                              .interval_target_coverage_pct
+                          }
+                          %.
+                        </div>
+                      </div>
+                    ) : (
+                      <BenchmarkStat
+                        label="Empirical interval coverage"
+                        value={
+                          forecastState.forecastPackage.evidence_report
+                            .empirical_interval_coverage_pct
+                        }
+                        baseline={
+                          forecastState.forecastPackage.evidence_report.interval_target_coverage_pct
+                        }
+                        suffix="%"
+                        baselineLabel="nominal target; descriptive only"
+                      />
+                    )}
                     <BenchmarkStat
                       label="Hierarchy error"
                       value={
@@ -2280,6 +2425,25 @@ const UtilityDemandForecastPage: React.FC = () => {
                       baseline={0}
                       baselineLabel="MW"
                     />
+                  </div>
+
+                  <div
+                    className="mt-3 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-xs text-slate-300"
+                    data-testid="utility-interval-evidence-counts"
+                  >
+                    Interval evidence:{' '}
+                    {forecastState.forecastPackage.evidence_report.interval_measured_split_count}{' '}
+                    measured folds;{' '}
+                    {
+                      forecastState.forecastPackage.evidence_report
+                        .interval_calibration_sample_count
+                    }{' '}
+                    unique calibration timestamps (
+                    {forecastState.forecastPackage.evidence_report.interval_calibration_sample_uses}{' '}
+                    fold uses);{' '}
+                    {forecastState.forecastPackage.evidence_report.interval_test_sample_count}{' '}
+                    chronological test observations. Calibration windows may overlap across folds;
+                    reported coverage is descriptive for this time-series sample.
                   </div>
 
                   <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
@@ -2374,11 +2538,43 @@ const UtilityDemandForecastPage: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                          <span>Source hash</span>
+                          <span>Content fingerprint (FNV-1a; non-cryptographic)</span>
                           <span className="text-right text-cyan-300">
                             {forecastState.forecastPackage.source_manifest.hash}
                           </span>
                         </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span>Source retrieved at</span>
+                          <span className="text-right text-cyan-300">
+                            {forecastState.forecastPackage.source_manifest.fetchedAt ??
+                              'Not recorded'}
+                          </span>
+                        </div>
+                        {uploadFormatEvidence && (
+                          <div className="flex items-center justify-between gap-4">
+                            <span>Upload format evidence</span>
+                            <span className="text-right text-cyan-300">
+                              {uploadFormatEvidence.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        )}
+                        {forecastState.forecastPackage.source_manifest.sourceAttribution && (
+                          <div className="text-xs text-slate-300">
+                            {forecastState.forecastPackage.source_manifest.sourceAttribution}
+                          </div>
+                        )}
+                        {forecastState.forecastPackage.source_manifest.sourceTermsUrl && (
+                          <a
+                            href={forecastState.forecastPackage.source_manifest.sourceTermsUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-cyan-300 hover:text-cyan-200"
+                          >
+                            {forecastState.forecastPackage.source_manifest.isSyntheticFixture
+                              ? 'Related IESO terms reference (not a license determination)'
+                              : 'Source terms'}
+                          </a>
+                        )}
                         <div className="flex items-center justify-between gap-4">
                           <span>Champion model</span>
                           <span className="text-right text-cyan-300">
@@ -2416,7 +2612,8 @@ const UtilityDemandForecastPage: React.FC = () => {
                       <h2 className="text-lg font-semibold text-slate-50">Scenario matrix</h2>
                       <p className="mt-1 text-sm text-slate-300">
                         Low, base, and high cases share one statistical engine and export as a
-                        single planning matrix for regulators.
+                        single planning matrix in regulator-style format (template — validate before
+                        filing).
                       </p>
                     </div>
                     <Map className="h-5 w-5 text-cyan-300" />
@@ -2488,7 +2685,9 @@ const UtilityDemandForecastPage: React.FC = () => {
                               {row.high?.peak_demand_mw.toFixed(1)}
                             </td>
                             <td className="px-3 py-3 text-right">
-                              {row.expected?.annual_energy_gwh.toFixed(1)}
+                              {Number.isFinite(row.expected?.annual_energy_gwh)
+                                ? row.expected?.annual_energy_gwh.toFixed(1)
+                                : 'Not available'}
                             </td>
                             <td className="px-3 py-3 text-right">
                               {row.expected?.utilization_pct.toFixed(1)}%
@@ -2756,6 +2955,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                             ...buildUtilityPlanningDescriptor(
                               forecastState.forecastPackage,
                               commercialProofState,
+                              uploadFormatEvidence,
                             ),
                             definition: artifact,
                           });
@@ -3029,9 +3229,10 @@ function BenchmarkStat({
   suffix?: string;
   integer?: boolean;
 }) {
-  const formatter = integer
-    ? (input: number) => `${Math.round(input)}${suffix}`
-    : (input: number) => `${input.toFixed(2)}${suffix}`;
+  const formatter = (input: number) => {
+    if (!Number.isFinite(input)) return 'not measured';
+    return integer ? `${Math.round(input)}${suffix}` : `${input.toFixed(2)}${suffix}`;
+  };
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
       <div className="text-xs uppercase tracking-wide text-slate-300">{label}</div>

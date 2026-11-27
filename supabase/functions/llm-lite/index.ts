@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 
 const RL_HEADERS = { 'X-RateLimit-Remaining': '29', 'X-RateLimit-Limit': '30' } as const;
 let _corsHeaders: Record<string, string> = {};
@@ -94,7 +95,10 @@ serve(async (req) => {
     return json({ ok: true, mode: 'lite' });
   }
   if (req.method === 'POST' && (path === '/explain-chart' || url.pathname.endsWith('/explain-chart'))) {
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) return json({ error: bodyRead.reason === 'too_large' ? 'Payload too large' : 'Malformed JSON body' }, bodyRead.reason === 'too_large' ? 413 : 400);
+    const body = asJsonObject(bodyRead.json);
+    if (!body) return json({ error: 'Body must be a JSON object' }, 400);
     const { datasetPath, userPrompt } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (isBlacklisted(userPrompt)) return json({ error: 'Request blocked by safety policy.' }, 403);
@@ -102,7 +106,10 @@ serve(async (req) => {
     return jsonResult({ dataset: datasetPath, result: { tl_dr: 'Automated summary (lite)', trends: [], classroom_activity: 'Discuss recent trends.', provenance: [{ id: datasetPath, last_updated: new Date().toISOString(), note: 'lite' }] }, source: 'supabase-llm-lite/explain-chart', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/analytics-insight' || url.pathname.endsWith('/analytics-insight'))) {
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) return json({ error: bodyRead.reason === 'too_large' ? 'Payload too large' : 'Malformed JSON body' }, bodyRead.reason === 'too_large' ? 413 : 400);
+    const body = asJsonObject(bodyRead.json);
+    if (!body) return json({ error: 'Body must be a JSON object' }, 400);
     const { datasetPath, queryType } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (isBlacklisted(queryType)) return json({ error: 'Request blocked by safety policy.' }, 403);
@@ -110,7 +117,10 @@ serve(async (req) => {
     return jsonResult({ dataset: datasetPath, result: { summary: 'Automated (lite) insight', key_findings: [], policy_implications: [], confidence: 'low', sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/analytics-insight', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/transition-report' || url.pathname.endsWith('/transition-report'))) {
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) return json({ error: bodyRead.reason === 'too_large' ? 'Payload too large' : 'Malformed JSON body' }, bodyRead.reason === 'too_large' ? 413 : 400);
+    const body = asJsonObject(bodyRead.json);
+    if (!body) return json({ error: 'Body must be a JSON object' }, 400);
     const { datasetPath, focus } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (isBlacklisted(focus)) return json({ error: 'Request blocked by safety policy.' }, 403);
@@ -118,13 +128,19 @@ serve(async (req) => {
     return jsonResult({ dataset: datasetPath, result: { summary: 'Automated (lite) report', progress: [], risks: [], recommendations: [], confidence: 'low', sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/transition-report', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/transition-kpis' || url.pathname.endsWith('/transition-kpis'))) {
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) return json({ error: bodyRead.reason === 'too_large' ? 'Payload too large' : 'Malformed JSON body' }, bodyRead.reason === 'too_large' ? 413 : 400);
+    const body = asJsonObject(bodyRead.json);
+    if (!body) return json({ error: 'Body must be a JSON object' }, 400);
     const { datasetPath } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     return jsonResult({ dataset: datasetPath, result: { dataset: datasetPath, timeframe: 'recent', kpis: { total_mwh: 0, top_source: { type: 'unknown', mwh: 0 }, renewable_share: 0 }, sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/transition-kpis', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/data-quality' || url.pathname.endsWith('/data-quality'))) {
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) return json({ error: bodyRead.reason === 'too_large' ? 'Payload too large' : 'Malformed JSON body' }, bodyRead.reason === 'too_large' ? 413 : 400);
+    const body = asJsonObject(bodyRead.json);
+    if (!body) return json({ error: 'Body must be a JSON object' }, 400);
     const { datasetPath, logs } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (logsContainBlacklist(logs)) return json({ error: 'Request blocked by safety policy.' }, 403);

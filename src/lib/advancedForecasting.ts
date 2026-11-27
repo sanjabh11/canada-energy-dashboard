@@ -3015,16 +3015,17 @@ export interface ProsumerFlexibilityResult {
   availableFlexibilityMw: number;
   p90FlexibilityMw: number;
   p10FlexibilityMw: number;
-  conformalLowerMw: number;
-  conformalUpperMw: number;
+  intervalLowerMw: number;
+  intervalUpperMw: number;
   expectedRevenueCad: number;
   revenueLowerCad: number;
   revenueUpperCad: number;
   chargeSchedule: Array<{ hour: number; action: 'charge' | 'discharge' | 'idle'; powerMw: number }>;
   dropoutSamples: number[];
-  coverageRate: number;
+  targetCoverageRate: number;
   metadata: {
     nDropoutSamples: number;
+    intervalEvidence: 'target_only';
     methodology: string;
     claimLabel: string;
     trainingDataProfile: string;
@@ -3032,7 +3033,7 @@ export interface ProsumerFlexibilityResult {
 }
 
 /**
- * Estimate prosumer flexibility using Monte Carlo Dropout + Conformal Prediction.
+ * Estimate prosumer flexibility using Monte Carlo Dropout with a heuristic interval.
  *
  * References:
  *   - arXiv:2601.14663: MCD+CP for prosumer flexibility aggregation in ancillary services
@@ -3076,15 +3077,15 @@ export function estimateProsumerFlexibilityMcdCp(
   const nonconformityScores = dropoutSamples.map((s) => Math.abs(s - p50));
   const sortedScores = nonconformityScores.sort((a, b) => a - b);
   const k = Math.ceil((1 - alpha) * nSamples);
-  const conformalHalfWidth = sortedScores[Math.min(k, nSamples - 1)] ?? 0;
+  const intervalHalfWidth = sortedScores[Math.min(k, nSamples - 1)] ?? 0;
 
-  const conformalLower = Math.max(0, p50 - conformalHalfWidth);
-  const conformalUpper = p50 + conformalHalfWidth;
+  const intervalLower = Math.max(0, p50 - intervalHalfWidth);
+  const intervalUpper = p50 + intervalHalfWidth;
 
   // Revenue estimation using price forecast
   const expectedRevenue = p50 * input.priceForecastCadPerMwh;
-  const revenueLower = conformalLower * input.priceLowerCadPerMwh;
-  const revenueUpper = conformalUpper * input.priceUpperCadPerMwh;
+  const revenueLower = intervalLower * input.priceLowerCadPerMwh;
+  const revenueUpper = intervalUpper * input.priceUpperCadPerMwh;
 
   // Simple charge schedule (24h)
   const chargeSchedule: Array<{
@@ -3109,20 +3110,21 @@ export function estimateProsumerFlexibilityMcdCp(
     availableFlexibilityMw: round(p50, 4),
     p90FlexibilityMw: round(p90, 4),
     p10FlexibilityMw: round(p10, 4),
-    conformalLowerMw: round(conformalLower, 4),
-    conformalUpperMw: round(conformalUpper, 4),
+    intervalLowerMw: round(intervalLower, 4),
+    intervalUpperMw: round(intervalUpper, 4),
     expectedRevenueCad: round(expectedRevenue, 2),
     revenueLowerCad: round(revenueLower, 2),
     revenueUpperCad: round(revenueUpper, 2),
     chargeSchedule,
     dropoutSamples: dropoutSamples.slice(0, 20), // Limit stored samples
-    coverageRate: round(1 - alpha, 4),
+    targetCoverageRate: round(1 - alpha, 4),
     metadata: {
       nDropoutSamples: nSamples,
+      intervalEvidence: 'target_only',
       methodology:
         'Monte Carlo Dropout (n=' +
         nSamples +
-        ') with Conformal Prediction calibration. Dropout simulates aleatoric uncertainty in flexibility sources. CP provides coverage guarantees for P90 compliance.',
+        ') produces a simulated heuristic interval. The requested coverage target is nominal only; no observed holdout data was used to measure coverage and no guarantee is claimed.',
       claimLabel: 'advisory',
       trainingDataProfile: 'simulator-calibrated',
     },

@@ -269,7 +269,7 @@ export async function handleStripeCheckoutRequest(
 
     if (!session.ok) {
       return withCors(
-        new Response(JSON.stringify({ error: session.message }), {
+        new Response(JSON.stringify({ error: "Failed to create Stripe checkout session" }), {
           status: session.status || 400,
           headers: { "Content-Type": "application/json" },
         }),

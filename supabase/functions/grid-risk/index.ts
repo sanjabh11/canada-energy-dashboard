@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
+import { boundedPersistedPayload } from "../_shared/persistedPayload.ts";
 import { buildMeta, evaluateGridRisk } from "../_shared/mlForecasting.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -23,7 +25,15 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
   }
 
-  const body = await req.json().catch(() => ({}));
+  const bodyRead = await readBoundedJson(req);
+  if (!bodyRead.ok) {
+    const tooLarge = bodyRead.reason === "too_large";
+    return new Response(JSON.stringify({ error: tooLarge ? "Payload too large" : "Malformed JSON body" }), { status: tooLarge ? 413 : 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
+  const body = asJsonObject(bodyRead.json);
+  if (!body) {
+    return new Response(JSON.stringify({ error: "Body must be a JSON object" }), { status: 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
   const result = evaluateGridRisk(body);
   const response = {
     ...result,
@@ -39,16 +49,19 @@ serve(async (req) => {
   };
 
   if (supabase) {
-    await supabase.from("ml_alert_evaluations").insert({
+    // Persisted payloads stay bounded regardless of caller content — raw
+    // caller fields must not write unbounded or non-JSONB-safe content.
+    const { error: insertError } = await supabase.from("ml_alert_evaluations").insert({
       alert_type: "grid_risk",
       province: String(body.region ?? "AB"),
       subject_key: "dispatch_constraint",
-      input_payload: body,
-      result_payload: response,
+      input_payload: boundedPersistedPayload(body),
+      result_payload: boundedPersistedPayload(response),
       claim_label: "scenario-based",
       confidence_score: response.meta.confidence_score,
       warnings: response.meta.warnings,
     });
+    if (insertError) console.error("ml_alert_evaluations insert failed:", insertError.message);
   }
 
   return new Response(JSON.stringify(response), { status: 200, headers: { ...cors, ...jsonHeaders, ...rl.headers } });

@@ -333,8 +333,10 @@ export class UncertaintyEngine {
   /**
    * Attach a conformal predictor for calibrated prediction intervals.
    *
-   * When attached, runMonteCarlo results will include a conformalInterval
-   * with finite-sample coverage guarantees (CQR + ACI).
+   * When attached, runMonteCarlo results include a conformalInterval.
+   * Standard finite-sample results require method-specific assumptions such as
+   * exchangeability; this attachment alone does not establish coverage for
+   * serially dependent time-series data.
    */
   attachConformalPredictor(predictor: ConformalPredictor): void {
     this.conformalPredictor = predictor;
@@ -437,7 +439,7 @@ export class UncertaintyEngine {
       if (!conformalInterval.calibrated) {
         warnings.push(
           'Conformal predictor has insufficient calibration data (< 30 samples). ' +
-            'Interval is uncalibrated; coverage guarantees do not apply yet.',
+            'The interval is uncalibrated; its target is not measured coverage.',
         );
       }
     }
@@ -615,12 +617,14 @@ export interface FleetForecastResult {
   method: string;
   copulaType: CopulaType;
   cacpAdjusted: boolean;
-  coverageRate: number;
+  targetCoverageRate: number | null;
+  coverageEvidenceStatus: 'target_only' | 'no_forecast';
   nSites: number;
   metadata: {
     correlationAssumption: string;
     diversificationBenefit: number;
     computationTimeMs: number;
+    historicalCoverageInput: number | null;
   };
 }
 
@@ -654,9 +658,15 @@ export function aggregateFleetForecastWithCopula(input: {
       method: 'copula_cacp',
       copulaType: copula.type,
       cacpAdjusted: false,
-      coverageRate: 0,
+      targetCoverageRate: null,
+      coverageEvidenceStatus: 'no_forecast',
       nSites: 0,
-      metadata: { correlationAssumption: 'none', diversificationBenefit: 0, computationTimeMs: 0 },
+      metadata: {
+        correlationAssumption: 'none',
+        diversificationBenefit: 0,
+        computationTimeMs: 0,
+        historicalCoverageInput: null,
+      },
     };
   }
 
@@ -684,7 +694,7 @@ export function aggregateFleetForecastWithCopula(input: {
 
   // Apply CACP (Context-Aware Conformal Prediction) adjustment
   let cacpAdjusted = false;
-  let coverageRate = cacpConfig?.targetCoverage ?? 0.9;
+  let targetCoverageRate = cacpConfig?.targetCoverage ?? 0.9;
 
   if (cacpConfig) {
     const historicalCoverage = cacpConfig.historicalCoverage ?? 0.85;
@@ -709,7 +719,7 @@ export function aggregateFleetForecastWithCopula(input: {
       p90: median + adjustedSpread / 2,
     };
     cacpAdjusted = true;
-    coverageRate = Math.min(0.99, Math.max(0.5, targetCoverage));
+    targetCoverageRate = Math.min(0.99, Math.max(0.5, targetCoverage));
   }
 
   // Compute diversification benefit
@@ -742,12 +752,14 @@ export function aggregateFleetForecastWithCopula(input: {
     method: 'copula_cacp',
     copulaType: copula.type,
     cacpAdjusted,
-    coverageRate: round(coverageRate, 4),
+    targetCoverageRate: round(targetCoverageRate, 4),
+    coverageEvidenceStatus: 'target_only',
     nSites,
     metadata: {
       correlationAssumption,
       diversificationBenefit,
       computationTimeMs: Date.now() - startTime,
+      historicalCoverageInput: cacpConfig?.historicalCoverage ?? null,
     },
   };
 }

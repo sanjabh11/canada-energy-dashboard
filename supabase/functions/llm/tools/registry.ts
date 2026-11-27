@@ -48,6 +48,21 @@ export interface ToolCall {
 }
 
 /**
+ * Bound a tool failure before it enters LLM tool context or step results.
+ * Raw exception text can carry URLs, credentials, or schema details that the
+ * LLM may later paraphrase into a caller-visible answer.
+ */
+export function boundedToolError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  return raw
+    .replace(/\s+/g, ' ')
+    .replace(/https?:\/\/\S+/gi, '[url]')
+    .replace(/[A-Za-z0-9_-]{24,}/g, '[redacted]')
+    .trim()
+    .slice(0, 200);
+}
+
+/**
  * Tool: Get current grid status for a province
  */
 async function getGridStatusTool(
@@ -81,7 +96,7 @@ async function getGridStatusTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'grid_snapshots',
@@ -149,7 +164,7 @@ async function getPoolPricesTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'prices',
@@ -199,7 +214,7 @@ async function getEmissionsTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'carbon_emissions',
@@ -244,7 +259,7 @@ async function getDemandForecastTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'demand_forecasts',
@@ -287,7 +302,7 @@ async function searchCorpusTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'document_embeddings',
@@ -339,7 +354,7 @@ async function runNL2SQLTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'nl2sql',
@@ -372,7 +387,7 @@ async function getGridContextTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'grid_context',
@@ -420,7 +435,7 @@ async function getStorageStatusTool(
     return {
       success: false,
       data: null,
-      error: String(error),
+      error: boundedToolError(error),
       metadata: {
         executionTimeMs: Date.now() - startTime,
         source: 'storage_dispatch_actions',

@@ -2,8 +2,9 @@
  * Conformal Prediction Module
  *
  * Implements Conformalized Quantile Regression (CQR) and Adaptive Conformal
- * Inference (ACI) to produce finite-sample calibrated prediction intervals
- * with guaranteed marginal coverage.
+ * Inference (ACI). Standard finite-sample marginal coverage results require
+ * exchangeability and method-specific assumptions; they do not automatically
+ * apply to serially dependent time-series data.
  *
  * References:
  *   - Romano et al. "Conformalized Quantile Regression" (NeurIPS 2019)
@@ -11,10 +12,11 @@
  *   - Angelopoulos & Bates "A Gentle Introduction to Conformal Prediction"
  *     (Foundations and Trends in ML, 2023)
  *
- * Regulatory context:
- *   OEB/AER/CER filings require calibrated uncertainty with documented
- *   coverage guarantees. Bootstrap MC intervals assume i.i.d. and lack
- *   finite-sample coverage proofs. CP intervals are distribution-free.
+ * Research-use boundary:
+ *   A nominal coverage target is not measured coverage or regulatory approval.
+ *   For time-series use, document the dependence assumptions and report
+ *   chronological held-out evidence as descriptive unless a suitable guarantee
+ *   has been established for the method and data.
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -112,7 +114,10 @@ export function computeCqrScores(forecasts: QuantileForecast[], actuals: number[
  * Compute the conformal quantile from calibration scores.
  *
  * Uses the standard conformal quantile: ceil((n+1) * (1-alpha)) / n
- * which guarantees finite-sample marginal coverage ≥ 1-alpha.
+ * which gives the standard finite-sample marginal coverage result when
+ * calibration and test examples are exchangeable. Serially dependent time
+ * series require additional justification; this helper alone does not provide
+ * a time-series coverage guarantee.
  *
  * @param scores Nonconformity scores from the calibration set
  * @param alpha Target miscoverage rate (e.g., 0.10 for 90% coverage)

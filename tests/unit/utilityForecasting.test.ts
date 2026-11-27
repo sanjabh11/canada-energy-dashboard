@@ -14,6 +14,8 @@ import {
   utilityForecastPackageToCsv,
   type UtilityPlanningScenario,
 } from '../../src/lib/utilityForecasting';
+import type { UtilityHistoricalLoadRow } from '../../src/lib/types/utilityForecasting';
+import { calculateSeasonalNaiveBaseline } from '../../src/lib/forecastBaselines';
 
 function buildScenario(jurisdiction: 'Ontario' | 'Alberta'): UtilityPlanningScenario {
   return {
@@ -42,20 +44,21 @@ describe('utilityForecasting', () => {
     expect(parsed.rows[0].customer_class.length).toBeGreaterThan(0);
   });
 
-  it('publishes a public-derived Ontario system sample with a provenance manifest', () => {
+  it('publishes a synthetic Ontario system-demand fixture with a provenance manifest', () => {
     const rows = generateOntarioPublicUtilitySampleRows();
     const csv = buildOntarioPublicUtilitySampleCsv();
     const manifest = buildOntarioPublicUtilitySampleManifestMarkdown();
     const parsed = parseUtilityHistoricalLoadCsv(csv);
 
     expect(rows.length).toBeGreaterThan(24 * 21);
-    expect(rows[0].source_system).toBe(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id);
+    expect(rows[0].source_system).toBe('ceip-synthetic-ieso-public-system-fixture-v1');
     expect(parsed.errors).toEqual([]);
     expect(parsed.rows[0].geography_level).toBe('system');
     expect(manifest).toContain(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_url);
-    expect(manifest).toContain(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_file);
+    expect(manifest).toContain('Referenced source file');
     expect(manifest).toContain('customer LDC history');
-    expect(manifest).toContain('Transform version');
+    expect(manifest).toContain('Bundled fixture transform version');
+    expect(manifest).toContain('not downloaded, transformed, or validated against the referenced IESO CSV');
 
     const forecastPackage = buildUtilityForecastPackage({
       rows,
@@ -68,7 +71,14 @@ describe('utilityForecasting', () => {
     expect(forecastPackage.input_provenance_summary.source_kind).toBe('public_system_sample');
     expect(forecastPackage.source_manifest.id).toBe(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id);
     expect(forecastPackage.source_manifest.hash).toMatch(/^fnv1a-/);
-    expect(forecastPackage.warnings).toContain('Public-derived Ontario system sample is workflow proof only; it is not customer LDC history or production utility telemetry.');
+    expect(forecastPackage.source_manifest.fetchedAt).toBeNull();
+    expect(forecastPackage.source_manifest.isSyntheticFixture).toBe(true);
+    expect(forecastPackage.source_manifest.sourceFile).toContain('bundled-synthetic-fixture:');
+    expect(forecastPackage.source_manifest.sourceAttribution).toContain('Synthetic CEIP fixture');
+    expect(forecastPackage.source_manifest.sourceTermsUrl).toBe('https://www.ieso.ca/terms-of-use');
+    expect(csv).toContain('Synthetic CEIP fixture');
+    expect(csv).toContain('# Reference terms (for separately imported IESO material; not a license determination for this fixture)');
+    expect(forecastPackage.warnings.some((warning) => warning.includes('Synthetic Ontario system-demand fixture is generated locally'))).toBe(true);
     expect(forecastPackage.assumptions.some((assumption) => assumption.includes(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id))).toBe(true);
   });
 
@@ -96,6 +106,17 @@ describe('utilityForecasting', () => {
     });
     expect(parsed.rows[2].timestamp).toBe('2026-01-01T23:00:00.000Z');
     expect(genericParsed.rows).toEqual(parsed.rows);
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows: parsed.rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_file,
+      sourceKind: 'public_system_sample',
+    });
+    expect(forecastPackage.source_manifest.isSyntheticFixture).toBe(false);
+    expect(forecastPackage.source_manifest.sourceFile).toBe(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_file);
+    expect(forecastPackage.source_manifest.transformVersion).toBe('ieso-apo-derived-transform-v1');
+    expect(forecastPackage.source_manifest.sourceAttribution).toContain('Independent Electricity System Operator');
   });
 
   it('builds an Ontario utility forecast package with benchmark proof and OEB rows', () => {
@@ -111,8 +132,8 @@ describe('utilityForecasting', () => {
     expect(forecastPackage.evidence_report.rolling_origin_splits.length).toBeGreaterThan(0);
     expect(forecastPackage.evidence_report.validation_method).toBe('rolling_origin_cv');
     expect(forecastPackage.evidence_report.champion_challenger.champion).toBe('transparent_trend_seasonal');
-    expect(forecastPackage.evidence_report.benchmark_failure_notes[0]).toContain('Baseline win: persistence baseline');
-    expect(forecastPackage.warnings).toContain(forecastPackage.evidence_report.benchmark_failure_notes[0]);
+    expect(forecastPackage.evidence_report.benchmark_failure_notes).toEqual([]);
+    expect(forecastPackage.evidence_report.interval_status).toBe('measured');
     expect(forecastPackage.cases.expected.yearly).toHaveLength(10);
     expect(forecastPackage.scenario_matrix.base.label).toBe('expected');
     expect(forecastPackage.oeb_rows).toHaveLength(5);
@@ -123,6 +144,229 @@ describe('utilityForecasting', () => {
     expect(forecastPackage.regulatory_exports.ontario.scenario_matrix_rows.length).toBeGreaterThan(0);
     expect(forecastPackage.input_provenance_summary.live_surfaces.length).toBeGreaterThan(0);
     expect(forecastPackage.assumptions.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('scores empirical interval coverage on untouched test data and baselines on the test window only', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 600 }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString(),
+      geography_level: 'feeder',
+      geography_id: 'STEP-F1',
+      customer_class: 'general',
+      demand_mw: index < 576 ? 100 : 500,
+      gross_load_mw: index < 576 ? 100 : 500,
+      source_system: 'step-fixture',
+    }));
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'step-series.csv',
+      isSampleData: true,
+      sourceKind: 'uploaded_historical',
+    });
+
+    const splits = forecastPackage.evidence_report.rolling_origin_splits;
+    expect(splits.length).toBeGreaterThan(0);
+    const lastSplit = splits[splits.length - 1];
+    expect(lastSplit.test_count).toBe(24);
+    expect(lastSplit.interval_coverage_pct).toBeLessThan(50);
+    expect(lastSplit.persistence_mae).toBeGreaterThan(10);
+    expect(forecastPackage.evidence_report.empirical_interval_coverage_pct).not.toBeNull();
+    expect(forecastPackage.evidence_report.empirical_interval_coverage_pct!).toBeLessThan(91.67);
+    expect(forecastPackage.evidence_report.interval_measured_split_count).toBe(3);
+    expect(forecastPackage.evidence_report.interval_calibration_sample_count).toBe(216);
+    expect(forecastPackage.evidence_report.interval_calibration_sample_uses).toBe(504);
+    expect(forecastPackage.evidence_report.interval_test_sample_count).toBe(72);
+    expect(forecastPackage.evidence_report.interval_method_note).toContain('calibration windows overlap across folds');
+  });
+
+  it('keeps a perfect zero-error baseline as a challenger without inventing skill', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 600 }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString(),
+      geography_level: 'feeder',
+      geography_id: 'FLAT-F1',
+      customer_class: 'general',
+      demand_mw: 100,
+      gross_load_mw: 100,
+    }));
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'flat-baseline.csv',
+      sourceKind: 'uploaded_historical',
+    });
+
+    expect(forecastPackage.benchmark.persistence_mae).toBe(0);
+    expect(Number.isNaN(forecastPackage.benchmark.skill_score_vs_persistence)).toBe(true);
+    expect(forecastPackage.evidence_report.champion_challenger.challenger).toBe('persistence');
+    expect(forecastPackage.evidence_report.champion_challenger.decision_reason).toContain(
+      'zero holdout MAE',
+    );
+  });
+
+  it('aligns rolling seasonal-naive phase after a non-period calibration tail', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 408 }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString(),
+      geography_level: 'feeder',
+      geography_id: 'PHASE-F1',
+      customer_class: 'general',
+      demand_mw: 100 + index,
+      gross_load_mw: 100 + index,
+      source_system: 'seasonal-phase-fixture',
+    }));
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'seasonal-phase.csv',
+      sourceKind: 'uploaded_historical',
+    });
+    const lastSplit = forecastPackage.evidence_report.rolling_origin_splits.at(-1);
+    const fitValues = rows.slice(0, 256).map((row) => row.demand_mw);
+    const expectedPredictions = Array.from({ length: 24 }, (_, index) =>
+      fitValues[fitValues.length - 24 + ((128 + index) % 24)],
+    );
+    const actuals = rows.slice(384).map((row) => row.demand_mw);
+    const expectedMae = actuals.reduce(
+      (sum, actual, index) => sum + Math.abs(actual - expectedPredictions[index]),
+      0,
+    ) / actuals.length;
+
+    expect(lastSplit?.train_count).toBe(256);
+    expect(lastSplit?.calibration_count).toBe(128);
+    expect(lastSplit?.seasonal_naive_mae).toBeCloseTo(expectedMae, 2);
+  });
+
+  it('uses the measured system level instead of summing parent and child rows', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 48 }, (_, index) => {
+      const timestamp = new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString();
+      const common = { timestamp, customer_class: 'general', source_system: 'hierarchy-fixture' };
+      return [
+        { ...common, geography_level: 'system' as const, geography_id: 'SYSTEM', demand_mw: 1_000, gross_load_mw: 1_000, customer_count: 100 },
+        { ...common, geography_level: 'feeder' as const, geography_id: 'F1', demand_mw: 400, gross_load_mw: 400, customer_count: 40 },
+        { ...common, geography_level: 'feeder' as const, geography_id: 'F2', demand_mw: 600, gross_load_mw: 600, customer_count: 60 },
+      ];
+    }).flat();
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'mixed-hierarchy.csv',
+      sourceKind: 'uploaded_historical',
+    });
+
+    expect(forecastPackage.summary.row_count).toBe(144);
+    expect(forecastPackage.summary.baseline_peak_mw).toBe(1_000);
+    expect(forecastPackage.summary.baseline_energy_gwh).toBe(48);
+    expect(forecastPackage.evidence_report.hierarchy_reconciliation.status).toBe('reconciled');
+    expect(forecastPackage.evidence_report.hierarchy_completeness_scope).toBe('complete_system');
+    // A measured system series is preferred over child levels: it answers the
+    // total directly and cannot silently omit a wholly absent child entity.
+    expect(forecastPackage.geography_allocations.every((row) => row.geography_level === 'system')).toBe(true);
+    expect(forecastPackage.summary.geography_count).toBe(1);
+    expect(forecastPackage.summary.geographies).toEqual(['SYSTEM']);
+    expect(forecastPackage.warnings.some((warning) => warning.includes('complete system geography/customer-class grid'))).toBe(true);
+  });
+
+  it('uses a complete parent series when child geography intervals are missing', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 48 }, (_, index) => {
+      const timestamp = new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString();
+      const common = { timestamp, customer_class: 'general', source_system: 'partial-hierarchy-fixture' };
+      return [
+        { ...common, geography_level: 'system' as const, geography_id: 'SYSTEM', demand_mw: 1_000, gross_load_mw: 1_000 },
+        { ...common, geography_level: 'feeder' as const, geography_id: 'F1', demand_mw: 400, gross_load_mw: 400 },
+        ...(index % 2 === 0
+          ? [{ ...common, geography_level: 'feeder' as const, geography_id: 'F2', demand_mw: 600, gross_load_mw: 600 }]
+          : []),
+      ];
+    }).flat();
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'partial-hierarchy.csv',
+      sourceKind: 'uploaded_historical',
+    });
+
+    expect(forecastPackage.summary.baseline_peak_mw).toBe(1_000);
+    expect(forecastPackage.summary.geographies).toEqual(['SYSTEM']);
+    expect(forecastPackage.evidence_report.hierarchy_completeness_scope).toBe('complete_system');
+    expect(forecastPackage.geography_allocations.every((row) => row.geography_id === 'SYSTEM')).toBe(true);
+    expect(forecastPackage.warnings.some((warning) => warning.includes('complete system geography/customer-class grid'))).toBe(true);
+  });
+
+  it('scores 24-step rolling and 72-step holdout baselines from the same fixed training origin', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 600 }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString(),
+      geography_level: 'feeder',
+      geography_id: 'ORIGIN-F1',
+      customer_class: 'general',
+      demand_mw: index < 528 ? 100 + (index % 24) : index < 576 ? 500 : 1000,
+      gross_load_mw: index < 528 ? 100 + (index % 24) : index < 576 ? 500 : 1000,
+      source_system: 'fixed-origin-fixture',
+    }));
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'fixed-origin.csv',
+      isSampleData: false,
+      sourceKind: 'uploaded_historical',
+    });
+    const holdoutTrain = rows.slice(0, 528).map((row) => row.demand_mw);
+    const holdoutActuals = rows.slice(528).map((row) => row.demand_mw);
+    const holdoutSeason = holdoutTrain.slice(-24);
+    const expectedPersistenceMae = holdoutActuals.reduce(
+      (sum, actual) => sum + Math.abs(actual - holdoutTrain[holdoutTrain.length - 1]),
+      0,
+    ) / holdoutActuals.length;
+    const expectedSeasonalMae = holdoutActuals.reduce(
+      (sum, actual, index) => sum + Math.abs(actual - holdoutSeason[index % 24]),
+      0,
+    ) / holdoutActuals.length;
+
+    expect(forecastPackage.benchmark.sample_size).toBe(72);
+    expect(forecastPackage.benchmark.persistence_mae).toBeCloseTo(expectedPersistenceMae, 2);
+    expect(forecastPackage.benchmark.seasonal_naive_mae).toBeCloseTo(expectedSeasonalMae, 2);
+
+    const lastRollingSplit = forecastPackage.evidence_report.rolling_origin_splits.at(-1);
+    expect(lastRollingSplit?.test_count).toBe(24);
+    expect(lastRollingSplit?.train_count).toBe(408);
+    expect(lastRollingSplit?.calibration_count).toBe(168);
+    expect(lastRollingSplit?.persistence_mae).toBeCloseTo(1000 - 123, 2);
+    expect(lastRollingSplit?.seasonal_naive_mae).toBeCloseTo(1000 - 111.5, 2);
+  });
+
+  it('reports interval evidence as unavailable when history cannot support rolling calibration', () => {
+    const rows: UtilityHistoricalLoadRow[] = Array.from({ length: 48 }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2025, 0, 1) + index * 3_600_000).toISOString(),
+      geography_level: 'feeder',
+      geography_id: 'SHORT-F1',
+      customer_class: 'general',
+      demand_mw: 100 + index,
+      gross_load_mw: 100 + index,
+      source_system: 'short-history-fixture',
+    }));
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'short-history.csv',
+      isSampleData: false,
+      sourceKind: 'uploaded_historical',
+    });
+    const csv = utilityForecastPackageToCsv(forecastPackage);
+
+    expect(forecastPackage.evidence_report.interval_status).toBe('insufficient_history');
+    expect(forecastPackage.evidence_report.empirical_interval_coverage_pct).toBeNull();
+    expect(forecastPackage.evidence_report.mean_interval_width_mw).toBeNull();
+    expect(csv).toContain('interval_evidence_status,insufficient_history');
+    expect(csv).toContain('empirical_interval_coverage_pct,not_available');
+  });
+
+  it('aligns seasonal naive one-step targets to the matching prior season index', () => {
+    const metrics = calculateSeasonalNaiveBaseline([1, 2, 3, 4, 5, 6], 1, 3);
+
+    expect(metrics.mae).toBe(3);
   });
 
   it('reconciles geography allocations back to the expected peak by highlighted horizon', () => {
@@ -262,5 +506,63 @@ describe('utilityForecasting', () => {
 
     expect(forecastPackage.input_provenance_summary.gross_reconstitution_applied).toBe(true);
     expect(forecastPackage.input_provenance_summary.quality_counts.some((entry) => entry.flag === 'gross_reconstituted' && entry.count > 0)).toBe(true);
+  });
+});
+
+describe('utility forecast time-axis validity', () => {
+  function makeRows(intervalMs: number, length = 48): UtilityHistoricalLoadRow[] {
+    return Array.from({ length }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2025, 0, 1) + index * intervalMs).toISOString(),
+      geography_level: 'system',
+      geography_id: 'SYSTEM',
+      customer_class: 'general',
+      demand_mw: 100 + index,
+    }));
+  }
+
+  it('keeps regular hourly data eligible for measured evidence', () => {
+    const forecastPackage = buildUtilityForecastPackage({
+      rows: makeRows(3_600_000),
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'hourly-regular.csv',
+    });
+
+    expect(forecastPackage.evidence_report.time_axis_status).toBe('regular_hourly');
+    expect(forecastPackage.evidence_report.baseline_status).not.toBe('unsupported_time_axis');
+    expect(Number.isFinite(forecastPackage.summary.baseline_energy_gwh)).toBe(true);
+  });
+
+  it('marks daily cadence as exploratory and suppresses time-based benchmark and energy values', () => {
+    const forecastPackage = buildUtilityForecastPackage({
+      rows: makeRows(24 * 3_600_000),
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'daily.csv',
+    });
+
+    expect(forecastPackage.evidence_report.time_axis_status).toBe('unsupported');
+    expect(forecastPackage.evidence_report.baseline_status).toBe('unsupported_time_axis');
+    expect(forecastPackage.evidence_report.interval_status).toBe('unsupported_time_axis');
+    expect(forecastPackage.evidence_report.rolling_origin_splits).toHaveLength(0);
+    expect(Number.isNaN(forecastPackage.benchmark.mae)).toBe(true);
+    expect(Number.isNaN(forecastPackage.summary.baseline_energy_gwh)).toBe(true);
+    expect(Number.isNaN(forecastPackage.cases.expected.yearly[0].annual_energy_gwh)).toBe(true);
+  });
+
+  it('accepts consecutive monthly timestamps as monthly cadence', () => {
+    const rows = Array.from({ length: 24 }, (_, index) => ({
+      timestamp: new Date(Date.UTC(2023, index, 1)).toISOString(),
+      geography_level: 'system' as const,
+      geography_id: 'SYSTEM',
+      customer_class: 'general',
+      demand_mw: 100 + index,
+    }));
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'monthly-regular.csv',
+    });
+
+    expect(forecastPackage.evidence_report.time_axis_status).toBe('regular_monthly');
+    expect(Number.isFinite(forecastPackage.summary.baseline_energy_gwh)).toBe(true);
   });
 });

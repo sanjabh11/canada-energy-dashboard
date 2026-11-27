@@ -150,7 +150,7 @@ function buildArtifact(
 ): ProofArtifactDefinition {
   const claimLabel =
     snapshot.liveTierMarketRateSource?.claimLabel ??
-    snapshot.simulatorResult?.meta.claim_label ??
+    snapshot.simulatorResult?.meta?.claim_label ??
     'estimated';
   const freshnessGate = buildTierPricingFreshnessGate(snapshot);
   return {
@@ -207,11 +207,11 @@ function creditBlendDetail(results: TierRoiResults): string {
   }
   const pct = Math.round(creditUseLimit * 100);
   const year =
-    Number.isInteger(results.complianceYear) && (results.complianceYear as number) >= 2000
+    Number.isInteger(results.complianceYear) && results.complianceYear >= 2000
       ? results.complianceYear
       : 'current';
-  const eligible = Math.round(results.creditEligibleTonnes).toLocaleString();
-  const remainder = Math.round(results.fundRemainderTonnes).toLocaleString();
+  const eligible = Math.round(creditEligibleTonnes).toLocaleString();
+  const remainder = Math.round(fundRemainderTonnes).toLocaleString();
   return `${eligible} t credits (${pct}% ${year} compliance-year use limit) + ${remainder} t TIER fund remainder`;
 }
 
@@ -303,10 +303,10 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
       ? 'CEIP fee: USD fee applies; CAD equivalent unavailable pending sourced FX'
       : `CEIP fee: CAD ${snapshot.results.ceipFee.toLocaleString()}`;
   const savingsLine = pricingGate.blocksStrongSavingsClaim
-    ? 'Net savings and ROI withheld pending current pricing and sourced FX evidence'
+    ? 'Net savings and savings-vs-CEIP-fee withheld pending current pricing and sourced FX evidence'
     : snapshot.results.netSavings === null || snapshot.results.roiPercent === null
-      ? 'Net savings and ROI: unavailable pending current pricing and sourced FX'
-      : `Net savings: CAD ${snapshot.results.netSavings.toLocaleString()} (${snapshot.results.roiPercent.toFixed(0)}% ROI)`;
+      ? 'Net savings vs CEIP fee: unavailable pending current pricing and sourced FX'
+      : `Net savings: CAD ${snapshot.results.netSavings.toLocaleString()} (${snapshot.results.roiPercent.toFixed(0)}% of the CEIP fee)`;
   return {
     definition: buildArtifact(
       'tier-cfo-memo',
@@ -353,7 +353,7 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
             : `Market price source: fallback planning input only (not a current market quote); snapshot dated ${snapshot.pricing.lastVerifiedAt}`,
           `Headline price schedule: ${snapshot.pricing.headlinePriceSchedule.map(({ year, priceCadPerTonne }) => `${year} CAD ${priceCadPerTonne}/t`).join('; ')}`,
           `Future price-floor schedule: ${snapshot.pricing.priceFloorSchedule.map(({ year, priceCadPerTonne }) => `${year} CAD ${priceCadPerTonne}/t`).join('; ')}`,
-          `Scenario engine: ${snapshot.simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via ${snapshot.simulatorSource}`,
+          `Scenario engine: ${snapshot.simulatorResult?.meta?.model_version ?? 'tier-deterministic-v1'} via ${snapshot.simulatorSource}`,
           `Freshness gate: ${buildTierPricingFreshnessGate(snapshot).message}`,
         ],
       },
@@ -437,7 +437,7 @@ export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {
     snapshot.results.netSavings === null ||
     snapshot.results.roiPercent === null
       ? 'withheld pending current pricing and sourced FX evidence'
-      : `CAD ${snapshot.results.netSavings.toLocaleString()} / ${snapshot.results.roiPercent.toFixed(0)}%`;
+      : `CAD ${snapshot.results.netSavings.toLocaleString()} (${snapshot.results.roiPercent.toFixed(0)}% of the CEIP fee)`;
   const creditBlend = creditBlendDetail(snapshot.results);
   return [
     '# TIER scenario appendix',
@@ -447,7 +447,7 @@ export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {
     `- Market credits: CAD ${snapshot.results.marketCredits.toLocaleString()} (${creditBlend ? `blended: credits up to the regulated credit use limit for the compliance year — 60%/2023, 70%/2024, 80%/2025, 90%/2026+ — plus a fund payment on the remainder; this scenario: ${creditBlend}` : 'credit-use-limit fields absent from this snapshot — treat as an unbounded market-price comparison, not a regulated blend'})`,
     `- Direct investment: CAD ${snapshot.results.directInvestment.toLocaleString()}`,
     `- CEIP fee: ${feeLine}`,
-    `- Net savings / ROI: ${savingsLine}`,
+    `- Net savings vs CEIP fee: ${savingsLine}`,
     `- Freshness gate: ${pricingGate.status} — ${pricingGate.message}`,
     '- Direct-investment credit treatment remains undetermined until the current Alberta Standard status is verified.',
     '',

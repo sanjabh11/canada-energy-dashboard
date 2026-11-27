@@ -63,18 +63,29 @@ export const TIERComplianceLandingPage: React.FC = () => {
       setSubmitError(
         'Pilot requests are disabled until the privacy collection notice is approved.',
       );
+      trackEvent('tier_lead_rejected', {
+        reason: 'intake_disabled',
+        source_route: '/tier-compliance',
+      });
       return;
     }
     if (!validateEmail(email)) {
       setSubmitError('Enter a valid work email.');
+      trackEvent('tier_lead_rejected', {
+        reason: 'invalid_email',
+        source_route: '/tier-compliance',
+      });
       return;
     }
     if (!contactName.trim()) {
       setSubmitError('Enter your name.');
+      trackEvent('tier_lead_rejected', {
+        reason: 'missing_name',
+        source_route: '/tier-compliance',
+      });
       return;
     }
     setSubmitError('');
-    trackEvent('tier_lead_submit', { segment: 'Industrial', source_route: '/tier-compliance' });
     const result = await persistLeadIntake({
       company_name: company,
       contact_name: contactName,
@@ -86,8 +97,15 @@ export const TIERComplianceLandingPage: React.FC = () => {
     });
     if (!result.ok) {
       setSubmitError('We could not save your request. Please try again in a moment.');
+      trackEvent('tier_lead_rejected', {
+        reason: 'persist_failed',
+        source_route: '/tier-compliance',
+      });
       return;
     }
+    // Count only persisted leads — rejected or failed persists emit
+    // tier_lead_rejected so the funnel doesn't double-count the attempt.
+    trackEvent('tier_lead_submit', { segment: 'Industrial', source_route: '/tier-compliance' });
     setSubmitted(true);
   };
 
@@ -97,21 +115,29 @@ export const TIERComplianceLandingPage: React.FC = () => {
       setConsultantError(
         'Pilot requests are disabled until the privacy collection notice is approved.',
       );
+      trackEvent('tier_consultant_lead_rejected', {
+        reason: 'intake_disabled',
+        source_route: '/tier-compliance',
+      });
       return;
     }
     if (!validateEmail(consultantEmail)) {
       setConsultantError('Enter a valid work email.');
+      trackEvent('tier_consultant_lead_rejected', {
+        reason: 'invalid_email',
+        source_route: '/tier-compliance',
+      });
       return;
     }
     if (consultantClientCount && !validateNonNegInt(consultantClientCount)) {
       setConsultantError('Client count must be a non-negative number.');
+      trackEvent('tier_consultant_lead_rejected', {
+        reason: 'invalid_client_count',
+        source_route: '/tier-compliance',
+      });
       return;
     }
     setConsultantError('');
-    trackEvent('tier_consultant_lead_submit', {
-      segment: 'Consultant',
-      source_route: '/tier-compliance',
-    });
     const result = await persistLeadIntake({
       company_name: consultantFirm,
       contact_name: 'TIER Consultant',
@@ -128,8 +154,17 @@ export const TIERComplianceLandingPage: React.FC = () => {
     });
     if (!result.ok) {
       setConsultantError('We could not save your request. Please try again in a moment.');
+      trackEvent('tier_consultant_lead_rejected', {
+        reason: 'persist_failed',
+        source_route: '/tier-compliance',
+      });
       return;
     }
+    // Persisted leads only — same post-persist semantics as tier_lead_submit.
+    trackEvent('tier_consultant_lead_submit', {
+      segment: 'Consultant',
+      source_route: '/tier-compliance',
+    });
     setConsultantSubmitted(true);
   };
 

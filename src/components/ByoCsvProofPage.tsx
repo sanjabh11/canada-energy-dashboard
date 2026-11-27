@@ -64,7 +64,7 @@ export function ByoCsvProofPage() {
         csvText,
         sourceLabel,
         route,
-        generatedAt: '2026-05-31T00:00:00.000Z',
+        generatedAt: new Date().toISOString(),
       }),
     [csvText, route, sourceLabel],
   );
@@ -81,6 +81,7 @@ export function ByoCsvProofPage() {
         `Local CSV is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_LOCAL_CSV_BYTES)} for browser-only review.`,
       );
       setFileStatus('File rejected before parsing');
+      trackEvent('byo_csv_file_rejected', { reason: 'size_limit', file_bytes: file.size });
       event.target.value = '';
       return;
     }
@@ -97,6 +98,7 @@ export function ByoCsvProofPage() {
     } catch {
       setFileError('Unable to read the selected local file.');
       setFileStatus('File read failed');
+      trackEvent('byo_csv_file_rejected', { reason: 'read_failed' });
     }
   }
 

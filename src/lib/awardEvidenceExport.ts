@@ -50,16 +50,15 @@ export interface AwardExportJSON {
  */
 export async function exportAwardEvidence(
   dashboardKPIs: DashboardKPIs,
-  exportJSON: AwardExportJSON
+  exportJSON: AwardExportJSON,
 ): Promise<{ success: boolean; data?: Blob; error?: string }> {
-  
   // Flatten export JSON to match dashboard field names
   const flatExport = {
     monthly_curtailment_avoided_mwh: exportJSON.curtailment.total_avoided_mwh,
     monthly_opportunity_cost_saved_cad: exportJSON.curtailment.total_savings_cad,
     solar_forecast_mae_percent: exportJSON.forecast.solar_mae_1h,
     wind_forecast_mae_percent: exportJSON.forecast.wind_mae_1h,
-    roi_benefit_cost: exportJSON.curtailment.roi_percent
+    roi_benefit_cost: exportJSON.curtailment.roi_percent,
   };
 
   // Validate alignment
@@ -70,7 +69,7 @@ export async function exportAwardEvidence(
     console.error('[AWARD EXPORT] Validation failed:', errorMsg);
     return {
       success: false,
-      error: errorMsg
+      error: errorMsg,
     };
   }
 
@@ -90,7 +89,7 @@ export async function exportAwardEvidence(
     `Solar MAE 1h (%),${exportJSON.forecast.solar_mae_1h}`,
     `Wind MAE 1h (%),${exportJSON.forecast.wind_mae_1h}`,
     `Baseline Uplift (%),${exportJSON.forecast.baseline_uplift_percent}`,
-    `Calibration,ECCC Weather Observations`,
+    `Calibration,Not performed`,
     '',
     '## DATA QUALITY',
     `Sample Count,${exportJSON.data_quality.sample_count}`,
@@ -114,14 +113,14 @@ export async function exportAwardEvidence(
     `Dashboard-Export Alignment,VERIFIED`,
     `Tolerance,1%`,
     `Mismatches,0`,
-    `Status,READY FOR SUBMISSION`
+    `Status,READY FOR SUBMISSION`,
   ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
   return {
     success: true,
-    data: blob
+    data: blob,
   };
 }
 
@@ -141,16 +140,16 @@ export function downloadAwardEvidence(blob: Blob, filename: string = 'award-evid
 
 /**
  * Example usage:
- * 
+ *
  * const dashboardKPIs = {
  *   monthly_curtailment_avoided_mwh: 679,
  *   monthly_opportunity_cost_saved_cad: 42500,
  *   solar_forecast_mae_percent: 4.5,
  *   wind_forecast_mae_percent: 8.2
  * };
- * 
+ *
  * const exportJSON = { ... }; // From API
- * 
+ *
  * const result = await exportAwardEvidence(dashboardKPIs, exportJSON);
  * if (result.success && result.data) {
  *   downloadAwardEvidence(result.data);

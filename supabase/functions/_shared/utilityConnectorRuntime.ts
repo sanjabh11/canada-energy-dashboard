@@ -247,7 +247,10 @@ export async function runGreenButtonCallback(params: {
       status: 400,
       body: {
         error: 'Green Button token exchange failed.',
-        details: tokenPayload ?? { raw_response: tokenText || null },
+        // Never echo the upstream token payload: it can carry OAuth error
+        // detail or token material back to the caller. A bounded code is
+        // enough for the owner to diagnose a rejected exchange.
+        details: { upstream_error: readErrorMessage(tokenPayload) ?? 'token_exchange_rejected' },
       },
     };
   }

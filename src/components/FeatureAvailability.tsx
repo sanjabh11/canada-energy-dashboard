@@ -1,13 +1,26 @@
 /**
  * Feature Availability Page
- * 
+ *
  * User-facing page showing what's available in Phase 1 launch
  * and what's coming in Phase 2.
  */
 
 import React, { useState, useMemo } from 'react';
-import { CheckCircle, Clock, AlertTriangle, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { FEATURE_REGISTRY, getDeploymentStats, getFeatureReleaseDisplay, type FeatureStatus, type FeatureConfig } from '../lib/featureFlags';
+import {
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+import {
+  FEATURE_REGISTRY,
+  getDeploymentStats,
+  getFeatureReleaseDisplay,
+  type FeatureStatus,
+  type FeatureConfig,
+} from '../lib/featureFlags';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 
 const STATUS_CONFIG = {
@@ -67,12 +80,17 @@ const ROADMAP_CONFIG = {
 const FeatureCard: React.FC<{ feature: FeatureConfig }> = ({ feature }) => {
   const [expanded, setExpanded] = useState(false);
   const releaseDisplay = feature.status === 'deferred' ? getFeatureReleaseDisplay(feature) : null;
-  const config = feature.status === 'deferred'
-    ? (releaseDisplay?.tone === 'danger' ? ROADMAP_CONFIG.overdue : ROADMAP_CONFIG.comingSoon)
-    : STATUS_CONFIG[feature.status];
+  const config =
+    feature.status === 'deferred'
+      ? releaseDisplay?.tone === 'danger'
+        ? ROADMAP_CONFIG.overdue
+        : ROADMAP_CONFIG.comingSoon
+      : STATUS_CONFIG[feature.status];
   const Icon = config.icon;
   const statusLabel = releaseDisplay?.label ?? config.label;
-  const statusNote = releaseDisplay?.note ?? (feature.estimatedRelease ? `Est. ${feature.estimatedRelease}` : undefined);
+  const statusNote =
+    releaseDisplay?.note ??
+    (feature.estimatedRelease ? `Est. ${feature.estimatedRelease}` : undefined);
 
   return (
     <div className={`border-2 ${config.borderColor} rounded-lg p-4 ${config.bgColor}`}>
@@ -87,9 +105,7 @@ const FeatureCard: React.FC<{ feature: FeatureConfig }> = ({ feature }) => {
             <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
               <span className={`font-medium ${config.color}`}>{statusLabel}</span>
               <span>Rating: {feature.rating}/5</span>
-              {statusNote && (
-                <span className="text-gray-500">• {statusNote}</span>
-              )}
+              {statusNote && <span className="text-gray-500">• {statusNote}</span>}
             </div>
 
             {feature.limitations && feature.limitations.length > 0 && (
@@ -98,7 +114,11 @@ const FeatureCard: React.FC<{ feature: FeatureConfig }> = ({ feature }) => {
                   onClick={() => setExpanded(!expanded)}
                   className="flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 transition-colors"
                 >
-                  {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {expanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
                   {expanded ? 'Hide' : 'Show'} limitations ({feature.limitations.length})
                 </button>
 
@@ -139,15 +159,15 @@ export const FeatureAvailability: React.FC = () => {
     if (filterStatus === 'all') {
       return allFeatures;
     }
-    return allFeatures.filter(f => f.status === filterStatus);
+    return allFeatures.filter((f) => f.status === filterStatus);
   }, [filterStatus]);
 
   const groupedFeatures = useMemo(() => {
     return {
-      production_ready: features.filter(f => f.status === 'production_ready'),
-      acceptable: features.filter(f => f.status === 'acceptable'),
-      partial: features.filter(f => f.status === 'partial'),
-      deferred: features.filter(f => f.status === 'deferred'),
+      production_ready: features.filter((f) => f.status === 'production_ready'),
+      acceptable: features.filter((f) => f.status === 'acceptable'),
+      partial: features.filter((f) => f.status === 'partial'),
+      deferred: features.filter((f) => f.status === 'deferred'),
     };
   }, [features]);
 
@@ -245,86 +265,92 @@ export const FeatureAvailability: React.FC = () => {
         {/* Feature Lists */}
         <div className="space-y-8">
           {/* Production Ready */}
-          {(filterStatus === 'all' || filterStatus === 'production_ready') && groupedFeatures.production_ready.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-3xl">✨</span>
-                Production Ready - No Limitations
-              </h2>
-              <p className="text-gray-600 mb-4">
-                These features are fully functional and tested. Use with confidence for production workloads.
-              </p>
-              <div className="space-y-3">
-                {groupedFeatures.production_ready.map(feature => (
-                  <FeatureCard key={feature.id} feature={feature} />
-                ))}
+          {(filterStatus === 'all' || filterStatus === 'production_ready') &&
+            groupedFeatures.production_ready.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-3xl">✨</span>
+                  Learning and analysis features
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  These features support exploration with sample and user-provided data. Review each
+                  feature’s evidence and limitations before relying on results.
+                </p>
+                <div className="space-y-3">
+                  {groupedFeatures.production_ready.map((feature) => (
+                    <FeatureCard key={feature.id} feature={feature} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Acceptable */}
-          {(filterStatus === 'all' || filterStatus === 'acceptable') && groupedFeatures.acceptable.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-3xl">🟡</span>
-                Available - Known Limitations
-              </h2>
-              <p className="text-gray-600 mb-4">
-                These features work well within documented limitations. Review limitations before use.
-              </p>
-              <div className="space-y-3">
-                {groupedFeatures.acceptable.map(feature => (
-                  <FeatureCard key={feature.id} feature={feature} />
-                ))}
+          {(filterStatus === 'all' || filterStatus === 'acceptable') &&
+            groupedFeatures.acceptable.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-3xl">🟡</span>
+                  Available - Known Limitations
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  These features work well within documented limitations. Review limitations before
+                  use.
+                </p>
+                <div className="space-y-3">
+                  {groupedFeatures.acceptable.map((feature) => (
+                    <FeatureCard key={feature.id} feature={feature} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Partial */}
-          {(filterStatus === 'all' || filterStatus === 'partial') && groupedFeatures.partial.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-3xl">🟠</span>
-                Limited Functionality - Use with Caution
-              </h2>
-              <p className="text-gray-600 mb-4">
-                These features have significant limitations. Suitable for exploration and visualization, not critical decisions.
-              </p>
-              <div className="space-y-3">
-                {groupedFeatures.partial.map(feature => (
-                  <FeatureCard key={feature.id} feature={feature} />
-                ))}
+          {(filterStatus === 'all' || filterStatus === 'partial') &&
+            groupedFeatures.partial.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-3xl">🟠</span>
+                  Limited Functionality - Use with Caution
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  These features have significant limitations. Suitable for exploration and
+                  visualization, not critical decisions.
+                </p>
+                <div className="space-y-3">
+                  {groupedFeatures.partial.map((feature) => (
+                    <FeatureCard key={feature.id} feature={feature} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Deferred */}
-          {(filterStatus === 'all' || filterStatus === 'deferred') && groupedFeatures.deferred.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-3xl">🔜</span>
-                Roadmap & Deferred Features
-              </h2>
-              <p className="text-gray-600 mb-4">
-                These features are not yet enabled. Release estimates are shown per feature and marked overdue when the target window has passed.
-              </p>
-              <div className="space-y-3">
-                {groupedFeatures.deferred.map(feature => (
-                  <FeatureCard key={feature.id} feature={feature} />
-                ))}
+          {(filterStatus === 'all' || filterStatus === 'deferred') &&
+            groupedFeatures.deferred.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-3xl">🔜</span>
+                  Roadmap & Deferred Features
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  These features are not yet enabled. Release estimates are shown per feature and
+                  marked overdue when the target window has passed.
+                </p>
+                <div className="space-y-3">
+                  {groupedFeatures.deferred.map((feature) => (
+                    <FeatureCard key={feature.id} feature={feature} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
 
         {/* Footer */}
         <div className="mt-12 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            Your Feedback Shapes Phase 2
-          </h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Your Feedback Shapes Phase 2</h3>
           <p className="text-blue-800 text-sm mb-3">
-            Help us prioritize what matters most. Which deferred features would add the most value for you?
-            What limitations in available features cause the most friction?
+            Help us prioritize what matters most. Which deferred features would add the most value
+            for you? What limitations in available features cause the most friction?
           </p>
           <p className="text-blue-700 text-xs">
             Use the feedback button (top right) or help system to share your thoughts.

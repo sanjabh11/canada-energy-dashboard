@@ -2,11 +2,7 @@ import {
   resolveCommercialCommitmentEvidence,
   type CommercialCommitmentStatus,
 } from './commercialCommitmentEvidence';
-import {
-  cqrCalibrate,
-  type QuantileForecast,
-  type ConformalInterval,
-} from './conformalPrediction';
+import { cqrCalibrate, type QuantileForecast, type ConformalInterval } from './conformalPrediction';
 
 export const GA_ICI_PREDICTOR_VERSION = 'ga-ici-5cp-decision-support-v1';
 export const IESO_PEAK_TRACKER_SOURCE_URL = 'https://www.ieso.ca/peaktracker';
@@ -90,7 +86,8 @@ export interface IciFiveCpRetainedEvidenceExtractParams {
   commercialCommitmentEvidence?: string;
   route?: string;
   proofPackId?: string;
-  piiScreenResult?: 'redacted' | 'screened' | 'no personal data' | 'no personal data or meter identifiers found';
+  piiScreenResult?:
+    'redacted' | 'screened' | 'no personal data' | 'no personal data or meter identifiers found';
   artifactTitle?: string;
   claimBoundary?: string;
   doNotClaim?: string;
@@ -139,11 +136,16 @@ function decodeHtmlEntities(value: string): string {
 }
 
 function stripHtml(value: string): string {
-  return decodeHtmlEntities(value.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  return decodeHtmlEntities(value.replace(/<[^>]*>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function parseLooseNumber(value: string): number | null {
-  const normalized = value.replace(/,/g, '').replace(/[^\d.-]/g, '').trim();
+  const normalized = value
+    .replace(/,/g, '')
+    .replace(/[^\d.-]/g, '')
+    .trim();
   if (!normalized) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
@@ -198,7 +200,14 @@ function parsePipeTables(text: string): ParsedTable[] {
   let group: string[] = [];
   const flushGroup = () => {
     const rows = group
-      .map((line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim()))
+      .map((line) =>
+        line
+          .trim()
+          .replace(/^\|/, '')
+          .replace(/\|$/, '')
+          .split('|')
+          .map((cell) => cell.trim()),
+      )
       .filter((row) => row.some((cell) => cell.length > 0))
       .filter((row) => !row.every((cell) => /^:?-{2,}:?$/.test(cell)));
     if (rows.length >= 2) tables.push({ headers: rows[0], rows: rows.slice(1) });
@@ -223,8 +232,11 @@ function parseHtmlTables(text: string): ParsedTable[] {
 
   tableMatches.forEach((tableText) => {
     const rows = Array.from(tableText.matchAll(/<tr[\s\S]*?<\/tr>/gi))
-      .map(([rowText]) => Array.from(rowText.matchAll(/<(?:th|td)\b[^>]*>([\s\S]*?)<\/(?:th|td)>/gi))
-        .map(([, cell]) => stripHtml(cell)))
+      .map(([rowText]) =>
+        Array.from(rowText.matchAll(/<(?:th|td)\b[^>]*>([\s\S]*?)<\/(?:th|td)>/gi)).map(
+          ([, cell]) => stripHtml(cell),
+        ),
+      )
       .filter((row) => row.some((cell) => cell.length > 0));
     if (rows.length >= 2) tables.push({ headers: rows[0], rows: rows.slice(1) });
   });
@@ -242,23 +254,31 @@ function parseDelimitedTable(text: string): ParsedTable[] {
 function isPeakTrackerTable(headers: string[]): boolean {
   const normalizedHeaders = headers.map(normalizeColumn);
   const hasRank = normalizedHeaders.includes('rank');
-  const hasDate = normalizedHeaders.some((header) => ['date', 'trade_date', 'delivery_date', 'peak_date'].includes(header));
-  const hasIciDemand = normalizedHeaders.some((header) => (
-    header.includes('ici_ontario_demand') || header.includes('ontario_demand')
-  ));
-  return hasDate && hasIciDemand && (hasRank || normalizedHeaders.some((header) => header.startsWith('ici_')));
+  const hasDate = normalizedHeaders.some((header) =>
+    ['date', 'trade_date', 'delivery_date', 'peak_date'].includes(header),
+  );
+  const hasIciDemand = normalizedHeaders.some(
+    (header) => header.includes('ici_ontario_demand') || header.includes('ontario_demand'),
+  );
+  return (
+    hasDate &&
+    hasIciDemand &&
+    (hasRank || normalizedHeaders.some((header) => header.startsWith('ici_')))
+  );
 }
 
 function valueForColumn(row: string[], headers: string[], candidates: string[]): string {
   const normalizedHeaders = headers.map(normalizeColumn);
   const index = normalizedHeaders.findIndex((header) => candidates.includes(header));
-  return index >= 0 ? row[index]?.trim() ?? '' : '';
+  return index >= 0 ? (row[index]?.trim() ?? '') : '';
 }
 
 function valueForColumnContaining(row: string[], headers: string[], fragments: string[]): string {
   const normalizedHeaders = headers.map(normalizeColumn);
-  const index = normalizedHeaders.findIndex((header) => fragments.every((fragment) => header.includes(fragment)));
-  return index >= 0 ? row[index]?.trim() ?? '' : '';
+  const index = normalizedHeaders.findIndex((header) =>
+    fragments.every((fragment) => header.includes(fragment)),
+  );
+  return index >= 0 ? (row[index]?.trim() ?? '') : '';
 }
 
 function parseDateParts(value: string): { year: number; month: number; day: number } | null {
@@ -273,18 +293,30 @@ function parseDateParts(value: string): { year: number; month: number; day: numb
   }
 
   const monthNames = new Map([
-    ['jan', 0], ['january', 0],
-    ['feb', 1], ['february', 1],
-    ['mar', 2], ['march', 2],
-    ['apr', 3], ['april', 3],
+    ['jan', 0],
+    ['january', 0],
+    ['feb', 1],
+    ['february', 1],
+    ['mar', 2],
+    ['march', 2],
+    ['apr', 3],
+    ['april', 3],
     ['may', 4],
-    ['jun', 5], ['june', 5],
-    ['jul', 6], ['july', 6],
-    ['aug', 7], ['august', 7],
-    ['sep', 8], ['sept', 8], ['september', 8],
-    ['oct', 9], ['october', 9],
-    ['nov', 10], ['november', 10],
-    ['dec', 11], ['december', 11],
+    ['jun', 5],
+    ['june', 5],
+    ['jul', 6],
+    ['july', 6],
+    ['aug', 7],
+    ['august', 7],
+    ['sep', 8],
+    ['sept', 8],
+    ['september', 8],
+    ['oct', 9],
+    ['october', 9],
+    ['nov', 10],
+    ['november', 10],
+    ['dec', 11],
+    ['december', 11],
   ]);
   const dayMonthMatch = normalized.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
   if (dayMonthMatch) {
@@ -308,7 +340,9 @@ function timestampFromHourEnding(dateText: string, hourText: string): string | n
   const dateParts = parseDateParts(dateText);
   const hour = parseLooseNumber(hourText);
   if (!dateParts || hour === null || hour < 1 || hour > 24 || !Number.isInteger(hour)) return null;
-  const timestamp = new Date(Date.UTC(dateParts.year, dateParts.month, dateParts.day, hour === 24 ? 24 : hour));
+  const timestamp = new Date(
+    Date.UTC(dateParts.year, dateParts.month, dateParts.day, hour === 24 ? 24 : hour),
+  );
   return timestamp.toISOString();
 }
 
@@ -327,28 +361,40 @@ export function parseIesoPeakTrackerSnapshot(
   options: IesoPeakTrackerParseOptions = {},
 ): IciSystemPeakHour[] {
   const source = options.sourceUrl ?? IESO_PEAK_TRACKER_SOURCE_URL;
-  const tables = [
-    ...parseHtmlTables(text),
-    ...parsePipeTables(text),
-    ...parseDelimitedTable(text),
-  ];
+  const tables = [...parseHtmlTables(text), ...parsePipeTables(text), ...parseDelimitedTable(text)];
   const peaks: IciSystemPeakHour[] = [];
 
   tables
     .filter((table) => isPeakTrackerTable(table.headers))
     .forEach((table) => {
       table.rows.forEach((row) => {
-        const explicitTimestamp = valueForColumn(row, table.headers, ['timestamp', 'datetime', 'date_time']);
-        const dateText = valueForColumn(row, table.headers, ['date', 'trade_date', 'delivery_date', 'peak_date']);
-        const hourText = valueForColumn(row, table.headers, ['hour_ending', 'hour_ending_est', 'hour_ending_edt', 'he', 'hour']);
-        const demandText = valueForColumn(row, table.headers, [
-          'ici_ontario_demand',
-          'ici_ontario_demand_mw',
-          'ontario_demand',
-          'ontario_demand_mw',
-          'demand_mw',
-          'system_demand_mw',
-        ]) || valueForColumnContaining(row, table.headers, ['ontario', 'demand']);
+        const explicitTimestamp = valueForColumn(row, table.headers, [
+          'timestamp',
+          'datetime',
+          'date_time',
+        ]);
+        const dateText = valueForColumn(row, table.headers, [
+          'date',
+          'trade_date',
+          'delivery_date',
+          'peak_date',
+        ]);
+        const hourText = valueForColumn(row, table.headers, [
+          'hour_ending',
+          'hour_ending_est',
+          'hour_ending_edt',
+          'he',
+          'hour',
+        ]);
+        const demandText =
+          valueForColumn(row, table.headers, [
+            'ici_ontario_demand',
+            'ici_ontario_demand_mw',
+            'ontario_demand',
+            'ontario_demand_mw',
+            'demand_mw',
+            'system_demand_mw',
+          ]) || valueForColumnContaining(row, table.headers, ['ontario', 'demand']);
         const statusText = valueForColumn(row, table.headers, [
           'status',
           'status_initial_prelim_final',
@@ -378,7 +424,9 @@ export function parseIesoPeakTrackerSnapshot(
 
   const result = Array.from(deduped.values());
   if (result.length === 0) {
-    throw new Error('No IESO Peak Tracker rows found. Expected Rank, Date, Hour Ending, ICI Ontario Demand (MW), and Status columns.');
+    throw new Error(
+      'No IESO Peak Tracker rows found. Expected Rank, Date, Hour Ending, ICI Ontario Demand (MW), and Status columns.',
+    );
   }
   return result;
 }
@@ -414,9 +462,10 @@ function toRiskWindow(
 ): IciPeakRiskWindow {
   const timestamp = normalizeTimestamp(peak.timestamp);
   const customerLoad = customerLoadLookup.get(timestamp) ?? null;
-  const estimatedPdf = customerLoad !== null && peak.ontario_demand_mw > 0
-    ? round(customerLoad / peak.ontario_demand_mw)
-    : null;
+  const estimatedPdf =
+    customerLoad !== null && peak.ontario_demand_mw > 0
+      ? round(customerLoad / peak.ontario_demand_mw)
+      : null;
   const status = peak.status ?? 'candidate';
 
   return {
@@ -426,9 +475,12 @@ function toRiskWindow(
     customer_load_mw: customerLoad !== null ? round(customerLoad, 3) : null,
     estimated_peak_demand_factor: estimatedPdf,
     status,
-    action_label: status === 'forecast' || status === 'candidate'
-      ? rank <= 10 ? 'curtail_if_operationally_safe' : 'watch'
-      : 'history_only',
+    action_label:
+      status === 'forecast' || status === 'candidate'
+        ? rank <= 10
+          ? 'curtail_if_operationally_safe'
+          : 'watch'
+        : 'history_only',
   };
 }
 
@@ -441,16 +493,16 @@ export function buildIciFiveCpDecisionSupportReport(params: {
   sourceUrls?: string[];
 }): IciFiveCpDecisionSupportReport {
   const customerLoadLookup = buildCustomerLoadLookup(params.customerLoad);
-  const ranked = rankSystemPeaks(params.systemPeaks)
-    .map((peak, index) => toRiskWindow(peak, index + 1, customerLoadLookup));
+  const ranked = rankSystemPeaks(params.systemPeaks).map((peak, index) =>
+    toRiskWindow(peak, index + 1, customerLoadLookup),
+  );
 
   const topFive = ranked.slice(0, 5);
   const topFiveCustomerLoad = topFive.every((peak) => peak.customer_load_mw !== null)
     ? topFive.reduce((sum, peak) => sum + (peak.customer_load_mw ?? 0), 0)
     : null;
-  const topFiveSystemDemand = topFive.length === 5
-    ? topFive.reduce((sum, peak) => sum + peak.ontario_demand_mw, 0)
-    : null;
+  const topFiveSystemDemand =
+    topFive.length === 5 ? topFive.reduce((sum, peak) => sum + peak.ontario_demand_mw, 0) : null;
 
   return {
     version: GA_ICI_PREDICTOR_VERSION,
@@ -461,9 +513,10 @@ export function buildIciFiveCpDecisionSupportReport(params: {
     },
     top_five_peak_hours: topFive,
     watchlist: ranked.slice(0, 10),
-    estimated_peak_demand_factor: topFiveCustomerLoad !== null && topFiveSystemDemand && topFiveSystemDemand > 0
-      ? round(topFiveCustomerLoad / topFiveSystemDemand)
-      : null,
+    estimated_peak_demand_factor:
+      topFiveCustomerLoad !== null && topFiveSystemDemand && topFiveSystemDemand > 0
+        ? round(topFiveCustomerLoad / topFiveSystemDemand)
+        : null,
     top_five_customer_load_mwh: topFiveCustomerLoad !== null ? round(topFiveCustomerLoad, 3) : null,
     top_five_system_demand_mwh: topFiveSystemDemand !== null ? round(topFiveSystemDemand, 3) : null,
     source_urls: params.sourceUrls ?? [
@@ -471,7 +524,8 @@ export function buildIciFiveCpDecisionSupportReport(params: {
       'https://www.ieso.ca/en/Sector-Participants/Settlements/Global-Adjustment-Class-A-Eligibility',
       IESO_PEAK_TRACKER_SOURCE_URL,
     ],
-    claim_boundary: 'Ontario GA/ICI 5CP decision support only. This report estimates exposure from supplied load and public/candidate peak records; it is not a savings guarantee, settlement statement, or legal/regulatory opinion.',
+    claim_boundary:
+      'Ontario GA/ICI 5CP decision support only. This report estimates exposure from supplied load and public/candidate peak records; it is not a savings guarantee, settlement statement, or legal/regulatory opinion.',
     do_not_claim: [
       'Guaranteed GA savings',
       'Final IESO settlement result',
@@ -493,7 +547,9 @@ export function buildIciFiveCpHistoricalBacktestReport(params: {
   const candidateTopFive = candidates.slice(0, 5);
   const candidateWatchlist = candidates.slice(0, 10);
   const actualTopFive = rankSystemPeaks(params.actualTopFivePeaks).slice(0, 5);
-  const candidateTopFiveRanks = new Map(candidateTopFive.map((peak) => [peak.timestamp, peak.rank]));
+  const candidateTopFiveRanks = new Map(
+    candidateTopFive.map((peak) => [peak.timestamp, peak.rank]),
+  );
   const watchlistRanks = new Map(candidateWatchlist.map((peak) => [peak.timestamp, peak.rank]));
   const actualTopFiveSet = new Set(actualTopFive.map((peak) => peak.timestamp));
   const toBacktestPeak = (
@@ -506,12 +562,12 @@ export function buildIciFiveCpHistoricalBacktestReport(params: {
     status: peak.status ?? 'candidate',
     matched_candidate_rank: candidateRank,
   });
-  const candidateTopFiveCaptureCount = actualTopFive
-    .filter((peak) => candidateTopFiveRanks.has(peak.timestamp))
-    .length;
-  const watchlistCaptureCount = actualTopFive
-    .filter((peak) => watchlistRanks.has(peak.timestamp))
-    .length;
+  const candidateTopFiveCaptureCount = actualTopFive.filter((peak) =>
+    candidateTopFiveRanks.has(peak.timestamp),
+  ).length;
+  const watchlistCaptureCount = actualTopFive.filter((peak) =>
+    watchlistRanks.has(peak.timestamp),
+  ).length;
 
   return {
     version: `${GA_ICI_PREDICTOR_VERSION}:historical-backtest-v1`,
@@ -523,20 +579,21 @@ export function buildIciFiveCpHistoricalBacktestReport(params: {
     candidate_peak_count: candidates.length,
     actual_top_five_count: actualTopFive.length,
     candidate_top_five_capture_count: candidateTopFiveCaptureCount,
-    candidate_top_five_capture_rate: actualTopFive.length > 0
-      ? round(candidateTopFiveCaptureCount / actualTopFive.length, 4)
-      : null,
+    candidate_top_five_capture_rate:
+      actualTopFive.length > 0
+        ? round(candidateTopFiveCaptureCount / actualTopFive.length, 4)
+        : null,
     watchlist_capture_count: watchlistCaptureCount,
-    watchlist_capture_rate: actualTopFive.length > 0
-      ? round(watchlistCaptureCount / actualTopFive.length, 4)
-      : null,
+    watchlist_capture_rate:
+      actualTopFive.length > 0 ? round(watchlistCaptureCount / actualTopFive.length, 4) : null,
     missed_actual_peak_hours: actualTopFive
       .filter((peak) => !watchlistRanks.has(peak.timestamp))
       .map((peak) => toBacktestPeak(peak, null)),
     false_positive_candidate_top_five_hours: candidateTopFive
       .filter((peak) => !actualTopFiveSet.has(peak.timestamp))
       .map((peak) => toBacktestPeak(peak, null)),
-    claim_boundary: 'Historical GA/ICI 5CP backtest compares public/candidate peak watchlists with supplied historical top-five peak records only. It is not a buyer-specific accuracy claim or settlement-quality audit.',
+    claim_boundary:
+      'Historical GA/ICI 5CP backtest compares public/candidate peak watchlists with supplied historical top-five peak records only. It is not a buyer-specific accuracy claim or settlement-quality audit.',
     do_not_claim: [
       'Guaranteed capture of future 5CP peaks',
       'Buyer-specific savings or curtailment outcome',
@@ -558,15 +615,19 @@ export function iciFiveCpReportToMarkdown(report: IciFiveCpDecisionSupportReport
     '',
     '| Rank | Timestamp | Ontario demand MW | Customer load MW | Estimated PDF | Status | Action label |',
     '|---:|---|---:|---:|---:|---|---|',
-    ...report.watchlist.map((peak) => [
-      peak.rank,
-      peak.timestamp,
-      peak.ontario_demand_mw.toFixed(2),
-      peak.customer_load_mw?.toFixed(3) ?? 'missing',
-      peak.estimated_peak_demand_factor?.toFixed(6) ?? 'missing',
-      peak.status ?? 'candidate',
-      peak.action_label,
-    ].join(' | ')).map((row) => `| ${row} |`),
+    ...report.watchlist
+      .map((peak) =>
+        [
+          peak.rank,
+          peak.timestamp,
+          peak.ontario_demand_mw.toFixed(2),
+          peak.customer_load_mw?.toFixed(3) ?? 'missing',
+          peak.estimated_peak_demand_factor?.toFixed(6) ?? 'missing',
+          peak.status ?? 'candidate',
+          peak.action_label,
+        ].join(' | '),
+      )
+      .map((row) => `| ${row} |`),
     '',
     '## Do Not Claim',
     ...report.do_not_claim.map((claim) => `- ${claim}`),
@@ -580,12 +641,19 @@ export function buildIciFiveCpRetainedEvidenceExtract(
   report: IciFiveCpDecisionSupportReport,
   params: IciFiveCpRetainedEvidenceExtractParams,
 ): string {
-  const topFiveWithLoadCount = report.top_five_peak_hours.filter((peak) => peak.customer_load_mw !== null).length;
-  const peakTrackerSource = report.source_urls.find((url) => /peaktracker/i.test(url)) ?? report.source_urls[0] ?? 'IESO source not supplied';
-  const claimBoundary = params.claimBoundary
-    ?? 'Buyer supplied redacted Ontario load planning support only; GA/ICI output is decision support workflow only.';
-  const doNotClaim = params.doNotClaim
-    ?? 'No savings guarantee, final IESO settlement, eligibility determination, or operational curtailment instruction.';
+  const topFiveWithLoadCount = report.top_five_peak_hours.filter(
+    (peak) => peak.customer_load_mw !== null,
+  ).length;
+  const peakTrackerSource =
+    report.source_urls.find((url) => /peaktracker/i.test(url)) ??
+    report.source_urls[0] ??
+    'IESO source not supplied';
+  const claimBoundary =
+    params.claimBoundary ??
+    'Buyer supplied redacted Ontario load planning support only; GA/ICI output is decision support workflow only.';
+  const doNotClaim =
+    params.doNotClaim ??
+    'No savings guarantee, final IESO settlement, eligibility determination, or operational curtailment instruction.';
   const commercialCommitmentEvidence = resolveCommercialCommitmentEvidence(
     params.commercialCommitmentStatus,
     params.commercialCommitmentEvidence,
@@ -620,29 +688,35 @@ export function buildIciFiveCpRetainedEvidenceExtract(
     `- IESO peak tracker source: ${peakTrackerSource}`,
     `- decision-support settlement boundary: ${report.claim_boundary}`,
     `- base period: ${report.base_period.start} to ${report.base_period.end}`,
-    ...(params.historicalBacktest ? [
-      '',
-      '## Historical Backtest Summary',
-      `- candidate peak rows: ${params.historicalBacktest.candidate_peak_count}`,
-      `- actual top-five rows: ${params.historicalBacktest.actual_top_five_count}`,
-      `- candidate top-five capture rate: ${params.historicalBacktest.candidate_top_five_capture_rate ?? 'not available'}`,
-      `- watchlist capture rate: ${params.historicalBacktest.watchlist_capture_rate ?? 'not available'}`,
-      `- missed actual peak hours: ${params.historicalBacktest.missed_actual_peak_hours.length}`,
-      `- false positive candidate top-five hours: ${params.historicalBacktest.false_positive_candidate_top_five_hours.length}`,
-      `- backtest claim boundary: ${params.historicalBacktest.claim_boundary}`,
-    ] : []),
+    ...(params.historicalBacktest
+      ? [
+          '',
+          '## Historical Backtest Summary',
+          `- candidate peak rows: ${params.historicalBacktest.candidate_peak_count}`,
+          `- actual top-five rows: ${params.historicalBacktest.actual_top_five_count}`,
+          `- candidate top-five capture rate: ${params.historicalBacktest.candidate_top_five_capture_rate ?? 'not available'}`,
+          `- watchlist capture rate: ${params.historicalBacktest.watchlist_capture_rate ?? 'not available'}`,
+          `- missed actual peak hours: ${params.historicalBacktest.missed_actual_peak_hours.length}`,
+          `- false positive candidate top-five hours: ${params.historicalBacktest.false_positive_candidate_top_five_hours.length}`,
+          `- backtest claim boundary: ${params.historicalBacktest.claim_boundary}`,
+        ]
+      : []),
     '',
     '## Top Five Peak Windows',
     '| Rank | Timestamp | Ontario demand MW | Customer load MW | Estimated PDF | Status |',
     '|---:|---|---:|---:|---:|---|',
-    ...report.top_five_peak_hours.map((peak) => [
-      peak.rank,
-      peak.timestamp,
-      peak.ontario_demand_mw.toFixed(2),
-      peak.customer_load_mw?.toFixed(3) ?? 'missing',
-      peak.estimated_peak_demand_factor?.toFixed(6) ?? 'missing',
-      peak.status ?? 'candidate',
-    ].join(' | ')).map((row) => `| ${row} |`),
+    ...report.top_five_peak_hours
+      .map((peak) =>
+        [
+          peak.rank,
+          peak.timestamp,
+          peak.ontario_demand_mw.toFixed(2),
+          peak.customer_load_mw?.toFixed(3) ?? 'missing',
+          peak.estimated_peak_demand_factor?.toFixed(6) ?? 'missing',
+          peak.status ?? 'candidate',
+        ].join(' | '),
+      )
+      .map((row) => `| ${row} |`),
     '',
     '## Source URLs',
     ...report.source_urls.map((url) => `- ${url}`),
@@ -672,7 +746,9 @@ export interface IciFiveCpProbabilisticReport extends IciFiveCpDecisionSupportRe
     alpha: number;
     nCalibrationSamples: number;
     conformalQuantile: number;
-    coverageRate: number;
+    targetCoverageRate: number;
+    empiricalHeldOutCoverageRate: null;
+    coverageStatus: 'not_measured';
     method: string;
   };
   probabilisticClaimBoundary: string;
@@ -702,26 +778,35 @@ export function augmentPeakReportWithCP(
       ...report,
       top_five_peak_hours_probabilistic: report.top_five_peak_hours.map((w) => ({
         ...w,
-        alertTier: (w.status === 'forecast' || w.status === 'candidate' ? 'monitor' : 'history_only') as PeakAlertTier,
-        alertRationale: w.status === 'forecast' || w.status === 'candidate'
-          ? 'Insufficient calibration data (<30 samples). Conformal intervals not computed.'
-          : 'Historical data only — no probabilistic assessment.',
+        alertTier: (w.status === 'forecast' || w.status === 'candidate'
+          ? 'monitor'
+          : 'history_only') as PeakAlertTier,
+        alertRationale:
+          w.status === 'forecast' || w.status === 'candidate'
+            ? 'Insufficient calibration data (<30 samples). Conformal intervals not computed.'
+            : 'Historical data only — no probabilistic assessment.',
       })),
       watchlist_probabilistic: report.watchlist.map((w) => ({
         ...w,
-        alertTier: (w.status === 'forecast' || w.status === 'candidate' ? 'monitor' : 'history_only') as PeakAlertTier,
-        alertRationale: w.status === 'forecast' || w.status === 'candidate'
-          ? 'Insufficient calibration data (<30 samples). Conformal intervals not computed.'
-          : 'Historical data only — no probabilistic assessment.',
+        alertTier: (w.status === 'forecast' || w.status === 'candidate'
+          ? 'monitor'
+          : 'history_only') as PeakAlertTier,
+        alertRationale:
+          w.status === 'forecast' || w.status === 'candidate'
+            ? 'Insufficient calibration data (<30 samples). Conformal intervals not computed.'
+            : 'Historical data only — no probabilistic assessment.',
       })),
       conformalCalibration: {
         alpha,
         nCalibrationSamples: nCalibration,
         conformalQuantile: 0,
-        coverageRate: 0,
-        method: `CQR calibration skipped — insufficient samples (n=${nCalibration}, need >=30).`,
+        targetCoverageRate: round(1 - alpha, 4),
+        empiricalHeldOutCoverageRate: null,
+        coverageStatus: 'not_measured',
+        method: `CQR interval calibration skipped — insufficient samples (n=${nCalibration}, need >=30); no held-out coverage was measured.`,
       },
-      probabilisticClaimBoundary: 'Conformal intervals not computed due to insufficient calibration data. Alert tiers are advisory only.',
+      probabilisticClaimBoundary:
+        'Intervals were not computed due to insufficient calibration data. The target is nominal only; alert tiers are advisory and no held-out coverage was measured.',
     };
     return warningReport;
   }
@@ -798,21 +883,6 @@ export function augmentPeakReportWithCP(
   );
   const qHat = fullCalibration.calibration.conformalQuantile;
 
-  // Compute empirical coverage: fraction of actuals within calibrated intervals
-  let covered = 0;
-  for (let i = 0; i < nCalibration; i++) {
-    const interval = cqrCalibrate(
-      calibrationForecasts,
-      calibrationActuals,
-      calibrationForecasts[i],
-      alpha,
-    );
-    if (calibrationActuals[i] >= interval.interval.lower && calibrationActuals[i] <= interval.interval.upper) {
-      covered++;
-    }
-  }
-  const coverageRate = nCalibration > 0 ? covered / nCalibration : 0;
-
   return {
     ...report,
     top_five_peak_hours_probabilistic: topFiveProbabilistic,
@@ -821,9 +891,12 @@ export function augmentPeakReportWithCP(
       alpha,
       nCalibrationSamples: nCalibration,
       conformalQuantile: round(qHat, 4),
-      coverageRate: round(coverageRate, 4),
-      method: `CQR conformal calibration (alpha=${alpha}, n=${nCalibration}). Multi-tier alerts: curtail (P90≥threshold), watch (P50 near threshold), monitor (P10 near threshold).`,
+      targetCoverageRate: round(1 - alpha, 4),
+      empiricalHeldOutCoverageRate: null,
+      coverageStatus: 'not_measured',
+      method: `CQR interval calibration (alpha=${alpha}, n=${nCalibration}); target coverage is nominal only and no independent held-out coverage was measured. Multi-tier alerts: curtail (P90≥threshold), watch (P50 near threshold), monitor (P10 near threshold).`,
     },
-    probabilisticClaimBoundary: 'Probabilistic intervals provide coverage guarantees on the calibration set. Alert tiers are decision-support only — not operational curtailment instructions. Coverage rate reflects historical calibration, not future guarantees.',
+    probabilisticClaimBoundary:
+      'Intervals are calibrated on the supplied historical records, but no independent held-out coverage was measured. The target is nominal only; alert tiers are decision-support only, not operational curtailment instructions.',
   };
 }

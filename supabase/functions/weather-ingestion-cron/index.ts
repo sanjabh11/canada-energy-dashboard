@@ -125,8 +125,11 @@ serve(async (req) => {
           .single();
 
         if (error) {
-          // Ignore duplicate key errors (same timestamp)
-          if (!error.message.includes('duplicate key')) {
+          // Ignore duplicate key errors (same timestamp) — key on the
+          // Postgres code (23505 unique_violation), not message text.
+          const isDuplicateKey = String((error as { code?: string }).code ?? '') === '23505'
+            || error.message.includes('duplicate key');
+          if (!isDuplicateKey) {
             console.error(`Error inserting weather for ${province}:`, error);
           }
         } else {
@@ -161,7 +164,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: 'Internal error',
       }),
       {
         status: 500,

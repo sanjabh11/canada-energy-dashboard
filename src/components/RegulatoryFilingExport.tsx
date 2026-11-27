@@ -388,7 +388,7 @@ export const RegulatoryFilingExport: React.FC = () => {
               Utility Forecast Lane
             </h4>
             <p className="text-slate-300 text-xs mt-1">
-              Run utility-specific planning cases and export filing-ready load packs
+              Run utility-specific planning cases and export regulator-format load pack templates
             </p>
           </Link>
           <Link

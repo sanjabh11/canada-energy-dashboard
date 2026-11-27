@@ -34,13 +34,19 @@ export type TierMarketRateSelection = TierMarketRateRow | null;
 export type RetailerRateOfferSelection = RetailerRateOfferRow[];
 
 function compareObservedAtDesc(left?: string, right?: string): number {
-  return new Date(String(right ?? '')).getTime() - new Date(String(left ?? '')).getTime();
+  // Garbage dates parse to NaN and would corrupt the sort; treat them as
+  // epoch 0 so malformed rows always lose to any real observed_at.
+  const leftTime = new Date(String(left ?? '')).getTime();
+  const rightTime = new Date(String(right ?? '')).getTime();
+  return (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
 }
 
 function dedupeByRetailerKey(rows: RetailerRateOfferRow[]): RetailerRateOfferRow[] {
   const seen = new Set<string>();
   const result: RetailerRateOfferRow[] = [];
-  for (const row of [...rows].sort((left, right) => compareObservedAtDesc(left.observed_at, right.observed_at))) {
+  for (const row of [...rows].sort((left, right) =>
+    compareObservedAtDesc(left.observed_at, right.observed_at),
+  )) {
     if (!row.active) continue;
     if (seen.has(row.retailer_key)) continue;
     seen.add(row.retailer_key);
@@ -51,8 +57,14 @@ function dedupeByRetailerKey(rows: RetailerRateOfferRow[]): RetailerRateOfferRow
 
 export function getLatestTierMarketRate(rows: TierMarketRateRow[]): TierMarketRateSelection {
   return (
-    [...rows].sort((left, right) => compareObservedAtDesc(left.observed_at, right.observed_at))[0]
-    ?? null
+    [...rows]
+      // A row without a positive finite credit price is not a usable quote —
+      // exclude it so it cannot win "latest" and leak into the UI.
+      .filter((row) => {
+        const price = Number(row.market_credit_price_cad_per_tonne);
+        return Number.isFinite(price) && price > 0;
+      })
+      .sort((left, right) => compareObservedAtDesc(left.observed_at, right.observed_at))[0] ?? null
   );
 }
 

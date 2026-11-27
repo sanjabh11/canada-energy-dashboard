@@ -1,9 +1,13 @@
 import {
+  calculateForecastErrorMetrics,
   calculatePersistenceBaseline,
+  calculateSeasonalNaiveBaseline,
   calculateSkillScore,
   compareToBaselines,
   computeUplift,
   meetsIndustryStandard,
+  persistenceForecast,
+  seasonalNaiveForecast,
 } from '../../src/lib/forecastBaselines';
 
 afterEach(() => {
@@ -25,6 +29,36 @@ describe('forecastBaselines', () => {
     });
   });
 
+  it('repeats only the last complete season for a fixed-origin horizon', () => {
+    const forecast = seasonalNaiveForecast([1, 2, 3, 4], 7, 2);
+    expect(forecast.available).toBe(true);
+    expect(forecast.values).toEqual([3, 4, 3, 4, 3, 4, 3]);
+  });
+
+  it('marks the seasonal baseline unavailable when history is shorter than a season', () => {
+    const forecast = seasonalNaiveForecast([1, 2, 3, 4, 5, 6, 7, 8], 24, 24);
+    expect(forecast.available).toBe(false);
+    expect(forecast.values).toEqual([]);
+    expect(Number.isFinite(forecast.mae)).toBe(false);
+    expect(Number.isFinite(forecast.rmse)).toBe(false);
+  });
+
+  it('never reports zero error for empty or mismatched metric inputs', () => {
+    expect(calculateForecastErrorMetrics([1, 2], []).mae).toBeNaN();
+    expect(calculateForecastErrorMetrics([], []).mape).toBeNaN();
+    expect(calculateForecastErrorMetrics([1, 2, 3], [1, 2]).rmse).toBeNaN();
+    expect(calculatePersistenceBaseline([10, 10], 1).mae).toBe(0);
+    expect(calculatePersistenceBaseline([10], 1).mae).toBeNaN();
+    expect(calculateSeasonalNaiveBaseline([1, 2, 3], 1, 168).mae).toBeNaN();
+    expect(persistenceForecast(12, 0).available).toBe(false);
+  });
+
+  it('keeps seasonal phase aligned when the forecast starts after a non-period calibration tail', () => {
+    const training = Array.from({ length: 48 }, (_, index) => index);
+
+    expect(seasonalNaiveForecast(training, 4, 24, 128).values).toEqual([32, 33, 34, 35]);
+  });
+
   it('compares a perfect model against baselines', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
 
@@ -44,5 +78,7 @@ describe('forecastBaselines', () => {
       margin: 0.5,
     });
     expect(calculateSkillScore(12, 10)).toBeCloseTo(-0.2);
+    expect(Number.isNaN(calculateSkillScore(0, 0))).toBe(true);
+    expect(Number.isNaN(calculateSkillScore(12, Number.NaN))).toBe(true);
   });
 });

@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
-import { applyRateLimit, getClientId, logApiUsage } from "../_shared/rateLimit.ts";
+import { applyRateLimit, getClientId, logApiUsage, parseClientId } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -34,9 +35,7 @@ serve(async (req: Request) => {
   }
 
   const startedAt = Date.now();
-  const clientId = getClientId(req);
-  const apiKey = clientId.startsWith('key:') ? clientId.slice(4) : null;
-  const ipAddress = clientId.startsWith('ip:') ? clientId.slice(3) : null;
+  const { apiKey, ipAddress } = parseClientId(getClientId(req));
 
   try {
     if (req.method !== 'POST') {
@@ -47,7 +46,14 @@ serve(async (req: Request) => {
       return jsonResponse(req, 503, { error: 'Service configuration missing' }, rl.headers);
     }
 
-    const body = await req.json().catch(() => ({}));
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) {
+      return jsonResponse(req, bodyRead.reason === "too_large" ? 413 : 400, { error: bodyRead.reason === "too_large" ? "Payload too large" : "Malformed JSON body" }, rl.headers);
+    }
+    const body = asJsonObject(bodyRead.json);
+    if (!body) {
+      return jsonResponse(req, 400, { error: 'Body must be a JSON object' }, rl.headers);
+    }
 
     // Extract and validate required fields
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
@@ -143,7 +149,7 @@ serve(async (req: Request) => {
       apiKey,
       ipAddress,
       responseTimeMs: Date.now() - startedAt,
-      extra: { error: String(error) },
+      extra: { error: String(error).slice(0, 300) },
     });
     return jsonResponse(req, 500, { error: 'Internal server error' }, rl.headers);
   }

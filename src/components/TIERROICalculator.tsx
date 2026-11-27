@@ -90,6 +90,11 @@ function loadSavedScenarioInputs(): TierScenarioInputs {
   }
 }
 
+function formatObservedDate(iso: string | undefined): string {
+  const parsed = Date.parse(iso ?? '');
+  return Number.isFinite(parsed) ? new Date(parsed).toLocaleDateString() : 'date pending';
+}
+
 export const TIERROICalculator: React.FC = () => {
   useEffect(() => {
     trackEvent('tier_calculator_view', { source_route: '/roi-calculator' });
@@ -122,6 +127,7 @@ export const TIERROICalculator: React.FC = () => {
   const [simulatorSource, setSimulatorSource] = useState<'edge' | 'local_fallback'>(
     'local_fallback',
   );
+  const [simulatorError, setSimulatorError] = useState<string | null>(null);
   const [liveTierMarketRate, setLiveTierMarketRate] = useState<number | null>(null);
   const [liveTierMarketRateSource, setLiveTierMarketRateSource] = useState<{
     sourceName?: string;
@@ -133,7 +139,10 @@ export const TIERROICalculator: React.FC = () => {
   // TIER Pricing configuration (single source of truth)
   const tierPricing = useTIERPricing();
   const FUND_PRICE = tierPricing.fundPrice;
-  const MARKET_PRICE = liveTierMarketRate ?? tierPricing.marketCreditPrice;
+  const MARKET_PRICE =
+    liveTierMarketRate !== null && Number.isFinite(liveTierMarketRate)
+      ? liveTierMarketRate
+      : tierPricing.marketCreditPrice;
   const ARBITRAGE_SPREAD = calculateArbitrageSpread({
     ...tierPricing,
     marketCreditPrice: MARKET_PRICE,
@@ -144,8 +153,12 @@ export const TIERROICalculator: React.FC = () => {
     fetchLatestTierMarketRate()
       .then((rate) => {
         if (cancelled) return;
-        if (rate) {
-          setLiveTierMarketRate(Number(rate.market_credit_price_cad_per_tonne));
+        // Only a positive finite price counts as a usable live rate: null,
+        // non-numeric, zero, or negative rows all degrade to the fallback
+        // planning price so they cannot reach the engines or the UI label.
+        const price = rate ? Number(rate.market_credit_price_cad_per_tonne) : Number.NaN;
+        if (rate && Number.isFinite(price) && price > 0) {
+          setLiveTierMarketRate(price);
           setLiveTierMarketRateSource({
             sourceName: rate.source_name,
             sourceUrl: rate.source_url,
@@ -203,10 +216,11 @@ export const TIERROICalculator: React.FC = () => {
   // Optional compliance-year input drives the regulated credit use limit;
   // blank or malformed values fall back to the evaluation year in the engine.
   const trimmedComplianceYear = complianceYear.trim();
+  // Matches the engine contract (/^\d{4}$/ + >= 2000): "1e3", "0x7e6",
+  // "+2026", and "1999" are not valid compliance years — the engine would
+  // silently fall back while the input still showed the bad value.
   const parsedComplianceYear =
-    trimmedComplianceYear !== '' &&
-    Number.isInteger(Number(trimmedComplianceYear)) &&
-    Number(trimmedComplianceYear) >= 2000
+    /^\d{4}$/.test(trimmedComplianceYear) && Number(trimmedComplianceYear) >= 2000
       ? Number(trimmedComplianceYear)
       : undefined;
 
@@ -256,27 +270,43 @@ export const TIERROICalculator: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    evaluateTierScenario({
-      annualEmissionsTonnes: annualEmissions,
-      benchmarkExceedanceTonnes: benchmarkExceedance,
-      directInvestmentCapexCad: directInvestCapex,
-      complianceYear: parsedComplianceYear,
-      creditAssumptions: {
-        fundPriceCadPerTonne: FUND_PRICE,
-        marketCreditPriceCadPerTonne: MARKET_PRICE,
-        // No credit-rate assumption: current Standard status is unverified, so
-        // the simulator models zero assumed credits.
-        directInvestmentCreditRate: 0,
-        lastVerifiedAt: tierPricing.lastVerifiedAt,
-      },
-      discountRate: 0.08,
-    }).then(({ data, source }) => {
-      if (cancelled) return;
-      setSimulatorResult(data);
-      setSimulatorSource(source);
-    });
+    // Debounce: each call POSTs to the edge function (which also writes an
+    // ml_alert_evaluations row), so don't fire a request per keystroke.
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      evaluateTierScenario(
+        {
+          annualEmissionsTonnes: annualEmissions,
+          benchmarkExceedanceTonnes: benchmarkExceedance,
+          directInvestmentCapexCad: directInvestCapex,
+          complianceYear: parsedComplianceYear,
+          creditAssumptions: {
+            fundPriceCadPerTonne: FUND_PRICE,
+            marketCreditPriceCadPerTonne: MARKET_PRICE,
+            // No credit-rate assumption: current Standard status is unverified, so
+            // the simulator models zero assumed credits.
+            directInvestmentCreditRate: 0,
+            lastVerifiedAt: tierPricing.lastVerifiedAt,
+          },
+          discountRate: 0.08,
+        },
+        { signal: controller.signal },
+      )
+        .then(({ data, source, error }) => {
+          if (cancelled) return;
+          setSimulatorResult(data);
+          setSimulatorSource(source);
+          setSimulatorError(error ?? null);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setSimulatorError('simulation unavailable');
+        });
+    }, 300);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
+      controller.abort();
     };
   }, [
     annualEmissions,
@@ -336,23 +366,21 @@ export const TIERROICalculator: React.FC = () => {
       setEmailError(
         'Pilot requests are unavailable until current source pricing, positive modeled net savings, and dated FX are verified.',
       );
+      trackEvent('tier_lead_rejected', { reason: 'pilot_not_allowed' });
       return;
     }
     if (!isLeadIntakeEnabled()) {
       setEmailError('Pilot requests are disabled until the privacy collection notice is approved.');
+      trackEvent('tier_lead_rejected', { reason: 'intake_disabled' });
       return;
     }
     if (!validateEmail(emailCapture)) {
       setEmailError('Enter a valid work email so our team can follow up.');
+      trackEvent('tier_lead_rejected', { reason: 'invalid_email' });
       return;
     }
 
     setEmailError('');
-    trackEvent('tier_lead_submit', {
-      segment: 'Industrial',
-      source_route: '/roi-calculator',
-      has_pilot_request: showPilotRequest,
-    });
 
     // Facility-level fields are only sent when a permitted pilot request is
     // explicitly selected; otherwise the request contains contact details only.
@@ -379,8 +407,18 @@ export const TIERROICalculator: React.FC = () => {
 
     if (!persistResult.ok) {
       setEmailError('We could not save your request. Please try again in a moment.');
+      trackEvent('tier_lead_rejected', { reason: 'persist_failed' });
       return;
     }
+
+    // `tier_lead_submit` counts a persisted lead only — a rejected or failed
+    // persist emits `tier_lead_rejected` instead so the funnel doesn't
+    // double-count the same attempt.
+    trackEvent('tier_lead_submit', {
+      segment: 'Industrial',
+      source_route: '/roi-calculator',
+      has_pilot_request: showPilotRequest,
+    });
 
     setEmailCapture('');
     setEmailSubmitted(true);
@@ -699,6 +737,11 @@ export const TIERROICalculator: React.FC = () => {
                     Sets the regulated credit use limit ({Math.round(creditUseLimit * 100)}% for{' '}
                     {results.complianceYear}). Blank defaults to the current year.
                   </p>
+                  {trimmedComplianceYear !== '' && parsedComplianceYear === undefined && (
+                    <p role="alert" className="text-xs text-amber-300 mt-1">
+                      Year must be a 4-digit year ≥ 2000 — using {results.complianceYear} instead.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -730,7 +773,7 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="text-2xl font-bold text-emerald-400">CAD {MARKET_PRICE}/t</div>
                     <div className="text-xs text-slate-300 mt-1">
                       {liveTierMarketRateSource
-                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
+                        ? `Observed ${formatObservedDate(liveTierMarketRateSource.observedAt)} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
                         : `Illustrative planning input only—not a current market quote · snapshot dated ${tierPricing.lastVerifiedAt}`}
                     </div>
                   </div>
@@ -739,7 +782,11 @@ export const TIERROICalculator: React.FC = () => {
                   <span className="text-sm bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">
                     {pricingFreshnessGate.blocksStrongSavingsClaim
                       ? 'CAD spread withheld until pricing evidence is current and validated'
-                      : `CAD ${effectiveSpreadPerTonne.toFixed(0)}/t effective spread after ${Math.round(creditUseLimit * 100)}% credit-use limit`}
+                      : !Number.isFinite(effectiveSpreadPerTonne)
+                        ? 'Blended credit spread unavailable at these inputs'
+                        : effectiveSpreadPerTonne <= 0
+                          ? 'No blended credit spread at these inputs — market credit price meets or exceeds the fund price'
+                          : `CAD ${effectiveSpreadPerTonne.toFixed(0)}/t effective spread after ${Math.round(creditUseLimit * 100)}% credit-use limit`}
                   </span>
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -761,15 +808,16 @@ export const TIERROICalculator: React.FC = () => {
                     </div>
                     <div className="mt-1 text-xs text-slate-300">
                       {liveTierMarketRateSource
-                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} • ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
+                        ? `Observed ${formatObservedDate(liveTierMarketRateSource.observedAt)} • ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
                         : `${tierPricing.marketPriceDisclosure} Reviewed ${tierPricing.lastVerifiedAt}.`}
                     </div>
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-slate-300">
-                  Simulator: {simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via{' '}
+                  Simulator: {simulatorResult?.meta?.model_version ?? 'tier-deterministic-v1'} via{' '}
                   {simulatorSource === 'edge' ? 'Supabase Edge' : 'local fallback'}.
-                  {simulatorResult?.meta.staleness_status === 'stale'
+                  {simulatorError ? ' Edge request failed — local result shown.' : ''}
+                  {simulatorResult?.meta?.staleness_status === 'stale'
                     ? ' Pricing assumptions need reverification.'
                     : ''}
                 </div>
@@ -887,7 +935,7 @@ export const TIERROICalculator: React.FC = () => {
                   <div role="status">
                     <div className="text-sm text-amber-300">Stale or unprovenanced rate inputs</div>
                     <div className="text-xl font-semibold text-slate-50">
-                      Savings, ranking, and ROI are withheld
+                      Savings, ranking, and net savings vs CEIP fee are withheld
                     </div>
                     <p className="mt-2 text-sm text-slate-300">
                       The fund or market-credit price input is outside its freshness window or lacks
@@ -922,7 +970,7 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="text-sm text-amber-300">CAD-equivalent result unavailable</div>
                     <p className="mt-2 text-sm text-slate-300">
                       Provide current, sourced USD/CAD evidence before calculating net savings or
-                      ROI.
+                      their ratio to the CEIP fee.
                     </p>
                   </div>
                 ) : (
@@ -936,7 +984,7 @@ export const TIERROICalculator: React.FC = () => {
                       </div>
                       {results.roiPercent !== null && (
                         <div className="min-w-0 text-right">
-                          <div className="text-sm text-emerald-400">ROI</div>
+                          <div className="text-sm text-emerald-400">Net savings vs CEIP fee</div>
                           <div className="text-3xl font-bold text-emerald-400">
                             {results.roiPercent.toFixed(0)}%
                           </div>
@@ -954,7 +1002,7 @@ export const TIERROICalculator: React.FC = () => {
                     </div>
                   </>
                 )}
-                {simulatorResult?.warnings.map((warning) => (
+                {simulatorResult?.warnings?.map((warning) => (
                   <p key={warning} className="mt-2 text-xs text-amber-200">
                     {warning}
                   </p>

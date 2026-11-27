@@ -62,10 +62,13 @@ describe('Lane D — Whop acquisition removal (G12)', () => {
 
 describe('Lane D — claims reconciliation (G13/G16)', () => {
   it('public home page labels workflow and timing claims as unvalidated hypotheses', () => {
-    const home = read('src/components/CommercialLandingPage.tsx');
+    // Prettier reflows JSX text across lines — squash whitespace so the
+    // unvalidated-claims sentence is matched on content, not line breaks.
+    const home = read('src/components/CommercialLandingPage.tsx').replace(/\s+/g, ' ');
     expect(home).toContain('buyer validation pending');
     expect(home).toContain('Buyer demand, delivery time, pricing, savings, and procurement fit have');
     expect(home).toContain('Proposed workflow concepts');
+    expect(home).not.toMatch(/in minutes/i);
     expect(home).not.toMatch(/sellable proof packs|target pilot path|30 to 60 day pilots|under ninety/i);
   });
 

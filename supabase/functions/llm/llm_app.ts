@@ -11,6 +11,9 @@ import {
   buildGridOptimizationPrompt
 } from './prompt_templates.ts';
 import { getFreshnessStatus, type FreshnessStatus } from '../_shared/dataProvenance.ts';
+import { readBoundedJson, asJsonObject } from '../_shared/boundedBody.ts';
+import { getRateLimitIdentity } from '../_shared/clientId.ts';
+import { llmRateLimitVerdict, combineRateLimitResults, effectiveLlmQuota } from '../_shared/llmRateLimit.ts';
 
 // Local adapter within this function (defer import to avoid cold start failures)
 type CallLlmModule = {
@@ -335,27 +338,66 @@ function isBlacklisted(text?: string): boolean {
 
 const MAX_REQS_PER_MINUTE = Number(Deno.env.get('LLM_MAX_RPM') || 30);
 type RateLimitResult = { ok: boolean; remaining?: number; limit?: number };
-async function checkRateLimit(userId: string): Promise<RateLimitResult> {
+/**
+ * Bounded read + object-shape gate shared by every POST handler in this app.
+ * A literal `null`, array or scalar body used to destructure into a 500 or
+ * silently-empty fields; the endpoint contract is "JSON object".
+ */
+async function readJsonObjectBody(
+  req: Request,
+): Promise<{ ok: true; body: Record<string, any> } | { ok: false; response: Response }> {
+  const bodyRead = await readBoundedJson(req);
+  if (!bodyRead.ok) {
+    const tooLarge = bodyRead.reason === 'too_large';
+    return {
+      ok: false,
+      response: new Response(
+        JSON.stringify({ error: tooLarge ? 'Payload too large' : 'Malformed JSON body' }),
+        { status: tooLarge ? 413 : 400, headers: jsonHeaders },
+      ),
+    };
+  }
+  const body = asJsonObject(bodyRead.json);
+  if (!body) {
+    return {
+      ok: false,
+      response: new Response(JSON.stringify({ error: 'Body must be a JSON object' }), { status: 400, headers: jsonHeaders }),
+    };
+  }
+  return { ok: true, body };
+}
+
+/**
+ * Network bucket only: x-user-id is not authenticated and must not define a
+ * quota. Gateway forwarding trust remains a staging gate.
+ */
+async function checkRateLimit(_userId: string, req?: Request): Promise<RateLimitResult> {
   await ensureSupabase();
-  if (!supabase) return { ok: true };
+  if (!supabase) throw new Error('Shared rate limiter unavailable');
+  const identities = [`net:${req ? getRateLimitIdentity(req) : 'ip:unknown'}`];
   try {
-    const now = Date.now();
-    const windowMs = Math.floor(now / 60000) * 60000;
-    const windowIso = new Date(windowMs).toISOString();
-    const { data, error } = await (supabase as any).rpc('llm_rl_increment', {
-      p_user_id: userId,
-      p_window: windowIso,
-      p_default_limit: MAX_REQS_PER_MINUTE,
-    });
-    if (error) throw error;
-    const row = Array.isArray(data) ? data[0] : data;
-    const used = Number(row?.count ?? 0);
-    const limit = Number(row?.user_quota ?? MAX_REQS_PER_MINUTE) || MAX_REQS_PER_MINUTE;
-    const ok = used <= limit;
-    return ok ? { ok: true, remaining: Math.max(0, limit - used), limit } : { ok: false, remaining: 0, limit };
+    const results = await Promise.all(identities.map(async (id) => {
+      const now = Date.now();
+      const windowMs = Math.floor(now / 60000) * 60000;
+      const windowIso = new Date(windowMs).toISOString();
+      const { data, error } = await (supabase as any).rpc('llm_rl_increment', {
+        p_user_id: id,
+        p_window: windowIso,
+        p_default_limit: MAX_REQS_PER_MINUTE,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      const used = Number(row?.count);
+      const rowLimit = Number(row?.user_quota);
+      if (!Number.isFinite(used) || used < 1 || !Number.isFinite(rowLimit) || rowLimit < 1 || !Number.isFinite(MAX_REQS_PER_MINUTE) || MAX_REQS_PER_MINUTE < 1) throw new Error('Invalid rate limiter response');
+      // Never exceed the configured ceiling even if the database row default is higher.
+      const limit = effectiveLlmQuota(rowLimit, MAX_REQS_PER_MINUTE);
+      return llmRateLimitVerdict(used, limit) as RateLimitResult;
+    }));
+    return combineRateLimitResults(results) as RateLimitResult;
   } catch (e) {
     console.warn('rate limit check failed', e);
-    return { ok: true };
+    throw new Error('Shared rate limiter unavailable');
   }
 }
 
@@ -404,7 +446,9 @@ async function fetchManifest(datasetPath: string): Promise<any> {
     } catch (_) { /* ignore and fallback */ }
     return { dataset: datasetPath, schema: [], sampleRows: [], license: 'unknown', estimatedRows: 0, last_updated: new Date().toISOString() };
   }
-  const url = `${WRAPPER_BASE_URL}/api/manifest/${datasetPath}`;
+  // datasetPath is caller-controlled — encode it as a single path segment so
+  // "../" or "?..." values cannot inject path/query into the wrapper URL.
+  const url = `${WRAPPER_BASE_URL}/api/manifest/${encodeURIComponent(datasetPath)}`;
   const r = await fetch(url);
   if (!r.ok) {
     console.warn('manifest fetch failed', url, r.status);
@@ -426,7 +470,7 @@ async function fetchSampleRows(datasetPath: string, limit = 50): Promise<any[]> 
     } catch (_) { /* ignore */ }
     return [];
   }
-  const url = `${WRAPPER_BASE_URL}/api/stream/${datasetPath}?limit=${limit}`;
+  const url = `${WRAPPER_BASE_URL}/api/stream/${encodeURIComponent(datasetPath)}?limit=${limit}`;
   const r = await fetch(url);
   if (!r.ok) {
     console.warn('sample fetch failed', url, r.status);
@@ -484,7 +528,9 @@ async function callLLM(params: any): Promise<any> {
 
 // Handler functions
 async function handleTransitionKpis(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { datasetPath, timeframe } = body;
   if (!datasetPath) return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
 
@@ -615,13 +661,16 @@ async function handleHistory(req: Request): Promise<Response> {
     return respondWithResult({ dataset: datasetPath || undefined, result: merged.slice(0, limit), llmMode: 'history', source: 'supabase-llm/history', isFallback: false });
   } catch (e) {
     console.warn('handleHistory error', e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: jsonHeaders });
+    return new Response(JSON.stringify({ error: 'Internal error' }), { status: 500, headers: jsonHeaders });
   }
 }
 
 async function handleExplainChart(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { datasetPath, panelId, timeframe, userPrompt } = body;
+  if (userPrompt != null && typeof userPrompt !== 'string') return new Response(JSON.stringify({ error: 'userPrompt must be a string' }), { status: 400, headers: jsonHeaders });
   if (!datasetPath) return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
   if (isBlacklisted(userPrompt) || isSensitiveTopic(userPrompt)) return new Response(JSON.stringify({ error: 'Request blocked by safety policy.' }), { status: 403, headers: jsonHeaders });
 
@@ -630,7 +679,7 @@ async function handleExplainChart(req: Request): Promise<Response> {
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
 
   const manifest = await fetchManifest(datasetPath);
@@ -721,7 +770,9 @@ async function handleExplainChart(req: Request): Promise<Response> {
 }
 
 async function handleAnalyticsInsight(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { datasetPath, timeframe, queryType } = body;
   if (!datasetPath) return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
   if (isBlacklisted(queryType) || isSensitiveTopic(queryType)) return new Response(JSON.stringify({ error: 'Request blocked by safety policy.' }), { status: 403, headers: jsonHeaders });
@@ -731,7 +782,7 @@ async function handleAnalyticsInsight(req: Request): Promise<Response> {
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
 
   const manifest = await fetchManifest(datasetPath);
@@ -807,7 +858,9 @@ async function handleAnalyticsInsight(req: Request): Promise<Response> {
 }
 
 async function handleGridOptimization(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { datasetPath, timeframe, goal, scenario, region } = body as {
     datasetPath?: string;
     timeframe?: string;
@@ -825,7 +878,7 @@ async function handleGridOptimization(req: Request): Promise<Response> {
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
   }
@@ -937,7 +990,9 @@ async function handleGridOptimization(req: Request): Promise<Response> {
 }
 
 async function handleTransitionReport(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { datasetPath, timeframe, focus } = body;
   if (!datasetPath) return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
   if (isBlacklisted(focus) || isSensitiveTopic(focus)) return new Response(JSON.stringify({ error: 'Request blocked by safety policy.' }), { status: 403, headers: jsonHeaders });
@@ -947,7 +1002,7 @@ async function handleTransitionReport(req: Request): Promise<Response> {
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
 
   const manifest = await fetchManifest(datasetPath);
@@ -1037,7 +1092,9 @@ async function handleTransitionReport(req: Request): Promise<Response> {
 }
 
 async function handleDataQuality(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { datasetPath, focus, logs } = body;
   if (!datasetPath) return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
   
@@ -1059,7 +1116,7 @@ async function handleDataQuality(req: Request): Promise<Response> {
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
 
   const manifest = await fetchManifest(datasetPath);
@@ -1136,19 +1193,22 @@ async function handleDataQuality(req: Request): Promise<Response> {
 }
 
 async function handleCopilot(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const { query } = body;
 
   if (typeof query !== 'string' || query.trim().length === 0 || query.length > 1000) {
     return new Response(JSON.stringify({ error: 'query must be 1-1000 characters' }), { status: 400, headers: jsonHeaders });
   }
+  if (isBlacklisted(query) || isSensitiveTopic(query)) return new Response(JSON.stringify({ error: 'Request blocked by safety policy.' }), { status: 403, headers: jsonHeaders });
 
   if (!LLM_ENABLED) {
     return new Response(JSON.stringify({ error: 'LLM disabled by operator. Try later.' }), { status: 503, headers: { ...jsonHeaders, 'X-LLM-Mode': 'disabled' } });
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
   }
@@ -1188,7 +1248,9 @@ function normalizeAgentSections(details: Record<string, unknown>, summary: strin
 }
 
 async function handleAgentWorkflow(req: Request, workflowType: string): Promise<Response> {
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = await readJsonObjectBody(req);
+  if (parsedBody.ok === false) return parsedBody.response;
+  const body = parsedBody.body;
   const config = body?.config && typeof body.config === 'object' ? body.config : {};
 
   if (!LLM_ENABLED) {
@@ -1196,7 +1258,7 @@ async function handleAgentWorkflow(req: Request, workflowType: string): Promise<
   }
 
   const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
-  const rl = await checkRateLimit(userId);
+  const rl = await checkRateLimit(userId, req);
   if (!rl.ok) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
   }
@@ -1265,7 +1327,7 @@ export async function handleRequest(req: Request): Promise<Response> {
     return await handleTransitionKpis(req);
   }
   if (req.method === 'GET' && (path === '/history' || url.pathname.endsWith('/history'))) {
-    return await handleHistory(req);
+    return new Response(JSON.stringify({ error: 'History unavailable pending access controls' }), { status: 503, headers: jsonHeaders });
   }
   if (req.method === 'POST' && (path === '/explain-chart' || url.pathname.endsWith('/explain-chart'))) {
     return await handleExplainChart(req);

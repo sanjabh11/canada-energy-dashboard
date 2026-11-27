@@ -128,7 +128,7 @@ async function fetchAndPersistIESOData(options: { skipFilter?: boolean } = {}): 
   if (!sourceCheck.usable) {
     const message = sourceCheck.message ?? 'IESO returned no usable records.';
     errorCount++;
-    const failureMeta = { ...metadata, rowsPersisted: 0, error: message };
+    const failureMeta = { ...metadata, rowsPersisted: 0, error: String(message).slice(0, 300) };
     await updateStreamHealth('degraded', failureMeta, {
       last_error: new Date().toISOString(),
       error_count: errorCount,
@@ -175,7 +175,7 @@ async function fetchAndPersistIESOData(options: { skipFilter?: boolean } = {}): 
   } catch (err) {
     errorCount++;
     const message = err instanceof Error ? err.message : String(err);
-    const failureMeta = { ...metadata, rowsPersisted: rows.length, error: message };
+    const failureMeta = { ...metadata, rowsPersisted: rows.length, error: String(message).slice(0, 300) };
     await updateStreamHealth('degraded', failureMeta, {
       last_error: new Date().toISOString(),
       error_count: errorCount
@@ -471,9 +471,10 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (error) {
+      console.error('stream-ontario-demand refresh failed:', error);
       return new Response(JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: 'Internal error',
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -613,7 +614,6 @@ serve(async (req: Request) => {
       console.error('Critical error in stream-ontario-demand:', error);
       return new Response(JSON.stringify({
         error: 'Failed to fetch data',
-        message: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -658,7 +658,7 @@ serve(async (req: Request) => {
           console.error('IESO stream loop error', err);
           controller.enqueue(encodeSSE('error', {
             timestamp: new Date().toISOString(),
-            message: err instanceof Error ? err.message : String(err)
+            message: 'stream_iteration_failed'
           }));
 
           await delay(IESO_CONFIG.ERROR_RETRY_DELAY_MS ?? 300000);

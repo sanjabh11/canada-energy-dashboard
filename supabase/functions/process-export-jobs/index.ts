@@ -28,6 +28,20 @@ function isAuthorized(req: Request): boolean {
   return isCronAuthorized(req);
 }
 
+/**
+ * status_reason is returned to the export-job owner by export-job-status —
+ * bound it and strip URL/credential material, never persist raw error text.
+ */
+function boundedExportStatusReason(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  return raw
+    .replace(/\s+/g, " ")
+    .replace(/https?:\/\/\S+/gi, "[url]")
+    .replace(/[A-Za-z0-9_-]{24,}/g, "[redacted]")
+    .trim()
+    .slice(0, 160) || "export_processing_failed";
+}
+
 function parseSources(snapshot: Record<string, unknown>): ServerDataSource[] | undefined {
   const raw = snapshot.required_sources;
   if (!Array.isArray(raw)) return undefined;
@@ -267,7 +281,9 @@ serve(async (req) => {
 
       processed.success += 1;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      // status_reason is surfaced to the export-job owner via
+      // export-job-status — carry a bounded reason, never raw error text.
+      const message = boundedExportStatusReason(error);
       const exhausted = (job.attempt_count ?? 0) >= (job.max_attempts ?? 3);
 
       if (exhausted) {

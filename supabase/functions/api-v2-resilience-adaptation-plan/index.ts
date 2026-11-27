@@ -117,7 +117,8 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('resilience-adaptation-plan failed:', err);
+    return new Response(JSON.stringify({ error: 'Internal error' }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
       status: 500,
     });

@@ -64,7 +64,7 @@ serve(async (req) => {
 
     if (error) {
       console.error("Failed to write heartbeat", error);
-      return new Response(JSON.stringify({ error: "Failed to write heartbeat", details: error }), {
+      return new Response(JSON.stringify({ error: "Failed to write heartbeat" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
