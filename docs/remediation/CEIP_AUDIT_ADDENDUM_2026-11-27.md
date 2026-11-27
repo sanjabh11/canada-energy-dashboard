@@ -6,16 +6,18 @@ or buyer evidence.
 
 ## Bound source and CI receipt
 
-- Bound source: `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` on
+- Bound source: `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` on
   `codex/product-value-spine-2026-11-27`.
 - Exact-head CI run:
-  [45988106846](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45988106846).
-- Required verification jobs: `lint-typecheck`, `test`, `build-and-smoke`, and
-  `evidence-binding` all concluded `success` for the bound source.
-- CI evidence artifact: `15193198778`, digest
-  `sha256:cd9c4a5f993aa8442e0ca28ab64d218038b78da7d6cdaa7a256506417e402f43`.
-- Coverage artifact: `15193200714`, digest
-  `sha256:37a4f1ed08604cccc26c0b0c3d33e8c7605ef981de44cefce1494473966512e6`.
+  [45996032177](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45996032177).
+- Required source verification jobs: `lint-typecheck`, `test`, and
+  `build-and-smoke` concluded `success`; `evidence-binding` is the expected
+  pre-rebind staleness failure because this document still named the prior
+  receipt when the source run executed.
+- CI evidence artifact: `15196807837`, digest
+  `sha256:bad759475d931772a417185ab09c0a1f4624986b094b9c17f12c113061f73c95`.
+- Coverage artifact: `15195708073`, digest
+  `sha256:5eb38fc7e091446156e51ffd2724c87b24f540a3b51e5288b5b23dbbe51f2b4c`.
 - The PR run did not produce a Netlify Deploy Preview.
 
 ### Historical receipts retained
@@ -27,6 +29,12 @@ or buyer evidence.
   `45987365111` is retained as **failure**: its addendum increased the docs
   inventory from 267 to 268 while EV-005 still claimed 267. The follow-up
   corrected the evidence artifacts without changing product code.
+- Corrective copy commit `d930a2cbd0db9d371f1a466953b9aa758686507a` / run
+  `45995260412` is retained as **failure**: `uiClaimsDrift.test.ts` caught the
+  missing canonical `Ontario GA ICI 5CP` workflow phrase after the starter was
+  made region-neutral. The follow-up source commit `7d2c549de8eafa8e456526b2cbe5fa94e95fda13`
+  restores the phrase while explicitly stating that the starter is synthetic,
+  not Ontario or Alberta utility evidence.
 
 ## Follow-up receipt — documentation inventory correction
 
@@ -89,8 +97,9 @@ credential value was read or printed.
 
 - Repository implementation: **implemented + locally tested + CI-verified** at
   the required three-job layer for `5f26fa9`.
-- Documentation rebind: **complete** at the exact-head four-job CI layer for
-  `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` / `45988106846`.
+- Documentation rebind: **in progress** for source
+  `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` / `45996032177`; the next
+  document-only CI run must make the evidence-binding job green.
 - Hosted staging: **STOP** — no migration, RLS/grants, function, storage,
   backup/restore, retention, rate-limit, monitoring, or rollback evidence.
 - Pilot: **STOP** — privacy/CASL/legal approval, manual WCAG, deployed
@@ -98,4 +107,8 @@ credential value was read or printed.
   executed) remain open.
 
 The next run may close only the documentation-binding layer. It cannot close
-the owner or buyer gates above.
+the owner or buyer gates above. The inverse-containment diff from checkpoint
+`4da02aaf8592e6fbca75276aa0610dbd7af13684` to the corrective source lists
+exactly the seven approved paths; the broader `4da02aa`→`6106405` comparison
+includes historical evidence/docs differences and is not a reason to revert
+them.

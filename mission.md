@@ -2,16 +2,16 @@
 
 ## Authoritative update — 2026-11-27 (Product-Value Sprint)
 
-**bound HEAD `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` — CI run
-> `45988106846`**
+**bound HEAD `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` — CI run
+> `45996032177`**
 
-The corrected docs/PDF source is verified by exact-head run `45988106846`. `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding` all concluded `success`. GitHub artifact `15193198778` has digest `sha256:cd9c4a5f993aa8442e0ca28ab64d218038b78da7d6cdaa7a256506417e402f43`; the coverage artifact is `15193200714` with digest `sha256:37a4f1ed08604cccc26c0b0c3d33e8c7605ef981de44cefce1494473966512e6`. The run completed the build, all configured browser/a11y/manual-assist steps, completeness check and artifact upload. The earlier code run `45984013531` and failed docs run `45987365111` remain retained as historical receipts; the latter records the real 267→268 EV-005 drift that this follow-up corrected. These results establish repository/CI proof only; replacement-project staging, owner approvals, manual WCAG, deployed performance and buyer validation remain STOP. The dirty local overlay is not part of this CI receipt.
+The source correction is verified by exact-head run `45996032177`: `lint-typecheck`, `test`, and `build-and-smoke` concluded `success`; `evidence-binding` is the designed stale-document failure pending this docs-only rebind. GitHub artifact `15196807837` has digest `sha256:bad759475d931772a417185ab09c0a1f4624986b094b9c17f12c113061f73c95`; the coverage artifact is `15195708073` with digest `sha256:5eb38fc7e091446156e51ffd2724c87b24f540a3b51e5288b5b23dbbe51f2b4c`. The run completed the build, all configured browser/a11y/manual-assist steps, completeness check and artifact upload. The earlier code run `45984013531`, docs inventory correction `45988106846`, and corrective-copy failure `45995260412` remain retained as historical receipts. These results establish repository/CI proof only; replacement-project staging, owner approvals, manual WCAG, deployed performance and buyer validation remain STOP. The dirty local overlay is not part of this CI receipt.
 
 ## 3C execution brief
 
 ### Context
 
-CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The current product-value evidence is bound to exact commit `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` and run `45988106846`; the docs-only rebind is complete at the four-job CI layer. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
+CEIP is moving from repository remediation toward a controlled-pilot decision on replacement project `qktgjpbifknqjpvrgkrj`. The current product-value source is bound to exact commit `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` and run `45996032177`; this docs-only rebind records that source before the next exact-head document run. The main checkout may contain intentional dirty files; work only in an isolated checkout and do not use the dirty overlay as CI proof. The authoritative incident register records INC-001 closed at the incident-record layer; the leak-site project is never restored. The replacement project is read-only observed until an owner-run staging action is authorized.
 
 ### Your task
 
@@ -65,7 +65,7 @@ checks and create reports but must not edit the shared checkout.
 
 **Mission status:** `REPOSITORY_CI_VERIFIED / STAGING_PILOT_BLOCKED`
 
-**Current decision:** repository CI evidence is defensible for source `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` / run `45988106846` at the exact-head four-job layer. Independent reproduction, hosted controls, owner approvals, manual quality evidence and buyer validation remain open. Staging and pilot are **STOP**. This mission artifact grants no deployment,
+**Current decision:** repository CI evidence is defensible for source `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` / run `45996032177` at the exact-head three-job verification layer; the evidence-binding staleness signal is being resolved by this docs-only rebind. Independent reproduction, hosted controls, owner approvals, manual quality evidence and buyer validation remain open. Staging and pilot are **STOP**. This mission artifact grants no deployment,
 restoration, billing, outreach or buyer authority.
 
 **Audit snapshot (2026-10-26; captured before this documentation update):** The authoritative incident register records

@@ -6,17 +6,19 @@
 
 **Sprint branch:** `codex/product-value-spine-2026-11-27`
 
-**bound HEAD `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` — CI run
-> `45988106846`**
+**bound HEAD `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` — CI run
+> `45996032177`**
 
-**Proof layer:** local implementation plus exact-head four-job CI verification.
-The required verification jobs (`lint-typecheck`, `test`, `build-and-smoke`,
-and `evidence-binding`) are green for this bound source. CI evidence artifact
-`15193198778` has digest
-`sha256:cd9c4a5f993aa8442e0ca28ab64d218038b78da7d6cdaa7a256506417e402f43`;
-coverage artifact `15193200714` has digest
-`sha256:37a4f1ed08604cccc26c0b0c3d33e8c7605ef981de44cefce1494473966512e6`.
-Hosted, owner-approved, and buyer-validated evidence remain unclaimed.
+**Proof layer:** local implementation plus exact-head CI verification of the
+three source jobs. `lint-typecheck`, `test`, and `build-and-smoke` concluded
+`success`; `evidence-binding` is the expected pre-rebind staleness failure
+because these documents still named the prior receipt when this source run
+executed. CI evidence artifact `15196807837` has digest
+`sha256:bad759475d931772a417185ab09c0a1f4624986b094b9c17f12c113061f73c95`;
+coverage artifact `15195708073` has digest
+`sha256:5eb38fc7e091446156e51ffd2724c87b24f540a3b51e5288b5b23dbbe51f2b4c`.
+The docs-only rebind is the next receipt; hosted, owner-approved, and
+buyer-validated evidence remain unclaimed.
 
 **Excluded local artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
 `schema.sql` remain untracked by design. The checkpoint includes the tracked
@@ -36,9 +38,10 @@ refresh TIER provenance conservatively; update MCCAC and procurement language;
 and synchronize the experiment registry to 13 designed / 0 executed.
 
 **Push status:** owner-approved branch push completed for the code commit and
-the docs/PDF correction. No production deploy or hosted mutation was
-performed. The latest bound source is the corrected docs receipt above; its
-exact-head run is the authoritative four-job result.
+the source correction. No production deploy or hosted mutation was performed.
+The docs-only rebind is being created on top of the green source receipt;
+its exact-head run must be recorded before claiming the current four-job
+document layer.
 
 ## Product-value sprint local verification — 2026-11-27
 
@@ -68,8 +71,8 @@ legal, or buyer evidence.
 - **Scope guard:** the sprint diff from checkpoint `535d7e6` contains no changes
   under `supabase/`, `src/components/whop/`, or `.github/workflows/`.
 - **Excluded artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
-  `schema.sql` remain untracked and were not staged. The pushed code receipt is
-  `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47`.
+  `schema.sql` remain untracked and were not staged. The pushed source receipt
+  is `7d2c549de8eafa8e456526b2cbe5fa94e95fda13`.
 
 ## Historical exact-head CI receipt — 2026-11-27 (code commit `5f26fa9`)
 
@@ -98,9 +101,9 @@ Coverage artifact: `15191335629`, digest
 `sha256:1a3bbdc5caf6d0769ba518f727fff7771802482f7edafe9681a7c799edf7be9c`.
 The PR produced no Netlify Deploy Preview in this run.
 
-## Final documentation-rebind receipt — 2026-11-27
+## Historical documentation-rebind receipt — 2026-11-27
 
-The corrected docs/PDF source `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c`
+The prior corrected docs/PDF source `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c`
 was verified by [run 45988106846](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45988106846)
 with an exact `head_sha` match. `lint-typecheck`, `test`,
 `build-and-smoke`, and `evidence-binding` all concluded `success`. The
@@ -113,6 +116,32 @@ the coverage artifact is `15193200714` with digest
 No Netlify Deploy Preview was generated. Repository evidence is defensible at
 the exact-head four-job layer; hosted staging and the controlled pilot remain
 STOP.
+
+## Corrective source receipt — 2026-11-27
+
+The source correction `d930a2cbd0db9d371f1a466953b9aa758686507a` intentionally
+copied the seven approved copy/legal/pricing/test blobs from the audited source
+commit and was then corrected by `7d2c549de8eafa8e456526b2cbe5fa94e95fda13`.
+The first corrective run `45995260412` is retained as **failure**: its source
+jobs reached the test stage, where `uiClaimsDrift.test.ts` correctly caught a
+region-neutral starter copy missing the canonical `Ontario GA ICI 5CP` workflow
+phrase. No test was weakened and no workflow, Supabase, Whop, or legal scope
+was broadened. The follow-up source commit restores that phrase while stating
+clearly that the starter is synthetic and not Ontario or Alberta utility
+evidence.
+
+The exact-head [run 45996032177](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45996032177)
+for `7d2c549de8eafa8e456526b2cbe5fa94e95fda13` has `lint-typecheck`, `test`,
+and `build-and-smoke` green. Its `evidence-binding` failure is the designed
+staleness signal that this document-only rebind resolves. CI evidence artifact
+`15196807837` has digest
+`sha256:bad759475d931772a417185ab09c0a1f4624986b094b9c17f12c113061f73c95`;
+coverage artifact `15195708073` has digest
+`sha256:5eb38fc7e091446156e51ffd2724c87b24f540a3b51e5288b5b23dbbe51f2b4c`.
+The inverse-containment diff from checkpoint `4da02aaf8592e6fbca75276aa0610dbd7af13684`
+to this source lists exactly the seven approved paths; the unrestricted
+checkpoint-to-`6106405` comparison is historical evidence and is not a reason
+to revert the seven legitimate evidence/document differences.
 
 ## Prior exact-head CI receipt — 2026-11-27
 
