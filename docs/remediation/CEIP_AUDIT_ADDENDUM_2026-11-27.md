@@ -6,21 +6,27 @@ or buyer evidence.
 
 ## Bound source and CI receipt
 
-- Bound source: `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` on
+- Bound source: `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` on
   `codex/product-value-spine-2026-11-27`.
 - Exact-head CI run:
-  [45984013531](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45984013531).
-- Required verification jobs: `lint-typecheck`, `test`, and `build-and-smoke`
-  all concluded `success` for the bound source.
-- `evidence-binding` concluded `failure` because the documents named the prior
-  milestone at the time the code run executed. This docs-only rebind is intended
-  to make the next exact-head run four-job green; that future result is not
-  claimed here.
-- CI evidence artifact: `15191817955`, digest
-  `sha256:14900d9e218584c3fe31dadb8f324e71aa1c2ab56a7d56a9ee1889b871b01e86`.
-- Coverage artifact: `15191335629`, digest
-  `sha256:1a3bbdc5caf6d0769ba518f727fff7771802482f7edafe9681a7c799edf7be9c`.
+  [45988106846](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45988106846).
+- Required verification jobs: `lint-typecheck`, `test`, `build-and-smoke`, and
+  `evidence-binding` all concluded `success` for the bound source.
+- CI evidence artifact: `15193198778`, digest
+  `sha256:cd9c4a5f993aa8442e0ca28ab64d218038b78da7d6cdaa7a256506417e402f43`.
+- Coverage artifact: `15193200714`, digest
+  `sha256:37a4f1ed08604cccc26c0b0c3d33e8c7605ef981de44cefce1494473966512e6`.
 - The PR run did not produce a Netlify Deploy Preview.
+
+### Historical receipts retained
+
+- Code commit `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` / run
+  `45984013531` had the three required verification jobs green and the
+  expected pre-rebind `evidence-binding` failure.
+- Docs/PDF commit `605a8985a9fb65e6abe9d524bdfc11e1ff47b862` / run
+  `45987365111` is retained as **failure**: its addendum increased the docs
+  inventory from 267 to 268 while EV-005 still claimed 267. The follow-up
+  corrected the evidence artifacts without changing product code.
 
 ## Follow-up receipt — documentation inventory correction
 
@@ -83,8 +89,8 @@ credential value was read or printed.
 
 - Repository implementation: **implemented + locally tested + CI-verified** at
   the required three-job layer for `5f26fa9`.
-- Documentation rebind: **in progress** until the docs commit's exact-head CI
-  run reports `evidence-binding=success`.
+- Documentation rebind: **complete** at the exact-head four-job CI layer for
+  `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` / `45988106846`.
 - Hosted staging: **STOP** — no migration, RLS/grants, function, storage,
   backup/restore, retention, rate-limit, monitoring, or rollback evidence.
 - Pilot: **STOP** — privacy/CASL/legal approval, manual WCAG, deployed

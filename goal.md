@@ -6,15 +6,17 @@
 
 **Sprint branch:** `codex/product-value-spine-2026-11-27`
 
-**bound HEAD `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47` — CI run
-> `45984013531`**
+**bound HEAD `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c` — CI run
+> `45988106846`**
 
-**Proof layer:** local implementation plus exact-head CI verification. The
-required verification jobs (`lint-typecheck`, `test`, and `build-and-smoke`)
-are green for this bound source. The workflow conclusion is failure only
-because the pre-rebind documents produced the designed stale-document
-`evidence-binding` signal; this docs commit is the rebind. Hosted,
-owner-approved, and buyer-validated evidence remain unclaimed.
+**Proof layer:** local implementation plus exact-head four-job CI verification.
+The required verification jobs (`lint-typecheck`, `test`, `build-and-smoke`,
+and `evidence-binding`) are green for this bound source. CI evidence artifact
+`15193198778` has digest
+`sha256:cd9c4a5f993aa8442e0ca28ab64d218038b78da7d6cdaa7a256506417e402f43`;
+coverage artifact `15193200714` has digest
+`sha256:37a4f1ed08604cccc26c0b0c3d33e8c7605ef981de44cefce1494473966512e6`.
+Hosted, owner-approved, and buyer-validated evidence remain unclaimed.
 
 **Excluded local artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
 `schema.sql` remain untracked by design. The checkpoint includes the tracked
@@ -33,10 +35,10 @@ add the non-validated CAD pilot/white-label catalog and zero-backend inquiry CTA
 refresh TIER provenance conservatively; update MCCAC and procurement language;
 and synchronize the experiment registry to 13 designed / 0 executed.
 
-**Push status:** owner-approved branch push completed for code commit
-`5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47`. No production deploy or hosted
-mutation was performed. The docs-only rebind and PDF are the next evidence
-commit; a fresh run must make `evidence-binding` green.
+**Push status:** owner-approved branch push completed for the code commit and
+the docs/PDF correction. No production deploy or hosted mutation was
+performed. The latest bound source is the corrected docs receipt above; its
+exact-head run is the authoritative four-job result.
 
 ## Product-value sprint local verification — 2026-11-27
 
@@ -69,7 +71,7 @@ legal, or buyer evidence.
   `schema.sql` remain untracked and were not staged. The pushed code receipt is
   `5f26fa9cc1d877cfb19be900be8aaa4e55fc9b47`.
 
-## Exact-head CI receipt — 2026-11-27 (code commit `5f26fa9`)
+## Historical exact-head CI receipt — 2026-11-27 (code commit `5f26fa9`)
 
 The exact-head [run 45984013531](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45984013531)
 verified the code commit. Its required verification jobs are green; the
@@ -95,6 +97,22 @@ CI evidence artifact: `15191817955`, digest
 Coverage artifact: `15191335629`, digest
 `sha256:1a3bbdc5caf6d0769ba518f727fff7771802482f7edafe9681a7c799edf7be9c`.
 The PR produced no Netlify Deploy Preview in this run.
+
+## Final documentation-rebind receipt — 2026-11-27
+
+The corrected docs/PDF source `b79b5875dbb0d9a4e8152f55f9cee85d8372d90c`
+was verified by [run 45988106846](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45988106846)
+with an exact `head_sha` match. `lint-typecheck`, `test`,
+`build-and-smoke`, and `evidence-binding` all concluded `success`. The
+positioning inventory correction is therefore CI-verified rather than inferred
+from a local document edit. The run's CI evidence artifact is `15193198778`
+with digest
+`sha256:cd9c4a5f993aa8442e0ca28ab64d218038b78da7d6cdaa7a256506417e402f43`;
+the coverage artifact is `15193200714` with digest
+`sha256:37a4f1ed08604cccc26c0b0c3d33e8c7605ef981de44cefce1494473966512e6`.
+No Netlify Deploy Preview was generated. Repository evidence is defensible at
+the exact-head four-job layer; hosted staging and the controlled pilot remain
+STOP.
 
 ## Prior exact-head CI receipt — 2026-11-27
 
