@@ -3,11 +3,64 @@ export type DirectPlanCode =
 
 export type WhopPlanCode = 'whop_basic' | 'whop_pro' | 'whop_team';
 
+export type AlbertaPilotSkuCode =
+  'municipal_waste_pilot' | 'gst_planning_estimate' | 'consultant_white_label';
+
+export interface AlbertaPilotSku {
+  code: AlbertaPilotSkuCode;
+  label: string;
+  priceCad: number | { min: number; max: number };
+  interval: 'one_time' | 'month';
+  status: 'hypothesis_non_validated';
+  procurementNote: string;
+}
+
 export interface PlanPrice {
   code: DirectPlanCode | WhopPlanCode;
   price: number;
   currency: 'USD';
   interval: 'month' | 'year' | 'one_time' | 'forever';
+}
+
+/**
+ * Additive CAD hypothesis catalog for the product-value sprint. These entries
+ * are not checkout prices, procurement thresholds, or buyer-validated offers.
+ * Keep them separate from the USD/Whop plan catalog so existing entitlements
+ * and currency tests cannot silently change.
+ */
+export const ALBERTA_PILOT_SKUS_CAD: Record<AlbertaPilotSkuCode, AlbertaPilotSku> = {
+  municipal_waste_pilot: {
+    code: 'municipal_waste_pilot',
+    label: 'Municipal / waste utility proof pilot',
+    priceCad: 2850,
+    interval: 'one_time',
+    status: 'hypothesis_non_validated',
+    procurementNote: 'Entity-specific procurement review required; no universal threshold implied.',
+  },
+  gst_planning_estimate: {
+    code: 'gst_planning_estimate',
+    label: 'GST planning estimate for municipal / waste pilot',
+    priceCad: 2992.5,
+    interval: 'one_time',
+    status: 'hypothesis_non_validated',
+    procurementNote:
+      'Illustrative tax planning only; confirm treatment with the purchasing entity.',
+  },
+  consultant_white_label: {
+    code: 'consultant_white_label',
+    label: 'Consultant white-label utility proof pack',
+    priceCad: { min: 299, max: 500 },
+    interval: 'month',
+    status: 'hypothesis_non_validated',
+    procurementNote: 'Entity-specific scope, terms, and procurement review required.',
+  },
+};
+
+export function formatCadHypothesis(sku: AlbertaPilotSku): string {
+  if (typeof sku.priceCad === 'number') {
+    return `CAD ${sku.priceCad.toLocaleString('en-CA', { minimumFractionDigits: sku.priceCad % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+  }
+  return `CAD ${sku.priceCad.min.toLocaleString('en-CA')}–${sku.priceCad.max.toLocaleString('en-CA')}`;
 }
 
 export const CEIP_PRICING = {

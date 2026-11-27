@@ -237,18 +237,18 @@ export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
   marketCreditPrice: 25,
   fundPriceProvenance: {
     asOfDate: '2026-06-02',
-    source: 'Canada-Alberta Implementation Agreement TIER headline price',
+    source: 'Canada-Alberta Implementation Agreement (May 15, 2026) — TIER headline price',
     sourceUrl:
       'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
     maxAgeDays: TIER_FUND_RATE_MAX_AGE_DAYS,
   },
   marketCreditProvenance: {
     asOfDate: '2026-06-02',
-    source: 'CEIP fallback secondary-market planning snapshot',
+    source: 'CEIP fallback secondary-market planning snapshot (replace before buyer use)',
     maxAgeDays: TIER_MARKET_RATE_MAX_AGE_DAYS,
   },
   effectiveDate: '2026-01-01',
-  source: 'Canada-Alberta Implementation Agreement TIER headline price',
+  source: 'Canada-Alberta Implementation Agreement (May 15, 2026) — TIER headline price',
   sourceUrl:
     'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
   lastVerifiedAt: '2026-06-02',

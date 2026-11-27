@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
+  ALBERTA_PILOT_SKUS_CAD,
   CEIP_PRICING,
   PLAN_PRICES,
+  formatCadHypothesis,
   getPlanPrice,
   formatUsd,
   type DirectPlanCode,
@@ -140,6 +142,22 @@ describe('pricingCatalog', () => {
 
     it('formats 299 as USD 299', () => {
       expect(formatUsd(299)).toBe('USD 299');
+    });
+  });
+
+  describe('ALBERTA_PILOT_SKUS_CAD', () => {
+    it('keeps the CAD pilot catalog additive and explicitly hypothetical', () => {
+      expect(ALBERTA_PILOT_SKUS_CAD.municipal_waste_pilot.priceCad).toBe(2850);
+      expect(ALBERTA_PILOT_SKUS_CAD.gst_planning_estimate.priceCad).toBe(2992.5);
+      expect(ALBERTA_PILOT_SKUS_CAD.consultant_white_label.priceCad).toEqual({ min: 299, max: 500 });
+      expect(ALBERTA_PILOT_SKUS_CAD.municipal_waste_pilot.status).toBe('hypothesis_non_validated');
+      expect(ALBERTA_PILOT_SKUS_CAD.municipal_waste_pilot.procurementNote).toContain('Entity-specific');
+    });
+
+    it('formats CAD hypotheses with explicit currency', () => {
+      expect(formatCadHypothesis(ALBERTA_PILOT_SKUS_CAD.municipal_waste_pilot)).toBe('CAD 2,850');
+      expect(formatCadHypothesis(ALBERTA_PILOT_SKUS_CAD.gst_planning_estimate)).toBe('CAD 2,992.50');
+      expect(formatCadHypothesis(ALBERTA_PILOT_SKUS_CAD.consultant_white_label)).toBe('CAD 299–500');
     });
   });
 });

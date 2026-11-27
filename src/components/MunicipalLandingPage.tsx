@@ -164,8 +164,8 @@ const FAQ_ITEMS = [
     a: 'Funder alignment has not been verified. Any draft output must be checked against the current application guide by the applicant and funder before use; CEIP does not claim acceptance or eligibility.',
   },
   {
-    q: 'What support does MCCAC provide for municipalities using CEIP?',
-    a: 'Consult MCCAC directly for its current programs. CEIP has not verified an integration, endorsement, or required analytics layer.',
+    q: 'What is the current MCCAC status?',
+    a: 'MCCAC published a July 17, 2026 wind-down notice and expects the wind-down to complete by June 2027. Existing signed agreements may proceed; CEIP has no verified integration, endorsement, or required analytics layer.',
   },
   {
     q: 'How long does implementation take?',
@@ -223,7 +223,7 @@ export const MunicipalLandingPage: React.FC = () => {
           'municipal climate tools Alberta',
           'TIER compliance municipality',
           'GHG reporting municipal',
-          'MCCAC energy tools',
+          'municipal energy planning references',
           'FCM Green Municipal Fund',
         ]}
       />

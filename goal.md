@@ -1,5 +1,67 @@
 # goal.md — CEIP controlled-pilot objective
 
+## Active Product-Value Sprint — 2026-11-27
+
+**Checkpoint:** `535d7e6` (`chore(checkpoint): preserve overnight audit overlay`)
+
+**Sprint branch:** `codex/product-value-spine-2026-11-27`
+
+**Proof layer:** local implementation and verification only. No CI, hosted,
+owner-approved, or buyer-validated evidence is claimed until a later exact-head
+run and the required human gates exist.
+
+**Excluded local artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
+`schema.sql` remain untracked by design. The checkpoint includes the tracked
+`coverage/lcov.info` deletion and all real code, script, and test files present
+in the overlay.
+
+**Objective:** Make CEIP useful enough for a controlled product-value test by
+giving a utility reviewer one privacy-preserving, source-dated workflow that
+produces a reviewer-ready forecast and benchmark artifact. Keep TIER, municipal,
+Whop, hosted Supabase, paid checkout, outreach, and buyer validation bounded as
+hypotheses or owner-gated lanes. Never infer market validation from code, tests,
+CI, or designed experiments.
+
+**Scope:** collapse `/` into a three-step browser-local utility proof workflow;
+add the non-validated CAD pilot/white-label catalog and zero-backend inquiry CTA;
+refresh TIER provenance conservatively; update MCCAC and procurement language;
+and synchronize the experiment registry to 13 designed / 0 executed.
+
+**Push stop-gate:** do not push this branch or update exact-head evidence
+bindings until the owner reviews the local handoff and explicitly approves the
+CI run.
+
+## Product-value sprint local verification — 2026-11-27
+
+This section records the final local proof layer for the sprint implementation;
+it does not replace historical CI receipts and does not claim hosted, owner,
+legal, or buyer evidence.
+
+- **Positioning and claims:** strict positioning verifier passed with 0 warnings;
+  claim-boundary and commercial-source checks passed.
+- **Code and build:** `tsc -b` passed; lint passed with 0 errors and 1,696
+  warnings (below the 1,742 baseline); lint-baseline passed; production build
+  passed.
+- **Focused tests:** the expanded product/pricing/Whop/TIER/positioning slice
+  passed 105/105 tests; wedge prototype browser tests passed 16/16 in Chromium.
+- **Product-value smoke:** the browser-local three-step workflow passed 2/2
+  Chromium tests, including sample load, privacy/schema blocking, printable
+  output, JSON/CSV downloads, no raw CSV request body, and no console/page
+  errors.
+- **Sample artifact:** `/tmp/ceip-product-value-sprint/535d7e6/forecast-benchmark-appendix.pdf`
+  is a 12,575-byte PDF beginning with `%PDF-`; SHA-256 is
+  `583a323b766efe44064337e206584a6d25c658b5c0ee37f0fb9d29460c263e02`.
+- **Scope guard:** the sprint diff from checkpoint `535d7e6` contains no changes
+  under `supabase/`, `src/components/whop/`, or `.github/workflows/`.
+- **Excluded artifacts:** `.fastembed_cache/`, `data.sql`, `roles.sql`, and
+  `schema.sql` remain untracked and were not staged. No push has occurred; the
+  implementation commit is local-only and awaits owner review.
+
+**Still unverified or owner-gated:** exact-head CI, hosted Supabase migration/
+RLS/function/storage/backup/rollback evidence, Whop deployment configuration,
+privacy/CASL approval, manual WCAG review, deployed performance, and all 13
+buyer experiments (0 executed).
+
 ## Current authoritative receipt — 2026-10-27
 
 **bound HEAD `8d6096a45ffa08e86519ef24335aee79c6603047` — CI run

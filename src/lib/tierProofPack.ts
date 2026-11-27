@@ -56,8 +56,8 @@ function buildTierSourceCurrencyItems(snapshot: TierProofSnapshot): TierSourceCu
     {
       label: 'Government of Alberta TIER regulation overview',
       sourceUrl: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
-      sourceDate: 'Fall 2025 amendments and Order in Council 369/2025; page reviewed 2026-06-02',
-      reviewedAt: '2026-06-02',
+      sourceDate: 'Fall 2025 amendments and Order in Council 369/2025; page reviewed 2026-11-27',
+      reviewedAt: '2026-11-27',
       currentUse:
         'Compliance options, direct-investment amendment context, annual compliance report timing, verification-documents dependency, compliance-cost-containment trigger, and buyer-specific eligibility caveats.',
       verifyBeforeOutbound:

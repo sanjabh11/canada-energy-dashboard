@@ -31,7 +31,7 @@
     {"id": "H-CREDIT-2", "text": "Credit banking audit is natural cross-sell from TIER CFO memo", "status": "unresolved", "load_bearing_claims": ["LC-9"], "evidence": []},
     {"id": "H-CONTRA-1", "text": "Anti-spreadsheet positioning resonates more than Canadian energy compliance positioning", "status": "unresolved", "load_bearing_claims": ["LC-12"], "evidence": []}
   ],
-  "experiments_designed": 11,
+  "experiments_designed": 13,
   "experiments_executed": 0,
   "evidence_types_present": ["product_promise", "codebase_evidence", "competitor_intel", "stakeholder_input", "pricing_signal"],
   "evidence_types_missing": ["customer_outcome", "user_quote", "behavioral_observation", "support_ticket", "analytics_data", "sales_data"],

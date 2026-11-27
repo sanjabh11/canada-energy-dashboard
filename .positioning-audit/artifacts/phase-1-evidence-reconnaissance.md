@@ -91,7 +91,7 @@
 | Routes | 140 unique paths | EV-005 |
 | Lazy-loaded components | 68 | EV-005 |
 | Component files | 208 | EV-005 |
-| Lib files | 220 | EV-005 |
+| Lib files | 221 | EV-005 |
 | Documentation files | 267 | EV-005 |
 | Edge Functions | 110 | EV-010 |
 | Active commercial wedges | 10 | EV-003 |
