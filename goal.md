@@ -43,6 +43,43 @@ The docs-only rebind is being created on top of the green source receipt;
 its exact-head run must be recorded before claiming the current four-job
 document layer.
 
+## Product-Value Sprint hard-freeze close-out — 2026-11-28
+
+The product-value source is `bfe73fd42b617991dae50ad4db6045629179b0c6`,
+verified by [CI run 45999193017](https://github.com/sanjabh11/canada-energy-dashboard/actions/runs/45999193017)
+with `lint-typecheck`, `test`, `build-and-smoke`, and `evidence-binding` all
+successful. This close-out is documentation-only and does not alter that
+source tree. The CI evidence artifact is `15198951244` with digest
+`sha256:d997617bbaea55d8c6eb570bbe4e725f56cc675e327f1a734a46fc1d2170fb8d`.
+
+The verified static Wave-1 preview is the immutable Netlify deploy permalink
+[`https://6b0982df048fabcdc3dce75e--canada-energy.netlify.app`](https://6b0982df048fabcdc3dce75e--canada-energy.netlify.app)
+(deploy `6b0982df048fabcdc3dce75e`), built from a clean worktree at the exact
+`bfe73fd` tree with synthetic public configuration and edge fetching disabled.
+It is not a Supabase, Whop, production, or hosted-function deployment. The
+earlier draft `6b0981c326c9bc6b1c863b16` is superseded and must not be used.
+
+Live Chromium verification on the immutable permalink passed all five buyer-
+readiness checks: homepage HTTP 200 with zero console and uncaught errors;
+the region-neutral sample and a five-row 15-minute local-clock `kWh` CSV
+completed the three steps, showed `timezone_ambiguous` without raw-row
+submission, and produced a non-empty `%PDF-` export; 31 requests contained
+zero POSTs or CSV/meter-value markers (one Plausible event); `/privacy` and
+`/utility-security` showed `sanjabh11@gmail.com` and no `@ceip.energy`; and
+the CAD pilot card showed the neutral tax wording and the monitored mailbox
+CTA. The Wave-1 attachment is
+`.positioning-audit/artifacts/forecast-benchmark-appendix.pdf`, 13,236 bytes,
+starting with `%PDF-`, SHA-256
+`ddbe499e56b64241fd97644b2693f169f145bf827c9ac3c2b3bde81577bb0e22`.
+
+Static-mode boundaries are explicit: secondary backend routes remain offline
+without Supabase; no Supabase or Whop mutation, deployment, checkout, or
+production release is implied; and PR #51 must not be merged to `main` from
+this receipt. **HARD CODE FREEZE ACTIVE:** Wave-1 engineering is sealed,
+there are `0/13` executed experiments, and no further code, dependency,
+workflow, infrastructure, or feature work is authorized until the owner
+records replies and outcomes for `EXP-011` and `EXP-012`.
+
 ## Product-value sprint local verification — 2026-11-27
 
 This section records the final local proof layer for the sprint implementation;
