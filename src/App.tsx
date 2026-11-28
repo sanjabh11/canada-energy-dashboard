@@ -90,9 +90,6 @@ const WhopDiscoverPage = React.lazy(() =>
   import('./components/WhopDiscoverPage').then((m) => ({ default: m.WhopDiscoverPage })),
 );
 // Gemini Strategy Features (Alberta-Focused)
-const MicroGenWizard = React.lazy(() =>
-  import('./components/MicroGenWizard').then((m) => ({ default: m.MicroGenWizard })),
-);
 const RROAlertSystem = React.lazy(() =>
   import('./components/RROAlertSystem').then((m) => ({ default: m.RROAlertSystem })),
 );
@@ -108,9 +105,6 @@ const QuizDashboard = React.lazy(() =>
 );
 const GuestQuizPlayer = React.lazy(() =>
   import('./components/whop/GuestQuizPlayer').then((m) => ({ default: m.GuestQuizPlayer })),
-);
-const WatchdogApp = React.lazy(() =>
-  import('./components/whop/WatchdogApp').then((m) => ({ default: m.WatchdogApp })),
 );
 // Legal Pages (Whop Compliance - Criteria 14, 15)
 const PrivacyPolicy = React.lazy(() =>
@@ -219,7 +213,7 @@ const EnergyCopilot = React.lazy(() =>
 const AgentRunner = React.lazy(() =>
   import('./components/AgentRunner').then((m) => ({ default: m.AgentRunner })),
 );
-// Whop Mini-App (Isolated, zero-auth for Whop App Store)
+// Whop Mini-App (isolated, zero-auth — retained for existing-customer compatibility)
 const WhopMiniApp = React.lazy(() => import('./components/whop-mini/WhopMiniApp'));
 
 // System Status Page (Phase 0 Foundation)
@@ -236,11 +230,6 @@ function RouteLoader() {
     </div>
   );
 }
-
-const routerFutureConfig = {
-  v7_startTransition: true,
-  v7_relativeSplatPath: true,
-} as const;
 
 function RouterAppShell() {
   return (
@@ -267,14 +256,16 @@ const router = createBrowserRouter([
       { path: '/analytics', element: <AnalyticsTrendsDashboard /> },
       { path: '/analytics-trends', element: <AnalyticsTrendsDashboard /> },
 
-      // Whop Integration Routes (CRITICAL for Whop App Store)
+      // Whop integration routes kept live for existing-customer billing
+      // compatibility only — de-emphasized channel, not promoted in primary
+      // navigation or SEO surfaces.
       { path: '/whop/experience', element: <WhopExperiencePage /> },
       { path: '/whop/experience/:experienceId', element: <WhopExperiencePage /> },
       { path: '/whop/experience/:experienceId/*', element: <WhopExperiencePage /> },
       { path: '/whop/dashboard', element: <WhopDashboardPage /> },
       { path: '/whop/discover', element: <WhopDiscoverPage /> },
 
-      // Whop Mini-App (ISOLATED - Zero auth, zero external APIs for Whop App Store)
+      // Whop Mini-App (isolated, zero-auth surface retained for existing-customer compatibility)
       { path: '/whop-mini/*', element: <WhopMiniApp /> },
 
       // Forecast Benchmarking (standalone for consulting firms / regulatory)
@@ -331,7 +322,7 @@ const router = createBrowserRouter([
       { path: '/indigenous/reporting', element: <FunderReportingDashboard /> },
       { path: '/funder-reporting', element: <FunderReportingDashboard /> },
       // HERO FEATURES - Production Ready
-      // { path: '/tier-calculator', element: <TIERCreditCalculator /> }, // TODO: Recreate - corrupted in all commits
+      { path: '/tier-calculator', element: <Navigate to="/roi-calculator" replace /> }, // legacy alias — original component was corrupted in history
       { path: '/landfill-methane', element: <LandfillMethane /> },
       // Employer & Incubator Pages (Gap #8, #9)
       { path: '/employers', element: <EmployersPage /> },
@@ -340,9 +331,12 @@ const router = createBrowserRouter([
       { path: '/hire-me', element: <EmployersPage /> },
       { path: '/ctn', element: <IncubatorsPage /> },
       // Gemini Strategy: Alberta-Focused Tools
-      { path: '/solar-wizard', element: <MicroGenWizard /> },
-      { path: '/micro-gen', element: <MicroGenWizard /> },
-      { path: '/rate-alerts', element: <RROAlertSystem /> },
+      // Off-USP route redirected pending buyer evidence (audit P2)
+      { path: '/solar-wizard', element: <Navigate to="/solutions" replace /> },
+      // Off-USP route redirected pending buyer evidence (audit P2)
+      { path: '/micro-gen', element: <Navigate to="/solutions" replace /> },
+      // Off-USP route redirected pending buyer evidence (audit P2)
+      { path: '/rate-alerts', element: <Navigate to="/rro" replace /> },
       { path: '/rro', element: <RROAlertSystem /> },
       { path: '/indigenous/aicei', element: <AICEIReportingModule /> },
       { path: '/aicei', element: <AICEIReportingModule /> },
@@ -465,10 +459,14 @@ const router = createBrowserRouter([
       },
       { path: '/whop-quiz', element: <Navigate to="/whop/quiz" replace /> },
 
-      // Whop "Alberta Rate Watchdog" - Primary Wedge Product
-      { path: '/whop/watchdog', element: <WatchdogApp /> },
-      { path: '/watchdog', element: <WatchdogApp /> },
-      { path: '/rate-watchdog', element: <WatchdogApp /> },
+      // Whop "Alberta Rate Watchdog" - de-emphasized B2C product
+      // (TIER is the current focused pilot hypothesis, unvalidated with buyers)
+      // Off-USP route redirected pending buyer evidence (audit P2)
+      { path: '/whop/watchdog', element: <Navigate to="/pricing" replace /> },
+      // Off-USP route redirected pending buyer evidence (audit P2)
+      { path: '/watchdog', element: <Navigate to="/pricing" replace /> },
+      // Off-USP route redirected pending buyer evidence (audit P2)
+      { path: '/rate-watchdog', element: <Navigate to="/pricing" replace /> },
 
       // Legal Pages (Whop Compliance - Criteria 14, 15)
       { path: '/legal', element: <Navigate to="/privacy" replace /> },
@@ -529,7 +527,7 @@ function App() {
                   <SkipToMain targetId="main-content" />
                   <Toaster position="top-right" richColors />
                   <Suspense fallback={<RouteLoader />}>
-                    <RouterProvider router={router} future={routerFutureConfig} />
+                    <RouterProvider router={router} />
                   </Suspense>
                 </HelpProvider>
               </AuthProvider>

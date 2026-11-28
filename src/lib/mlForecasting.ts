@@ -16,10 +16,6 @@ import dispatchWeights from './modelWeights/dispatch-pinn-v2.json';
 import pvWeights from './modelWeights/pv-gnn-v2.json';
 import {
   ConformalPredictor,
-  type ConformalInterval,
-  type QuantileForecast,
-  type ACIState,
-  type ConformalCalibrationResult,
   cqrCalibrate,
   initAciState,
   updateAciState,
@@ -39,90 +35,29 @@ import {
   computeWindPowerPotential,
   computeDiscomfortIndex,
   computeWeatherDemandScore,
-  type WeatherFeatureSet,
-  type WeatherFeatureConfig,
-  DEFAULT_WEATHER_FEATURE_CONFIG,
 } from './weatherFeatures';
+import { getTierCreditUseLimit } from './tierPricing';
 import {
   AdwinDriftDetector,
   createDemandForecastDriftDetector,
   createPriceSpikeDriftDetector,
-  type AdwinConfig,
-  type DriftEvent,
-  type AdwinDiagnostics,
-  DEFAULT_ADWIN_CONFIG,
 } from './driftDetector';
-import {
-  mapForecastToCERScenarios,
-  generateOEBFilingBundle,
-  CER_EF2026_SCENARIOS,
-  OEB_FILING_TEMPLATES,
-  type CERScenarioType,
-  type OEBFilingType,
-  type CERScenarioMapping,
-  type OEBFilingBundle,
-} from './regulatoryScenarios';
+import { mapForecastToCERScenarios, generateOEBFilingBundle } from './regulatoryScenarios';
 import {
   computeTreeShap,
   computeKernelShap,
   generateRegulatoryExplanation,
-  type ShapExplanation,
-  type ShapMethod,
-  type TreeModel,
 } from './explainabilityEngine';
 import {
   reconcileHierarchicalForecasts,
   ONTARIO_DEMAND_HIERARCHY,
-  type ReconciliationMethod,
-  type ReconciliationResult,
-  type ReconciliationInput,
-  type HierarchyNode,
-  type HierarchyForecast,
 } from './hierarchicalReconciliation';
-import {
-  forecastEvChargingLoad,
-  extractEvForecastFeatures,
-  type EvForecastModel,
-  type EvForecastResult,
-  type EvChargingStation,
-  type EvChargingRecord,
-  type EvForecastPoint,
-} from './evChargingForecast';
-import {
-  aggregateFleetForecastWithCopula,
-  type CopulaType,
-  type CopulaParams,
-  type SiteForecast,
-  type FleetForecastResult,
-} from './uncertaintyEngine';
-import {
-  optimizeStorageArbitrage,
-  generateSyntheticPriceForecasts,
-  type BatteryStorageConfig,
-  type PriceForecast,
-  type StorageAction,
-  type ArbitrageResult,
-} from './storageArbitrage';
-import {
-  hampelFilter,
-  imputeMissing,
-  validateWithImputation,
-  type HampelFilterResult,
-  type ImputationResult,
-  type ValidationWithImputationResult,
-} from './dataContract';
-import {
-  computeDynamicSCR,
-  computeFleetSCR,
-  type DynamicSCRResult,
-  type FleetSCRResult,
-  type GridStrengthClass,
-} from './weakGridFixtures';
-import {
-  augmentPeakReportWithCP,
-  type IciFiveCpProbabilisticReport,
-  type PeakAlertTier,
-} from './gaIciPeakPredictor';
+import { forecastEvChargingLoad, extractEvForecastFeatures } from './evChargingForecast';
+import { aggregateFleetForecastWithCopula } from './uncertaintyEngine';
+import { optimizeStorageArbitrage, generateSyntheticPriceForecasts } from './storageArbitrage';
+import { hampelFilter, imputeMissing, validateWithImputation } from './dataContract';
+import { computeDynamicSCR, computeFleetSCR } from './weakGridFixtures';
+import { augmentPeakReportWithCP } from './gaIciPeakPredictor';
 
 export interface MlDataSource {
   name: string;
@@ -490,6 +425,66 @@ function generateHorizonPointForecast(
   return forecast;
 }
 
+/**
+ * Normalize a caller-supplied compliance year. Accepts integers >= 2000 and
+ * clean four-digit strings (coerced); anything else falls back to
+ * `fallbackYear` so a malformed value can never silently price the wrong
+ * schedule step. Mirrors the Edge normalizer in
+ * supabase/functions/_shared/mlForecasting.ts — keep in sync.
+ */
+function normalizeTierComplianceYear(raw: unknown, fallbackYear: number): number {
+  const candidate =
+    typeof raw === 'number'
+      ? raw
+      : typeof raw === 'string' && /^\d{4}$/.test(raw.trim())
+        ? Number(raw.trim())
+        : Number.NaN;
+  return Number.isInteger(candidate) && candidate >= 2000 ? candidate : fallbackYear;
+}
+
+/**
+ * Hard cap for scenario magnitudes (tonnes or CAD). Inputs beyond this are
+ * clamped so absurd values (e.g. 1e308) cannot produce Infinity pathway costs
+ * or silent $0 results. Mirrors _shared/mlForecasting.ts — keep in sync.
+ */
+const MAX_SCENARIO_NUMERIC = 1e12;
+
+/**
+ * Upper bound for per-tonne prices (CAD/t) and the DI credit rate (0–1).
+ * Finite-but-huge prices would otherwise overflow pathway costs into
+ * Infinity and round() would silently flatten them to $0.
+ * Mirrors _shared/mlForecasting.ts — keep in sync.
+ */
+const MAX_SCENARIO_PRICE = 1e6;
+
+/**
+ * Coerce a value to a finite number. Returns undefined when the value is not
+ * a number or numeric string — malformed values count as "not supplied"
+ * rather than silently becoming NaN or a $0 pathway. Mirrors
+ * supabase/functions/_shared/mlForecasting.ts — keep in sync.
+ */
+function coerceFiniteNumber(value: unknown): number | undefined {
+  const parsed =
+    typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')
+      ? Number(value)
+      : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** Numeric input read with a hard fallback: malformed values use `fallback`. */
+function numOr(value: unknown, fallback: number): number {
+  return coerceFiniteNumber(value) ?? fallback;
+}
+
+/** YYYY-MM-DD passthrough; malformed or missing values fall back to today. */
+function normalizeIsoDate(value: unknown): string {
+  return typeof value === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(`${value}T00:00:00.000Z`))
+    ? value
+    : new Date().toISOString().slice(0, 10);
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function clamp(value: number, min = 0, max = 1): number {
@@ -579,6 +574,8 @@ export interface TierScenarioInput {
   };
   discountRate: number;
   asOfDate?: string;
+  /** TIER compliance year for the regulated credit use limit; defaults to the asOfDate year. */
+  complianceYear?: number;
 }
 
 export interface TierScenarioResult {
@@ -586,7 +583,13 @@ export interface TierScenarioResult {
   benchmarkExceedanceTonnes: number;
   pathways: {
     fundPayment: { costCad: number; priceCadPerTonne: number };
-    marketCredits: { costCad: number; priceCadPerTonne: number };
+    marketCredits: {
+      costCad: number;
+      priceCadPerTonne: number;
+      creditUseLimit: number;
+      creditEligibleTonnes: number;
+      fundRemainderTonnes: number;
+    };
     directInvestment: {
       costCad: number;
       capexCad: number;
@@ -601,17 +604,82 @@ export interface TierScenarioResult {
 }
 
 export function calculateTierScenario(input: TierScenarioInput): TierScenarioResult {
-  const asOfDate = input.asOfDate ?? new Date().toISOString().slice(0, 10);
-  const exceedance = Math.max(0, input.benchmarkExceedanceTonnes);
-  const capex = Math.max(0, input.directInvestmentCapexCad);
-  const fundPrice = Math.max(0, input.creditAssumptions.fundPriceCadPerTonne);
-  const marketPrice = Math.max(0, input.creditAssumptions.marketCreditPriceCadPerTonne);
-  const creditRate = Math.max(0, input.creditAssumptions.directInvestmentCreditRate);
+  // Runtime payloads may carry the snake_case edge-function field names;
+  // honor both spellings so the local fallback engine keeps parity with the
+  // edge engine. Mirrors supabase/functions/_shared/mlForecasting.ts.
+  const raw = input as unknown as Record<string, unknown>;
+  const assumptions = (raw.creditAssumptions ?? raw.credit_assumptions ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const asOfDate = normalizeIsoDate(raw.asOfDate ?? raw.as_of_date);
+  const exceedance = Math.min(
+    Math.max(0, numOr(raw.benchmarkExceedanceTonnes ?? raw.benchmark_exceedance_tonnes, 0)),
+    MAX_SCENARIO_NUMERIC,
+  );
+  const capex = Math.min(
+    Math.max(0, numOr(raw.directInvestmentCapexCad ?? raw.direct_investment_capex_cad, 0)),
+    MAX_SCENARIO_NUMERIC,
+  );
+  const discountRate = numOr(raw.discountRate ?? raw.discount_rate, 0.08);
+  // Fallbacks mirror the Edge engine (95/25/0.8) so malformed inputs behave
+  // identically on both engines and the parity invariant holds.
+  const fundPrice = Math.min(
+    Math.max(
+      0,
+      numOr(assumptions.fundPriceCadPerTonne ?? assumptions.fund_price_cad_per_tonne, 95),
+    ),
+    MAX_SCENARIO_PRICE,
+  );
+  const marketPrice = Math.min(
+    Math.max(
+      0,
+      numOr(
+        assumptions.marketCreditPriceCadPerTonne ?? assumptions.market_credit_price_cad_per_tonne,
+        25,
+      ),
+    ),
+    MAX_SCENARIO_PRICE,
+  );
+  const creditRate = Math.min(
+    Math.max(
+      0,
+      numOr(
+        assumptions.directInvestmentCreditRate ?? assumptions.direct_investment_credit_rate,
+        0.8,
+      ),
+    ),
+    1,
+  );
+  // Bounded passthrough (cast for the typed call): a finite numeric epoch-ms
+  // value stays a number so behavior matches the edge engine — String()
+  // would make it an invalid date there but not here. Strings are
+  // length-capped so unbounded caller text cannot reach result metadata.
+  // Keep in sync with _shared/mlForecasting.ts.
+  const lastVerifiedAtRaw = assumptions.lastVerifiedAt ?? assumptions.last_verified_at;
+  const lastVerifiedAt = (
+    (typeof lastVerifiedAtRaw === 'string' && lastVerifiedAtRaw.length <= 64) ||
+    (typeof lastVerifiedAtRaw === 'number' && Number.isFinite(lastVerifiedAtRaw))
+      ? lastVerifiedAtRaw
+      : '2026-02-01'
+  ) as string;
   const creditedTonnes = fundPrice > 0 ? Math.min(exceedance, (capex * creditRate) / fundPrice) : 0;
   const residualTonnes = Math.max(0, exceedance - creditedTonnes);
 
+  const complianceYear = normalizeTierComplianceYear(
+    raw.complianceYear ?? raw.compliance_year,
+    new Date(`${asOfDate}T00:00:00.000Z`).getUTCFullYear(),
+  );
+  // Credits may cover at most the regulated use limit of the obligation; the
+  // remainder is owed to the TIER fund regardless of market price.
+  const creditUseLimit = getTierCreditUseLimit(complianceYear);
+  const creditEligibleTonnes = exceedance * creditUseLimit;
+  const fundRemainderTonnes = exceedance - creditEligibleTonnes;
+
   const fundPaymentCost = round(exceedance * fundPrice);
-  const marketCreditsCost = round(exceedance * marketPrice);
+  const marketCreditsCost = round(
+    creditEligibleTonnes * marketPrice + fundRemainderTonnes * fundPrice,
+  );
   const directInvestmentCost = round(capex + residualTonnes * fundPrice);
 
   const candidates = [
@@ -621,23 +689,32 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
   ].sort((a, b) => a[1] - b[1]);
 
   const warnings: string[] = [];
-  if (daysBetween(input.creditAssumptions.lastVerifiedAt, asOfDate) > 90) {
+  if (daysBetween(lastVerifiedAt, asOfDate) > 90) {
     warnings.push(
       'TIER pricing assumptions are stale; verify current Alberta rules before using for a binding decision.',
     );
   }
-  if (input.discountRate < 0 || input.discountRate > 0.5) {
+  if (discountRate < 0 || discountRate > 0.5) {
     warnings.push(
       'Discount rate is outside the normal scenario range; review financing assumptions.',
     );
   }
 
   return {
-    annualEmissionsTonnes: Math.max(0, input.annualEmissionsTonnes),
+    annualEmissionsTonnes: Math.min(
+      Math.max(0, numOr(raw.annualEmissionsTonnes ?? raw.annual_emissions_tonnes, 0)),
+      MAX_SCENARIO_NUMERIC,
+    ),
     benchmarkExceedanceTonnes: exceedance,
     pathways: {
       fundPayment: { costCad: fundPaymentCost, priceCadPerTonne: fundPrice },
-      marketCredits: { costCad: marketCreditsCost, priceCadPerTonne: marketPrice },
+      marketCredits: {
+        costCad: marketCreditsCost,
+        priceCadPerTonne: marketPrice,
+        creditUseLimit,
+        creditEligibleTonnes: round(creditEligibleTonnes, 3),
+        fundRemainderTonnes: round(fundRemainderTonnes, 3),
+      },
       directInvestment: {
         costCad: directInvestmentCost,
         capexCad: capex,
@@ -656,12 +733,12 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
         {
           name: 'Alberta TIER pricing assumptions',
           url: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
-          lastUpdated: input.creditAssumptions.lastVerifiedAt,
+          lastUpdated: lastVerifiedAt,
         },
       ],
       isFallback: false,
       methodology:
-        'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
+        'Deterministic compliance pathway cost comparison; market credits blend credits up to the regulated credit use limit with a fund payment on the remainder; estimates are not binding financial advice.',
       warnings,
       generatedAt: `${asOfDate}T00:00:00.000Z`,
       claimLabel: 'estimated',
@@ -678,30 +755,64 @@ export interface RetailerOfferInput {
 }
 
 export function evaluateRateWatchdog(input: {
-  province: string;
-  usageKwh: number;
-  currentRateCadPerKwh: number;
-  provider: string;
-  retailerOffers: RetailerOfferInput[];
+  province?: string;
+  usageKwh?: number;
+  currentRateCadPerKwh?: number;
+  provider?: string;
+  retailerOffers?: RetailerOfferInput[];
   asOfDate?: string;
+  // Index signature admits the snake_case spellings the edge engine accepts —
+  // the local engine must read them identically or fallback results diverge.
+  [key: string]: any;
 }) {
-  const usageKwh = Math.max(0, input.usageKwh);
-  const currentRate = Math.max(0, input.currentRateCadPerKwh);
-  const evaluatedOffers = input.retailerOffers
-    .map((offer) => {
-      const monthlySavingsCad = (currentRate - Math.max(0, offer.fixedRateCadPerKwh)) * usageKwh;
-      const yearlySavingsCad = monthlySavingsCad * 12 - Math.max(0, offer.cancellationFeeCad ?? 0);
+  // numOr + caps + spelling coverage mirror the edge engine's watchdog path
+  // (and the tier path) so malformed/snake_case inputs can't diverge or emit
+  // NaN/Infinity savings. Keep in sync with _shared/mlForecasting.ts.
+  const usageKwh = Math.min(
+    Math.max(0, numOr(input.usageKwh ?? input.usage_kwh, 600)),
+    MAX_SCENARIO_NUMERIC,
+  );
+  const currentRate = Math.min(
+    Math.max(0, numOr(input.currentRateCadPerKwh ?? input.current_rate_cad_per_kwh, 0.1205)),
+    MAX_SCENARIO_NUMERIC,
+  );
+  const offers = Array.isArray(input.retailerOffers ?? input.retailer_offers)
+    ? (input.retailerOffers ?? input.retailer_offers)
+    : [];
+  const evaluatedOffers = offers
+    .map((offer: any) => {
+      const fixedRate = Math.min(
+        Math.max(
+          0,
+          numOr(
+            offer.fixedRateCadPerKwh ??
+              offer.fixed_rate_cad_per_kwh ??
+              (offer.fixedRate != null ? offer.fixedRate / 100 : 0),
+            0,
+          ),
+        ),
+        MAX_SCENARIO_NUMERIC,
+      );
+      const cancellationFee = Math.min(
+        Math.max(0, numOr(offer.cancellationFeeCad ?? offer.cancellation_fee_cad, 0)),
+        MAX_SCENARIO_NUMERIC,
+      );
+      const monthlySavingsCad = (currentRate - fixedRate) * usageKwh;
+      const yearlySavingsCad = monthlySavingsCad * 12 - cancellationFee;
       return {
         ...offer,
+        // Overwrite the raw spellings with normalized values — the edge
+        // engine emits only the canonical keys, so a raw unclamped value
+        // must not leak through the spread here either.
+        fixedRateCadPerKwh: fixedRate,
+        termMonths: numOr(offer.termMonths ?? offer.term_months ?? offer.term, 0),
         estimatedMonthlySavingsCad: round(monthlySavingsCad),
         estimatedYearlySavingsCad: round(yearlySavingsCad),
         percentSavings:
-          currentRate > 0
-            ? round(((currentRate - offer.fixedRateCadPerKwh) / currentRate) * 100, 1)
-            : 0,
+          currentRate > 0 ? round(((currentRate - fixedRate) / currentRate) * 100, 1) : 0,
       };
     })
-    .sort((a, b) => b.estimatedYearlySavingsCad - a.estimatedYearlySavingsCad);
+    .sort((a: any, b: any) => b.estimatedYearlySavingsCad - a.estimatedYearlySavingsCad);
 
   const bestOffer = evaluatedOffers[0] ?? null;
   const warnings = [
@@ -709,8 +820,8 @@ export function evaluateRateWatchdog(input: {
   ];
 
   return {
-    province: input.province,
-    provider: input.provider,
+    province: input.province ?? 'AB',
+    provider: input.provider ?? 'Default RoLR provider',
     usageKwh,
     currentRateCadPerKwh: currentRate,
     bestOffer,
@@ -741,24 +852,6 @@ export function evaluateRateWatchdog(input: {
 
 function mean(values: number[]): number {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-}
-
-function std(values: number[]): number {
-  if (values.length < 2) return 0;
-  const avg = mean(values);
-  return Math.sqrt(mean(values.map((value) => (value - avg) ** 2)));
-}
-
-function pearson(x: number[], y: number[]): number {
-  if (x.length !== y.length || x.length < 2) return 0;
-  const xMean = mean(x);
-  const yMean = mean(y);
-  const numerator = x.reduce((sum, value, index) => sum + (value - xMean) * (y[index] - yMean), 0);
-  const denominator = Math.sqrt(
-    x.reduce((sum, value) => sum + (value - xMean) ** 2, 0) *
-      y.reduce((sum, value) => sum + (value - yMean) ** 2, 0),
-  );
-  return denominator === 0 ? 0 : numerator / denominator;
 }
 
 export function rankFeaturesRfeV1(

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
 import type { HelpContent } from '../lib/helpApi';
 import { useHelpText } from './HelpProvider';
+import { trackEvent } from '../lib/analytics';
 
 interface HelpButtonProps {
   id: string;
@@ -17,8 +18,10 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
   const [content, setContent] = useState<HelpContent | null>(null);
   const [loading, setLoading] = useState(false);
   const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
-  const [HelpModalComponent, setHelpModalComponent] = useState<React.ComponentType<any> | null>(null);
-  
+  const [HelpModalComponent, setHelpModalComponent] = useState<React.ComponentType<any> | null>(
+    null,
+  );
+
   // Get tooltip text from the help context
   const shortText = useHelpText(id);
 
@@ -76,35 +79,36 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
 
         // First, check local help content database (instant, no network)
         const localContent = getHelpContent(id);
-        
+
         // Convert to HelpContent format
         setContent({
           id: localContent.id,
           short_text: localContent.shortText,
           body_html: localContent.bodyHtml,
-          related_sources: localContent.relatedTopics?.map(topic => ({
+          related_sources: localContent.relatedTopics?.map((topic) => ({
             name: topic,
-            url: `#help-${topic}`
-          }))
+            url: `#help-${topic}`,
+          })),
         });
-        
+
         // Optionally try to fetch from API to get latest content (non-blocking)
         // This allows server-side updates without redeploying
-        fetchHelpById(id).then(apiContent => {
-          if (apiContent) {
-            setContent(apiContent);
-          }
-        }).catch(() => {
-          // Silently fail - we already have local content
-        });
-        
+        fetchHelpById(id)
+          .then((apiContent) => {
+            if (apiContent) {
+              setContent(apiContent);
+            }
+          })
+          .catch(() => {
+            // Silently fail - we already have local content
+          });
       } catch (error) {
         console.error('Failed to load help content:', error);
         // Fallback to generic message
         setContent({
           id,
           short_text: shortText || 'Help',
-          body_html: '<p>Unable to load help content. Please try again or contact support.</p>'
+          body_html: '<p>Unable to load help content. Please try again or contact support.</p>',
         });
       } finally {
         setLoading(false);
@@ -112,17 +116,8 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
     }
   };
 
-  // Basic analytics tracking (can be enhanced later)
   const trackHelpOpen = (action: 'tooltip_hover' | 'button_click') => {
-    // Simple console logging for now - can be enhanced with actual analytics
-    console.debug(`Help ${action} for ${id}`, {
-      timestamp: Date.now(),
-      action: action,
-      id: id
-    });
-
-    // TODO: Integrate with actual analytics service
-    // Example: window.gtag('event', 'help_interaction', { action, id });
+    trackEvent('help_interaction', { action, id });
   };
 
   return (
@@ -154,7 +149,9 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
           isOpen={open}
           onClose={() => setOpen(false)}
           title={content?.short_text || 'Help'}
-          content={sanitizedHtml ? <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} /> : null}
+          content={
+            sanitizedHtml ? <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} /> : null
+          }
         />
       )}
     </>

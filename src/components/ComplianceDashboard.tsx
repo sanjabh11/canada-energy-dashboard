@@ -6,11 +6,36 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import {
-  Shield, AlertTriangle, CheckCircle, XCircle, Clock, Eye,
-  FileText, Activity, Database, TrendingUp, Bell, AlertCircle,
-  Archive, Settings, Star
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts';
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  FileText,
+  Activity,
+  Database,
+  TrendingUp,
+  Bell,
+  AlertCircle,
+  Archive,
+  Settings,
+  Star,
 } from 'lucide-react';
 import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
@@ -74,8 +99,10 @@ interface ComplianceData {
   alerts: ViolationAlert[];
 }
 
-// Enhanced mock compliance data with more realistic structures
-// TODO: Replace with real Environment Canada and Provincial regulator APIs
+// Enhanced sample compliance data with realistic structures.
+// Backlog: wire real Environment Canada / provincial regulator feeds
+// (tracked in docs/remediation/CEIP_GAP_REMEDIATION_PLAN_2026-10-04.md).
+// The UI discloses this via the 'mock' dataSource badge — never presented as live.
 const mockComplianceData = [
   {
     id: '项目-001',
@@ -84,7 +111,7 @@ const mockComplianceData = [
     violations: 3,
     lastAudit: '2025-01-15',
     regulator: 'Environment Canada',
-    jurisdiction: 'Ontario'
+    jurisdiction: 'Ontario',
   },
   {
     id: '项目-002',
@@ -93,7 +120,7 @@ const mockComplianceData = [
     violations: 1,
     lastAudit: '2025-01-14',
     regulator: 'BC Ministry of Environment',
-    jurisdiction: 'British Columbia'
+    jurisdiction: 'British Columbia',
   },
   {
     id: '项目-003',
@@ -102,8 +129,8 @@ const mockComplianceData = [
     violations: 7,
     lastAudit: '2025-01-13',
     regulator: 'MDDELCC',
-    jurisdiction: 'Quebec'
-  }
+    jurisdiction: 'Quebec',
+  },
 ];
 
 const mockViolations = [
@@ -122,8 +149,8 @@ const mockViolations = [
     remediationSteps: [
       'Conduct comprehensive biodiversity survey',
       'Submit impact mitigation plan to Environment Canada',
-      'Obtain eagle habitat protection certificate'
-    ]
+      'Obtain eagle habitat protection certificate',
+    ],
   },
   {
     id: 'V-002',
@@ -140,9 +167,9 @@ const mockViolations = [
     remediationSteps: [
       'Revise emergency evacuation procedures',
       'Conduct employee safety training',
-      'Install additional emergency lighting'
-    ]
-  }
+      'Install additional emergency lighting',
+    ],
+  },
 ];
 
 const mockAuditLog = [
@@ -153,7 +180,7 @@ const mockAuditLog = [
     action: 'Updated SARAH Report',
     resource: 'Ontario Wind Farm',
     details: 'Modified environmental impact assessment submission',
-    ipAddress: '192.168.1.100'
+    ipAddress: '192.168.1.100',
   },
   {
     id: 'AUD-002',
@@ -162,8 +189,8 @@ const mockAuditLog = [
     action: 'Reviewed Compliance Documents',
     resource: 'Quebec Hydro',
     details: 'Approved permitting documentation and safety protocols',
-    ipAddress: '192.168.1.101'
-  }
+    ipAddress: '192.168.1.101',
+  },
 ];
 
 const mockAlerts = [
@@ -174,8 +201,8 @@ const mockAlerts = [
     message: 'Critical environmental violation requiring immediate attention',
     severity: 'critical' as const,
     timestamp: '2025-01-10T10:30:00Z',
-    status: 'active' as const
-  }
+    status: 'active' as const,
+  },
 ];
 
 export const ComplianceDashboard: React.FC = () => {
@@ -183,7 +210,7 @@ export const ComplianceDashboard: React.FC = () => {
     projects: mockComplianceData,
     violations: mockViolations,
     auditLog: mockAuditLog,
-    alerts: mockAlerts
+    alerts: mockAlerts,
   });
 
   const [remediationAdvice, setRemediationAdvice] = useState<any>(null);
@@ -200,12 +227,13 @@ export const ComplianceDashboard: React.FC = () => {
     setLoading(true);
     try {
       // Try to load from API first
-      const [projectsResponse, violationsResponse, auditResponse, alertsResponse] = await Promise.all([
-        fetch('/api/compliance/projects'),
-        fetch('/api/compliance/violations'),
-        fetch('/api/compliance/audit'),
-        fetch('/api/compliance/alerts')
-      ]);
+      const [projectsResponse, violationsResponse, auditResponse, alertsResponse] =
+        await Promise.all([
+          fetch('/api/compliance/projects'),
+          fetch('/api/compliance/violations'),
+          fetch('/api/compliance/audit'),
+          fetch('/api/compliance/alerts'),
+        ]);
 
       if (projectsResponse.ok && violationsResponse.ok && auditResponse.ok) {
         const projectsData = await projectsResponse.json();
@@ -217,7 +245,7 @@ export const ComplianceDashboard: React.FC = () => {
           projects: projectsData,
           violations: violationsData,
           auditLog: auditData,
-          alerts: alertsData
+          alerts: alertsData,
         });
         setDataSource('live');
         setDataSourceLabel('Environment Canada & Provincial Regulator APIs');
@@ -252,17 +280,19 @@ export const ComplianceDashboard: React.FC = () => {
             projects: cachedSnapshot.payload.projects || mockComplianceData,
             violations: cachedSnapshot.payload.violations || mockViolations,
             auditLog: cachedSnapshot.payload.auditLog || mockAuditLog,
-            alerts: cachedSnapshot.payload.alerts || mockAlerts
+            alerts: cachedSnapshot.payload.alerts || mockAlerts,
           });
           setDataSource('cached');
-          setDataSourceLabel(cachedSnapshot.payload.metadata?.data_source || 'Cached compliance data');
+          setDataSourceLabel(
+            cachedSnapshot.payload.metadata?.data_source || 'Cached compliance data',
+          );
         } else {
           // Fall back to mock data
           setData({
             projects: mockComplianceData,
             violations: mockViolations,
             auditLog: mockAuditLog,
-            alerts: mockAlerts
+            alerts: mockAlerts,
           });
           setDataSource('mock');
           setDataSourceLabel('Sample compliance data');
@@ -287,10 +317,12 @@ export const ComplianceDashboard: React.FC = () => {
           projects: cachedSnapshot.payload.projects || mockComplianceData,
           violations: cachedSnapshot.payload.violations || mockViolations,
           auditLog: cachedSnapshot.payload.auditLog || mockAuditLog,
-          alerts: cachedSnapshot.payload.alerts || mockAlerts
+          alerts: cachedSnapshot.payload.alerts || mockAlerts,
         });
         setDataSource('cached');
-        setDataSourceLabel(cachedSnapshot.payload.metadata?.data_source || 'Cached compliance data');
+        setDataSourceLabel(
+          cachedSnapshot.payload.metadata?.data_source || 'Cached compliance data',
+        );
       } else {
         setDataSource('mock');
         setDataSourceLabel('Sample compliance data');
@@ -305,59 +337,67 @@ export const ComplianceDashboard: React.FC = () => {
   }, [selectedProject, loadComplianceData]);
 
   // Generate remediation advice using LLM
-  const loadRemediationAdvice = useCallback(async (violationId: string) => {
-    remediationAbortRef.current?.abort();
-    const controller = new AbortController();
-    remediationAbortRef.current = controller;
+  const loadRemediationAdvice = useCallback(
+    async (violationId: string) => {
+      remediationAbortRef.current?.abort();
+      const controller = new AbortController();
+      remediationAbortRef.current = controller;
 
-    setLoadingAdvice(true);
-    try {
-      const violation = data.violations.find(v => v.id === violationId);
-      if (!violation) return;
+      setLoadingAdvice(true);
+      try {
+        const violation = data.violations.find((v) => v.id === violationId);
+        if (!violation) return;
 
-      // Use market-brief endpoint adapted for compliance remediation
-      const { json } = await fetchEdgePostJson([
-        ENDPOINTS.LLM.MARKET_BRIEF, // Adapt as needed for compliance-focused endpoint
-      ], {
-        datasetPath: 'compliance_violations',
-        timeframe: 'current',
-        focus: `environmental and safety compliance remediation for: ${violation.description}`,
-        requestType: 'remediation_guidance'
-      }, { signal: controller.signal } as EdgeFetchOptions);
+        // Use market-brief endpoint adapted for compliance remediation
+        const { json } = await fetchEdgePostJson(
+          [
+            ENDPOINTS.LLM.MARKET_BRIEF, // Adapt as needed for compliance-focused endpoint
+          ],
+          {
+            datasetPath: 'compliance_violations',
+            timeframe: 'current',
+            focus: `environmental and safety compliance remediation for: ${violation.description}`,
+            requestType: 'remediation_guidance',
+          },
+          { signal: controller.signal } as EdgeFetchOptions,
+        );
 
-      const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
+        const payload =
+          json && typeof json === 'object' && 'result' in json ? (json as any).result : json;
 
-      if (!controller.signal.aborted) {
-        setRemediationAdvice({
-          violationId,
-          advice: payload,
-          timestamp: new Date().toISOString()
-        });
+        if (!controller.signal.aborted) {
+          setRemediationAdvice({
+            violationId,
+            advice: payload,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
+        console.error('Remediation advice load failed:', e);
+      } finally {
+        if (!controller.signal.aborted) setLoadingAdvice(false);
       }
-    } catch (e: any) {
-      if (e?.name === 'AbortError') return;
-      console.error('Remediation advice load failed:', e);
-    } finally {
-      if (!controller.signal.aborted) setLoadingAdvice(false);
-    }
-  }, [data.violations]);
+    },
+    [data.violations],
+  );
 
   // Process chart data
   const severityChartData = [
-    { name: 'Low', count: data.violations.filter(v => v.severity === 'low').length },
-    { name: 'Medium', count: data.violations.filter(v => v.severity === 'medium').length },
-    { name: 'High', count: data.violations.filter(v => v.severity === 'high').length },
-    { name: 'Critical', count: data.violations.filter(v => v.severity === 'critical').length }
+    { name: 'Low', count: data.violations.filter((v) => v.severity === 'low').length },
+    { name: 'Medium', count: data.violations.filter((v) => v.severity === 'medium').length },
+    { name: 'High', count: data.violations.filter((v) => v.severity === 'high').length },
+    { name: 'Critical', count: data.violations.filter((v) => v.severity === 'critical').length },
   ];
 
   // Time-series compliance data (mock)
-  const timeSeriesData = data.projects.map(project => ({
+  const timeSeriesData = data.projects.map((project) => ({
     date: '2025-01-15',
     [project.projectName]: project.complianceScore,
-    category: 'current'
+    category: 'current',
   }));
 
-  const filteredViolations = data.violations.filter(v => {
+  const filteredViolations = data.violations.filter((v) => {
     const matchProject = selectedProject === 'all' || v.projectId === selectedProject;
     const matchSeverity = filterSeverity === 'all' || v.severity === filterSeverity;
     return matchProject && matchSeverity;
@@ -365,32 +405,65 @@ export const ComplianceDashboard: React.FC = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'text-danger border-red-200 bg-secondary';
-      case 'high': return 'text-orange-600 border-orange-200 bg-orange-50';
-      case 'medium': return 'text-warning border-yellow-200 bg-secondary';
-      case 'low': return 'text-electric border-blue-200 bg-secondary';
-      default: return 'text-secondary border-[var(--border-subtle)] bg-secondary';
+      case 'critical':
+        return 'text-danger border-red-200 bg-secondary';
+      case 'high':
+        return 'text-orange-600 border-orange-200 bg-orange-50';
+      case 'medium':
+        return 'text-warning border-yellow-200 bg-secondary';
+      case 'low':
+        return 'text-electric border-blue-200 bg-secondary';
+      default:
+        return 'text-secondary border-[var(--border-subtle)] bg-secondary';
     }
   };
 
   const getSeverityIcon = (severity: string) => {
-    const className = "h-4 w-4";
+    const className = 'h-4 w-4';
     switch (severity) {
-      case 'critical': return <XCircle className={`${className} text-red-500`} />;
-      case 'high': return <AlertTriangle className={`${className} text-orange-500`} />;
-      case 'medium': return <AlertCircle className={`${className} text-yellow-500`} />;
-      case 'low': return <CheckCircle className={`${className} text-blue-500`} />;
-      default: return <Clock className={`${className} text-tertiary`} />;
+      case 'critical':
+        return <XCircle className={`${className} text-red-500`} />;
+      case 'high':
+        return <AlertTriangle className={`${className} text-orange-500`} />;
+      case 'medium':
+        return <AlertCircle className={`${className} text-yellow-500`} />;
+      case 'low':
+        return <CheckCircle className={`${className} text-blue-500`} />;
+      default:
+        return <Clock className={`${className} text-tertiary`} />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'compliant': return <span className="px-2 py-1 text-xs bg-green-100 text-success rounded-full">Compliant</span>;
-      case 'non_compliant': return <span className="px-2 py-1 text-xs bg-red-100 text-danger rounded-full">Non-compliant</span>;
-      case 'pending': return <span className="px-2 py-1 text-xs bg-yellow-100 text-warning rounded-full">Pending</span>;
-      case 'review': return <span className="px-2 py-1 text-xs bg-blue-100 text-electric rounded-full">Under Review</span>;
-      default: return <span className="px-2 py-1 text-xs bg-secondary text-secondary rounded-full">Unknown</span>;
+      case 'compliant':
+        return (
+          <span className="px-2 py-1 text-xs bg-green-100 text-success rounded-full">
+            Compliant
+          </span>
+        );
+      case 'non_compliant':
+        return (
+          <span className="px-2 py-1 text-xs bg-red-100 text-danger rounded-full">
+            Non-compliant
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="px-2 py-1 text-xs bg-yellow-100 text-warning rounded-full">Pending</span>
+        );
+      case 'review':
+        return (
+          <span className="px-2 py-1 text-xs bg-blue-100 text-electric rounded-full">
+            Under Review
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 text-xs bg-secondary text-secondary rounded-full">
+            Unknown
+          </span>
+        );
     }
   };
 
@@ -438,7 +511,7 @@ export const ComplianceDashboard: React.FC = () => {
           {[
             { id: 'overview', label: 'Overview', icon: Eye },
             { id: 'violations', label: 'Violations', icon: AlertTriangle },
-            { id: 'audit', label: 'Audit Trail', icon: Archive }
+            { id: 'audit', label: 'Audit Trail', icon: Archive },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -460,7 +533,6 @@ export const ComplianceDashboard: React.FC = () => {
 
         {activeTab === 'overview' && (
           <div className="space-y-6">
-
             {/* Project Compliance Scores */}
             <div>
               <h3 className="text-lg font-semibold text-primary mb-4">Project Compliance Scores</h3>
@@ -475,7 +547,11 @@ export const ComplianceDashboard: React.FC = () => {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span>Compliance Score</span>
-                          <span className={project.complianceScore > 80 ? 'text-success' : 'text-danger'}>
+                          <span
+                            className={
+                              project.complianceScore > 80 ? 'text-success' : 'text-danger'
+                            }
+                          >
                             {project.complianceScore}%
                           </span>
                         </div>
@@ -503,7 +579,9 @@ export const ComplianceDashboard: React.FC = () => {
 
             {/* Violation Severity Chart */}
             <div>
-              <h3 className="text-lg font-semibold text-primary mb-4">Violation Distribution by Severity</h3>
+              <h3 className="text-lg font-semibold text-primary mb-4">
+                Violation Distribution by Severity
+              </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={severityChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -519,7 +597,6 @@ export const ComplianceDashboard: React.FC = () => {
 
         {activeTab === 'violations' && (
           <div className="space-y-6">
-
             {/* Filters */}
             <div className="flex flex-wrap gap-4 mb-4">
               <div>
@@ -531,7 +608,9 @@ export const ComplianceDashboard: React.FC = () => {
                 >
                   <option value="all">All Projects</option>
                   {data.projects.map((project) => (
-                    <option key={project.id} value={project.id}>{project.projectName}</option>
+                    <option key={project.id} value={project.id}>
+                      {project.projectName}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -597,7 +676,9 @@ export const ComplianceDashboard: React.FC = () => {
                           <div className="text-secondary">Loading AI recommendations...</div>
                         ) : (
                           <div>
-                            <div className="text-sm font-medium text-secondary mb-2">Remediation Steps:</div>
+                            <div className="text-sm font-medium text-secondary mb-2">
+                              Remediation Steps:
+                            </div>
                             <ul className="space-y-1">
                               {violation.remediationSteps.map((step, index) => (
                                 <li key={index} className="text-sm text-secondary flex items-start">

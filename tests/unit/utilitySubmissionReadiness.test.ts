@@ -11,7 +11,7 @@ describe('utilitySubmissionReadiness', () => {
       canonicalAppUrl: 'https://ceip.example.com',
       bridgeBaseUrl: 'https://gb.ceip.example.com',
       currentOrigin: 'https://ceip.example.com',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     expect(bundle.packets).toHaveLength(2);
@@ -49,7 +49,7 @@ describe('utilitySubmissionReadiness', () => {
   it('marks missing canonical app URL as misconfigured and avoids localhost submission artifacts', () => {
     const bundle = buildOntarioSubmissionSprintBundle({
       bridgeBaseUrl: 'https://gb.ceip.example.com',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     expect(bundle.canonical_app_url).toBe('');
@@ -62,7 +62,7 @@ describe('utilitySubmissionReadiness', () => {
   it('marks missing bridge host as misconfigured and avoids supabase callback artifacts in the submission packet', () => {
     const bundle = buildOntarioSubmissionSprintBundle({
       canonicalAppUrl: 'https://ceip.example.com',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     expect(bundle.has_blocking_repo_misconfiguration).toBe(true);
@@ -76,7 +76,7 @@ describe('utilitySubmissionReadiness', () => {
       canonicalAppUrl: 'https://ceip.example.com',
       bridgeBaseUrl: 'https://gb.ceip.example.com',
       currentOrigin: 'http://127.0.0.1:5173',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     expect(bundle.has_blocking_repo_misconfiguration).toBe(true);
@@ -89,7 +89,7 @@ describe('utilitySubmissionReadiness', () => {
       canonicalAppUrl: 'https://app-staging.burner-ceip.dev',
       bridgeBaseUrl: 'https://gb-staging.burner-ceip.dev',
       currentOrigin: 'https://app-staging.burner-ceip.dev',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     expect(bundle.readiness_tracks.find((track) => track.label === 'Staging internet readiness')?.status).toBe('ready');
@@ -105,7 +105,7 @@ describe('utilitySubmissionReadiness', () => {
       canonicalAppUrl: 'https://ceip.example.com',
       bridgeBaseUrl: 'https://gb.ceip.example.com',
       currentOrigin: 'https://ceip.example.com',
-      supabaseUrl: 'https://qnymbecjgeaoxsfphrti.supabase.co',
+      supabaseUrl: 'https://qktgjpbifknqjpvrgkrj.supabase.co',
     });
 
     const londonPacket = bundle.packets[0]!;

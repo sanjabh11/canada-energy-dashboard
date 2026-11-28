@@ -33,8 +33,7 @@ serve(async (req) => {
       if (error) {
         console.error('Manifest fetch error:', error);
         return new Response(JSON.stringify({
-          error: 'Failed to fetch help manifest',
-          details: error.message
+          error: 'Failed to fetch help manifest'
         }), {
           status: 500,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -101,8 +100,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Help function error:', error);
     return new Response(JSON.stringify({
-      error: 'Internal server error',
-      details: error.message
+      error: 'Internal server error'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

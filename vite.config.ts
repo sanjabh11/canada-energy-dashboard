@@ -62,7 +62,9 @@ export default defineConfig(({ command }) => {
       },
     },
     build: {
-      chunkSizeWarningLimit: 1200,
+      // 600 keeps oversized chunks visible; the previous 1200 masked the
+      // 1.1 MB vendor-redoc chunk (audit PERF-2).
+      chunkSizeWarningLimit: 600,
       sourcemap: uploadSentrySourceMaps ? 'hidden' : false,
       rollupOptions: {
         output: {

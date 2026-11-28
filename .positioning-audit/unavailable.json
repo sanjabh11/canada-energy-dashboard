@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-07-21T00:00:00Z",
+  "week": "2026-07-21",
+  "supabase_service_role_key": "missing",
+  "supabase_url": "present",
+  "crm": "not_configured",
+  "linkedin_api": "not_configured",
+  "search_console": "not_configured",
+  "analytics": "plausible_configured_but_not_locally_queryable",
+  "gtm_weekly_report": "failed_missing_credentials",
+  "mode": "evidence_limited_local_only"
+}

@@ -4,7 +4,7 @@
 -- Copy and paste this entire script into Supabase Dashboard SQL Editor
 -- to verify that all Phase 1 migrations were applied successfully.
 --
--- Dashboard URL: https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/sql/new
+-- Dashboard URL: https://supabase.com/dashboard/project/qktgjpbifknqjpvrgkrj/sql/new
 -- ============================================================================
 
 -- Step 1: Check if all required tables exist

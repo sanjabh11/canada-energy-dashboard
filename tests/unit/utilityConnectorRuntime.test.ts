@@ -52,6 +52,30 @@ describe('utilityConnectorRuntime', () => {
     expect(authorizeUtilityConnectorHeaders('expected-key', new Headers({ 'x-utility-connector-key': 'expected-key' }))).toBeNull();
   });
 
+  it('fails closed before any write when Green Button owner binding is absent', async () => {
+    const repo = createFakeConnectorRepo();
+    const response = await runGreenButtonCallback({
+      code: 'good-code',
+      state: 'acct-unbound',
+      connectorId: 'acct-unbound',
+      ownerUserId: '',
+      tokenEndpoint: `${server.baseUrl}/token-success`,
+      clientId: 'client-123',
+      clientSecret: 'secret-456',
+      redirectUri: 'https://example.com/callback',
+    }, {
+      fetchImpl: fetch,
+      upsertAccount: repo.upsertAccount,
+      logRun: repo.logRun,
+      upsertToken: repo.upsertToken,
+      encryptSecret: async (plaintext) => `enc:${plaintext}`,
+    });
+
+    expect(response.status).toBe(412);
+    expect(repo.state.accounts).toHaveLength(0);
+    expect(repo.state.runs).toHaveLength(0);
+  });
+
   it('exchanges a mocked Green Button auth code and stores expiry metadata', async () => {
     const repo = createFakeConnectorRepo();
     server.requestLog.length = 0;
@@ -76,6 +100,7 @@ describe('utilityConnectorRuntime', () => {
       code: 'good-code',
       state: 'acct-1',
       connectorId: 'acct-1',
+      ownerUserId: 'owner-1',
       tokenEndpoint: `${server.baseUrl}/token-success`,
       clientId: 'client-123',
       clientSecret: 'secret-456',
@@ -108,6 +133,7 @@ describe('utilityConnectorRuntime', () => {
       code: 'revoked-code',
       state: 'acct-2',
       connectorId: 'acct-2',
+      ownerUserId: 'owner-1',
       tokenEndpoint: `${server.baseUrl}/token-revoked`,
       clientId: 'client-123',
       clientSecret: 'secret-456',
@@ -145,6 +171,7 @@ describe('utilityConnectorRuntime', () => {
     });
     const response = await runGreenButtonSync({
       connectorId: 'acct-3',
+      ownerUserId: 'owner-1',
       utilityName: 'London Hydro',
       displayName: 'London Hydro Green Button',
       feedUrl: `${server.baseUrl}/feed.xml`,
@@ -181,6 +208,7 @@ describe('utilityConnectorRuntime', () => {
     const repo = createFakeConnectorRepo();
     const response = await runGreenButtonSync({
       connectorId: 'acct-4',
+      ownerUserId: 'owner-1',
       utilityName: 'Alectra Utilities',
       displayName: 'Alectra Utilities Green Button',
       feedUrl: `${server.baseUrl}/feed-unauthorized`,
@@ -230,6 +258,7 @@ describe('utilityConnectorRuntime', () => {
 
     const response = await runGreenButtonRevoke({
       connectorId: 'acct-6',
+      ownerUserId: 'owner-1',
       utilityName: 'Ontario Mock Utility',
       displayName: 'Ontario Mock Utility CMD',
       revocationMode: 'api',
@@ -258,6 +287,7 @@ describe('utilityConnectorRuntime', () => {
 
     const requested = await runGreenButtonRevoke({
       connectorId: 'acct-7',
+      ownerUserId: 'owner-1',
       utilityName: 'London Hydro',
       displayName: 'London Hydro Green Button',
       revocationMode: 'portal_redirect',
@@ -276,6 +306,7 @@ describe('utilityConnectorRuntime', () => {
 
     const confirmed = await runGreenButtonRevoke({
       connectorId: 'acct-7',
+      ownerUserId: 'owner-1',
       utilityName: 'London Hydro',
       displayName: 'London Hydro Green Button',
       revocationMode: 'portal_redirect',
@@ -298,6 +329,7 @@ describe('utilityConnectorRuntime', () => {
     const repo = createFakeConnectorRepo();
     const response = await runGreenButtonSync({
       connectorId: 'acct-5',
+      ownerUserId: 'owner-1',
       utilityName: 'London Hydro',
       displayName: 'London Hydro Green Button',
       xmlPayload: fixture('green-button-empty.xml'),

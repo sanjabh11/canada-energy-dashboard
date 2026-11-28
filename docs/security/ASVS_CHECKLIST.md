@@ -4,6 +4,22 @@
 
 This document maps existing security controls in the Canada Energy Dashboard to OWASP ASVS Level 1 and Level 2 requirements. It is intended for enterprise sales enablement and security audit preparation.
 
+> **Reconciliation note (2026-10-07):** This checklist predates the October
+> security remediation. Known deltas since 2026-07-01:
+> - `auth-session.ts` now verifies Whop tokens server-side via a multi-target
+>   chain; `/v5/me` and `/oauth/userinfo` are flagged owner-unconfirmed against
+>   official Whop docs — V2.2/V2.4 hold only pending that contract check.
+> - Public `anon`/`authenticated` direct writes to `lead_intake_submissions` are
+>   revoked in migration `20261006001` (locally proven via embedded-Postgres
+>   allow→deny test); hosted application remains owner-gated.
+> - `whop-verify-access` edge function is source-complete but deploy-gated
+>   (503 fail-closed without `WHOP_ALLOWED_ORIGINS`+`WHOP_API_KEY`).
+> - In-memory intake rate limits are per-instance best-effort, not distributed;
+>   Netlify-level rules are a deploy concern, not yet evidenced.
+> Rows below marked **Pass** reflect source-level controls, not hosted
+> verification; re-verify against the deployed environment before citing this
+> document to buyers.
+
 ---
 
 ## ASVS Level 1 (Baseline) — Verification Results

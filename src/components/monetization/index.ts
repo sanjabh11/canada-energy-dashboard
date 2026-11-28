@@ -9,12 +9,13 @@ export { MonetizationBadge, MonetizationTierLabel, TIER_CONFIG } from './Monetiz
 export type { MonetizationBadgeProps, MonetizationTier } from './MonetizationBadge';
 
 export { MonetizationCard } from './MonetizationCard';
-export type { MonetizationCardProps, FeatureMonetization, SponsorCategory } from './MonetizationCard';
+export type {
+  MonetizationCardProps,
+  FeatureMonetization,
+  SponsorCategory,
+} from './MonetizationCard';
 
 export { MonetizationReport, FEATURE_MONETIZATION_DATA } from './MonetizationReport';
 export type { MonetizationReportProps } from './MonetizationReport';
 
-// Whop Tier Gating (New - Hybrid Strategy)
-export { WhopTierGate, useWhopTier } from './WhopTierGate';
-export type { WhopTier } from './WhopTierGate';
 export { hasTierAccess, normalizeTier as normalizeUserTier } from '../../lib/entitlements';

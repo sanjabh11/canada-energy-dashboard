@@ -1,15 +1,16 @@
 /**
  * Whop Mini-App Entry Point
- * 
- * This is an isolated, self-contained mini-app for Whop marketplace.
- * 
+ *
+ * This is an isolated, self-contained mini-app for existing Whop members.
+ * Existing-customer surface only: no acquisition, checkout, or promotional copy.
+ *
  * KEY DESIGN PRINCIPLES:
  * 1. ZERO external API calls on initial load
- * 2. ZERO ProtectedRoute wrappers (uses Whop JWT instead)
+ * 2. ZERO ProtectedRoute wrappers (server-verified Whop session instead)
  * 3. All data is bundled statically
  * 4. Skeleton loading states for any async operations
  * 5. FCP target: <1.5s, Bundle target: <2MB
- * 
+ *
  * Routes:
  * /whop-mini/           → Home (hub for all experiences)
  * /whop-mini/watchdog   → Rate Watchdog Calculator  
@@ -21,9 +22,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { 
-  Zap, Calculator, BookOpen, TrendingUp, Award, LayoutDashboard,
-  ChevronRight, Loader
+import {
+  Zap,
+  Calculator,
+  BookOpen,
+  TrendingUp,
+  Award,
+  LayoutDashboard,
+  ChevronRight,
+  Loader,
 } from 'lucide-react';
 
 // Import sub-components (lazy load for performance)
@@ -41,85 +48,145 @@ interface WhopMiniUser {
   isWhopUser: boolean;
 }
 
+function guestUser(): WhopMiniUser {
+  return { id: `guest_${Date.now()}`, tier: 'free', isWhopUser: false };
+}
+
+const WHOP_TOKEN_PARAMS = ['whop_user_token', 'token', 'whop_token'] as const;
+
 /**
- * Parse Whop JWT token from URL (silent auth)
+ * Extract the Whop user token passed on initial iframe load.
+ *
+ * The token is a CREDENTIAL ONLY: it is sent exactly once to the
+ * server-side whop-verify-access edge function as `Authorization: Bearer`.
+ * It is never decoded locally (a client-decoded JWT proves nothing about
+ * identity or tier) and never echoed, logged, or persisted.
  */
-function useWhopAuth(): { user: WhopMiniUser | null; loading: boolean } {
+export function extractWhopUserToken(search: string): string | null {
+  const params = new URLSearchParams(search);
+  for (const key of WHOP_TOKEN_PARAMS) {
+    const value = params.get(key);
+    if (value && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+/**
+ * Remove credential params from the address bar once captured, so the
+ * token is not retained in history or leaked via document referrer.
+ */
+function scrubTokenFromUrl(): void {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    let touched = false;
+    for (const key of WHOP_TOKEN_PARAMS) {
+      if (params.has(key)) {
+        params.delete(key);
+        touched = true;
+      }
+    }
+    if (!touched) return;
+    const query = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
+  } catch {
+    // Cosmetic only — never let URL hygiene break auth resolution.
+  }
+}
+
+/**
+ * Map whop-verify-access tiers (free | starter | pro | enterprise) onto the
+ * mini-app tier vocabulary (free | basic | pro). Unknown values → free.
+ */
+export function mapWhopMiniTier(tier: unknown): WhopMiniUser['tier'] {
+  switch (tier) {
+    case 'pro':
+    case 'enterprise':
+      return 'pro';
+    case 'starter':
+    case 'basic':
+      return 'basic';
+    default:
+      return 'free';
+  }
+}
+
+/**
+ * Verify a Whop token against the whop-verify-access edge function and
+ * return the SERVER-verified member profile. Fails closed to a guest
+ * profile on ANY failure: missing edge-base config, network error, non-2xx
+ * response, or a body without a verified user id.
+ */
+export async function verifyWhopMiniAccess(
+  token: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<WhopMiniUser> {
+  const edgeBase = (import.meta.env.VITE_SUPABASE_EDGE_BASE || '').replace(/\/+$/, '');
+  if (!edgeBase) return guestUser();
+
+  const experienceId = (import.meta.env.VITE_WHOP_EXPERIENCE_ID || '').trim();
+
+  try {
+    const res = await fetchImpl(`${edgeBase}/whop-verify-access`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // The token travels only as a bearer credential; the function also
+        // accepts Whop's iframe-injected x-whop-user-token header.
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(experienceId ? { experienceId } : {}),
+    });
+    if (!res.ok) return guestUser();
+
+    const data = await res.json();
+    const id = typeof data?.user?.id === 'string' ? data.user.id.trim() : '';
+    if (!id) return guestUser();
+
+    return {
+      id,
+      email: typeof data?.user?.email === 'string' ? data.user.email : undefined,
+      // Entitlement comes exclusively from the server response.
+      tier: data?.hasAccess === true ? mapWhopMiniTier(data?.tier) : 'free',
+      isWhopUser: true,
+    };
+  } catch {
+    return guestUser();
+  }
+}
+
+/**
+ * Resolve the Whop iframe session. The URL param supplies only the
+ * credential; identity and tier come solely from server verification.
+ * Any failure resolves to a free-tier guest.
+ */
+export function useWhopAuth(): { user: WhopMiniUser | null; loading: boolean } {
   const [user, setUser] = useState<WhopMiniUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const parseToken = async () => {
-      try {
-        // Check URL params for Whop token
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('whop_user_token') || 
-                      urlParams.get('token') ||
-                      urlParams.get('whop_token');
+    let cancelled = false;
 
-        if (token) {
-          // Verify token server-side — never trust client-decoded JWT for tier
-          try {
-            const edgeBase = import.meta.env.VITE_SUPABASE_EDGE_BASE || '';
-            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-            if (edgeBase && anonKey) {
-              const res = await fetch(`${edgeBase}/whop-webhook`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'apikey': anonKey,
-                  'Authorization': `Bearer ${anonKey}`,
-                },
-                body: JSON.stringify({ action: 'verify_token', token }),
-              });
-              if (res.ok) {
-                const verified = await res.json();
-                setUser({
-                  id: verified.user_id || `whop_${Date.now()}`,
-                  email: verified.email,
-                  tier: verified.tier || 'free',
-                  isWhopUser: true,
-                });
-              } else {
-                // Verification failed — treat as guest
-                setUser({ id: `guest_${Date.now()}`, tier: 'free', isWhopUser: false });
-              }
-            } else {
-              // No edge base configured — decode locally but cap at free tier
-              try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                setUser({
-                  id: payload.sub || payload.user_id || `whop_${Date.now()}`,
-                  email: payload.email,
-                  tier: 'free',
-                  isWhopUser: true,
-                });
-              } catch {
-                setUser({ id: `guest_${Date.now()}`, tier: 'free', isWhopUser: false });
-              }
-            }
-          } catch {
-            // Network/verification error — guest mode
-            setUser({
-              id: `guest_${Date.now()}`,
-              tier: 'free',
-              isWhopUser: false
-            });
-          }
-        } else {
-          // No token - guest mode
-          setUser({
-            id: `guest_${Date.now()}`,
-            tier: 'free',
-            isWhopUser: false
-          });
+    const resolveSession = async () => {
+      try {
+        const token = extractWhopUserToken(window.location.search);
+        if (!token) {
+          if (!cancelled) setUser(guestUser());
+          return;
         }
+        scrubTokenFromUrl();
+        const verified = await verifyWhopMiniAccess(token);
+        if (!cancelled) setUser(verified);
+      } catch {
+        if (!cancelled) setUser(guestUser());
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    parseToken();
+    void resolveSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { user, loading };
@@ -142,13 +209,13 @@ function SkeletonLoader({ message = 'Loading...' }: { message?: string }) {
 /**
  * Feature card for home page
  */
-function FeatureCard({ 
-  icon: Icon, 
-  title, 
-  description, 
-  href, 
+function FeatureCard({
+  icon: Icon,
+  title,
+  description,
+  href,
   tag,
-  tagColor = 'cyan'
+  tagColor = 'cyan',
 }: {
   icon: React.ElementType;
   title: string;
@@ -161,22 +228,26 @@ function FeatureCard({
     cyan: 'bg-cyan-500/20 text-cyan-300',
     green: 'bg-green-500/20 text-green-300',
     purple: 'bg-purple-500/20 text-purple-300',
-    amber: 'bg-amber-500/20 text-amber-300'
+    amber: 'bg-amber-500/20 text-amber-300',
   };
 
   return (
-    <Link 
+    <Link
       to={href}
       className="group block bg-slate-800/50 border border-slate-700 rounded-xl p-6 
                  hover:border-cyan-500/50 hover:bg-slate-800 transition-all duration-300"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 bg-cyan-500/10 rounded-lg flex items-center justify-center
-                        group-hover:bg-cyan-500/20 transition-colors">
+        <div
+          className="w-12 h-12 bg-cyan-500/10 rounded-lg flex items-center justify-center
+                        group-hover:bg-cyan-500/20 transition-colors"
+        >
           <Icon className="w-6 h-6 text-cyan-400" />
         </div>
         {tag && (
-          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClasses[tagColor]}`}>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClasses[tagColor]}`}
+          >
             {tag}
           </span>
         )}
@@ -202,16 +273,19 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
       {/* Hero */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700">
         <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 
-                          rounded-full px-4 py-2 mb-6">
+          <div
+            className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 
+                          rounded-full px-4 py-2 mb-6"
+          >
             <Zap className="w-4 h-4 text-cyan-400" />
             <span className="text-cyan-300 text-sm font-medium">Canada Energy Academy</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Save Money. <span className="text-cyan-400">Master Energy.</span>
+            Member Tools. <span className="text-cyan-400">Learn Energy.</span>
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-            Stop overpaying on electricity. Learn the grid. Advance your career.
+            Compare your electricity rate to public benchmarks, test your knowledge, and explore the
+            grid.
           </p>
         </div>
       </div>
@@ -219,17 +293,17 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
       {/* Feature Grid */}
       <div className="max-w-4xl mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold text-white mb-8">Choose Your Experience</h2>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <FeatureCard
             icon={Calculator}
             title="Rate Watchdog"
-            description="Are you overpaying for electricity? Compare your rate to Alberta's RoLR benchmark and find savings."
+            description="Compare your electricity rate to Alberta's RoLR benchmark and see an illustrative savings estimate."
             href="/whop-mini/watchdog"
             tag="FREE"
             tagColor="green"
           />
-          
+
           <FeatureCard
             icon={BookOpen}
             title="Energy Quiz"
@@ -238,25 +312,25 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
             tag="FREE"
             tagColor="green"
           />
-          
+
           <FeatureCard
             icon={TrendingUp}
             title="Energy Trader"
-            description="Simulate high-stakes grid decisions with scenario-based Alberta market exercises and demo analytics."
+            description="Practice grid decision-making with simulated, scenario-based Alberta market exercises and demo analytics."
             href="/whop-mini/trader"
             tag="NEW"
             tagColor="purple"
           />
-          
+
           <FeatureCard
             icon={Award}
             title="Certificate Tracks"
-            description="Earn credentials in Grid Operations, TIER Compliance, and Municipal Energy Management."
+            description="Preview learning tracks in Grid Operations, TIER Compliance, and Municipal Energy Management (no accredited credential awarded)."
             href="/whop-mini/certs"
             tag="PRO"
             tagColor="amber"
           />
-          
+
           <FeatureCard
             icon={LayoutDashboard}
             title="Dashboard Demo"
@@ -267,14 +341,15 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
           />
         </div>
 
-        {/* ROI Message */}
-        <div className="mt-12 bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/30 
-                        rounded-xl p-6 text-center">
-          <p className="text-2xl font-bold text-white mb-2">
-            Average User Saves <span className="text-green-400">$540/year</span>
-          </p>
+        {/* Member note — estimates are illustrative, not measured outcomes */}
+        <div
+          className="mt-12 bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/30 
+                        rounded-xl p-6 text-center"
+        >
+          <p className="text-2xl font-bold text-white mb-2">Estimate Your Rate Position</p>
           <p className="text-slate-400">
-            Switch from RoLR to competitive rates using our Rate Watchdog tool
+            The Rate Watchdog compares your rate against public benchmarks. All figures are
+            illustrative calculations, not measured savings.
           </p>
         </div>
       </div>
@@ -282,7 +357,7 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
       {/* Footer */}
       <div className="border-t border-slate-800 py-6">
         <div className="max-w-4xl mx-auto px-4 text-center text-slate-500 text-sm">
-          Canada Energy Intelligence Platform • Powered by Whop
+          Canada Energy Intelligence Platform • Member tools
         </div>
       </div>
     </div>

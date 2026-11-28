@@ -18,7 +18,7 @@ serve(async (req) => {
 
 
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   try {
@@ -57,8 +57,8 @@ serve(async (req) => {
           confidence_upper: mae * 1.2,
           baseline_mae: baselineMae,
           baseline_uplift_percent: 25 + (horizon * 0.5),
-          calibrated: horizon <= 12,
-          calibration_source: horizon <= 12 ? 'ECCC' : undefined,
+          calibrated: false,
+          calibration_source: undefined,
         };
       });
 
@@ -67,7 +67,7 @@ serve(async (req) => {
         province,
         horizons,
         last_updated: new Date().toISOString(),
-        overall_quality: 0.92,
+        overall_quality: 0.3,
       };
     };
 
@@ -317,7 +317,7 @@ serve(async (req) => {
       const province = url.searchParams.get('province') || 'ON';
       const sourceType = url.searchParams.get('source_type');
       const horizon = parseInt(url.searchParams.get('horizon') || '1');
-      const limit = parseInt(url.searchParams.get('limit') || '30');
+      const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '30', 10) || 30, 1), 500);
 
       let query = supabase
         .from('forecast_performance_metrics')
@@ -397,8 +397,8 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Forecast Performance API Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Forecast Performance API Error:', error instanceof Error ? error.message.slice(0, 200) : 'unknown');
+    return new Response(JSON.stringify({ error: 'Internal error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

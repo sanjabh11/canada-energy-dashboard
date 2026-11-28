@@ -1,15 +1,17 @@
 /**
- * Methane Compliance Engine - Municipal Landfill Quantification
- * 
- * Production UI for Alberta Quantification Protocol v3.0 / EPA LandGEM calculations
- * Integrates with landfillMethaneCalculations.ts engine
- * 
+ * Landfill Methane Screening Tool - Municipal Landfill Screening Estimates
+ *
+ * Screening-level UI backed by landfillMethaneCalculations.ts (LandGEM-style
+ * first-order decay). Canada's federal landfill-methane regulations and the
+ * required ECCC assessment model mean every output here is a screening
+ * estimate only — not a compliance or credit-issuance assessment, and not a
+ * quantification under Alberta's landfill-gas protocol.
+ *
  * Features:
  * - Wizard-style input (facility → waste → gas capture → results)
- * - Real-time LandGEM calculations per Alberta Protocol
- * - TIER credit potential display
- * - Actionable recommendations
- * - PDF export for compliance reporting
+ * - LandGEM-style screening estimates (no credit quantification or issuance)
+ * - Actionable screening prompts (no cost, revenue, or payback claims)
+ * - Text export of the screening estimate for planning review
  */
 
 import React, { useState, useEffect } from 'react';
@@ -19,7 +21,6 @@ import {
   ArrowRight,
   Flame,
   TrendingDown,
-  DollarSign,
   Download,
   Info,
   AlertCircle,
@@ -29,15 +30,15 @@ import {
   Zap,
   Cloud,
   BarChart3,
-  FileText
+  FileText,
 } from 'lucide-react';
 import {
   calculateLandGEMMethane,
   formatLandGEMResults,
+  LANDGEM_SCREENING_LABEL,
   type LandfillData,
-  type LandGEMCalculationResult
+  type LandGEMCalculationResult,
 } from '../lib/landfillMethaneCalculations';
-import { TIERScenarioToggle } from './TIERScenarioToggle';
 import { DIPTracker } from './DIPTracker';
 
 type WizardStep = 'facility' | 'waste' | 'climate' | 'results';
@@ -46,7 +47,7 @@ const CAPTURE_SYSTEM_TYPES = [
   { value: 'none', label: 'No Capture System', efficiency: 0 },
   { value: 'passive_venting', label: 'Passive Venting', efficiency: 0.1 },
   { value: 'horizontal_collectors', label: 'Horizontal Collectors', efficiency: 0.65 },
-  { value: 'vertical_wells', label: 'Vertical Wells', efficiency: 0.85 }
+  { value: 'vertical_wells', label: 'Vertical Wells', efficiency: 0.85 },
 ] as const;
 
 const ENERGY_RECOVERY_OPTIONS = [
@@ -54,7 +55,7 @@ const ENERGY_RECOVERY_OPTIONS = [
   { value: 'flare_only', label: 'Flare Only (Destroy Methane)' },
   { value: 'electricity_generation', label: 'Electricity Generation' },
   { value: 'heat_recovery', label: 'Heat Recovery' },
-  { value: 'vehicle_fuel', label: 'Vehicle Fuel (RNG)' }
+  { value: 'vehicle_fuel', label: 'Vehicle Fuel (RNG)' },
 ] as const;
 
 export function LandfillMethaneModule() {
@@ -77,18 +78,20 @@ export function LandfillMethaneModule() {
 
   // Waste data
   const [currentYear] = useState(new Date().getFullYear());
-  const [wasteHistory, setWasteHistory] = useState<Array<{ year: number, tonnesWaste: number }>>([
+  const [wasteHistory, setWasteHistory] = useState<Array<{ year: number; tonnesWaste: number }>>([
     { year: currentYear - 3, tonnesWaste: 48000 },
     { year: currentYear - 2, tonnesWaste: 50000 },
     { year: currentYear - 1, tonnesWaste: 52000 },
-    { year: currentYear, tonnesWaste: 54000 }
+    { year: currentYear, tonnesWaste: 54000 },
   ]);
   const [organicPercent, setOrganicPercent] = useState(45);
 
   // Gas capture data
-  const [captureSystemType, setCaptureSystemType] = useState<typeof CAPTURE_SYSTEM_TYPES[number]['value']>('none');
+  const [captureSystemType, setCaptureSystemType] =
+    useState<(typeof CAPTURE_SYSTEM_TYPES)[number]['value']>('none');
   const [captureEfficiency, setCaptureEfficiency] = useState(0);
-  const [energyRecovery, setEnergyRecovery] = useState<typeof ENERGY_RECOVERY_OPTIONS[number]['value']>('none');
+  const [energyRecovery, setEnergyRecovery] =
+    useState<(typeof ENERGY_RECOVERY_OPTIONS)[number]['value']>('none');
 
   // Results
   const [result, setResult] = useState<LandGEMCalculationResult | null>(null);
@@ -97,7 +100,7 @@ export function LandfillMethaneModule() {
 
   // Auto-update capture efficiency when system type changes
   useEffect(() => {
-    const systemConfig = CAPTURE_SYSTEM_TYPES.find(s => s.value === captureSystemType);
+    const systemConfig = CAPTURE_SYSTEM_TYPES.find((s) => s.value === captureSystemType);
     if (systemConfig) {
       setCaptureEfficiency(systemConfig.efficiency);
     }
@@ -127,7 +130,7 @@ export function LandfillMethaneModule() {
         flareOrEnergyRecovery: energyRecovery as any,
         avgPrecipitationMm: avgPrecipitation,
         avgTemperatureCelsius: avgTemperature,
-        organicWastePercent: organicPercent
+        organicWastePercent: organicPercent,
       };
 
       const calculationResult = calculateLandGEMMethane(landfillData);
@@ -141,9 +144,8 @@ export function LandfillMethaneModule() {
   };
 
   const addWasteYear = () => {
-    const lastYear = wasteHistory.length > 0
-      ? Math.max(...wasteHistory.map(w => w.year))
-      : currentYear - 1;
+    const lastYear =
+      wasteHistory.length > 0 ? Math.max(...wasteHistory.map((w) => w.year)) : currentYear - 1;
 
     setWasteHistory([...wasteHistory, { year: lastYear + 1, tonnesWaste: 50000 }]);
   };
@@ -167,12 +169,12 @@ export function LandfillMethaneModule() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Landfill_Methane_Assessment_${landfillName.replace(/\s+/g, '_')}_${currentYear}.txt`;
+      a.download = `Landfill_Methane_Screening_${landfillName.replace(/\s+/g, '_')}_${currentYear}.txt`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       // Show success feedback
       alert('Report downloaded successfully!');
     } catch (err) {
@@ -187,9 +189,9 @@ export function LandfillMethaneModule() {
 
     // Validate closure year in Step 1
     if (currentStep === 'facility' && closureYear && closureYear < startYear) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        closureYear: `Closure year must be after start year (${startYear})`
+        closureYear: `Closure year must be after start year (${startYear})`,
       }));
       hasErrors = true;
     }
@@ -204,7 +206,7 @@ export function LandfillMethaneModule() {
         }
       });
       if (Object.keys(tonnageErrors).length > 0) {
-        setValidationErrors(prev => ({ ...prev, tonnage: tonnageErrors }));
+        setValidationErrors((prev) => ({ ...prev, tonnage: tonnageErrors }));
       }
     }
 
@@ -228,7 +230,10 @@ export function LandfillMethaneModule() {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Header */}
       <header className="max-w-7xl mx-auto px-6 py-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Platform
         </Link>
@@ -241,18 +246,25 @@ export function LandfillMethaneModule() {
             <Flame className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Methane Compliance Engine</h1>
-            <p className="text-slate-400">Alberta Quantification Protocol v3.0 + TIER Credit Calculator</p>
+            <h1 className="text-3xl font-bold">Landfill Methane Screening Tool</h1>
+            <p className="text-slate-400">{LANDGEM_SCREENING_LABEL}</p>
           </div>
         </div>
         <p className="text-slate-300 max-w-2xl">
-          Automated methane quantification per <strong>Alberta Quantification Protocol for Landfill Gas Capture and Combustion (Version 3.0)</strong>.
-          Calculate compliance baselines and TIER credit potential for municipal landfills.
+          LandGEM-style first-order screening estimate for municipal landfill methane. Outputs are
+          screening estimates only — they do not quantify verified reductions, assess regulatory or
+          Alberta-protocol conformance, or determine TIER credit eligibility or value.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">EPA LandGEM</span>
-          <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">TIER Regulation</span>
-          <span className="px-2 py-1 bg-emerald-900/50 text-emerald-400 rounded text-xs">58% of Canada landfills uncontrolled</span>
+          <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
+            EPA LandGEM-style model
+          </span>
+          <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
+            Screening level only
+          </span>
+          <span className="px-2 py-1 bg-emerald-900/50 text-emerald-400 rounded text-xs">
+            Facility-specific rules
+          </span>
         </div>
       </section>
 
@@ -261,18 +273,32 @@ export function LandfillMethaneModule() {
         <div className="bg-orange-900/20 border border-orange-500/30 rounded-xl p-4 flex items-start gap-4">
           <FileText className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <div className="font-bold text-orange-400 mb-1">Federal Methane Regulations Coming</div>
+            <div className="font-bold text-orange-400 mb-1">
+              Federal landfill-methane regulations are in force
+            </div>
             <p className="text-slate-300">
-              New federal regulations (Canada Gazette 2024-06-29) require rigorous methane assessment for landfills.
-              <span className="font-bold"> 58% of Canadian landfill methane is currently uncontrolled</span>.
-              Get ahead of compliance while generating <span className="font-bold text-emerald-400">$500k-$2M+/year</span> in TIER credits.
+              Canada published its Landfill Methane Regulations in December 2025. Applicability and
+              compliance timelines depend on facility-specific waste and methane thresholds.
+              Applicable sites must use ECCC&apos;s Landfill Methane Modelling Tool to assess
+              methane generation. This LandGEM-style screen does not determine applicability or
+              regulatory conformance.
             </p>
             <div className="mt-2 flex gap-4 text-xs">
-              <a href="https://open.alberta.ca/publications/9781460141861" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline flex items-center gap-1">
+              <a
+                href="https://open.alberta.ca/publications/9781460141861"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:underline flex items-center gap-1"
+              >
                 <FileText className="h-3 w-3" /> Alberta Protocol v3.0 ↗
               </a>
-              <a href="https://gazette.gc.ca/rp-pr/p1/2024/2024-06-29/html/reg5-eng.html" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline flex items-center gap-1">
-                <FileText className="h-3 w-3" /> Federal Regulations ↗
+              <a
+                href="https://www.canada.ca/en/environment-climate-change/services/managing-reducing-waste/municipal-solid/waste-greenhouse-gases-canada-actions/landfill-methane-regulations.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:underline flex items-center gap-1"
+              >
+                <FileText className="h-3 w-3" /> Regulations and ECCC assessment ↗
               </a>
             </div>
           </div>
@@ -286,21 +312,40 @@ export function LandfillMethaneModule() {
             { step: 'facility', label: 'Facility' },
             { step: 'waste', label: 'Waste & Capture' },
             { step: 'climate', label: 'Climate Data' },
-            { step: 'results', label: 'Results' }
+            { step: 'results', label: 'Results' },
           ].map((stepInfo, idx) => (
             <div key={stepInfo.step} className="flex items-center flex-1">
-              <div className={`flex items-center gap-2 ${currentStep === stepInfo.step ? 'text-emerald-400' :
-                ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx ? 'text-slate-400' : 'text-slate-600'
-                }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === stepInfo.step ? 'border-emerald-400 bg-emerald-400/20' :
-                  ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx ? 'border-slate-400' : 'border-slate-600'
-                  }`}>
+              <div
+                className={`flex items-center gap-2 ${
+                  currentStep === stepInfo.step
+                    ? 'text-emerald-400'
+                    : ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx
+                      ? 'text-slate-400'
+                      : 'text-slate-600'
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                    currentStep === stepInfo.step
+                      ? 'border-emerald-400 bg-emerald-400/20'
+                      : ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx
+                        ? 'border-slate-400'
+                        : 'border-slate-600'
+                  }`}
+                >
                   {idx + 1}
                 </div>
                 <span className="text-sm hidden sm:inline">{stepInfo.label}</span>
               </div>
-              {idx < 3 && <div className={`flex-1 h-0.5 mx-2 ${['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx ? 'bg-slate-400' : 'bg-slate-700'
-                }`} />}
+              {idx < 3 && (
+                <div
+                  className={`flex-1 h-0.5 mx-2 ${
+                    ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx
+                      ? 'bg-slate-400'
+                      : 'bg-slate-700'
+                  }`}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -309,7 +354,6 @@ export function LandfillMethaneModule() {
       {/* Wizard Content */}
       <section className="max-w-5xl mx-auto px-6 mb-12">
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-
           {/* Step 1: Facility Info */}
           {currentStep === 'facility' && (
             <div>
@@ -320,7 +364,9 @@ export function LandfillMethaneModule() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Landfill Name</label>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">
+                    Landfill Name
+                  </label>
                   <input
                     type="text"
                     value={landfillName}
@@ -332,7 +378,9 @@ export function LandfillMethaneModule() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Location (City)</label>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                      Location (City)
+                    </label>
                     <input
                       type="text"
                       value={locationCity}
@@ -343,7 +391,9 @@ export function LandfillMethaneModule() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Start Year</label>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                      Start Year
+                    </label>
                     <input
                       type="number"
                       value={startYear}
@@ -379,13 +429,16 @@ export function LandfillMethaneModule() {
                           setClosureYear(value);
                           // Clear error on change
                           if (value >= startYear) {
-                            setValidationErrors(prev => ({ ...prev, closureYear: undefined }));
+                            setValidationErrors((prev) => ({ ...prev, closureYear: undefined }));
                           }
                         }}
                         min={startYear}
                         max={currentYear}
-                        className={`w-full px-4 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none ${validationErrors.closureYear ? 'border-red-500' : 'border-slate-700 focus:border-emerald-500'
-                          }`}
+                        className={`w-full px-4 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none ${
+                          validationErrors.closureYear
+                            ? 'border-red-500'
+                            : 'border-slate-700 focus:border-emerald-500'
+                        }`}
                         placeholder="Closure year"
                       />
                       {validationErrors.closureYear && (
@@ -422,7 +475,9 @@ export function LandfillMethaneModule() {
                     max="100"
                     className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Typical municipal solid waste: 40-50%</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Typical municipal solid waste: 40-50%
+                  </p>
                 </div>
 
                 <div>
@@ -439,53 +494,58 @@ export function LandfillMethaneModule() {
                   </div>
 
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {wasteHistory.sort((a, b) => b.year - a.year).map((waste, idx) => (
-                      <div key={idx}>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={waste.year}
-                            onChange={(e) => updateWasteYear(idx, 'year', Number(e.target.value))}
-                            placeholder="Year"
-                            className="w-32 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm"
-                          />
-                          <input
-                            type="number"
-                            value={waste.tonnesWaste}
-                            onChange={(e) => {
-                              const value = Number(e.target.value);
-                              updateWasteYear(idx, 'tonnesWaste', value);
-                              // Clear error on change if valid
-                              if (value >= 0) {
-                                setValidationErrors(prev => ({
-                                  ...prev,
-                                  tonnage: { ...prev.tonnage, [idx]: undefined }
-                                }));
-                              }
-                            }}
-                            min="0"
-                            placeholder="Tonnes"
-                            className={`flex-1 px-3 py-2 bg-slate-900 border rounded text-sm ${validationErrors.tonnage?.[idx] ? 'border-red-500' : 'border-slate-700'
+                    {wasteHistory
+                      .sort((a, b) => b.year - a.year)
+                      .map((waste, idx) => (
+                        <div key={idx}>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={waste.year}
+                              onChange={(e) => updateWasteYear(idx, 'year', Number(e.target.value))}
+                              placeholder="Year"
+                              className="w-32 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm"
+                            />
+                            <input
+                              type="number"
+                              value={waste.tonnesWaste}
+                              onChange={(e) => {
+                                const value = Number(e.target.value);
+                                updateWasteYear(idx, 'tonnesWaste', value);
+                                // Clear error on change if valid
+                                if (value >= 0) {
+                                  setValidationErrors((prev) => ({
+                                    ...prev,
+                                    tonnage: { ...prev.tonnage, [idx]: undefined },
+                                  }));
+                                }
+                              }}
+                              min="0"
+                              placeholder="Tonnes"
+                              className={`flex-1 px-3 py-2 bg-slate-900 border rounded text-sm ${
+                                validationErrors.tonnage?.[idx]
+                                  ? 'border-red-500'
+                                  : 'border-slate-700'
                               }`}
-                          />
-                          <span className="text-sm text-slate-500 w-20">tonnes/yr</span>
-                          {wasteHistory.length > 1 && (
-                            <button
-                              onClick={() => removeWasteYear(idx)}
-                              className="px-3 py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 rounded text-sm transition-colors"
-                            >
-                              Remove
-                            </button>
+                            />
+                            <span className="text-sm text-slate-500 w-20">tonnes/yr</span>
+                            {wasteHistory.length > 1 && (
+                              <button
+                                onClick={() => removeWasteYear(idx)}
+                                className="px-3 py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 rounded text-sm transition-colors"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                          {validationErrors.tonnage?.[idx] && (
+                            <p className="text-red-400 text-xs mt-1 ml-36 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {validationErrors.tonnage[idx]}
+                            </p>
                           )}
                         </div>
-                        {validationErrors.tonnage?.[idx] && (
-                          <p className="text-red-400 text-xs mt-1 ml-36 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            {validationErrors.tonnage[idx]}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
                   </div>
 
                   <p className="text-xs text-slate-500 mt-2">
@@ -502,16 +562,19 @@ export function LandfillMethaneModule() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-3">Capture System Type</label>
+                      <label className="block text-sm font-medium text-slate-400 mb-3">
+                        Capture System Type
+                      </label>
                       <div className="grid md:grid-cols-2 gap-3">
                         {CAPTURE_SYSTEM_TYPES.map((system) => (
                           <button
                             key={system.value}
                             onClick={() => setCaptureSystemType(system.value)}
-                            className={`p-4 rounded-lg border-2 transition-colors text-left ${captureSystemType === system.value
-                              ? 'border-emerald-500 bg-emerald-500/10'
-                              : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
-                              }`}
+                            className={`p-4 rounded-lg border-2 transition-colors text-left ${
+                              captureSystemType === system.value
+                                ? 'border-emerald-500 bg-emerald-500/10'
+                                : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
+                            }`}
                           >
                             <div className="font-bold">{system.label}</div>
                             <div className="text-sm text-slate-400">
@@ -529,7 +592,9 @@ export function LandfillMethaneModule() {
                         </label>
                         <select
                           value={energyRecovery}
-                          onChange={(e) => setEnergyRecovery(e.target.value as typeof energyRecovery)}
+                          onChange={(e) =>
+                            setEnergyRecovery(e.target.value as typeof energyRecovery)
+                          }
                           className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
                         >
                           {ENERGY_RECOVERY_OPTIONS.map((option) => (
@@ -553,7 +618,9 @@ export function LandfillMethaneModule() {
                 <Cloud className="h-5 w-5 text-emerald-400" />
                 Climate Data
               </h2>
-              <p className="text-slate-400 mb-6">Climate parameters for LandGEM model calculations</p>
+              <p className="text-slate-400 mb-6">
+                Climate parameters for LandGEM model calculations
+              </p>
 
               <div className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -631,7 +698,7 @@ export function LandfillMethaneModule() {
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold flex items-center gap-2">
                       <TrendingDown className="h-5 w-5 text-emerald-400" />
-                      Methane Quantification Results
+                      Methane Screening Results
                     </h2>
                     <button
                       onClick={exportPDF}
@@ -642,9 +709,19 @@ export function LandfillMethaneModule() {
                     </button>
                   </div>
 
+                  {/* Screening-level label — every output carries it */}
+                  <div
+                    className="mb-6 rounded-lg border border-cyan-500/30 bg-cyan-900/20 px-4 py-3 text-sm text-cyan-100"
+                    role="note"
+                  >
+                    {result.screeningLabel}
+                  </div>
+
                   {/* Model Parameters */}
                   <div className="bg-slate-900/50 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-medium text-slate-400 mb-3">LandGEM Model Parameters</h3>
+                    <h3 className="text-sm font-medium text-slate-400 mb-3">
+                      LandGEM Model Parameters
+                    </h3>
                     <div className="grid md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <div className="text-slate-500">k (generation rate)</div>
@@ -656,10 +733,17 @@ export function LandfillMethaneModule() {
                       </div>
                       <div>
                         <div className="text-slate-500">Confidence</div>
-                        <div className={`font-bold ${result.modelConfidence === 'high' ? 'text-emerald-400' :
-                          result.modelConfidence === 'medium' ? 'text-amber-400' : 'text-red-400'
-                          }`}>
-                          {result.modelConfidence.toUpperCase()} (±{result.uncertaintyRangePercent}%)
+                        <div
+                          className={`font-bold ${
+                            result.modelConfidence === 'high'
+                              ? 'text-emerald-400'
+                              : result.modelConfidence === 'medium'
+                                ? 'text-amber-400'
+                                : 'text-red-400'
+                          }`}
+                        >
+                          {result.modelConfidence.toUpperCase()} (±{result.uncertaintyRangePercent}
+                          %)
                         </div>
                       </div>
                     </div>
@@ -694,7 +778,9 @@ export function LandfillMethaneModule() {
 
                   {/* GHG Emissions */}
                   <div className="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-medium text-orange-400 mb-3">Total GHG Emissions</h3>
+                    <h3 className="text-sm font-medium text-orange-400 mb-3">
+                      Total GHG Emissions
+                    </h3>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <div className="text-slate-400 text-sm">Fugitive CH₄ (as CO₂e)</div>
@@ -720,49 +806,27 @@ export function LandfillMethaneModule() {
                     </div>
                   </div>
 
-                  {/* TIER Credit Potential */}
-                  <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-medium text-emerald-400 mb-3 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      TIER Credit Potential
+                  <div className="bg-amber-900/20 border border-amber-500/30 rounded-lg p-4 mb-6">
+                    <h3 className="text-sm font-medium text-amber-300 mb-2">
+                      TIER eligibility and financial value are undetermined
                     </h3>
-                    <div className="mb-3">
-                      <div className="text-xs text-slate-400 mb-1">Scenario:</div>
-                      <div className="text-sm text-slate-300">{result.tierBaselineScenario}</div>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-slate-400 text-sm">Emissions Reduction Potential</div>
-                        <div className="text-2xl font-bold text-emerald-400">
-                          {result.tierCreditPotentialTonnes.toFixed(0)}
-                          <span className="text-sm text-slate-500 ml-2">tonnes CO₂e</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-slate-400 text-sm">Annual Revenue Potential</div>
-                        <div className="text-2xl font-bold text-emerald-400">
-                          ${result.tierCreditValueCAD.toLocaleString()}
-                          <span className="text-sm text-slate-500 ml-2">CAD/year</span>
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-sm text-slate-300">
+                      {result.screeningLabel}. This screening model does not quantify a
+                      project-specific verified reduction, establish Direct Investment eligibility,
+                      generate credits, or estimate TIER revenue. Confirm the applicable Alberta
+                      Standard, facility status, quantification protocol, and current market
+                      evidence before making a compliance or financial decision.
+                    </p>
                   </div>
 
-                  {/* TIER Scenario Toggle - Research Finding: $95 fund vs $20 market */}
-                  {result && (
-                    <TIERScenarioToggle
-                      emissionsTonnes={result.tierCreditPotentialTonnes}
-                      className="mb-6"
-                    />
-                  )}
-
-                  {/* Direct Investment Pathway Tracker - 2025 Amendment */}
-                  <DIPTracker tierCreditPrice={95} />
+                  <DIPTracker />
 
                   {/* Warnings */}
                   {result.warnings.length > 0 && (
                     <div className="bg-amber-900/20 border border-amber-500/30 rounded-lg p-4 mb-6">
-                      <h3 className="text-sm font-medium text-amber-400 mb-2">Calculation Warnings:</h3>
+                      <h3 className="text-sm font-medium text-amber-400 mb-2">
+                        Calculation Warnings:
+                      </h3>
                       <ul className="text-sm text-slate-300 space-y-1">
                         {result.warnings.map((warning, idx) => (
                           <li key={idx}>• {warning}</li>
@@ -777,30 +841,35 @@ export function LandfillMethaneModule() {
                       <h3 className="text-lg font-bold mb-4">Recommended Actions</h3>
                       <div className="space-y-3">
                         {result.recommendations.map((rec, idx) => (
-                          <div key={idx} className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
+                          <div
+                            key={idx}
+                            className="bg-slate-900/50 border border-slate-700 rounded-lg p-4"
+                          >
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <div className="font-bold">{rec.action}</div>
-                                <div className="text-sm text-slate-400">{rec.impactDescription}</div>
+                                <div className="text-sm text-slate-400">
+                                  {rec.impactDescription}
+                                </div>
                               </div>
                               <CheckCircle className="h-5 w-5 text-emerald-400 flex-shrink-0" />
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
                               <div>
-                                <div className="text-slate-500">Impact</div>
-                                <div className="font-medium">{rec.emissionsReductionTonnesCO2e.toFixed(0)} tonnes CO₂e</div>
+                                <div className="text-slate-500">Project reduction</div>
+                                <div className="font-medium">Not quantified or verified</div>
                               </div>
                               <div>
                                 <div className="text-slate-500">Cost</div>
-                                <div className="font-medium">${(rec.estimatedCostCAD / 1000).toFixed(0)}k</div>
+                                <div className="font-medium">Not assessed</div>
                               </div>
                               <div>
-                                <div className="text-slate-500">Revenue</div>
-                                <div className="font-medium text-emerald-400">${(rec.tierRevenueCAD / 1000).toFixed(0)}k/yr</div>
+                                <div className="text-slate-500">TIER value</div>
+                                <div className="font-medium text-amber-300">Undetermined</div>
                               </div>
                               <div>
                                 <div className="text-slate-500">Payback</div>
-                                <div className="font-medium text-emerald-400">{rec.paybackYears.toFixed(1)} years</div>
+                                <div className="font-medium">Not assessed</div>
                               </div>
                             </div>
                           </div>
@@ -840,7 +909,7 @@ export function LandfillMethaneModule() {
                 to="/pricing"
                 className="ml-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg flex items-center gap-2 transition-colors"
               >
-                Get Started ($5,900/month)
+                Get Started (USD 5,900/month)
                 <ArrowRight className="h-4 w-4" />
               </Link>
             )}
@@ -850,7 +919,9 @@ export function LandfillMethaneModule() {
 
       {/* Footer */}
       <footer className="max-w-7xl mx-auto px-6 py-8 border-t border-slate-800 text-center text-slate-500 text-sm">
-        <p>© {new Date().getFullYear()} Canada Energy Intelligence Platform. All rights reserved.</p>
+        <p>
+          © {new Date().getFullYear()} Canada Energy Intelligence Platform. All rights reserved.
+        </p>
         <div className="flex items-center justify-center gap-4 mt-4">
           <Link to="/tier-calculator" className="hover:text-white transition-colors">
             TIER Calculator

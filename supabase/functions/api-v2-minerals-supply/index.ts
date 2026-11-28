@@ -104,7 +104,7 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error('Minerals API error:', err);
     return new Response(JSON.stringify({ 
-      error: String(err),
+      error: 'Internal error',
       message: 'Failed to fetch minerals data from NRCan'
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

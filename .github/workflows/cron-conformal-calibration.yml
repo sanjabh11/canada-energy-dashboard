@@ -8,6 +8,7 @@ on:
 
 jobs:
   calibrate:
+    if: ${{ vars.CRON_LIVE_CALIBRATION_CRON == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger calibration-cron Edge Function

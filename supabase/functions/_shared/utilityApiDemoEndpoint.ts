@@ -420,7 +420,7 @@ async function handleStartDemo(
       }
     } catch (error) {
       await persistUtilityApiDemoState(supabase, { id: reusable.id }, {
-        last_error: error instanceof Error ? error.message : 'Reusable authorization refresh failed.',
+        last_error: error instanceof Error ? error.message.slice(0, 300) : 'Reusable authorization refresh failed.',
       });
     }
   }
@@ -488,16 +488,19 @@ export async function handleUtilityApiDemoRequest(req: Request, deps: UtilityApi
   }
 
   const startedAt = (deps.now ?? Date.now)();
+
+  // Auth runs before body parsing: unauthenticated callers must not be able
+  // to force a full JSON decode (or reach action dispatch) at all.
+  const authResult = await applyAuthAndLiveGuards(req, deps, corsHeaders);
+  if (authResult.response) {
+    return authResult.response;
+  }
+
   const body = await req.json().catch(() => ({}));
   const action = getAction(body?.action);
 
   if (!action) {
     return json({ error: 'Unsupported UtilityAPI demo action.' }, 405, corsHeaders);
-  }
-
-  const authResult = await applyAuthAndLiveGuards(req, deps, corsHeaders);
-  if (authResult.response) {
-    return authResult.response;
   }
 
   const operator = authResult.operator!;
@@ -613,6 +616,7 @@ export async function handleUtilityApiDemoRequest(req: Request, deps: UtilityApi
         break;
     }
   } catch (error) {
+    console.error('utilityapi-demo request failed:', error);
     await logUsage(deps, {
       endpoint: 'utilityapi-demo',
       method: req.method,
@@ -628,7 +632,7 @@ export async function handleUtilityApiDemoRequest(req: Request, deps: UtilityApi
       },
     });
     return json({
-      error: error instanceof Error ? error.message : 'UtilityAPI demo action failed.',
+      error: 'UtilityAPI demo action failed.',
       code: 'utilityapi_demo_exception',
     }, 500, {
       ...corsHeaders,

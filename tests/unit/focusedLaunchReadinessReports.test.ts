@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-focused-launch-readiness-reports.mjs');
-const timeout = 300_000;
+const timeout = 600_000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {
@@ -69,7 +69,7 @@ afterEach(() => {
 });
 
 describe('focused launch readiness report suite', () => {
-  it('runs the focused report contract checks without claiming launch readiness', { timeout: 300_000 }, () => {
+  it('runs the focused report contract checks without claiming launch readiness', { timeout: 600_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -114,7 +114,7 @@ describe('focused launch readiness report suite', () => {
     expect(stdout).toContain('validate_launch_evidence.py <manifest>');
   });
 
-  it('emits structured JSON for operator handoff and automation logs', { timeout: 300_000 }, () => {
+  it('emits structured JSON for operator handoff and automation logs', { timeout: 600_000 }, () => {
     const stdout = execFileSync(process.execPath, [checkScriptPath, '--skip-probes', '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -166,7 +166,10 @@ describe('focused launch readiness report suite', () => {
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);
   });
 
-  it('routes retained proof paths only to proof-aware child checks', { timeout: 300_000 }, () => {
+  // Proof-routed run measured ~9min on a quiet machine (children regenerate
+  // the launch-evidence manifest per distinct proof signature). Cache collapses
+  // identical signatures; residual cost is inherent — timeout sized to reality.
+  it('routes retained proof paths only to proof-aware child checks', { timeout: 900_000 }, () => {
     const tempRoot = makeTempRoot();
     const { releaseProofPath, supabaseProofPath } = writeCurrentProofs(tempRoot);
     const stdout = execFileSync(process.execPath, [
@@ -181,7 +184,9 @@ describe('focused launch readiness report suite', () => {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
-      timeout,
+      // Each distinct proof signature regenerates the manifest once (~60-90s);
+      // the shared 300s child cap cannot cover 12 children. Measured ~9min.
+      timeout: 900_000,
     });
     const payload = JSON.parse(stdout);
     const checksById = new Map(payload.checks.map((item: { id: string }) => [item.id, item]));

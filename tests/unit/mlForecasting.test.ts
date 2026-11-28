@@ -36,9 +36,12 @@ describe('mlForecasting shared engine', () => {
     });
 
     expect(result.pathways.fundPayment.costCad).toBe(1_900_000);
-    expect(result.pathways.marketCredits.costCad).toBe(500_000);
+    // 90% credit use limit for the 2026 compliance year:
+    // 18,000 t × $25 + 2,000 t × $95 fund remainder
+    expect(result.pathways.marketCredits.costCad).toBe(640_000);
+    expect(result.pathways.marketCredits.creditUseLimit).toBe(0.9);
     expect(result.bestPathway).toBe('market_credits');
-    expect(result.estimatedSavingsCad).toBe(1_400_000);
+    expect(result.estimatedSavingsCad).toBe(1_260_000);
     expect(result.warnings).toContain('TIER pricing assumptions are stale; verify current Alberta rules before using for a binding decision.');
   });
 

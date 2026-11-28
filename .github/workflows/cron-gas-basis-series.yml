@@ -7,6 +7,7 @@ on:
 
 jobs:
   trigger-gas-basis-series:
+    if: ${{ vars.CRON_LIVE_INGEST_GAS_BASIS_SERIES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Gas Basis Series Ingestion
@@ -14,9 +15,8 @@ jobs:
           echo "Triggering gas basis series ingestion..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-gas-basis-series" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "x-supabase-cron: true" \
+            "https://qktgjpbifknqjpvrgkrj.functions.supabase.co/ingest-gas-basis-series" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"days":730}')
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)

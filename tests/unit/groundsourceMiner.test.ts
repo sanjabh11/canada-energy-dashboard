@@ -52,7 +52,7 @@ describe('groundsource miner extraction helpers', () => {
     expect(summary.provenance_score).toBeCloseTo(0.7833, 3);
   });
 
-  it('marks fully LLM-backed runs as validated', () => {
+  it('marks fully LLM-backed runs as model_extracted, not validated', () => {
     const summary = summarizeGroundsourceRun({
       sourceCount: 3,
       eventCount: 3,
@@ -63,7 +63,7 @@ describe('groundsource miner extraction helpers', () => {
     });
 
     expect(summary.extraction_mode).toBe('llm');
-    expect(summary.claim_label).toBe('validated');
+    expect(summary.claim_label).toBe('model_extracted');
   });
 
   it('marks budget-exhausted runs explicitly', () => {

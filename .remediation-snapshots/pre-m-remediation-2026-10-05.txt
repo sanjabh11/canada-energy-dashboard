@@ -1,0 +1,242 @@
+2cdc44b6d85158865a167ec3b07f16b43677a119
+---BRANCH---
+codex/green-button-truth-spine
+---STATUS---
+ M .env.example
+ M .github/workflows/ci.yml
+ M .positioning-audit/artifacts/phase-1-evidence-reconnaissance.md
+ M .positioning-audit/artifacts/phase-5-validation-plan.md
+ M .positioning-audit/artifacts/phase-7-drift-tracking.md
+ M .positioning-audit/evidence-corpus.json
+ M .positioning-audit/experiments.json
+ M .positioning-audit/hypotheses.json
+ M .positioning-audit/inventory-snapshot.json
+ M .positioning-audit/state.json
+ M README.md
+ M docs/COMMERCIAL_SOURCE_OF_TRUTH.md
+ M docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md
+ M docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md
+ M eslint.config.js
+ M package.json
+ M pnpm-lock.yaml
+ M scripts/README.md
+ M scripts/check-claim-boundaries.mjs
+ M scripts/check-client-env-safety.mjs
+ M src/App.tsx
+ M src/components/BadgesPage.tsx
+ M src/components/CommandPalette.tsx
+ M src/components/ComplianceDashboard.tsx
+ M src/components/EnergyMap.tsx
+ M src/components/HelpButton.tsx
+ D src/components/MicroGenWizard.tsx
+ M src/components/PricingPage.tsx
+ M src/components/RROAlertSystem.tsx
+ M src/components/SolutionsNavigatorPage.tsx
+ M src/components/TIERComplianceLandingPage.tsx
+ M src/components/TIERROICalculator.tsx
+ M src/components/WhopDiscoverPage.tsx
+ M src/components/billing/PaddleProvider.tsx
+ D src/components/monetization/WhopTierGate.tsx
+ M src/components/monetization/index.ts
+ D src/components/whop/WatchdogApp.tsx
+ M src/lib/aesoService.ts
+ M src/lib/billingAdapter.ts
+ M src/lib/commercialPositioning.ts
+ M src/lib/entitlements.ts
+ M src/lib/exportJobsClient.ts
+ M src/lib/gamificationService.ts
+ M src/lib/helpContent.ts
+ D src/lib/lemonSqueezyAdapter.ts
+ M src/lib/moduleContent.ts
+ M src/lib/nlpService.ts
+ M src/lib/whop.ts
+ M tests/component/wedge-prototype-routes.spec.ts
+ M tests/setup/vitest.setup.ts
+ M tests/unit/branchReviewReadiness.test.ts
+ M tests/unit/buyerEvidenceGateReadiness.test.ts
+ M tests/unit/commercialPositioning.test.ts
+ M tests/unit/launchEvidenceManifest.test.ts
+ M tests/unit/positioningAuditSchema.test.ts
+ M tests/unit/productionApprovalReadiness.test.ts
+ M vite.config.ts
+ M vitest.config.ts
+?? .positioning-audit/unavailable.json
+?? .remediation-snapshots/
+?? .windsurf/
+?? AUDIT.md
+?? docs/COMMERCIAL_STATUS.md
+?? docs/WEEKLY_MARKETING_FLYWHEEL_2026_07_21.md
+?? docs/marketing/
+?? docs/remediation/
+?? docs/sales/
+?? src/lib/formValidation.ts
+?? src/lib/helpContent/
+?? src/lib/moduleContent/
+?? tests/unit/conformalPrediction.test.ts
+?? tests/unit/demandForecaster.test.ts
+---DIFF-STAT---
+ .env.example                                       |    4 +
+ .github/workflows/ci.yml                           |    9 +-
+ .../artifacts/phase-1-evidence-reconnaissance.md   |    8 +-
+ .../artifacts/phase-5-validation-plan.md           |    2 +-
+ .../artifacts/phase-7-drift-tracking.md            |    2 +-
+ .positioning-audit/evidence-corpus.json            |  164 +-
+ .positioning-audit/experiments.json                |   37 +-
+ .positioning-audit/hypotheses.json                 |    4 +-
+ .positioning-audit/inventory-snapshot.json         |   45 +-
+ .positioning-audit/state.json                      |    7 +-
+ README.md                                          |  273 +-
+ docs/COMMERCIAL_SOURCE_OF_TRUTH.md                 |    3 +-
+ docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md       |   54 +
+ .../templates/OUTREACH_AND_PILOT_TEMPLATES.md      |   56 +
+ eslint.config.js                                   |   10 +
+ package.json                                       |   48 +-
+ pnpm-lock.yaml                                     | 1476 +++--
+ scripts/README.md                                  |  233 +-
+ scripts/check-claim-boundaries.mjs                 |   17 +-
+ scripts/check-client-env-safety.mjs                |   13 +
+ src/App.tsx                                        |   35 +-
+ src/components/BadgesPage.tsx                      |    7 +
+ src/components/CommandPalette.tsx                  |    7 +-
+ src/components/ComplianceDashboard.tsx             |    6 +-
+ src/components/EnergyMap.tsx                       |   10 +-
+ src/components/HelpButton.tsx                      |   12 +-
+ src/components/MicroGenWizard.tsx                  |  637 ---
+ src/components/PricingPage.tsx                     |   48 +-
+ src/components/RROAlertSystem.tsx                  |    2 +-
+ src/components/SolutionsNavigatorPage.tsx          |   24 +-
+ src/components/TIERComplianceLandingPage.tsx       |  159 +-
+ src/components/TIERROICalculator.tsx               |  188 +-
+ src/components/WhopDiscoverPage.tsx                |    2 +-
+ src/components/billing/PaddleProvider.tsx          |   33 +-
+ src/components/monetization/WhopTierGate.tsx       |  168 -
+ src/components/monetization/index.ts               |    3 -
+ src/components/whop/WatchdogApp.tsx                |  216 -
+ src/lib/aesoService.ts                             |   17 +-
+ src/lib/billingAdapter.ts                          |   55 +-
+ src/lib/commercialPositioning.ts                   |   16 +-
+ src/lib/entitlements.ts                            |    8 +-
+ src/lib/exportJobsClient.ts                        |    4 +-
+ src/lib/gamificationService.ts                     |   49 +-
+ src/lib/helpContent.ts                             | 5726 +-------------------
+ src/lib/lemonSqueezyAdapter.ts                     |  392 --
+ src/lib/moduleContent.ts                           | 1755 +-----
+ src/lib/nlpService.ts                              |    4 +-
+ src/lib/whop.ts                                    |    1 -
+ tests/component/wedge-prototype-routes.spec.ts     |  139 +
+ tests/setup/vitest.setup.ts                        |   30 +
+ tests/unit/branchReviewReadiness.test.ts           |   10 +-
+ tests/unit/buyerEvidenceGateReadiness.test.ts      |   10 +-
+ tests/unit/commercialPositioning.test.ts           |   12 +-
+ tests/unit/launchEvidenceManifest.test.ts          |  335 +-
+ tests/unit/positioningAuditSchema.test.ts          |    2 +-
+ tests/unit/productionApprovalReadiness.test.ts     |    2 +-
+ vite.config.ts                                     |    4 +-
+ vitest.config.ts                                   |   14 +-
+ 58 files changed, 2352 insertions(+), 10255 deletions(-)
+---DIFF-NAME-ONLY---
+.env.example
+.github/workflows/ci.yml
+.positioning-audit/artifacts/phase-1-evidence-reconnaissance.md
+.positioning-audit/artifacts/phase-5-validation-plan.md
+.positioning-audit/artifacts/phase-7-drift-tracking.md
+.positioning-audit/evidence-corpus.json
+.positioning-audit/experiments.json
+.positioning-audit/hypotheses.json
+.positioning-audit/inventory-snapshot.json
+.positioning-audit/state.json
+README.md
+docs/COMMERCIAL_SOURCE_OF_TRUTH.md
+docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md
+docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md
+eslint.config.js
+package.json
+pnpm-lock.yaml
+scripts/README.md
+scripts/check-claim-boundaries.mjs
+scripts/check-client-env-safety.mjs
+src/App.tsx
+src/components/BadgesPage.tsx
+src/components/CommandPalette.tsx
+src/components/ComplianceDashboard.tsx
+src/components/EnergyMap.tsx
+src/components/HelpButton.tsx
+src/components/MicroGenWizard.tsx
+src/components/PricingPage.tsx
+src/components/RROAlertSystem.tsx
+src/components/SolutionsNavigatorPage.tsx
+src/components/TIERComplianceLandingPage.tsx
+src/components/TIERROICalculator.tsx
+src/components/WhopDiscoverPage.tsx
+src/components/billing/PaddleProvider.tsx
+src/components/monetization/WhopTierGate.tsx
+src/components/monetization/index.ts
+src/components/whop/WatchdogApp.tsx
+src/lib/aesoService.ts
+src/lib/billingAdapter.ts
+src/lib/commercialPositioning.ts
+src/lib/entitlements.ts
+src/lib/exportJobsClient.ts
+src/lib/gamificationService.ts
+src/lib/helpContent.ts
+src/lib/lemonSqueezyAdapter.ts
+src/lib/moduleContent.ts
+src/lib/nlpService.ts
+src/lib/whop.ts
+tests/component/wedge-prototype-routes.spec.ts
+tests/setup/vitest.setup.ts
+tests/unit/branchReviewReadiness.test.ts
+tests/unit/buyerEvidenceGateReadiness.test.ts
+tests/unit/commercialPositioning.test.ts
+tests/unit/launchEvidenceManifest.test.ts
+tests/unit/positioningAuditSchema.test.ts
+tests/unit/productionApprovalReadiness.test.ts
+vite.config.ts
+vitest.config.ts
+---UNTRACKED---
+.positioning-audit/unavailable.json
+.remediation-snapshots/pre-m-remediation-2026-10-05.txt
+.windsurf/plans/weekly-marketing-flywheel-2026-07-21.md
+AUDIT.md
+docs/COMMERCIAL_STATUS.md
+docs/WEEKLY_MARKETING_FLYWHEEL_2026_07_21.md
+docs/marketing/MESSAGING_HIERARCHY.md
+docs/remediation/CEIP_GAP_REMEDIATION_PLAN_2026-10-04.md
+docs/remediation/CEIP_REMEDIATION_REPORT_2026-10-05.md
+docs/sales/BATTLE_CARD_ORENNIA.md
+src/lib/formValidation.ts
+src/lib/helpContent/aiDatacentre.ts
+src/lib/helpContent/capacity.ts
+src/lib/helpContent/carbon.ts
+src/lib/helpContent/ccus.ts
+src/lib/helpContent/cer.ts
+src/lib/helpContent/climate.ts
+src/lib/helpContent/condensed.ts
+src/lib/helpContent/curtailment.ts
+src/lib/helpContent/database.ts
+src/lib/helpContent/digitalTwin.ts
+src/lib/helpContent/evInfrastructure.ts
+src/lib/helpContent/functions.ts
+src/lib/helpContent/grid.ts
+src/lib/helpContent/heatpump.ts
+src/lib/helpContent/hydrogen.ts
+src/lib/helpContent/indigenous.ts
+src/lib/helpContent/minerals.ts
+src/lib/helpContent/overview.ts
+src/lib/helpContent/pages.ts
+src/lib/helpContent/queue.ts
+src/lib/helpContent/scenarios.ts
+src/lib/helpContent/security.ts
+src/lib/helpContent/smr.ts
+src/lib/helpContent/storage.ts
+src/lib/helpContent/types.ts
+src/lib/helpContent/vpp.ts
+src/lib/moduleContent/gridOps.ts
+src/lib/moduleContent/policy.ts
+src/lib/moduleContent/policyPermitting.ts
+src/lib/moduleContent/policyRegulatory.ts
+src/lib/moduleContent/registry.ts
+src/lib/moduleContent/residential.ts
+src/lib/moduleContent/types.ts
+tests/unit/conformalPrediction.test.ts
+tests/unit/demandForecaster.test.ts

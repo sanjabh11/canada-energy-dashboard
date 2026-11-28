@@ -2,7 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { useAuth, ProtectedRoute } from './auth';
 import { ProgressTracker } from './badges';
 import { getBadgeProgress, BadgeProgress } from '../lib/gamificationService';
-import { User, Users, Award, CreditCard, Settings, Mail, MapPin, Shield, TrendingUp, Loader, Key, Book } from 'lucide-react';
+import {
+  User,
+  Users,
+  Award,
+  CreditCard,
+  Settings,
+  Mail,
+  MapPin,
+  Shield,
+  TrendingUp,
+  Loader,
+  Key,
+  Book,
+} from 'lucide-react';
 
 function ProfilePageContent() {
   const { user, edubizUser } = useAuth();
@@ -30,22 +43,22 @@ function ProfilePageContent() {
       color: 'text-slate-400',
       bgColor: 'bg-slate-800',
       borderColor: 'border-slate-700',
-      icon: '🆓'
+      icon: '🆓',
     },
     edubiz: {
       label: 'Edubiz',
       color: 'text-cyan-400',
       bgColor: 'bg-cyan-950',
       borderColor: 'border-cyan-700',
-      icon: '🎓'
+      icon: '🎓',
     },
     pro: {
       label: 'Pro',
       color: 'text-purple-400',
       bgColor: 'bg-purple-950',
       borderColor: 'border-purple-700',
-      icon: '⭐'
-    }
+      icon: '⭐',
+    },
   };
 
   const currentTier = edubizUser?.tier || 'free';
@@ -114,7 +127,9 @@ function ProfilePageContent() {
                     <MapPin className="h-4 w-4 mr-2" />
                     Province
                   </dt>
-                  <dd className="text-white font-medium">{edubizUser?.province_code || 'Not set'}</dd>
+                  <dd className="text-white font-medium">
+                    {edubizUser?.province_code || 'Not set'}
+                  </dd>
                 </div>
 
                 <div>
@@ -122,22 +137,21 @@ function ProfilePageContent() {
                     <Settings className="h-4 w-4 mr-2" />
                     Role
                   </dt>
-                  <dd className="text-white font-medium capitalize">{edubizUser?.role_preference || 'Not set'}</dd>
+                  <dd className="text-white font-medium capitalize">
+                    {edubizUser?.role_preference || 'Not set'}
+                  </dd>
                 </div>
 
                 <div>
-                  <dt className="text-sm text-slate-400 mb-2">
-                    Member Since
-                  </dt>
+                  <dt className="text-sm text-slate-400 mb-2">Member Since</dt>
                   <dd className="text-white font-medium">
                     {edubizUser?.created_at
                       ? new Date(edubizUser.created_at).toLocaleDateString('en-CA', {
                           year: 'numeric',
                           month: 'long',
-                          day: 'numeric'
+                          day: 'numeric',
                         })
-                      : 'Unknown'
-                    }
+                      : 'Unknown'}
                   </dd>
                 </div>
               </div>
@@ -199,12 +213,12 @@ function ProfilePageContent() {
           {/* Right Column - Tier Card */}
           <div className="space-y-6">
             {/* Current Tier Card */}
-            <div className={`${config.bgColor} rounded-xl border ${config.borderColor} shadow-xl p-6`}>
+            <div
+              className={`${config.bgColor} rounded-xl border ${config.borderColor} shadow-xl p-6`}
+            >
               <div className="text-center mb-6">
                 <div className="text-6xl mb-4">{config.icon}</div>
-                <h3 className={`text-2xl font-bold ${config.color} mb-2`}>
-                  {config.label} Tier
-                </h3>
+                <h3 className={`text-2xl font-bold ${config.color} mb-2`}>{config.label} Tier</h3>
                 {currentTier === 'free' && (
                   <p className="text-slate-400 text-sm">Limited access to features</p>
                 )}
@@ -279,21 +293,19 @@ function ProfilePageContent() {
                 )}
               </div>
 
-              {currentTier === 'free' && (
-                <a
-                  href="/pricing"
-                  className="block w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors"
-                >
-                  Upgrade to Edubiz
-                </a>
-              )}
-              {currentTier === 'edubiz' && (
-                <a
-                  href="/pricing"
-                  className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors"
-                >
-                  Upgrade to Pro
-                </a>
+              {(currentTier === 'free' || currentTier === 'edubiz') && (
+                <div className="space-y-3 text-center">
+                  <p className="text-sm text-slate-400">
+                    Marketplace plan upgrades are not offered. Existing membership access remains
+                    available.
+                  </p>
+                  <a
+                    href="/enterprise"
+                    className="block w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors"
+                  >
+                    Discuss a CEIP engagement
+                  </a>
+                </div>
               )}
               {currentTier === 'pro' && (
                 <div className="text-center text-purple-300 text-sm font-medium">
@@ -360,12 +372,17 @@ function ProfilePageContent() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Status</span>
-                    <span className={`font-medium ${
-                      edubizUser.subscription_status === 'active' ? 'text-green-400' :
-                      edubizUser.subscription_status === 'trialing' ? 'text-cyan-400' :
-                      'text-orange-400'
-                    }`}>
-                      {edubizUser.subscription_status.charAt(0).toUpperCase() + edubizUser.subscription_status.slice(1)}
+                    <span
+                      className={`font-medium ${
+                        edubizUser.subscription_status === 'active'
+                          ? 'text-green-400'
+                          : edubizUser.subscription_status === 'trialing'
+                            ? 'text-cyan-400'
+                            : 'text-orange-400'
+                      }`}
+                    >
+                      {edubizUser.subscription_status.charAt(0).toUpperCase() +
+                        edubizUser.subscription_status.slice(1)}
                     </span>
                   </div>
                   {edubizUser.trial_ends_at && (

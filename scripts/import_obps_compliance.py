@@ -9,7 +9,7 @@ Usage:
     python scripts/import_obps_compliance.py --csv data/obps_compliance_2023.csv
 
 Environment:
-    SUPABASE_URL, SUPABASE_KEY (or VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY)
+    SUPABASE_URL (or VITE_SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY
 """
 
 import os
@@ -41,9 +41,9 @@ OBPS_CSV_COLUMNS = {
 
 def get_client() -> Client:
     url = os.getenv('SUPABASE_URL') or os.getenv('VITE_SUPABASE_URL')
-    key = os.getenv('SUPABASE_KEY') or os.getenv('VITE_SUPABASE_ANON_KEY')
+    key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
     if not url or not key:
-        print("Error: SUPABASE_URL and SUPABASE_KEY (or VITE_*) must be set")
+        print("Error: SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY must be set")
         sys.exit(1)
     return create_client(url, key)
 

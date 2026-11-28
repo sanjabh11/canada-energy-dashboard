@@ -3,7 +3,7 @@
  * Test Phase 5 APIs - Storage Dispatch & Enhanced Forecasts
  */
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://qnymbecjgeaoxsfphrti.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://qktgjpbifknqjpvrgkrj.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
 async function testStorageDispatch() {

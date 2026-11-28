@@ -128,6 +128,15 @@ describe('proof-pack route registry', () => {
       'next_action',
       'pilot_evidence_register_action',
       'notes',
+      'consent_basis',
+      'consent_source',
+      'consent_date',
+      'sender_identification_status',
+      'unsubscribe_mechanism_status',
+      'casl_owner_approval',
+      'casl_approval_date',
+      'casl_approval_reference',
+      'unsubscribe_status',
     ].join(',');
 
     const rows = Array.from(proofPackRouteConfigs, ([route, config]) => [
@@ -150,9 +159,24 @@ describe('proof-pack route registry', () => {
       'create intake packet',
       'create_intake_packet',
       'No direct identifiers retained in this registry parity fixture.',
+      'express_consent',
+      'registry parity fixture consent record',
+      '2026-05-30',
+      'verified',
+      'verified',
+      'approved',
+      '2026-05-29',
+      'casl-fixture-review-2026-05-29',
+      'none',
     ].map(csvCell).join(','));
 
     writeFileSync(filePath, [header, ...rows, ''].join('\n'), 'utf8');
+    // CASL gate: outbound activity requires a shared suppression registry file.
+    writeFileSync(
+      path.join(root, 'suppression-registry.csv'),
+      'target_label,suppression_date,source_row,reason\n',
+      'utf8',
+    );
     const result = await runNodeScript(outreachValidatorPath, [filePath, '--report']);
 
     expect(result.status).toBe(0);

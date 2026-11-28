@@ -1,6 +1,6 @@
 # CEIP Commercial Source Of Truth
 
-> Date: June 3, 2026
+> Date: October 5, 2026
 > Purpose: define which docs can be used for current sales, outreach, pilot scoping, and public positioning.
 > Rule: when this file conflicts with older research, outreach, PRD, or monetization notes, this file and the active docs below win.
 
@@ -10,7 +10,8 @@ Use these files for current CEIP positioning:
 
 | File | Role | Required boundary |
 |---|---|---|
-| [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
+| [README.md](../README.md) | Public repo entrypoint (engineering onboarding). | Must retain the current sellability ratings table, link to COMMERCIAL_STATUS.md, and stay inside do-not-claim boundaries. |
+| [COMMERCIAL_STATUS.md](./COMMERCIAL_STATUS.md) | Commercial narrative extracted from the old README (F-15): proof-pack positioning, current ratings, verification commands, and do-not-claim list. | Must preserve proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
 | [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Desk-research strategy-direction confidence is 95/100; 95% market confidence needs buyer-supplied pilot evidence. |
 | [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live parity is achieved only when post-deploy live checks pass for the current production artifact, future deploys require approval, and buyer evidence remains the confidence blocker. |
 | [CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md](./CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md) | Current conversation mission review, achieved-target table, remaining-gap table, and next UI-feature roadmap. | Production static parity is current only after the approved deploy passes `check:post-deploy-live`; buyer-proven 95% market confidence remains blocked until the real pilot evidence register passes the hard gate. |
@@ -19,7 +20,8 @@ Use these files for current CEIP positioning:
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
 | [growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md](./growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md) | Current outreach copy library. | Lead with proof packs, not broad dashboards or generic AI. |
 | [growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md](./growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md) | Email/LinkedIn and pilot templates. | Must name route, input data, artifact, caveat, and decision criteria. |
-| [growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv](./growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv) | Machine-readable anonymized outreach response log. | Must record proof-pack route, caveat, artifact promise, reply status, and pilot-evidence follow-up action without direct identifiers. |
+| [growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv](./growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv) | Machine-readable anonymized outreach response log. | Shared schema records consent basis/source/date, verified sender and unsubscribe controls, dated CASL-owner approval, and suppression state without prospect identifiers; tooling does not send or approve outreach. |
+| [growth/SUPPRESSION_REGISTRY_LIVE.csv](./growth/SUPPRESSION_REGISTRY_LIVE.csv) | Canonical workspace-wide suppression registry (`email,domain,reason,source,suppressed_at,suppressed_by`). | Single suppression source for all campaigns; every opt-out is appended before the next send, and every outreach template requires a registry check. |
 | [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv) | Machine-readable buyer evidence register. | Must record `time_to_artifact_hours`, `buyer_data_coverage_pct`, `benchmark_lift_or_diagnostic`, `reviewer_acceptance`, and `commercial_commitment_status` before confidence changes. |
 
 ## Active Sellability Ratings
@@ -33,17 +35,21 @@ The active outreach docs must use the current sellability-confidence ratings fro
 | 3 | OEB/AUC regulatory filing packs | 4.3/5 |
 | 4 | Ontario GA/ICI 5CP decision-support pack | 4.2/5 |
 | 5 | Privacy-preserving BYO-CSV proof generator | 4.1/5 |
-| 6 | TIER compliance savings pack | 4.0/5 |
+| 6 | TIER scenario memo | 4.0/5 |
 | 7 | TIER credit banking audit pack | 3.9/5 |
 | 8 | Asset health executive capex pack | 4.1/5 |
 | 9 | Utility security procurement pack | 4.0/5 |
 | 10 | Shadow billing invoice proof pack | 3.8/5 |
 
+### Focused Pilot Hypothesis vs Documented Ranking
+
+The table above is the **documented fallback ranking** used by outreach copy and the sellability gates, and utility forecasting stays on top of it. Separately, the Alberta TIER compliance wedge (`/roi-calculator`, `/tier-compliance`, `/credit-banking`) is the **current focused pilot hypothesis**: it is desk-research validated only, unvalidated with buyers, and the code-side ordering in `src/lib/commercialPositioning.ts` reflects that pilot focus — it does not declare a validated beachhead and does not change these documented ratings. TIER remains a hypothesis until accepted buyer evidence lands in the pilot evidence register; until then, use this sentence verbatim when the two orderings must be reconciled: **"TIER = current focused pilot hypothesis (desk-research validated only); utility forecasting = documented fallback pending buyer evidence."**
+
 ## Approved Lead Positioning
 
-Use this wording:
+Use this wording. Whop is not a listing or acquisition channel; keep only legacy existing-customer access and billing support.
 
-> CEIP is a Canadian utility and Alberta TIER proof-pack product that turns forecasts, filing evidence, benchmark transparency, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance scenarios, credit ledgers, asset triage, security review, and billing checks into buyer-ready artifacts.
+> CEIP's current focused pilot hypothesis is an Alberta TIER scenario workflow, validated by desk research only; utility forecasting is the documented fallback. The product can prepare draft planning artifacts for review, but no buyer outcome, savings, procurement eligibility, or willingness to pay has been validated.
 
 Do not replace this with:
 

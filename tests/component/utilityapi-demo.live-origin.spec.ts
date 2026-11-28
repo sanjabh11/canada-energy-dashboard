@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:4175';
 const BASE_ORIGIN = new URL(BASE_URL).origin;
 const SESSION_FILE = process.env.UTILITYAPI_DEMO_OPERATOR_SESSION_FILE || '/tmp/utilityapi-demo-operator-session.json';
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://qnymbecjgeaoxsfphrti.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://qktgjpbifknqjpvrgkrj.supabase.co';
 const EDGE_BASE = (process.env.VITE_SUPABASE_EDGE_BASE || SUPABASE_URL.replace('.supabase.co', '.functions.supabase.co')).replace(/\/$/, '');
 const ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 

@@ -1,9 +1,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  FileText, Download, Calendar, DollarSign, Users, Leaf, 
-  AlertTriangle, CheckCircle, Clock, Building, Filter,
-  FileSpreadsheet, File, ChevronDown, ChevronRight,
-  Shield, MapPin, TrendingUp, BarChart3, Upload
+import {
+  FileText,
+  Download,
+  Calendar,
+  DollarSign,
+  Users,
+  Leaf,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Building,
+  Filter,
+  FileSpreadsheet,
+  File,
+  ChevronDown,
+  ChevronRight,
+  Shield,
+  MapPin,
+  TrendingUp,
+  BarChart3,
+  Upload,
 } from 'lucide-react';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import { SEOHead } from './SEOHead';
@@ -49,9 +65,11 @@ export function FunderReportingDashboard() {
   const [projectImportError, setProjectImportError] = useState<string | null>(null);
   const [reportPeriod, setReportPeriod] = useState({
     quarter: 'Q4',
-    year: '2025'
+    year: '2025',
   });
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['project_overview']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(['project_overview']),
+  );
   const proofBundle = useMemo(() => buildFunderProofBundle(sourceMode), [sourceMode]);
   const proofActions = useMemo(() => {
     const selectedProjectData = projects.filter((project) => selectedProjects.includes(project.id));
@@ -75,53 +93,61 @@ export function FunderReportingDashboard() {
       if (artifact.id === 'funder-quarterly-html') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
-            'text/html;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+              'text/html;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'funder-quarterly-json') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            JSON.stringify(buildFunderJsonPayload({
-              templateId: selectedTemplate,
-              period: reportPeriod,
-              projects: selectedProjectData,
-              sections: enabledSections,
-              narratives,
-              sourceMode,
-            }), null, 2),
-            'application/json;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              JSON.stringify(
+                buildFunderJsonPayload({
+                  templateId: selectedTemplate,
+                  period: reportPeriod,
+                  projects: selectedProjectData,
+                  sections: enabledSections,
+                  narratives,
+                  sourceMode,
+                }),
+                null,
+                2,
+              ),
+              'application/json;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'funder-quarterly-csv') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            buildCsvExportContent(selectedProjectData),
-            'text/csv;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              buildCsvExportContent(selectedProjectData),
+              'text/csv;charset=utf-8;',
+            ),
         };
       }
       if (artifact.id === 'funder-outreach-cover-note') {
         return {
           ...artifact,
-          onDownload: () => downloadTextArtifact(
-            artifact,
-            buildFunderOutreachCoverNote({
-              templateId: selectedTemplate,
-              period: reportPeriod,
-              projects: selectedProjectData,
-              sourceMode,
-            }),
-            'text/markdown;charset=utf-8;',
-          ),
+          onDownload: () =>
+            downloadTextArtifact(
+              artifact,
+              buildFunderOutreachCoverNote({
+                templateId: selectedTemplate,
+                period: reportPeriod,
+                projects: selectedProjectData,
+                sourceMode,
+              }),
+              'text/markdown;charset=utf-8;',
+            ),
         };
       }
       return {
@@ -132,7 +158,16 @@ export function FunderReportingDashboard() {
         },
       };
     });
-  }, [narratives, projects, proofBundle.artifacts, reportPeriod, reportSections, selectedProjects, selectedTemplate, sourceMode]);
+  }, [
+    narratives,
+    projects,
+    proofBundle.artifacts,
+    reportPeriod,
+    reportSections,
+    selectedProjects,
+    selectedTemplate,
+    sourceMode,
+  ]);
 
   useEffect(() => {
     loadProjects();
@@ -141,11 +176,11 @@ export function FunderReportingDashboard() {
   useEffect(() => {
     // Initialize sections based on template
     const template = REPORT_TEMPLATES[selectedTemplate];
-    const sections = template.sections.map(sectionId => ({
+    const sections = template.sections.map((sectionId) => ({
       id: sectionId,
       title: SECTION_LABELS[sectionId] || sectionId,
       enabled: true,
-      content: ''
+      content: '',
     }));
     setReportSections(sections);
   }, [selectedTemplate]);
@@ -159,11 +194,13 @@ export function FunderReportingDashboard() {
         const base = getEdgeBaseUrl();
         if (base) {
           const res = await fetch(`${base}/api-v2-indigenous-projects`, {
-            headers: getEdgeHeaders()
+            headers: getEdgeHeaders(),
           });
           if (res.ok) {
             const data = await res.json();
-            const projectList = (data.projects || []).map((project: Record<string, unknown>) => mapApiProjectToFunderProjectData(project));
+            const projectList = (data.projects || []).map((project: Record<string, unknown>) =>
+              mapApiProjectToFunderProjectData(project),
+            );
             if (projectList.length > 0) {
               setProjects(projectList);
               setSelectedProjects([projectList[0].id]);
@@ -173,7 +210,7 @@ export function FunderReportingDashboard() {
           }
         }
       }
-      
+
       // Fallback starter data if no projects loaded
       if (!projectsLoaded) {
         const demoProjects = buildStarterProjects();
@@ -207,7 +244,9 @@ export function FunderReportingDashboard() {
       setSourceMode('uploaded_projects');
       setProjectImportError(null);
     } catch (error) {
-      setProjectImportError(error instanceof Error ? error.message : 'Failed to parse imported project file.');
+      setProjectImportError(
+        error instanceof Error ? error.message : 'Failed to parse imported project file.',
+      );
     } finally {
       event.target.value = '';
     }
@@ -224,7 +263,7 @@ export function FunderReportingDashboard() {
   }
 
   function toggleSection(sectionId: string) {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const next = new Set(prev);
       if (next.has(sectionId)) {
         next.delete(sectionId);
@@ -236,9 +275,9 @@ export function FunderReportingDashboard() {
   }
 
   function toggleSectionEnabled(sectionId: string) {
-    setReportSections(prev => prev.map(s => 
-      s.id === sectionId ? { ...s, enabled: !s.enabled } : s
-    ));
+    setReportSections((prev) =>
+      prev.map((s) => (s.id === sectionId ? { ...s, enabled: !s.enabled } : s)),
+    );
   }
 
   function generateReportContent(project: ProjectData, sectionId: string): string {
@@ -252,7 +291,20 @@ export function FunderReportingDashboard() {
       ['Source Mode', buildFunderSourceLabel(sourceMode)],
       ['Generated', new Date().toLocaleDateString()],
       [],
-      ['Project Name', 'Community', 'Territory', 'Energy Type', 'Capacity (kW)', 'Status', 'FPIC Status', 'Budget', 'Actual Cost', 'Jobs Created', 'Emissions Avoided (tCO2)', 'Households Served'],
+      [
+        'Project Name',
+        'Community',
+        'Territory',
+        'Energy Type',
+        'Capacity (kW)',
+        'Status',
+        'FPIC Status',
+        'Budget',
+        'Actual Cost',
+        'Jobs Created',
+        'Emissions Avoided (tCO2)',
+        'Households Served',
+      ],
     ];
 
     projectData.forEach((project) => {
@@ -277,9 +329,9 @@ export function FunderReportingDashboard() {
 
   async function exportReport(format: ExportFormat) {
     setGenerating(true);
-    
-    const selectedProjectData = projects.filter(p => selectedProjects.includes(p.id));
-    const enabledSections = reportSections.filter(s => s.enabled);
+
+    const selectedProjectData = projects.filter((p) => selectedProjects.includes(p.id));
+    const enabledSections = reportSections.filter((s) => s.enabled);
     const descriptor = buildFunderReportDescriptor({
       templateId: selectedTemplate,
       period: reportPeriod,
@@ -288,38 +340,52 @@ export function FunderReportingDashboard() {
       narratives,
       sourceMode,
     });
-    
+
     try {
       if (format === 'json') {
-        const jsonArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'funder-quarterly-json');
+        const jsonArtifact = proofBundle.artifacts.find(
+          (artifact) => artifact.id === 'funder-quarterly-json',
+        );
         if (!jsonArtifact) return;
         downloadTextArtifact(
           jsonArtifact,
-          JSON.stringify(buildFunderJsonPayload({
-            templateId: selectedTemplate,
-            period: reportPeriod,
-            projects: selectedProjectData,
-            sections: enabledSections,
-            narratives,
-            sourceMode,
-          }), null, 2),
+          JSON.stringify(
+            buildFunderJsonPayload({
+              templateId: selectedTemplate,
+              period: reportPeriod,
+              projects: selectedProjectData,
+              sections: enabledSections,
+              narratives,
+              sourceMode,
+            }),
+            null,
+            2,
+          ),
           'application/json;charset=utf-8;',
         );
       }
-      
+
       if (format === 'excel') {
-        const csvArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'funder-quarterly-csv');
+        const csvArtifact = proofBundle.artifacts.find(
+          (artifact) => artifact.id === 'funder-quarterly-csv',
+        );
         if (!csvArtifact) return;
-        downloadTextArtifact(csvArtifact, buildCsvExportContent(selectedProjectData), 'text/csv;charset=utf-8;');
+        downloadTextArtifact(
+          csvArtifact,
+          buildCsvExportContent(selectedProjectData),
+          'text/csv;charset=utf-8;',
+        );
       }
-      
+
       if (format === 'pdf') {
         await downloadPdfArtifact(descriptor);
       }
-      
+
       if (format === 'word') {
         const rtfContent = generateRTFReport(selectedProjectData, enabledSections);
-        const rtfArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'funder-quarterly-rtf');
+        const rtfArtifact = proofBundle.artifacts.find(
+          (artifact) => artifact.id === 'funder-quarterly-rtf',
+        );
         if (!rtfArtifact) return;
         downloadTextArtifact(rtfArtifact, rtfContent, 'application/rtf');
       }
@@ -333,7 +399,7 @@ export function FunderReportingDashboard() {
 
   function generateHTMLReport(projectData: ProjectData[], sections: ReportSection[]): string {
     const template = REPORT_TEMPLATES[selectedTemplate];
-    
+
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -367,19 +433,27 @@ export function FunderReportingDashboard() {
     <p><strong>Projects Included:</strong> ${projectData.length}</p>
   </div>
 
-  ${projectData.map(project => `
+  ${projectData
+    .map(
+      (project) => `
     <h2>${project.name}</h2>
     <p><em>${project.community} - ${project.territory_name}</em></p>
     
-    ${sections.map(section => `
+    ${sections
+      .map(
+        (section) => `
       <div class="section">
         <h3>${section.title}</h3>
         <pre style="white-space: pre-wrap; font-family: inherit;">${
           narratives[`${project.id}-${section.id}`] || generateReportContent(project, section.id)
         }</pre>
       </div>
-    `).join('')}
-  `).join('<hr style="margin: 40px 0;">')}
+    `,
+      )
+      .join('')}
+  `,
+    )
+    .join('<hr style="margin: 40px 0;">')}
 
   <div class="footer">
     <p>This report was generated by the Canada Energy Intelligence Platform - Indigenous Energy Module.</p>
@@ -392,7 +466,7 @@ export function FunderReportingDashboard() {
 
   function generateRTFReport(projectData: ProjectData[], sections: ReportSection[]): string {
     const template = REPORT_TEMPLATES[selectedTemplate];
-    
+
     // Simple RTF format
     let rtf = `{\\rtf1\\ansi\\deff0
 {\\fonttbl{\\f0 Arial;}}
@@ -409,21 +483,22 @@ export function FunderReportingDashboard() {
 \\line
 `;
 
-    projectData.forEach(project => {
+    projectData.forEach((project) => {
       rtf += `
 {\\b\\fs28 ${project.name}}\\par
 {\\i ${project.community} - ${project.territory_name}}\\par
 \\par
 `;
-      
-      sections.forEach(section => {
-        const content = narratives[`${project.id}-${section.id}`] || generateReportContent(project, section.id);
+
+      sections.forEach((section) => {
+        const content =
+          narratives[`${project.id}-${section.id}`] || generateReportContent(project, section.id);
         rtf += `{\\b ${section.title}}\\par
 ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
 \\par
 `;
       });
-      
+
       rtf += '\\line\\par\n';
     });
 
@@ -445,7 +520,14 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
         title="Indigenous Funder Reporting Dashboard | OCAP-Aligned Workflow"
         description="Funder report templates for Wah-ila-toos, CERRC, and Northern REACHE programs with OCAP-aligned workflow language, explicit governance fields, and community review before external sharing."
         path="/funder-reporting"
-        keywords={['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP-aligned workflow', 'First Nations energy projects', 'funder reporting dashboard']}
+        keywords={[
+          'Indigenous energy reporting',
+          'Wah-ila-toos report',
+          'CERRC reporting',
+          'OCAP-aligned workflow',
+          'First Nations energy projects',
+          'funder reporting dashboard',
+        ]}
       />
       <header className="bg-gradient-to-r from-emerald-900 to-teal-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -456,10 +538,13 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-3xl font-bold">Funder Reporting Dashboard</h1>
-                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">EARLY ACCESS</span>
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                  EARLY ACCESS
+                </span>
               </div>
               <p className="text-emerald-100 text-sm mt-1">
-                Wah-ila-toos, CERRC, and Northern REACHE report templates — seeking community design partners
+                Wah-ila-toos, CERRC, and Northern REACHE report templates — seeking community design
+                partners
               </p>
             </div>
           </div>
@@ -473,9 +558,9 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
           <div>
             <h3 className="font-semibold text-emerald-300">OCAP-aligned reporting workflow</h3>
             <p className="text-sm text-slate-400">
-              Governance, FPIC, and approval fields stay explicit throughout this route. External sharing still
-              requires community review and owner-supplied confirmation, and this workflow should not be treated as
-              certified sovereignty infrastructure.
+              Governance, FPIC, and approval fields stay explicit throughout this route. External
+              sharing still requires community review and owner-supplied confirmation, and this
+              workflow should not be treated as certified sovereignty infrastructure.
             </p>
           </div>
         </div>
@@ -498,7 +583,8 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
           <div className="mb-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
             <div className="text-sm font-semibold text-white">Current source mode</div>
             <div className="mt-1 text-sm text-slate-400">
-              {buildFunderSourceLabel(sourceMode)} with explicit owner-supplied field review before export.
+              {buildFunderSourceLabel(sourceMode)} with explicit owner-supplied field review before
+              export.
             </div>
           </div>
         )}
@@ -515,22 +601,48 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
 
         {/* Aggregate Impact Summary */}
         {(() => {
-          const selected = projects.filter(p => selectedProjects.includes(p.id));
+          const selected = projects.filter((p) => selectedProjects.includes(p.id));
           const totalCapacity = selected.reduce((s, p) => s + (p.capacity_kw || 0), 0);
           const totalJobs = selected.reduce((s, p) => s + (p.jobs_created || 0), 0);
-          const totalEmissions = selected.reduce((s, p) => s + (p.emissions_avoided_tonnes_co2 || 0), 0);
+          const totalEmissions = selected.reduce(
+            (s, p) => s + (p.emissions_avoided_tonnes_co2 || 0),
+            0,
+          );
           const totalBudget = selected.reduce((s, p) => s + (p.total_budget || 0), 0);
           const totalHouseholds = selected.reduce((s, p) => s + (p.households_served || 0), 0);
           return (
             <div className="mb-8 grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
-                { label: 'Projects Selected', value: selected.length, icon: <Building className="h-5 w-5" /> },
-                { label: 'Total Capacity', value: `${totalCapacity.toLocaleString()} kW`, icon: <TrendingUp className="h-5 w-5" /> },
-                { label: 'Jobs Created', value: totalJobs.toLocaleString(), icon: <Users className="h-5 w-5" /> },
-                { label: 'Emissions Avoided', value: `${totalEmissions.toLocaleString()} tCO₂`, icon: <Leaf className="h-5 w-5" /> },
-                { label: 'Total Investment', value: `$${(totalBudget / 1000000).toFixed(1)}M`, icon: <DollarSign className="h-5 w-5" /> },
+                {
+                  label: 'Projects Selected',
+                  value: selected.length,
+                  icon: <Building className="h-5 w-5" />,
+                },
+                {
+                  label: 'Total Capacity',
+                  value: `${totalCapacity.toLocaleString()} kW`,
+                  icon: <TrendingUp className="h-5 w-5" />,
+                },
+                {
+                  label: 'Jobs Created',
+                  value: totalJobs.toLocaleString(),
+                  icon: <Users className="h-5 w-5" />,
+                },
+                {
+                  label: 'Emissions Avoided',
+                  value: `${totalEmissions.toLocaleString()} tCO₂`,
+                  icon: <Leaf className="h-5 w-5" />,
+                },
+                {
+                  label: 'Total Investment',
+                  value: `$${(totalBudget / 1000000).toFixed(1)}M`,
+                  icon: <DollarSign className="h-5 w-5" />,
+                },
               ].map((m, i) => (
-                <div key={i} className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-center">
+                <div
+                  key={i}
+                  className="bg-slate-800 border border-slate-700 rounded-xl p-4 text-center"
+                >
                   <div className="flex justify-center text-emerald-400 mb-2">{m.icon}</div>
                   <div className="text-xl font-bold text-white">{m.value}</div>
                   <div className="text-xs text-slate-400 mt-1">{m.label}</div>
@@ -550,7 +662,7 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                 Report Template
               </h2>
               <div className="space-y-3">
-                {(Object.keys(REPORT_TEMPLATES) as ReportTemplate[]).map(templateId => (
+                {(Object.keys(REPORT_TEMPLATES) as ReportTemplate[]).map((templateId) => (
                   <label
                     key={templateId}
                     className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
@@ -600,7 +712,9 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                   <label className="block text-sm text-slate-400 mb-1">Quarter</label>
                   <select
                     value={reportPeriod.quarter}
-                    onChange={e => setReportPeriod(prev => ({ ...prev, quarter: e.target.value }))}
+                    onChange={(e) =>
+                      setReportPeriod((prev) => ({ ...prev, quarter: e.target.value }))
+                    }
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                   >
                     <option value="Q1">Q1 (Jan-Mar)</option>
@@ -613,7 +727,7 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                   <label className="block text-sm text-slate-400 mb-1">Year</label>
                   <select
                     value={reportPeriod.year}
-                    onChange={e => setReportPeriod(prev => ({ ...prev, year: e.target.value }))}
+                    onChange={(e) => setReportPeriod((prev) => ({ ...prev, year: e.target.value }))}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                   >
                     <option value="2024">2024</option>
@@ -630,7 +744,8 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                 Project Import
               </h2>
               <p className="text-sm text-slate-400 mb-4">
-                Upload a CSV or JSON project set to replace the starter workflow without adding grant CRM behavior.
+                Upload a CSV or JSON project set to replace the starter workflow without adding
+                grant CRM behavior.
               </p>
               <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5 text-center">
                 <Upload className="h-8 w-8 text-emerald-300" />
@@ -640,7 +755,12 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                     Supported: `.csv` or `.json` with the existing project shape.
                   </div>
                 </div>
-                <input type="file" accept=".csv,.json,application/json,text/csv" className="hidden" onChange={handleProjectImport} />
+                <input
+                  type="file"
+                  accept=".csv,.json,application/json,text/csv"
+                  className="sr-only"
+                  onChange={handleProjectImport}
+                />
                 <span className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500">
                   Select file
                 </span>
@@ -681,7 +801,7 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                 Select Projects
               </h2>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {projects.map(project => (
+                {projects.map((project) => (
                   <label
                     key={project.id}
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
@@ -693,11 +813,11 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                     <input
                       type="checkbox"
                       checked={selectedProjects.includes(project.id)}
-                      onChange={e => {
+                      onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedProjects(prev => [...prev, project.id]);
+                          setSelectedProjects((prev) => [...prev, project.id]);
                         } else {
-                          setSelectedProjects(prev => prev.filter(id => id !== project.id));
+                          setSelectedProjects((prev) => prev.filter((id) => id !== project.id));
                         }
                       }}
                       className="rounded"
@@ -706,11 +826,15 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                       <div className="font-medium truncate">{project.name}</div>
                       <div className="text-xs text-slate-400">{project.community}</div>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      project.fpic_status === 'obtained' ? 'bg-emerald-900 text-emerald-300' :
-                      project.fpic_status === 'in_progress' ? 'bg-yellow-900 text-yellow-300' :
-                      'bg-slate-600 text-slate-300'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        project.fpic_status === 'obtained'
+                          ? 'bg-emerald-900 text-emerald-300'
+                          : project.fpic_status === 'in_progress'
+                            ? 'bg-yellow-900 text-yellow-300'
+                            : 'bg-slate-600 text-slate-300'
+                      }`}
+                    >
                       {project.fpic_status}
                     </span>
                   </label>
@@ -787,22 +911,26 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                       {REPORT_TEMPLATES[selectedTemplate].name}
                     </h3>
                     <p className="text-sm text-slate-400 mt-1">
-                      {reportPeriod.quarter} {reportPeriod.year} • {selectedProjects.length} project(s)
+                      {reportPeriod.quarter} {reportPeriod.year} • {selectedProjects.length}{' '}
+                      project(s)
                     </p>
                   </div>
 
                   {/* Sections */}
                   {projects
-                    .filter(p => selectedProjects.includes(p.id))
-                    .map(project => (
-                      <div key={project.id} className="border border-slate-600 rounded-lg overflow-hidden">
+                    .filter((p) => selectedProjects.includes(p.id))
+                    .map((project) => (
+                      <div
+                        key={project.id}
+                        className="border border-slate-600 rounded-lg overflow-hidden"
+                      >
                         <div className="bg-slate-700 px-4 py-3">
                           <h4 className="font-semibold">{project.name}</h4>
                           <p className="text-sm text-slate-400">{project.community}</p>
                         </div>
-                        
+
                         <div className="divide-y divide-slate-700">
-                          {reportSections.map(section => (
+                          {reportSections.map((section) => (
                             <div key={section.id} className="bg-slate-800">
                               <button
                                 onClick={() => toggleSection(`${project.id}-${section.id}`)}
@@ -818,7 +946,9 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                                     }}
                                     className="rounded"
                                   />
-                                  <span className={section.enabled ? '' : 'text-slate-500 line-through'}>
+                                  <span
+                                    className={section.enabled ? '' : 'text-slate-500 line-through'}
+                                  >
                                     {section.title}
                                   </span>
                                 </div>
@@ -828,31 +958,34 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                                   <ChevronRight className="h-4 w-4" />
                                 )}
                               </button>
-                              
-                              {expandedSections.has(`${project.id}-${section.id}`) && section.enabled && (
-                                <div className="px-4 pb-4">
-                                  <div className="bg-slate-900 rounded-lg p-4">
-                                    <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans">
-                                      {generateReportContent(project, section.id)}
-                                    </pre>
+
+                              {expandedSections.has(`${project.id}-${section.id}`) &&
+                                section.enabled && (
+                                  <div className="px-4 pb-4">
+                                    <div className="bg-slate-900 rounded-lg p-4">
+                                      <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans">
+                                        {generateReportContent(project, section.id)}
+                                      </pre>
+                                    </div>
+                                    <div className="mt-3">
+                                      <label className="block text-xs text-slate-400 mb-1">
+                                        Add narrative (optional):
+                                      </label>
+                                      <textarea
+                                        value={narratives[`${project.id}-${section.id}`] || ''}
+                                        onChange={(e) =>
+                                          setNarratives((prev) => ({
+                                            ...prev,
+                                            [`${project.id}-${section.id}`]: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="Add additional context or narrative for this section..."
+                                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 resize-none"
+                                        rows={3}
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="mt-3">
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                      Add narrative (optional):
-                                    </label>
-                                    <textarea
-                                      value={narratives[`${project.id}-${section.id}`] || ''}
-                                      onChange={e => setNarratives(prev => ({
-                                        ...prev,
-                                        [`${project.id}-${section.id}`]: e.target.value
-                                      }))}
-                                      placeholder="Add additional context or narrative for this section..."
-                                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 resize-none"
-                                      rows={3}
-                                    />
-                                  </div>
-                                </div>
-                              )}
+                                )}
                             </div>
                           ))}
                         </div>
@@ -875,24 +1008,32 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
 
                 {(() => {
                   const all = projects;
-                  const selected = projects.filter(p => selectedProjects.includes(p.id));
-                  const avgCapacity = all.reduce((s, p) => s + (p.capacity_kw || 0), 0) / all.length;
+                  const selected = projects.filter((p) => selectedProjects.includes(p.id));
+                  const avgCapacity =
+                    all.reduce((s, p) => s + (p.capacity_kw || 0), 0) / all.length;
                   const avgJobs = all.reduce((s, p) => s + (p.jobs_created || 0), 0) / all.length;
-                  const avgEmissions = all.reduce((s, p) => s + (p.emissions_avoided_tonnes_co2 || 0), 0) / all.length;
+                  const avgEmissions =
+                    all.reduce((s, p) => s + (p.emissions_avoided_tonnes_co2 || 0), 0) / all.length;
                   const avgBudget = all.reduce((s, p) => s + (p.total_budget || 0), 0) / all.length;
 
                   const benchmarks = [
                     { label: 'Capacity (kW)', avg: avgCapacity, key: 'capacity_kw' as const },
                     { label: 'Jobs Created', avg: avgJobs, key: 'jobs_created' as const },
-                    { label: 'Emissions Avoided (tCO₂)', avg: avgEmissions, key: 'emissions_avoided_tonnes_co2' as const },
+                    {
+                      label: 'Emissions Avoided (tCO₂)',
+                      avg: avgEmissions,
+                      key: 'emissions_avoided_tonnes_co2' as const,
+                    },
                     { label: 'Total Budget ($)', avg: avgBudget, key: 'total_budget' as const },
                   ];
 
                   return (
                     <div className="space-y-4">
                       {benchmarks.map((bm, idx) => {
-                        const selAvg = selected.reduce((s, p) => s + ((p as any)[bm.key] || 0), 0) / selected.length;
-                        const ratio = bm.avg > 0 ? (selAvg / bm.avg) : 1;
+                        const selAvg =
+                          selected.reduce((s, p) => s + ((p as any)[bm.key] || 0), 0) /
+                          selected.length;
+                        const ratio = bm.avg > 0 ? selAvg / bm.avg : 1;
                         const pct = Math.min(ratio * 100, 200);
                         const isAbove = ratio >= 1;
                         return (
@@ -900,15 +1041,23 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                             <div className="flex justify-between text-sm mb-1">
                               <span className="text-slate-300">{bm.label}</span>
                               <span className={isAbove ? 'text-emerald-400' : 'text-amber-400'}>
-                                {selAvg >= 1000 ? `${(selAvg / 1000).toFixed(1)}K` : selAvg.toFixed(0)}
-                                {' '}
+                                {selAvg >= 1000
+                                  ? `${(selAvg / 1000).toFixed(1)}K`
+                                  : selAvg.toFixed(0)}{' '}
                                 <span className="text-slate-500">
-                                  (avg: {bm.avg >= 1000 ? `${(bm.avg / 1000).toFixed(1)}K` : bm.avg.toFixed(0)})
+                                  (avg:{' '}
+                                  {bm.avg >= 1000
+                                    ? `${(bm.avg / 1000).toFixed(1)}K`
+                                    : bm.avg.toFixed(0)}
+                                  )
                                 </span>
                               </span>
                             </div>
                             <div className="h-3 bg-slate-700 rounded-full overflow-hidden relative">
-                              <div className="absolute top-0 left-1/2 w-px h-full bg-slate-500 z-10" title="Portfolio Average" />
+                              <div
+                                className="absolute top-0 left-1/2 w-px h-full bg-slate-500 z-10"
+                                title="Portfolio Average"
+                              />
                               <div
                                 className={`h-full rounded-full transition-all ${isAbove ? 'bg-emerald-500' : 'bg-amber-500'}`}
                                 style={{ width: `${Math.min(pct / 2, 100)}%` }}
@@ -918,7 +1067,8 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                         );
                       })}
                       <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
-                        <span className="inline-block w-px h-3 bg-slate-500" /> Center line = portfolio average
+                        <span className="inline-block w-px h-3 bg-slate-500" /> Center line =
+                        portfolio average
                       </p>
                     </div>
                   );

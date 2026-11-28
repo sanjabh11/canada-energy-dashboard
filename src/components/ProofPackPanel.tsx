@@ -36,12 +36,7 @@ function iconForFormat(format: ProofArtifactDefinition['format']) {
   }
 }
 
-export function ProofPackPanel({
-  title,
-  summary,
-  artifacts,
-  className = '',
-}: ProofPackPanelProps) {
+export function ProofPackPanel({ title, summary, artifacts, className = '' }: ProofPackPanelProps) {
   return (
     <section className={`rounded-2xl border border-slate-700 bg-slate-800/70 p-5 ${className}`}>
       <div className="flex items-start justify-between gap-4">
@@ -50,8 +45,8 @@ export function ProofPackPanel({
             <ShieldCheck className="h-4 w-4" />
             Proof Pack
           </div>
-          <h2 className="mt-2 text-lg font-semibold text-white">{title}</h2>
-          <p className="mt-1 text-sm text-slate-400">{summary}</p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-50">{title}</h2>
+          <p className="mt-1 text-sm text-slate-300">{summary}</p>
         </div>
       </div>
 
@@ -68,13 +63,13 @@ export function ProofPackPanel({
                 <div>
                   <div className="flex items-center gap-2">
                     <Icon className="h-4 w-4 text-cyan-300" />
-                    <div className="font-medium text-white">{artifact.label}</div>
-                    <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                    <div className="font-medium text-slate-50">{artifact.label}</div>
+                    <span className="rounded-full bg-slate-800/80 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
                       {artifact.format}
                     </span>
                   </div>
                   {artifact.description ? (
-                    <p className="mt-2 text-sm text-slate-400">{artifact.description}</p>
+                    <p className="mt-2 text-sm text-slate-300">{artifact.description}</p>
                   ) : null}
                 </div>
                 <button
@@ -89,12 +84,18 @@ export function ProofPackPanel({
                 </button>
               </div>
 
-              <div className="mt-3 space-y-2 text-xs text-slate-400">
+              <div className="mt-3 space-y-2 text-xs text-slate-300">
                 <div>Audience: {artifact.audience}</div>
                 <div>Source: {artifact.sourceSummary}</div>
                 <div>Manifest: {artifact.sourceManifestId}</div>
                 <div>
-                  Status: {artifact.claimLabel} • {artifact.verificationStatus.replace(/_/g, ' ')} • {artifact.freshnessState} • {artifact.commercialProofState === 'constructed_commercial_scenario' ? 'constructed scenario' : artifact.isFallback ? 'fallback/sample-backed' : 'non-fallback'}
+                  Status: {artifact.claimLabel} • {artifact.verificationStatus.replace(/_/g, ' ')} •{' '}
+                  {artifact.freshnessState} •{' '}
+                  {artifact.commercialProofState === 'constructed_commercial_scenario'
+                    ? 'constructed scenario'
+                    : artifact.isFallback
+                      ? 'fallback/sample-backed'
+                      : 'non-fallback'}
                 </div>
                 <div>Do not claim: {artifact.doNotClaim.join('; ')}</div>
                 <div>{artifact.boundedClaimsDisclaimer}</div>

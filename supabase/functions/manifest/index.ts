@@ -253,9 +253,21 @@ async function getDataSourceHealth(): Promise<Record<string, DataSourceHealth>> 
 
       if (healthResponse.ok) {
         const health = await healthResponse.json();
+        // Echo only scalar upstream fields into the public response — nested
+        // objects could carry internal details we did not author.
+        const upstreamScalars: Record<string, unknown> = {};
+        if (health && typeof health === 'object' && !Array.isArray(health)) {
+          for (const [key, value] of Object.entries(health as Record<string, unknown>).slice(0, 16)) {
+            if (value === null || typeof value === 'boolean' || typeof value === 'number') {
+              upstreamScalars[key] = value;
+            } else if (typeof value === 'string') {
+              upstreamScalars[key] = value.slice(0, 200);
+            }
+          }
+        }
         healthStatus[sourceId] = {
           status: 'healthy',
-          ...health,
+          ...upstreamScalars,
           lastCheck: new Date().toISOString()
         };
       } else {
@@ -267,9 +279,10 @@ async function getDataSourceHealth(): Promise<Record<string, DataSourceHealth>> 
         };
       }
     } catch (error) {
+      console.error(`Manifest health check failed for ${sourceId}:`, error);
       healthStatus[sourceId] = {
         status: 'error',
-        error: error instanceof Error ? error.message : String(error),
+        error: 'health_check_failed',
         lastCheck: new Date().toISOString()
       };
     }
@@ -393,7 +406,6 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       error: 'Failed to generate manifest',
-      message: error.message,
       timestamp: new Date().toISOString()
     }), {
       status: 500,

@@ -52,26 +52,32 @@ export function ConstructedScenarioPanel({
             <FlaskConical className="h-4 w-4" />
             Constructed commercial scenario
           </div>
-          <h3 className="mt-2 text-lg font-semibold text-white">{scenario.title}</h3>
+          <h3 className="mt-2 text-lg font-semibold text-slate-50">{scenario.title}</h3>
           <p className="mt-2 text-sm text-slate-300">{scenario.summary}</p>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Buyer and jurisdiction</div>
-          <div className="mt-2 text-sm text-white">{scenario.buyerType}</div>
-          <div className="mt-1 text-xs text-slate-400">{scenario.jurisdiction}</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-300">
+            Buyer and jurisdiction
+          </div>
+          <div className="mt-2 text-sm text-slate-50">{scenario.buyerType}</div>
+          <div className="mt-1 text-xs text-slate-300">{scenario.jurisdiction}</div>
         </div>
         <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Expected export</div>
-          <div className="mt-2 text-sm text-white">{scenario.expectedArtifact}</div>
-          <div className="mt-1 text-xs text-slate-400">Use this to show the buyer what the pilot output looks like.</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-300">Expected export</div>
+          <div className="mt-2 text-sm text-slate-50">{scenario.expectedArtifact}</div>
+          <div className="mt-1 text-xs text-slate-300">
+            Use this to show the buyer what the pilot output looks like.
+          </div>
         </div>
       </div>
 
       <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Why this is realistic</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-slate-300">
+          Why this is realistic
+        </div>
         <div className="mt-2 text-sm text-slate-200">{scenario.realisticBasis}</div>
       </div>
 
@@ -97,7 +103,7 @@ export function ConstructedScenarioPanel({
           <button
             key={file.id}
             onClick={() => downloadScenarioFile(file)}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:border-cyan-500/50"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:border-cyan-500/50"
           >
             <Download className="h-4 w-4" />
             {file.label}

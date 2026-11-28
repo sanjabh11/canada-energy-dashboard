@@ -12,8 +12,15 @@ node_modules
 /docs.zip
 /supabase.zip
 /playwright-report/
+/playwright-report-*/
 /playwright-results.json
+/playwright-results-*.json
 /test-results/
+/ci-evidence-manifest.json
+/ci-evidence-manifest.json.sha256
+/coverage/*
+!/coverage/lcov.info
+/.windsurf/
 
 # Environment files (never commit secrets)
 .env

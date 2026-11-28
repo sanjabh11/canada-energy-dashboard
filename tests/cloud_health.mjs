@@ -25,7 +25,7 @@ try {
   ENV_FILE = parseDotEnv(buf);
 } catch {}
 
-const BASE = process.env.VITE_SUPABASE_EDGE_BASE || ENV_FILE.VITE_SUPABASE_EDGE_BASE || 'https://qnymbecjgeaoxsfphrti.functions.supabase.co';
+const BASE = process.env.VITE_SUPABASE_EDGE_BASE || ENV_FILE.VITE_SUPABASE_EDGE_BASE || 'https://qktgjpbifknqjpvrgkrj.functions.supabase.co';
 const ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || ENV_FILE.VITE_SUPABASE_ANON_KEY || '';
 
 const headers = {};

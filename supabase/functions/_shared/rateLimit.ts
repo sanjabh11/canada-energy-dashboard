@@ -1,9 +1,15 @@
 declare const Deno: { env: { get(name: string): string | undefined } };
 /**
  * Shared Rate Limiting and API Usage Logging Utility
- * 
+ *
  * Provides in-memory rate limiting with configurable limits per endpoint.
  * Also logs API usage to Supabase for monitoring.
+ *
+ * SECURITY BOUNDARY NOTICE: this store is per runtime instance and resets on
+ * cold start — it is a best-effort anti-abuse signal, NOT shared protection.
+ * Treating it as a security boundary requires either observed gateway/shared
+ * enforcement in staging or explicit owner acceptance of the per-instance
+ * limitation before exposure.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -114,22 +120,10 @@ function cleanupExpiredEntries(windowMs: number): void {
   }
 }
 
-/**
- * Get client identifier from request (IP address or API key)
- */
-export function getClientId(req: Request): string {
-  // Try API key first (more reliable for authenticated requests)
-  const apiKey = req.headers.get('apikey') || req.headers.get('authorization')?.replace('Bearer ', '');
-  if (apiKey && apiKey.length > 10) {
-    return `key:${apiKey.substring(0, 20)}`;
-  }
-  
-  // Fall back to IP address
-  const forwardedFor = req.headers.get('x-forwarded-for');
-  const realIp = req.headers.get('x-real-ip');
-  const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
-  return `ip:${ip}`;
-}
+// Client identification lives in a pure module so it is unit-testable
+// outside Deno; re-export so existing importers keep working unchanged.
+import { getClientId, getRateLimitIdentity } from "./clientId.ts";
+export { getClientId, getRateLimitIdentity, parseClientId } from "./clientId.ts";
 
 /**
  * Create rate limit response headers
@@ -220,7 +214,11 @@ export function applyRateLimit(req: Request, endpoint: string): RateLimitGuardRe
     return { response: null, headers: {} };
   }
 
-  const clientId = getClientId(req);
+  // Bucket on the rotation-proof identity: credentials are caller-controlled
+  // (rotating bearer/apikey values must not reset the bucket), so the IP
+  // dimension governs whenever it is observable. getClientId keeps the
+  // credential fingerprint for attribution logging only.
+  const clientId = getRateLimitIdentity(req);
   const result = checkRateLimit(clientId, endpoint);
   const rlHeaders = rateLimitHeaders(result);
 

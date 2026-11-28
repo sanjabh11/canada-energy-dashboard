@@ -521,7 +521,7 @@ describe('status page release posture', () => {
     expect(advisorPosture).toBeTruthy();
     expect(advisorPosture?.status).toBe('needs_remediation');
     expect(advisorPosture?.evidence).toMatch(/permission denied/i);
-    expect(advisorPosture?.evidence).toMatch(/qnymbecjgeaoxsfphrti/);
+    expect(advisorPosture?.evidence).toMatch(/qktgjpbifknqjpvrgkrj/);
     expect(advisorPosture?.evidence).toMatch(/CLI lint works/i);
     expect(advisorPosture?.nextAction).toMatch(/Fix Supabase connector/i);
   });
@@ -1240,7 +1240,7 @@ describe('status page release posture', () => {
     const advisors = SUPABASE_ADVISOR_STATUS_CARD.checks.find((check) => check.id === 'security_performance_advisors');
 
     expect(SUPABASE_ADVISOR_STATUS_CARD.status).toBe('needs_remediation');
-    expect(SUPABASE_ADVISOR_STATUS_CARD.projectRef).toBe('qnymbecjgeaoxsfphrti');
+    expect(SUPABASE_ADVISOR_STATUS_CARD.projectRef).toBe('qktgjpbifknqjpvrgkrj');
     expect(SUPABASE_ADVISOR_STATUS_CARD.decisionBoundary).toMatch(/separates Supabase CLI database lint/i);
     expect(SUPABASE_ADVISOR_STATUS_CARD.decisionBoundary).toMatch(/does not claim advisor clearance/i);
     expect(SUPABASE_ADVISOR_STATUS_CARD.docsReference.url).toContain('database-advisors');

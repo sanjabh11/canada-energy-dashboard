@@ -16,6 +16,10 @@ const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evi
 const registerHeader = 'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes';
 const PILOT_EVIDENCE_CLI_TIMEOUT_MS = 60000;
 const tempRoots: string[] = [];
+// Keep CLI stdout/stderr assertions independent of deprecation noise emitted
+// by the host Node runtime (for example DEP0205 on Node 26). The commands'
+// exit status and their own stderr remain observable to each test.
+const childEnv = { ...process.env, NODE_NO_WARNINGS: '1' };
 
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-pilot-evidence-'));
@@ -27,6 +31,7 @@ function runNodeScript(scriptPath: string, args: string[]) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(process.execPath, [scriptPath, ...args], {
       cwd: process.cwd(),
+      env: childEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
@@ -52,6 +57,7 @@ function runTsxScript(scriptPath: string, args: string[]) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(tsxBinPath, [scriptPath, ...args], {
       cwd: process.cwd(),
+      env: childEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 

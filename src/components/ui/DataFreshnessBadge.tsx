@@ -1,9 +1,9 @@
 /**
  * DataFreshnessBadge Component
- * 
+ *
  * Displays data freshness/last updated timestamp with visual indicators.
  * Addresses Gap #6: Performance UX (HIGH Priority)
- * 
+ *
  * Usage:
  * <DataFreshnessBadge timestamp={lastUpdated} />
  * <DataFreshnessBadge timestamp={lastUpdated} staleThresholdMinutes={30} />
@@ -86,7 +86,7 @@ export function DataFreshnessBadge({
   // Format relative time
   const formatRelativeTime = (): string => {
     if (!lastUpdate || isNaN(lastUpdate.getTime())) return 'Unknown';
-    
+
     const diffMs = now.getTime() - lastUpdate.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMins / 60);
@@ -101,12 +101,12 @@ export function DataFreshnessBadge({
   // Format absolute time
   const formatAbsoluteTime = (): string => {
     if (!lastUpdate || isNaN(lastUpdate.getTime())) return 'Unknown';
-    
+
     return lastUpdate.toLocaleString('en-CA', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -114,41 +114,44 @@ export function DataFreshnessBadge({
   const displayTime = showRelative ? formatRelativeTime() : formatAbsoluteTime();
 
   // Status configuration
-  const statusConfig: Record<FreshnessStatus, {
-    icon: typeof CheckCircle;
-    color: string;
-    bgColor: string;
-    borderColor: string;
-    label: string;
-  }> = {
+  const statusConfig: Record<
+    FreshnessStatus,
+    {
+      icon: typeof CheckCircle;
+      color: string;
+      bgColor: string;
+      borderColor: string;
+      label: string;
+    }
+  > = {
     live: {
       icon: CheckCircle,
       color: 'text-emerald-400',
-      bgColor: 'bg-emerald-500/10',
+      bgColor: 'bg-emerald-950/90',
       borderColor: 'border-emerald-500/30',
-      label: 'Live'
+      label: 'Live',
     },
     stale: {
       icon: AlertTriangle,
       color: 'text-amber-400',
-      bgColor: 'bg-amber-500/10',
+      bgColor: 'bg-amber-950/90',
       borderColor: 'border-amber-500/30',
-      label: 'Stale'
+      label: 'Stale',
     },
     demo: {
       icon: Database,
       color: 'text-sky-400',
-      bgColor: 'bg-sky-500/10',
+      bgColor: 'bg-sky-950/90',
       borderColor: 'border-sky-500/30',
-      label: 'Demo Data'
+      label: 'Demo Data',
     },
     unknown: {
       icon: Clock,
-      color: 'text-slate-400',
-      bgColor: 'bg-slate-500/10',
+      color: 'text-slate-300',
+      bgColor: 'bg-slate-800/90',
       borderColor: 'border-slate-500/30',
-      label: 'Unknown'
-    }
+      label: 'Unknown',
+    },
   };
 
   const config = statusConfig[currentStatus];
@@ -182,13 +185,13 @@ export function DataFreshnessBadge({
       <Icon className={`h-3.5 w-3.5 ${config.color}`} />
       <div className="flex items-center gap-2 text-xs">
         <span className={`font-medium ${config.color}`}>{config.label}</span>
-        <span className="text-slate-400">•</span>
+        <span className="text-slate-300">•</span>
         <span className="text-slate-300" title={formatAbsoluteTime()}>
           {currentStatus === 'demo' ? 'Fallback or seeded dataset' : `Updated ${displayTime}`}
         </span>
         {source ? (
           <>
-            <span className="text-slate-400">•</span>
+            <span className="text-slate-300">•</span>
             <span className="text-slate-300">{source}</span>
           </>
         ) : null}
@@ -201,7 +204,7 @@ export function DataFreshnessBadge({
           title="Refresh data"
         >
           <RefreshCw
-            className={`h-3.5 w-3.5 text-slate-400 hover:text-blue-400 ${
+            className={`h-3.5 w-3.5 text-slate-300 hover:text-blue-300 ${
               isRefreshing ? 'animate-spin' : ''
             }`}
           />
@@ -218,7 +221,7 @@ export function DataFreshnessIndicator({
   timestamp,
   status: explicitStatus,
   staleThresholdMinutes = 60,
-  className = ''
+  className = '',
 }: Pick<DataFreshnessBadgeProps, 'timestamp' | 'status' | 'staleThresholdMinutes' | 'className'>) {
   const lastUpdate = timestamp
     ? typeof timestamp === 'string'
@@ -229,9 +232,9 @@ export function DataFreshnessIndicator({
   const getStatus = (): FreshnessStatus => {
     if (explicitStatus) return explicitStatus;
     if (!lastUpdate || isNaN(lastUpdate.getTime())) return 'unknown';
-    
+
     const minutesAgo = (Date.now() - lastUpdate.getTime()) / (1000 * 60);
-    
+
     if (minutesAgo < staleThresholdMinutes) return 'live';
     return 'stale';
   };
@@ -241,7 +244,7 @@ export function DataFreshnessIndicator({
     live: 'bg-emerald-400',
     stale: 'bg-amber-400',
     demo: 'bg-sky-400',
-    unknown: 'bg-slate-400'
+    unknown: 'bg-slate-400',
   };
 
   return (
@@ -249,11 +252,7 @@ export function DataFreshnessIndicator({
       className={`h-2 w-2 rounded-full ${colorMap[status]} ${
         status === 'live' ? 'animate-pulse' : ''
       } ${className}`}
-      title={
-        lastUpdate
-          ? `Updated: ${lastUpdate.toLocaleString('en-CA')}`
-          : 'Update time unknown'
-      }
+      title={lastUpdate ? `Updated: ${lastUpdate.toLocaleString('en-CA')}` : 'Update time unknown'}
     />
   );
 }

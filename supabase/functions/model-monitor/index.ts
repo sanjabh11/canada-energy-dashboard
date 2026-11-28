@@ -1,13 +1,14 @@
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 import { buildMeta, detectDrift } from "../_shared/mlForecasting.ts";
 import { finishOpsRun, logJobExecution, startOpsRun } from "../_shared/jobLogging.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN") ?? "";
 const GITHUB_REPOSITORY = Deno.env.get("GITHUB_REPOSITORY") ?? "";
 const RETRAIN_WORKFLOW_FILE = Deno.env.get("RETRAIN_WORKFLOW_FILE") ?? "cron-model-retrain.yml";
@@ -18,10 +19,7 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 const jsonHeaders = { "Content-Type": "application/json" };
 
 function isAuthorized(req: Request): boolean {
-  const authHeader = req.headers.get("Authorization");
-  return authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-    || authHeader === `Bearer ${CRON_SECRET}`
-    || req.headers.get("x-supabase-cron") === "true";
+  return isCronAuthorized(req);
 }
 
 async function dispatchRetrainWorkflow(payload: Record<string, unknown>) {
@@ -66,7 +64,15 @@ serve(async (req) => {
   }
 
   const startedAt = Date.now();
-  const body = await req.json().catch(() => ({}));
+  const bodyRead = await readBoundedJson(req);
+  if (!bodyRead.ok) {
+    const tooLarge = bodyRead.reason === "too_large";
+    return new Response(JSON.stringify({ error: tooLarge ? "Payload too large" : "Malformed JSON body" }), { status: tooLarge ? 413 : 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
+  const body = asJsonObject(bodyRead.json);
+  if (!body) {
+    return new Response(JSON.stringify({ error: "Body must be a JSON object" }), { status: 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
   const result = detectDrift(body);
   const modelKey = String(body.model_key ?? body.modelKey ?? "wasserstein-drift-v1");
   const domain = String(body.domain ?? "forecast");
@@ -123,11 +129,14 @@ serve(async (req) => {
         province: province ?? "",
         status: result.status,
         recommendation: result.recommendation,
-      }).catch((error) => ({
-        dispatched: false,
-        skipped: false,
-        error: error instanceof Error ? error.message : String(error),
-      })) as any;
+      }).catch((error) => {
+        console.error("model-monitor retrain dispatch failed:", error instanceof Error ? error.message : String(error));
+        return {
+          dispatched: false,
+          skipped: false,
+          error: "retrain_dispatch_failed",
+        };
+      }) as any;
     }
 
     if (opsRunId) {

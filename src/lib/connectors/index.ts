@@ -111,6 +111,133 @@ export interface FetchResult {
   warnings: string[];
 }
 
+export interface ConnectorRunAssessment {
+  fetched: number;
+  valid: number;
+  invalid: number;
+  warnings: string[];
+  upserted: number;
+  skipped: number;
+  failed: number;
+}
+
+export interface ConnectorRunClassification {
+  status: Extract<ConnectorStatus, 'success' | 'failed' | 'degraded'>;
+  errorMessage: string | null;
+}
+
+/**
+ * Classify a completed connector run without allowing an empty or invalid
+ * source response to create a false successful-freshness signal.
+ */
+export function classifyConnectorRun(input: ConnectorRunAssessment): ConnectorRunClassification {
+  const warningMessages = input.warnings.filter(Boolean).slice(0, 5);
+
+  if (input.fetched === 0) {
+    return {
+      status: 'failed',
+      errorMessage: 'No records returned by the source; existing data must remain stale.',
+    };
+  }
+
+  if (input.valid === 0) {
+    return {
+      status: 'failed',
+      errorMessage: 'No valid records remained after validation.',
+    };
+  }
+
+  if (input.failed > 0 && input.upserted === 0) {
+    return {
+      status: 'failed',
+      errorMessage: 'No validated records were persisted; existing data must remain stale.',
+    };
+  }
+
+  if (input.invalid > 0 || warningMessages.length > 0 || input.failed > 0) {
+    const details =
+      warningMessages.length > 0
+        ? warningMessages.join(' | ')
+        : `Run completed with ${input.invalid} invalid and ${input.failed} failed record(s).`;
+    return { status: 'degraded', errorMessage: details };
+  }
+
+  return { status: 'success', errorMessage: null };
+}
+
+export interface ConnectorMetaCacheRow {
+  connector_id: string;
+  name: string;
+  source_url: string;
+  publisher: string;
+  license: string;
+  refresh_cadence_hrs: number;
+  jurisdictions: string[];
+  metric_families: string[];
+  requires_auth: boolean;
+  caveat_notes?: string;
+  last_run_at: string | null;
+  last_run_status: ConnectorStatus;
+  last_run_records: number;
+  freshness_status: FreshnessStatus;
+  updated_at: string;
+}
+
+export function buildConnectorMetaCacheRow(
+  meta: ConnectorMeta,
+  lineage: LineageRecord,
+): ConnectorMetaCacheRow {
+  const isSuccessful = lineage.status === 'success';
+  return {
+    connector_id: meta.id,
+    name: meta.name,
+    source_url: meta.sourceUrl,
+    publisher: meta.publisher,
+    license: meta.license,
+    refresh_cadence_hrs: meta.refreshCadenceHours,
+    jurisdictions: meta.jurisdictions,
+    metric_families: meta.metricFamilies,
+    requires_auth: meta.requiresAuth,
+    caveat_notes: meta.caveatNotes,
+    last_run_at: isSuccessful ? lineage.completed_at : null,
+    last_run_status: lineage.status,
+    last_run_records: lineage.records_upserted,
+    freshness_status: isSuccessful ? 'live' : 'stale',
+    updated_at: lineage.completed_at ?? lineage.started_at,
+  };
+}
+
+async function writeConnectorEvidence(
+  connector: OfficialDataConnector,
+  lineage: LineageRecord,
+  supabaseClient: unknown,
+): Promise<void> {
+  await connector.lineageRecord(lineage, supabaseClient);
+
+  if (!supabaseClient || typeof (supabaseClient as { from?: unknown }).from !== 'function') {
+    return;
+  }
+
+  try {
+    const client = supabaseClient as {
+      from: (table: string) => {
+        upsert: (row: unknown, options: unknown) => Promise<{ error: unknown }>;
+      };
+    };
+    const { error } = await client
+      .from('connector_meta_cache')
+      .upsert(buildConnectorMetaCacheRow(connector.meta, lineage), {
+        onConflict: 'connector_id',
+        ignoreDuplicates: false,
+      });
+    if (error) {
+      console.error(`[${connector.meta.id}] connector_meta_cache update failed:`, error);
+    }
+  } catch (error) {
+    console.error(`[${connector.meta.id}] connector_meta_cache update threw:`, error);
+  }
+}
+
 /** Result of a freshnessCheck() call. */
 export interface FreshnessCheckResult {
   connector_id: string;
@@ -382,7 +509,7 @@ export async function runConnector(
         records_skipped: 0,
         error_message: `Source unavailable: ${discovered.message ?? 'no message'}`,
       };
-      await connector.lineageRecord(failedLineage, supabaseClient);
+      await writeConnectorEvidence(connector, failedLineage, supabaseClient);
       return failedLineage;
     }
 
@@ -406,16 +533,26 @@ export async function runConnector(
     const upsertResult = await connector.upsert(valid, supabaseClient);
 
     // 5. Lineage
+    const classification = classifyConnectorRun({
+      fetched: fetchResult.records.length,
+      valid: valid.length,
+      invalid: invalid.length,
+      warnings,
+      upserted: upsertResult.upserted,
+      skipped: upsertResult.skipped,
+      failed: upsertResult.failed,
+    });
+
     const completedLineage: LineageRecord = {
       ...partialLineage,
-      status: upsertResult.failed > 0 ? 'degraded' : 'success',
+      status: classification.status,
       completed_at: new Date().toISOString(),
       records_upserted: upsertResult.upserted,
       records_skipped: upsertResult.skipped,
       records_failed: upsertResult.failed + invalid.length,
-      error_message: warnings.length > 0 ? warnings.slice(0, 5).join(' | ') : null,
+      error_message: classification.errorMessage,
     };
-    await connector.lineageRecord(completedLineage, supabaseClient);
+    await writeConnectorEvidence(connector, completedLineage, supabaseClient);
     return completedLineage;
   } catch (err) {
     const failedLineage: LineageRecord = {
@@ -426,7 +563,7 @@ export async function runConnector(
       records_skipped: 0,
       error_message: err instanceof Error ? err.message : String(err),
     };
-    await connector.lineageRecord(failedLineage, supabaseClient);
+    await writeConnectorEvidence(connector, failedLineage, supabaseClient);
     return failedLineage;
   }
 }

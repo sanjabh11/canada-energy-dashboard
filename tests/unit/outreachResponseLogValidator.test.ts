@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -10,7 +10,11 @@ const appenderScriptPath = path.join(process.cwd(), 'scripts/append-outreach-res
 const templatePath = path.join(process.cwd(), 'docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv');
 const tempRoots: string[] = [];
 
-const header = 'activity_date,channel,target_label,buyer_lane,proof_pack_id,route,rating,variant_id,caveat_used,artifact_promised,reply_status,response_summary,pain_signal,requested_input,reviewer_role,commercial_commitment_status,next_action,pilot_evidence_register_action,notes';
+const header = 'activity_date,channel,target_label,buyer_lane,proof_pack_id,route,rating,variant_id,caveat_used,artifact_promised,reply_status,response_summary,pain_signal,requested_input,reviewer_role,commercial_commitment_status,next_action,pilot_evidence_register_action,notes,consent_basis,consent_source,consent_date,sender_identification_status,unsubscribe_mechanism_status,casl_owner_approval,casl_approval_date,casl_approval_reference,unsubscribe_status';
+const suppressionHeader = 'target_label,suppression_date,source_row,reason';
+const liveSuppressionHeader = 'email,domain,reason,source,suppressed_at,suppressed_by';
+const validSentCaslFields = ',express_consent,buyer_inquiry,2026-05-31,verified,verified,approved,2026-05-31,CASL-REVIEW-REF,none';
+const canonicalSuppressionPath = path.join(process.cwd(), 'docs/growth/SUPPRESSION_REGISTRY_LIVE.csv');
 
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-outreach-response-log-'));
@@ -18,10 +22,11 @@ function makeTempRoot() {
   return root;
 }
 
-function runScript(targetScriptPath: string, args: string[]) {
+function runScript(targetScriptPath: string, args: string[], env: Record<string, string> = {}) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(process.execPath, [targetScriptPath, ...args], {
       cwd: process.cwd(),
+      env: { ...process.env, ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
@@ -47,10 +52,16 @@ function runValidator(args: string[]) {
   return runScript(scriptPath, args);
 }
 
-function writeLog(rows: string[]) {
+function writeLog(rows: string[], caslFields = validSentCaslFields) {
   const root = makeTempRoot();
   const filePath = path.join(root, 'outreach-response-log.csv');
-  writeFileSync(filePath, [header, ...rows, ''].join('\n'), 'utf8');
+  writeFileSync(filePath, [header, ...rows.map((row) => `${row}${caslFields}`), ''].join('\n'), 'utf8');
+  return filePath;
+}
+
+function writeSuppressionRegistry(dir: string, rows: string[] = [], headerLine = suppressionHeader) {
+  const filePath = path.join(dir, 'suppression-registry.csv');
+  writeFileSync(filePath, [headerLine, ...rows, ''].join('\n'), 'utf8');
   return filePath;
 }
 
@@ -98,6 +109,22 @@ describe('outreach response log validator', () => {
       'create intake packet and request redacted retained extract',
       '--pilot-evidence-register-action',
       'create_intake_packet',
+      '--consent-basis',
+      'express_consent',
+      '--consent-source',
+      'buyer_inquiry',
+      '--consent-date',
+      '2026-05-31',
+      '--sender-identification-status',
+      'verified',
+      '--unsubscribe-mechanism-status',
+      'verified',
+      '--casl-owner-approval',
+      'approved',
+      '--casl-approval-date',
+      '2026-05-31',
+      '--casl-approval-reference',
+      'CASL-REVIEW-REF',
       '--notes',
       'No direct identifiers retained in the repo log.',
     ]);
@@ -119,6 +146,37 @@ describe('outreach response log validator', () => {
     expect(report.status).toBe(0);
     expect(report.stdout).toContain('Rows: 1');
     expect(report.stdout).toContain('Rows requiring evidence action: 1');
+  });
+
+  it('refuses to append outbound activity for a target already in the shared suppression registry', async () => {
+    const root = makeTempRoot();
+    const outputDir = path.join(root, 'outreach-workspace');
+    expect((await runScript(generatorScriptPath, ['--output-dir', outputDir])).status).toBe(0);
+    const logPath = path.join(outputDir, 'outreach-response-log.csv');
+    const suppressionPath = path.join(outputDir, 'suppression-registry.csv');
+    writeFileSync(suppressionPath, `${suppressionHeader}\nsuppressed_target_001,2026-05-31,2,unsubscribe\n`, 'utf8');
+    const before = readFileSync(logPath, 'utf8');
+
+    const result = await runScript(appenderScriptPath, [
+      '--log-file', logPath,
+      '--activity-date', '2026-06-01',
+      '--channel', 'email',
+      '--target-label', 'SUPPRESSED_TARGET_001',
+      '--route', '/utility-demand-forecast',
+      '--rating', '4.5',
+      '--variant-id', 'utility_forecast',
+      '--reply-status', 'sent_no_reply',
+      '--response-summary', 'Sent message summary.',
+      '--pain-signal', 'Load planning question',
+      '--requested-input', 'anonymized load history',
+      '--reviewer-role', 'utility planning reviewer',
+      '--next-action', 'await reply',
+      '--suppression-file', suppressionPath,
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('is suppressed');
+    expect(readFileSync(logPath, 'utf8')).toBe(before);
   });
 
   it('does not mutate the response log when an appended row fails validation', async () => {
@@ -218,14 +276,22 @@ describe('outreach response log validator', () => {
     const readmePath = path.join(outputDir, 'README.md');
     expect(existsSync(logPath)).toBe(true);
     expect(existsSync(readmePath)).toBe(true);
+    expect(existsSync(path.join(outputDir, 'suppression-registry.csv'))).toBe(true);
     expect(readFileSync(logPath, 'utf8')).toBe(`${header}\n`);
     expect(readFileSync(readmePath, 'utf8')).toContain('header-only log must keep confidence movement at zero');
+    expect(readFileSync(readmePath, 'utf8')).toContain('This tooling does not send outreach');
 
     const report = await runValidator([logPath, '--report']);
     expect(report.status).toBe(0);
     expect(report.stderr).toBe('');
     expect(report.stdout).toContain('Rows: 0');
     expect(report.stdout).toContain('Rows requiring evidence action: 0');
+
+    const suppressionPath = path.join(outputDir, 'suppression-registry.csv');
+    writeFileSync(suppressionPath, `${suppressionHeader}\npreserved_target_001,2026-06-01,2,unsubscribe\n`, 'utf8');
+    const regenerate = await runScript(generatorScriptPath, ['--output-dir', outputDir, '--force']);
+    expect(regenerate.status).toBe(0);
+    expect(readFileSync(suppressionPath, 'utf8')).toContain('preserved_target_001,2026-06-01,2,unsubscribe');
     expect(report.stdout).toContain('Confidence movement: none');
 
     const actionPlan = await runValidator([logPath, '--action-plan']);
@@ -277,6 +343,207 @@ describe('outreach response log validator', () => {
     expect(result.stdout).toContain('Rows requiring evidence action: 1');
     expect(result.stdout).toContain('ga_ici_5cp_decision_support_pack: 1');
     expect(result.stdout).toContain('data_offered: 1');
+  });
+
+  it('rejects outbound activity for a target recorded in the shared suppression registry', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01', 'email', 'SUPPRESSED_TARGET_001', 'utility', 'utility_forecast_planning_pack',
+        '/utility-demand-forecast', '4.5', 'utility_forecast', '"No production utility onboarding is claimed."',
+        'draft planning pack', 'sent_no_reply', 'Sent message summary.', 'Load planning', 'anonymized load history',
+        'utility planning reviewer', 'none', 'await reply', 'none', 'No direct identifiers retained.',
+      ].join(','),
+    ]);
+    const registryPath = writeSuppressionRegistry(path.dirname(filePath),
+      ['suppressed_target_001,2026-06-01,2,unsubscribe']);
+
+    const result = await runValidator([filePath, '--suppression-file', registryPath]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('target_label is suppressed on or before this outbound activity');
+  });
+
+  it('enforces opt-out across campaign directories via a shared --suppression-file registry', async () => {
+    const root = makeTempRoot();
+    const campaignDir = path.join(root, 'campaign-b');
+    mkdirSync(campaignDir, { recursive: true });
+    const filePath = path.join(campaignDir, 'outreach-response-log.csv');
+    const row = [
+      '2026-06-01', 'email', 'suppressed_target_001', 'utility', 'utility_forecast_planning_pack',
+      '/utility-demand-forecast', '4.5', 'utility_forecast', '"No production utility onboarding is claimed."',
+      'draft planning pack', 'sent_no_reply', 'Sent message summary.', 'Load planning', 'anonymized load history',
+      'utility planning reviewer', 'none', 'await reply', 'none', 'No direct identifiers retained.',
+    ].join(',');
+    writeFileSync(filePath, `${header}\n${row}${validSentCaslFields}\n`, 'utf8');
+
+    const sharedDir = path.join(root, 'shared');
+    mkdirSync(sharedDir, { recursive: true });
+    const sharedRegistry = path.join(sharedDir, 'suppression-registry.csv');
+    writeFileSync(sharedRegistry,
+      `${suppressionHeader}\nsuppressed_target_001,2026-06-01,2,unsubscribe\n`, 'utf8');
+
+    const result = await runValidator([filePath, '--suppression-file', sharedRegistry]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('target_label is suppressed on or before this outbound activity');
+  });
+
+  it('uses the canonical shared suppression registry by default and ignores campaign-local files', async () => {
+    expect(existsSync(canonicalSuppressionPath)).toBe(true);
+    const root = makeTempRoot();
+    const campaignDir = path.join(root, 'campaign-b');
+    mkdirSync(campaignDir, { recursive: true });
+    const filePath = path.join(campaignDir, 'outreach-response-log.csv');
+    const row = [
+      '2026-06-01', 'email', 'suppressed_target_001', 'utility', 'utility_forecast_planning_pack',
+      '/utility-demand-forecast', '4.5', 'utility_forecast', '"No production utility onboarding is claimed."',
+      'draft planning pack', 'sent_no_reply', 'Sent message summary.', 'Load planning', 'anonymized load history',
+      'utility planning reviewer', 'none', 'await reply', 'none', 'No direct identifiers retained.',
+    ].join(',');
+    writeFileSync(filePath, `${header}\n${row}${validSentCaslFields}\n`, 'utf8');
+
+    // Trap: a campaign-local registry claims the target is suppressed. The
+    // validator must not fall back to it — only the canonical default
+    // (docs/growth/SUPPRESSION_REGISTRY_LIVE.csv, header-only) is consulted.
+    writeSuppressionRegistry(campaignDir, ['suppressed_target_001,2026-06-01,2,unsubscribe']);
+
+    const result = await runValidator([filePath]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Outreach response log validation passed');
+  });
+
+  it('fails closed when the suppression registry is absent, even with no outbound rows', async () => {
+    const filePath = writeLog([]);
+    const missingRegistry = path.join(path.dirname(filePath), 'does-not-exist.csv');
+
+    const result = await runValidator([filePath, '--suppression-file', missingRegistry]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('suppression registry required');
+    expect(result.stderr).toContain('CEIP_SUPPRESSION_REGISTRY');
+  });
+
+  it('honors the CEIP_SUPPRESSION_REGISTRY env var for the shared registry', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01', 'email', 'suppressed_target_001', 'utility', 'utility_forecast_planning_pack',
+        '/utility-demand-forecast', '4.5', 'utility_forecast', '"No production utility onboarding is claimed."',
+        'draft planning pack', 'sent_no_reply', 'Sent message summary.', 'Load planning', 'anonymized load history',
+        'utility planning reviewer', 'none', 'await reply', 'none', 'No direct identifiers retained.',
+      ].join(','),
+    ]);
+    const registryPath = writeSuppressionRegistry(path.dirname(filePath),
+      ['suppressed_target_001,2026-06-01,2,unsubscribe']);
+
+    const result = await runScript(scriptPath, [filePath], { CEIP_SUPPRESSION_REGISTRY: registryPath });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('target_label is suppressed on or before this outbound activity');
+  });
+
+  it('accepts the canonical live schema and matches a target identity case-insensitively', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01', 'email', 'suppressed_target_001', 'utility', 'utility_forecast_planning_pack',
+        '/utility-demand-forecast', '4.5', 'utility_forecast', '"No production utility onboarding is claimed."',
+        'draft planning pack', 'sent_no_reply', 'Sent message summary.', 'Load planning', 'anonymized load history',
+        'utility planning reviewer', 'none', 'await reply', 'none', 'No direct identifiers retained.',
+      ].join(','),
+    ]);
+    const registryPath = writeSuppressionRegistry(path.dirname(filePath),
+      ['SUPPRESSED_TARGET_001,,unsubscribe,outreach-response-log row 2,2026-06-01,owner'],
+      liveSuppressionHeader);
+
+    const result = await runValidator([filePath, '--suppression-file', registryPath]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('target_label is suppressed on or before this outbound activity');
+  });
+
+  it('rejects suppression registries with unknown headers', async () => {
+    const filePath = writeLog([]);
+    const registryPath = writeSuppressionRegistry(path.dirname(filePath), [], 'email_address,notes');
+
+    const result = await runValidator([filePath, '--suppression-file', registryPath]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('unrecognized header');
+  });
+
+  it('appends opt-out rows to the shared registry in its own schema', async () => {
+    const root = makeTempRoot();
+    const outputDir = path.join(root, 'outreach-workspace');
+    expect((await runScript(generatorScriptPath, ['--output-dir', outputDir])).status).toBe(0);
+    const logPath = path.join(outputDir, 'outreach-response-log.csv');
+    const registryPath = writeSuppressionRegistry(outputDir, [], liveSuppressionHeader);
+
+    const result = await runScript(appenderScriptPath, [
+      '--log-file', logPath,
+      '--activity-date', '2026-06-01',
+      '--channel', 'email',
+      '--target-label', 'opted_out_target_001',
+      '--route', '/utility-demand-forecast',
+      '--rating', '4.5',
+      '--variant-id', 'utility_forecast',
+      '--reply-status', 'unsubscribe',
+      '--response-summary', 'Buyer replied unsubscribe.',
+      '--pain-signal', 'No further contact requested',
+      '--requested-input', 'none',
+      '--reviewer-role', 'utility planning reviewer',
+      '--next-action', 'record opt-out only',
+      '--suppression-file', registryPath,
+    ]);
+
+    expect(result.status).toBe(0);
+    const registryText = readFileSync(registryPath, 'utf8');
+    expect(registryText).toContain('opted_out_target_001');
+    expect(registryText).toContain('unsubscribe');
+    expect(registryText).toContain('ceip-outreach-appender');
+  });
+
+  it('fails closed when the appender cannot read a suppression registry', async () => {
+    const filePath = writeLog([]);
+    const missingRegistry = path.join(path.dirname(filePath), 'missing-registry.csv');
+
+    const result = await runScript(appenderScriptPath, [
+      '--log-file', filePath,
+      '--activity-date', '2026-06-01',
+      '--channel', 'email',
+      '--target-label', 'utility_planner_009',
+      '--route', '/utility-demand-forecast',
+      '--rating', '4.5',
+      '--variant-id', 'utility_forecast',
+      '--reply-status', 'sent_no_reply',
+      '--response-summary', 'Sent message summary.',
+      '--pain-signal', 'Load planning',
+      '--requested-input', 'anonymized load history',
+      '--reviewer-role', 'utility planning reviewer',
+      '--next-action', 'await reply',
+      '--suppression-file', missingRegistry,
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('suppression registry required');
+  });
+
+  it('rejects sent CEM records without documented consent and prior owner approval', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01', 'email', 'utility_planner_001', 'utility', 'utility_forecast_planning_pack',
+        '/utility-demand-forecast', '4.5', 'utility_forecast', '"No production utility onboarding is claimed."',
+        'draft planning pack', 'sent_no_reply', 'Sent message summary.', 'Load planning', 'anonymized load history',
+        'utility planning reviewer', 'none', 'await reply', 'none', 'No direct identifiers retained.',
+      ].join(','),
+    ], ',none,none,none,not_verified,not_verified,pending,none,none,none');
+
+    const result = await runValidator([filePath]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('outbound CEM activity requires a dated consent basis');
+    expect(result.stderr).toContain('outbound CEM activity requires verified sender identification');
+    expect(result.stderr).toContain('outbound CEM activity requires a verified working unsubscribe mechanism');
+    expect(result.stderr).toContain('outbound CEM activity requires dated CASL-owner approval');
   });
 
   it('prints an intake action plan without moving confidence', async () => {

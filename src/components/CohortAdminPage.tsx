@@ -1,7 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ProtectedRoute, useAuth } from './auth';
 import { supabase } from '../lib/supabaseClient';
-import { Users, Calendar, Plus, Loader, AlertCircle, Upload, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Users,
+  Calendar,
+  Plus,
+  Loader,
+  AlertCircle,
+  Upload,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 import { getEdgeBaseUrl } from '../lib/config';
 
 interface Cohort {
@@ -134,13 +143,13 @@ function CohortAdminPageContent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`
+          Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`,
         },
         body: JSON.stringify({
           cohort_id: cohortId,
           emails,
-          sender_name: edubizUser?.full_name || 'Your Instructor'
-        })
+          sender_name: edubizUser?.full_name || 'Your Instructor',
+        }),
       });
     } catch (e) {
       console.error('Failed to send invite emails', e);
@@ -198,7 +207,7 @@ function CohortAdminPageContent() {
     reader.onload = (event) => {
       try {
         const text = event.target?.result as string;
-        const lines = text.split(/\r\n|\n/).filter(line => line.trim());
+        const lines = text.split(/\r\n|\n/).filter((line) => line.trim());
         const parsed: { email: string; name: string }[] = [];
 
         // Skip header if present (heuristic: checks if first line has "email")
@@ -238,7 +247,7 @@ function CohortAdminPageContent() {
     reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
-        const lines = text.split(/\r\n|\n/).filter(line => line.trim());
+        const lines = text.split(/\r\n|\n/).filter((line) => line.trim());
         const membersToInsert: {
           cohort_id: string;
           learner_email: string;
@@ -259,7 +268,7 @@ function CohortAdminPageContent() {
               cohort_id: selectedCohort.id,
               learner_email: email,
               learner_full_name: name,
-              role: 'learner'
+              role: 'learner',
             });
           }
         }
@@ -271,9 +280,7 @@ function CohortAdminPageContent() {
         }
 
         // Batch insert
-        const { error } = await supabase
-          .from('cohort_members')
-          .insert(membersToInsert);
+        const { error } = await supabase.from('cohort_members').insert(membersToInsert);
 
         if (error) {
           console.error('Bulk upload error', error);
@@ -282,7 +289,7 @@ function CohortAdminPageContent() {
           setUploadSuccess(`Successfully invited ${membersToInsert.length} learners!`);
 
           // Send emails in background
-          const emails = membersToInsert.map(m => m.learner_email);
+          const emails = membersToInsert.map((m) => m.learner_email);
           sendInvites(selectedCohort.id, emails);
 
           setCsvFile(null);
@@ -338,13 +345,16 @@ function CohortAdminPageContent() {
               </span>
             )}
           </div>
-          <form onSubmit={handleCreateCohort} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <form
+            onSubmit={handleCreateCohort}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"
+          >
             <div className="md:col-span-1">
               <label className="block text-sm text-slate-300 mb-1">Cohort Name</label>
               <input
                 type="text"
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
+                onChange={(e) => setNewName(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 placeholder="e.g. Fall 2025 Indigenous Energy Cohort"
               />
@@ -354,7 +364,7 @@ function CohortAdminPageContent() {
               <input
                 type="text"
                 value={newDescription}
-                onChange={e => setNewDescription(e.target.value)}
+                onChange={(e) => setNewDescription(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 placeholder="Short summary for funders and training coordinators"
               />
@@ -397,11 +407,12 @@ function CohortAdminPageContent() {
             </div>
           ) : (
             <div className="divide-y divide-slate-700">
-              {cohorts.map(cohort => (
+              {cohorts.map((cohort) => (
                 <div
                   key={cohort.id}
-                  className={`py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 ${selectedCohort?.id === cohort.id ? 'bg-slate-900/60 rounded-lg px-3 -mx-3' : ''
-                    }`}
+                  className={`py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 ${
+                    selectedCohort?.id === cohort.id ? 'bg-slate-900/60 rounded-lg px-3 -mx-3' : ''
+                  }`}
                 >
                   <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -425,7 +436,8 @@ function CohortAdminPageContent() {
                       <div className="flex flex-col text-right">
                         <span>Schedule</span>
                         <span className="text-slate-200 font-medium">
-                          {cohort.start_date || 'TBD'}{cohort.end_date ? ` → ${cohort.end_date}` : ''}
+                          {cohort.start_date || 'TBD'}
+                          {cohort.end_date ? ` → ${cohort.end_date}` : ''}
                         </span>
                       </div>
                     )}
@@ -447,20 +459,25 @@ function CohortAdminPageContent() {
           <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-white">Learners in {selectedCohort.name}</h2>
+                <h2 className="text-lg font-semibold text-white">
+                  Learners in {selectedCohort.name}
+                </h2>
                 <p className="text-xs text-slate-400">
                   Invite learners by email. They will appear here as they join your cohort.
                 </p>
               </div>
             </div>
 
-            <form onSubmit={handleInviteMember} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4">
+            <form
+              onSubmit={handleInviteMember}
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4"
+            >
               <div>
                 <label className="block text-sm text-slate-300 mb-1">Learner email</label>
                 <input
                   type="email"
                   value={inviteEmail}
-                  onChange={e => setInviteEmail(e.target.value)}
+                  onChange={(e) => setInviteEmail(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   placeholder="learner@example.com"
                 />
@@ -470,7 +487,7 @@ function CohortAdminPageContent() {
                 <input
                   type="text"
                   value={inviteName}
-                  onChange={e => setInviteName(e.target.value)}
+                  onChange={(e) => setInviteName(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   placeholder="Name for certificates and reports"
                 />
@@ -507,7 +524,7 @@ function CohortAdminPageContent() {
                   ref={fileInputRef}
                   accept=".csv"
                   onChange={handleFileChange}
-                  className="hidden"
+                  className="sr-only"
                   id="csv-upload"
                 />
                 <label
@@ -516,7 +533,9 @@ function CohortAdminPageContent() {
                 >
                   <Upload className="h-8 w-8 text-slate-400" />
                   <span className="text-slate-300 font-medium">Click to upload CSV</span>
-                  <span className="text-xs text-slate-500">Format: email, name (optional) - one per line</span>
+                  <span className="text-xs text-slate-500">
+                    Format: email, name (optional) - one per line
+                  </span>
                 </label>
               </div>
 
@@ -548,7 +567,10 @@ function CohortAdminPageContent() {
                       </div>
                       <div className="space-y-1 mb-4">
                         {csvPreview.map((p, i) => (
-                          <div key={i} className="text-xs flex justify-between text-slate-300 border-b border-slate-800 pb-1 last:border-0">
+                          <div
+                            key={i}
+                            className="text-xs flex justify-between text-slate-300 border-b border-slate-800 pb-1 last:border-0"
+                          >
                             <span>{p.email}</span>
                             <span className="text-slate-500">{p.name || '-'}</span>
                           </div>
@@ -559,7 +581,11 @@ function CohortAdminPageContent() {
                         disabled={uploading}
                         className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                       >
-                        {uploading ? <Loader className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        {uploading ? (
+                          <Loader className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
                         {uploading ? 'Uploading...' : 'Upload Learners'}
                       </button>
                     </>
@@ -581,9 +607,7 @@ function CohortAdminPageContent() {
                 <span>Loading learners...</span>
               </div>
             ) : members.length === 0 ? (
-              <div className="py-4 text-slate-400 text-sm">
-                No learners in this cohort yet.
-              </div>
+              <div className="py-4 text-slate-400 text-sm">No learners in this cohort yet.</div>
             ) : (
               <div className="overflow-x-auto mt-8">
                 <table className="min-w-full text-xs text-left text-slate-300">
@@ -597,18 +621,18 @@ function CohortAdminPageContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {members.map(member => (
+                    {members.map((member) => (
                       <tr key={member.id} className="border-b border-slate-800 last:border-0">
                         <td className="py-2 pr-4">
                           <div className="font-medium text-slate-100">
                             {member.learner_full_name || 'Unnamed learner'}
                           </div>
-                          <div className="text-slate-400">
-                            {member.learner_email}
-                          </div>
+                          <div className="text-slate-400">{member.learner_email}</div>
                         </td>
                         <td className="py-2 pr-4 capitalize">{member.role || 'learner'}</td>
-                        <td className="py-2 pr-4 capitalize">{member.completion_status || 'not_started'}</td>
+                        <td className="py-2 pr-4 capitalize">
+                          {member.completion_status || 'not_started'}
+                        </td>
                         <td className="py-2 pr-4">
                           {member.invited_at
                             ? new Date(member.invited_at).toLocaleDateString('en-CA')

@@ -109,18 +109,23 @@ describe('UI claims drift regressions', () => {
     }
   });
 
-  it('keeps commercial entry-page metadata aligned to the active top ten', () => {
+  it('keeps commercial entry-page metadata aligned to the honest desk-research positioning', () => {
     const landingSource = readFileSync(path.join(process.cwd(), 'src/components/CommercialLandingPage.tsx'), 'utf8');
     const solutionsSource = readFileSync(path.join(process.cwd(), 'src/components/SolutionsNavigatorPage.tsx'), 'utf8');
     const roadmapSource = readFileSync(path.join(process.cwd(), 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md'), 'utf8');
 
-    expect(landingSource).toContain('Ontario GA/ICI 5CP decision support');
-    expect(landingSource).toContain('BYO-CSV privacy proof');
+    // Canonical positioning (G13): desk-research hypotheses, buyer outcomes
+    // unvalidated, utility forecasting as documented fallback.
+    expect(landingSource).toContain('desk-research hypotheses');
+    expect(landingSource).toContain('unvalidated');
+    expect(landingSource).toContain('Ontario GA ICI 5CP');
+    expect(landingSource).toContain('BYO CSV privacy proof');
     expect(solutionsSource).toContain('Ontario GA ICI 5CP');
     expect(solutionsSource).toContain('BYO CSV privacy proof');
     expect(roadmapSource).toContain('Large-load and API are reserve/support surfaces');
 
     expect(landingSource).not.toContain('APIs, and large-load readiness');
+    expect(landingSource).not.toContain('top ten sellable');
     expect(roadmapSource).not.toContain('billing, large-load, API packs');
   });
 

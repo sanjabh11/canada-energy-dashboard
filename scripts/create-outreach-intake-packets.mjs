@@ -3,6 +3,10 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import {
+  loadSuppressionRegistry,
+  resolveSuppressionRegistryPath,
+} from './lib/suppression-registry.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -37,7 +41,7 @@ for (let index = 0; index < args.length; index += 1) {
     const key = arg.slice(2);
     const value = args[index + 1] ?? '';
     index += 1;
-    if (!['log-file', 'output-dir', 'target-label'].includes(key)) {
+    if (!['log-file', 'output-dir', 'target-label', 'suppression-file'].includes(key)) {
       failures.push(`Unknown option: ${arg}`);
     } else if (!value || value.startsWith('--')) {
       failures.push(`${arg} requires a value.`);
@@ -59,6 +63,10 @@ Options:
   --log-file <csv>          Required. Valid outreach response log.
   --output-dir <dir>        Required. Destination for generated intake packet folders.
   --target-label <label>    Optional. Generate only matching anonymized target_label rows.
+  --suppression-file <csv>  Shared suppression registry. Defaults to the
+                            CEIP_SUPPRESSION_REGISTRY env var, then the canonical
+                            docs/growth/SUPPRESSION_REGISTRY_LIVE.csv. Required —
+                            the file must exist; there is no campaign-local fallback.
   --dry-run                 Validate and print planned packets without writing files.
   --force                   Overwrite generated files in a non-empty output directory.
 `);
@@ -158,6 +166,12 @@ function validateRequiredInput() {
   const logFile = values.has('log-file') ? path.resolve(repoRoot, values.get('log-file')) : null;
   if (logFile && !existsSync(logFile)) failures.push(`Outreach response log not found: ${displayPath(logFile)}`);
 
+  // The shared suppression registry is always required (canonical default, or
+  // --suppression-file / CEIP_SUPPRESSION_REGISTRY); fail closed if absent.
+  const suppressionFile = resolveSuppressionRegistryPath(repoRoot, values.get('suppression-file'));
+  const suppressionRegistry = loadSuppressionRegistry(repoRoot, suppressionFile);
+  failures.push(...suppressionRegistry.failures);
+
   if (failures.length > 0) {
     console.error('Outreach intake packet generation failed:\n');
     for (const failure of failures) console.error(`- ${failure}`);
@@ -172,9 +186,10 @@ validateRequiredInput();
 const logFile = path.resolve(repoRoot, values.get('log-file'));
 const outputDir = path.resolve(repoRoot, values.get('output-dir'));
 const targetLabelFilter = values.get('target-label') ?? null;
+const suppressionFile = resolveSuppressionRegistryPath(repoRoot, values.get('suppression-file'));
 
 try {
-  runNode('scripts/validate-outreach-response-log.mjs', [logFile]);
+  runNode('scripts/validate-outreach-response-log.mjs', [logFile, '--suppression-file', suppressionFile]);
 } catch (error) {
   console.error('Outreach intake packet generation failed: outreach log did not pass validation.\n');
   const stderr = error?.stderr ? String(error.stderr).trim() : '';

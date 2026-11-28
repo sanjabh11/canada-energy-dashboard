@@ -72,10 +72,18 @@ export function classifyEdgeFallbackReason(reason: string): string {
   if (normalized.includes('not configured')) {
     return 'edge_unconfigured';
   }
-  if (normalized.includes('aborterror') || normalized.includes('timeout') || normalized.includes('aborted')) {
+  if (
+    normalized.includes('aborterror') ||
+    normalized.includes('timeout') ||
+    normalized.includes('aborted')
+  ) {
     return 'edge_timeout';
   }
-  if (normalized.includes('failed to fetch') || normalized.includes('networkerror') || normalized.includes('load failed')) {
+  if (
+    normalized.includes('failed to fetch') ||
+    normalized.includes('networkerror') ||
+    normalized.includes('load failed')
+  ) {
     return 'edge_cors_failed';
   }
   return 'edge_function_unavailable';
@@ -161,15 +169,15 @@ export async function runPvFaultScenario(
   };
 }
 
-export function evaluateTierScenario(
-  input: TierScenarioInput,
-  options?: EdgeFetchOptions,
-) {
+export function evaluateTierScenario(input: TierScenarioInput, options?: EdgeFetchOptions) {
   return postWithFallback(
     ['tier-simulator/evaluate'],
     input,
     () => calculateTierScenario(input),
     options,
+    // Log tier fallbacks to jobExecutionLog like dispatch/pv_fault do —
+    // without this the wedge has no edge-vs-fallback telemetry.
+    { jobName: 'tier-simulator-evaluate', domain: 'tier' },
   );
 }
 
@@ -225,16 +233,15 @@ export function evaluateGridRiskScenario(
   input: Parameters<typeof evaluateGridRisk>[0],
   options?: EdgeFetchOptions,
 ) {
-  return postWithFallback(
-    ['grid-risk/evaluate'],
-    input,
-    () => evaluateGridRisk(input),
-    options,
-  );
+  return postWithFallback(['grid-risk/evaluate'], input, () => evaluateGridRisk(input), options);
 }
 
 export function evaluateForecastDrift(
-  input: Parameters<typeof detectWassersteinDrift>[0] & { domain?: string; province?: string; model_key?: string },
+  input: Parameters<typeof detectWassersteinDrift>[0] & {
+    domain?: string;
+    province?: string;
+    model_key?: string;
+  },
   options?: EdgeFetchOptions,
 ) {
   return postWithFallback(

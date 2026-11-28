@@ -41,7 +41,7 @@ serve(async (req: Request) => {
       });
 
       if (error) {
-        results.push({ project_id: projectId, error: error.message });
+        results.push({ project_id: projectId, error: 'Internal error' });
       } else {
         results.push({ project_id: projectId, ...data[0] });
       }
@@ -66,7 +66,8 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('investment-portfolio-optimization failed:', err);
+    return new Response(JSON.stringify({ error: 'Internal error' }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
       status: 500,
     });

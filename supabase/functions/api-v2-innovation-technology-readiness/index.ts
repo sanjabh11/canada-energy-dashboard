@@ -39,7 +39,7 @@ serve(async (req: Request) => {
     });
 
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ error: 'Internal error' }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 500,
       });
@@ -50,7 +50,8 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('innovation-technology-readiness failed:', err);
+    return new Response(JSON.stringify({ error: 'Internal error' }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
       status: 500,
     });

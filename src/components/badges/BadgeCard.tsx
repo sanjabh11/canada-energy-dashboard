@@ -6,6 +6,7 @@ interface BadgeCardProps {
   badge: Badge;
   earned: boolean;
   earnedAt?: string;
+  tracked?: boolean;
   progress?: {
     current: number;
     total: number;
@@ -14,7 +15,14 @@ interface BadgeCardProps {
   onClick?: () => void;
 }
 
-export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeCardProps) {
+export function BadgeCard({
+  badge,
+  earned,
+  earnedAt,
+  tracked = false,
+  progress,
+  onClick,
+}: BadgeCardProps) {
   const tierConfig = getBadgeTierConfig(badge.tier);
   const progressPercent = progress?.percentage || 0;
 
@@ -25,15 +33,18 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
         relative group cursor-pointer
         bg-slate-800 rounded-xl border-2 transition-all duration-300
         hover:shadow-2xl hover:-translate-y-2
-        ${earned
-          ? `${tierConfig.borderColor} shadow-lg`
-          : 'border-slate-700 opacity-75 hover:opacity-100'
+        ${
+          earned
+            ? `${tierConfig.borderColor} shadow-lg`
+            : 'border-slate-700 opacity-75 hover:opacity-100'
         }
       `}
     >
       {/* Gradient overlay for earned badges */}
       {earned && (
-        <div className={`absolute inset-0 bg-gradient-to-br ${tierConfig.gradientFrom} ${tierConfig.gradientTo} opacity-10 rounded-xl`} />
+        <div
+          className={`absolute inset-0 bg-gradient-to-br ${tierConfig.gradientFrom} ${tierConfig.gradientTo} opacity-10 rounded-xl`}
+        />
       )}
 
       <div className="relative p-6">
@@ -43,9 +54,10 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
             className={`
               w-24 h-24 rounded-full flex items-center justify-center text-5xl
               transition-all duration-300 group-hover:scale-110
-              ${earned
-                ? `${tierConfig.bgColor} border-2 ${tierConfig.borderColor}`
-                : 'bg-slate-900 border-2 border-slate-700'
+              ${
+                earned
+                  ? `${tierConfig.bgColor} border-2 ${tierConfig.borderColor}`
+                  : 'bg-slate-900 border-2 border-slate-700'
               }
             `}
           >
@@ -58,7 +70,9 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
         </div>
 
         {/* Badge Name */}
-        <h3 className={`text-xl font-bold text-center mb-2 ${earned ? 'text-white' : 'text-slate-400'}`}>
+        <h3
+          className={`text-xl font-bold text-center mb-2 ${earned ? 'text-white' : 'text-slate-400'}`}
+        >
           {badge.name}
         </h3>
 
@@ -67,9 +81,8 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
           <span
             className={`
               text-xs font-semibold px-3 py-1 rounded-full uppercase
-              ${earned
-                ? `${tierConfig.bgColor} ${tierConfig.color}`
-                : 'bg-slate-900 text-slate-500'
+              ${
+                earned ? `${tierConfig.bgColor} ${tierConfig.color}` : 'bg-slate-900 text-slate-500'
               }
             `}
           >
@@ -82,12 +95,14 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
           {badge.description}
         </p>
 
-        {/* Progress Bar (for unearned badges) */}
-        {!earned && progress && progress.total > 1 && (
+        {/* Progress Bar (for unearned badges) — suppressed for untracked criteria */}
+        {!earned && tracked && progress && progress.total > 1 && (
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
               <span>Progress</span>
-              <span>{progress.current} / {progress.total}</span>
+              <span>
+                {progress.current} / {progress.total}
+              </span>
             </div>
             <div className="relative w-full h-2 bg-slate-900 rounded-full overflow-hidden">
               <div
@@ -103,10 +118,11 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
           <div className="flex items-center justify-center pt-3 border-t border-slate-700">
             <CheckCircle className="h-4 w-4 text-green-400 mr-2" />
             <span className="text-xs text-slate-400">
-              Earned {new Date(earnedAt).toLocaleDateString('en-CA', {
+              Earned{' '}
+              {new Date(earnedAt).toLocaleDateString('en-CA', {
                 month: 'short',
                 day: 'numeric',
-                year: 'numeric'
+                year: 'numeric',
               })}
             </span>
           </div>
@@ -117,7 +133,11 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
           <div className="flex items-center justify-center pt-3 border-t border-slate-700">
             <Lock className="h-4 w-4 text-slate-600 mr-2" />
             <span className="text-xs text-slate-500">
-              {progressPercent === 0 ? 'Not started' : `${Math.round(progressPercent)}% complete`}
+              {!tracked
+                ? 'Progress tracking not yet live'
+                : progressPercent === 0
+                  ? 'Not started'
+                  : `${Math.round(progressPercent)}% complete`}
             </span>
           </div>
         )}
@@ -127,9 +147,8 @@ export function BadgeCard({ badge, earned, earnedAt, progress, onClick }: BadgeC
           <div
             className={`
               px-2 py-1 rounded-full text-xs font-bold
-              ${earned
-                ? `${tierConfig.bgColor} ${tierConfig.color}`
-                : 'bg-slate-900 text-slate-600'
+              ${
+                earned ? `${tierConfig.bgColor} ${tierConfig.color}` : 'bg-slate-900 text-slate-600'
               }
             `}
           >

@@ -199,7 +199,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('AI Data Centres API error:', err);
-    await safeLog(500, { error: String(err) });
+    await safeLog(500, { error: String(err).slice(0, 300) });
     return new Response(JSON.stringify({
       error: 'Internal server error',
       message: 'Failed to fetch AI data centres data'

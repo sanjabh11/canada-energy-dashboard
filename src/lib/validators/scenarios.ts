@@ -32,11 +32,11 @@ export const ScenarioSchema = z.object({
   horizonYears: z.array(z.number().int().min(2020).max(2100)),
   sectors: z.array(z.string()),
   technologies: z.array(z.string()),
-  policyLevers: z.record(z.any()),
-  macroAssumptions: z.record(z.any()),
-  demandAssumptions: z.record(z.any()),
-  reliabilityAssumptions: z.record(z.any()),
-  affordabilityAssumptions: z.record(z.any()),
+  policyLevers: z.record(z.string(), z.any()),
+  macroAssumptions: z.record(z.string(), z.any()),
+  demandAssumptions: z.record(z.string(), z.any()),
+  reliabilityAssumptions: z.record(z.string(), z.any()),
+  affordabilityAssumptions: z.record(z.string(), z.any()),
   createdBy: z.string().optional(),
   createdAt: z.string().datetime(),
 });
@@ -52,20 +52,20 @@ export const AssumptionPackSchema = z.object({
       url: z.string().url().optional(),
       publisher: z.string(),
       date: z.string().optional(),
-    })
+    }),
   ),
   owner: z.string(),
   createdAt: z.string().datetime(),
   isDefault: z.boolean(),
   reproducibilityHash: z.string(),
-  assumptions: z.record(z.any()),
+  assumptions: z.record(z.string(), z.any()),
 });
 
 export const ScenarioRunSchema = z.object({
   id: z.string(),
   scenarioId: z.string(),
   assumptionPackId: z.string(),
-  modelVersions: z.record(z.string()),
+  modelVersions: z.record(z.string(), z.string()),
   inputHashes: z.string(),
   randomSeed: z.number().int(),
   runStatus: z.enum(['pending', 'completed', 'failed']),
@@ -100,21 +100,24 @@ export async function calculateConfigHash(obj: Record<string, unknown>): Promise
   const sortKeys = (input: any): any => {
     if (input === null || typeof input !== 'object') return input;
     if (Array.isArray(input)) return input.map(sortKeys);
-    
+
     return Object.keys(input)
       .sort()
-      .reduce((acc, key) => {
-        acc[key] = sortKeys(input[key]);
-        return acc;
-      }, {} as Record<string, any>);
+      .reduce(
+        (acc, key) => {
+          acc[key] = sortKeys(input[key]);
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
   };
 
   const sorted = sortKeys(obj);
   const serialized = JSON.stringify(sorted);
   const msgBuffer = new TextEncoder().encode(serialized);
-  
+
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   return hashHex;
 }

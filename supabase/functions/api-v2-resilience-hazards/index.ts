@@ -68,11 +68,9 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("Failed to load resilience hazards", err);
-    const message = err instanceof Error ? err.message : JSON.stringify(err);
     return new Response(
       JSON.stringify({
         error: "Failed to load resilience hazards",
-        details: message,
       }),
       {
         status: 500,

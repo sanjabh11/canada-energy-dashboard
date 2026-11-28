@@ -1,0 +1,853 @@
+// Groundsource miner request core — the decision path behind the
+// groundsource-miner edge handler, expressed against injected HTTP,
+// persistence, LLM, and fetch dependencies so tests can exercise the
+// handler boundary (auth, SSRF policy, error redaction) without Deno or
+// network access. The edge entrypoint (index.ts) stays a thin adapter
+// that wires the real Supabase/Deno implementations.
+//
+// Security invariants enforced here:
+//  - Caller-supplied `sample_sources` are NEVER fetched. They must carry
+//    inline `text`/`html` fixture content; entries without it are skipped.
+//  - Only static SOURCE_ALLOWLIST URLs may be fetched, with redirects
+//    rejected and the URL re-validated (https, no userinfo, default port).
+//  - Caller-controlled URLs never reach warnings, persisted rows, or
+//    response metadata unredacted — only a redacted origin+path form
+//    (or a stable sample:// id) is used.
+//  - Internal error detail stays in bounded ops telemetry; response bodies
+//    carry generic messages and bounded reason codes only.
+
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
+import { buildMeta } from "../_shared/mlForecasting.ts";
+import {
+  normalizeGroundsourceExtractionPayload,
+  summarizeGroundsourceRun,
+} from "./groundsource.ts";
+
+const jsonHeaders = { "Content-Type": "application/json" };
+
+export const SOURCE_ALLOWLIST: Record<string, Array<{ name: string; url: string; latitude?: number; longitude?: number }>> = {
+  utility_public: [
+    { name: "AESO", url: "https://www.aeso.ca/", latitude: 51.0447, longitude: -114.0719 },
+    { name: "IESO", url: "https://www.ieso.ca/", latitude: 43.6532, longitude: -79.3832 },
+    { name: "Alberta Utilities Commission", url: "https://www.auc.ab.ca/", latitude: 51.0447, longitude: -114.0719 },
+    { name: "UCA Alberta", url: "https://ucahelps.alberta.ca/", latitude: 51.0447, longitude: -114.0719 },
+    { name: "ENMAX", url: "https://www.enmax.com/", latitude: 51.0447, longitude: -114.0719 },
+    { name: "ATCOenergy", url: "https://www.atcoenergy.com/", latitude: 51.0447, longitude: -114.0719 },
+    { name: "EPCOR", url: "https://www.epcor.com/", latitude: 53.5461, longitude: -113.4938 },
+    { name: "Hydro-Quebec", url: "https://www.hydroquebec.com/", latitude: 45.5017, longitude: -73.5673 },
+  ],
+  policy_public: [
+    { name: "Alberta News", url: "https://www.alberta.ca/news", latitude: 53.5461, longitude: -113.4938 },
+    { name: "Government of Canada News", url: "https://www.canada.ca/en/news.html", latitude: 45.4215, longitude: -75.6972 },
+    { name: "CBC Alberta", url: "https://www.cbc.ca/news/canada/calgary", latitude: 51.0447, longitude: -114.0719 },
+    { name: "CBC Ontario", url: "https://www.cbc.ca/news/canada/toronto", latitude: 43.6532, longitude: -79.3832 },
+    { name: "Calgary Herald Energy", url: "https://calgaryherald.com/tag/energy", latitude: 51.0447, longitude: -114.0719 },
+    { name: "Edmonton Journal Energy", url: "https://edmontonjournal.com/tag/energy", latitude: 53.5461, longitude: -113.4938 },
+    { name: "Globe and Mail Energy", url: "https://www.theglobeandmail.com/topics/energy/", latitude: 43.6532, longitude: -79.3832 },
+  ],
+};
+
+type SourceDescriptor = {
+  name: string;
+  /**
+   * Display/persistence form of the source URL. For allowlisted sources
+   * this is the static allowlist URL run through redactSourceUrl; for
+   * caller-supplied samples it is a stable `sample://N` identifier — the
+   * raw caller URL is never fetched, persisted, or echoed.
+   */
+  url: string;
+  /** True only for static SOURCE_ALLOWLIST entries — the sole fetchable URLs. */
+  fetchable: boolean;
+  latitude?: number;
+  longitude?: number;
+  title?: string;
+  text?: string;
+  html?: string;
+};
+
+/**
+ * Strip userinfo, query string, and fragment from a URL so credentials or
+ * tokens carried in the query can never leak into warnings, persisted
+ * rows, or response metadata. Non-HTTP(S) pseudo-URLs (e.g. sample://N)
+ * collapse to scheme+host; unparseable input collapses to a stable marker.
+ */
+export function redactSourceUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      return `${parsed.origin}${parsed.pathname}`;
+    }
+    return `${parsed.protocol}//${parsed.hostname || "redacted"}`;
+  } catch {
+    return "redacted-source";
+  }
+}
+
+/**
+ * Validate a URL before any server-side fetch: https only, no userinfo,
+ * no explicit non-default port. Rejects credential-bearing userinfo URLs
+ * and internal/odd-port targets even if the allowlist is mis-edited.
+ */
+export function isFetchableAllowlistUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "https:") return false;
+    if (parsed.username || parsed.password) return false;
+    if (parsed.port && parsed.port !== "443") return false;
+    return Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/** Bound an internal error for ops telemetry — detail stays server-side. */
+export function boundedErrorMessage(error: unknown, max = 300): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  return raw.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+/** Compact sanitized shape for console.* — no raw error objects. */
+export function sanitizedErrorForLog(error: unknown, max = 80): Record<string, unknown> {
+  const record: Record<string, unknown> = {};
+  const code = (error as { code?: unknown })?.code;
+  if (typeof code === "string" && code) record.code = code.slice(0, 64);
+  record.message = boundedErrorMessage(error, max)
+    .replace(/https?:\/\/\S+/gi, "[url]")
+    .replace(/[A-Za-z0-9_-]{24,}/g, "[redacted]");
+  return record;
+}
+
+async function sha256(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function clamp(value: number, min = 0, max = 1): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.max(min, Math.min(max, value));
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function inferEvent(text: string, sourceUrl: string) {
+  const lower = text.toLowerCase();
+  const eventType = lower.includes("outage") || lower.includes("interruption")
+    ? "outage"
+    : lower.includes("interconnect") || lower.includes("queue") || lower.includes("connection")
+      ? "interconnection"
+    : lower.includes("delay") || lower.includes("queue")
+      ? "delay"
+    : lower.includes("price") || lower.includes("rate")
+      ? "price_spike"
+    : lower.includes("tier") || lower.includes("regulation")
+          ? "policy"
+          : "other";
+  const province = lower.includes("alberta") || sourceUrl.includes("aeso") || sourceUrl.includes("alberta") ? "AB" : lower.includes("ontario") || sourceUrl.includes("ieso") ? "ON" : null;
+  const severity = eventType === "outage" ? "high" : eventType === "price_spike" ? "medium" : "low";
+  return { eventType, province, severity };
+}
+
+function sourceWeight(sourceGroup: string, sourceUrl: string): number {
+  const lower = `${sourceGroup} ${sourceUrl}`.toLowerCase();
+  if (lower.includes("aeso")) return 0.95;
+  if (lower.includes("ieso")) return 0.9;
+  if (lower.includes("auc")) return 0.88;
+  if (lower.includes("uca") || lower.includes("alberta")) return 0.84;
+  return 0.8;
+}
+
+function normalizeEventType(value: unknown, fallback: string): string {
+  const lower = String(value ?? fallback ?? "").toLowerCase();
+  if (lower.includes("outage")) return "outage";
+  if (lower.includes("interconnect") || lower.includes("queue") || lower.includes("connection")) return "interconnection";
+  if (lower.includes("delay")) return "delay";
+  if (lower.includes("price")) return "price_spike";
+  if (lower.includes("policy") || lower.includes("regulat")) return "policy";
+  if (lower.includes("weather")) return "weather";
+  return "other";
+}
+
+function normalizeSeverity(value: unknown, fallbackType: string): "low" | "medium" | "high" | "critical" {
+  const lower = String(value ?? "").toLowerCase();
+  if (lower === "critical" || lower === "high" || lower === "medium" || lower === "low") {
+    return lower;
+  }
+  if (fallbackType === "outage") return "high";
+  if (fallbackType === "price_spike" || fallbackType === "interconnection") return "medium";
+  return "low";
+}
+
+function coerceNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeProvince(value: unknown, text: string, sourceUrl: string): string | null {
+  const raw = String(value ?? "").trim().toUpperCase();
+  if (raw.length === 2) return raw;
+  const lower = `${text} ${sourceUrl}`.toLowerCase();
+  if (lower.includes("alberta") || lower.includes("aeso")) return "AB";
+  if (lower.includes("ontario") || lower.includes("ieso")) return "ON";
+  if (lower.includes("british columbia")) return "BC";
+  if (lower.includes("quebec")) return "QC";
+  return null;
+}
+
+function parseTimestamp(value: unknown): string | null {
+  if (!value) return null;
+  const parsed = new Date(String(value));
+  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : null;
+}
+
+type CallLlmFn = (request: {
+  messages: Array<{ role: string; content: string }>;
+  maxTokens?: number;
+  responseMimeType?: string;
+  thinkingBudget?: number;
+}) => Promise<unknown>;
+
+async function extractStructuredEvents(
+  source: SourceDescriptor,
+  text: string,
+  scheduledRun: boolean,
+  sourceGroup: string,
+  callLlm: CallLlmFn,
+) {
+  const prompt = [
+    "You extract public energy intelligence from allowlisted utility and policy text.",
+    "Return JSON only, with this shape:",
+    '{ "source_confidence": 0.0-1.0, "provenance_notes": [string], "events": [ { "event_type": "outage|delay|interconnection|price_spike|policy|weather|other", "province": "AB|ON|BC|QC|MB|SK|NS|NB|NL|PE|NT|NU|YT|null", "location_name": string|null, "latitude": number|null, "longitude": number|null, "affected_asset": string|null, "severity": "low|medium|high|critical", "event_timestamp": string|null, "confidence_score": 0.0-1.0, "summary": string } ] }',
+    "Return at most 1 event.",
+    "Keep provenance_notes to at most 1 short phrase under 80 characters.",
+    "Keep summary under 160 characters.",
+    "If no concrete public event is present, return events as an empty array and provenance_notes as an empty array.",
+    "Do not add explanations outside the JSON object.",
+    `source_group: ${sourceGroup}`,
+    `scheduled_run: ${scheduledRun ? "true" : "false"}`,
+    `source_name: ${source.name}`,
+    `source_url: ${source.url}`,
+    "Source text:",
+    text.slice(0, 4500),
+  ].join("\n");
+
+  try {
+    const llmResponse = await callLlm({
+      messages: [
+        {
+          role: "system",
+          content: "You are a structured extraction engine for energy operations. Do not invent facts. If nothing relevant is present, return an empty events array.",
+        },
+        { role: "user", content: prompt },
+      ],
+      maxTokens: 700,
+      responseMimeType: "application/json",
+      thinkingBudget: 0,
+    });
+    // Raw LLM output and error text never reach caller-facing fields —
+    // only the bounded reason codes from the normalizer propagate.
+    return normalizeGroundsourceExtractionPayload(llmResponse);
+  } catch (error) {
+    console.error("Groundsource LLM extraction failed:", sanitizedErrorForLog(error));
+    const reason = boundedErrorMessage(error);
+    return {
+      mode: "heuristic" as const,
+      sourceConfidence: 0.55,
+      provenanceNotes: [
+        reason.includes("GEMINI_API_KEY") ? "llm_unavailable" : "llm_request_failed",
+      ],
+      events: [],
+      fallbackReason: reason.includes("GEMINI_API_KEY") ? "llm_unavailable" : "llm_request_failed",
+    };
+  }
+}
+
+function normalizeRequestPath(url: string): string {
+  const pathname = new URL(url).pathname.replace(/\/+$/, "") || "/";
+  const candidates = [
+    "/functions/v1/groundsource-miner/ingest",
+    "/functions/v1/groundsource-miner",
+    "/groundsource-miner/ingest",
+    "/groundsource-miner",
+    "/ingest",
+    "/",
+  ];
+
+  for (const candidate of candidates) {
+    if (pathname === candidate) {
+      if (candidate.endsWith("/ingest")) return "/ingest";
+      return "/";
+    }
+  }
+
+  return pathname;
+}
+
+export interface GroundsourceHttpDeps {
+  isAuthorized: (req: Request) => boolean;
+  createCorsHeaders: (req: Request) => Record<string, string>;
+  handleCorsOptions: (req: Request) => Response;
+  applyRateLimit: (req: Request, functionName: string) => {
+    response?: Response | null;
+    headers?: Record<string, string>;
+  };
+}
+
+export interface GroundsourceOpsDeps {
+  startOpsRun: (supabase: unknown, context: Record<string, unknown>) => Promise<{ id: string; started_at?: string }>;
+  finishOpsRun: (supabase: unknown, runId: string, status: "success" | "failure", context: Record<string, unknown>) => Promise<unknown>;
+  logFallbackEvent: (supabase: unknown, context: Record<string, unknown>) => Promise<unknown>;
+  logJobExecution: (supabase: unknown, context: Record<string, unknown>) => Promise<unknown>;
+}
+
+export interface GroundsourceIngestionDeps {
+  // Supabase client is intentionally duck-typed so tests can inject a
+  // chainable mock — eslint's no-explicit-any is suppressed for this field.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any | null;
+  fetchImpl: typeof fetch;
+  callLlm: CallLlmFn;
+  saveSnapshot: (args: {
+    dashboardKey: string;
+    variantKey: string;
+    summaryPayload: Record<string, unknown>;
+    sourceLabel: string;
+    sourceUpdatedAt: string;
+    isPartial: boolean;
+    notes?: string;
+  }) => Promise<unknown>;
+  ops: GroundsourceOpsDeps;
+  budgets: {
+    dailyTokenBudget: number;
+    maxDurationMs: number;
+    maxEventsPerDay: number;
+  };
+}
+
+async function persistGroundsourceSnapshot(
+  deps: GroundsourceIngestionDeps,
+  sourceGroup: string,
+  summaryPayload: Record<string, unknown>,
+  sourceUpdatedAt?: string | null,
+) {
+  if (!deps.supabase) {
+    return;
+  }
+
+  await deps.saveSnapshot({
+    dashboardKey: "groundsource_intelligence",
+    variantKey: sourceGroup,
+    summaryPayload,
+    sourceLabel: "groundsource-miner",
+    sourceUpdatedAt: sourceUpdatedAt ?? new Date().toISOString(),
+    isPartial: Boolean(summaryPayload.meta && (summaryPayload.meta as Record<string, unknown>).claim_label === "advisory"),
+    notes: "Persisted protected groundsource ingestion summary for anon-safe browser reads.",
+  });
+}
+
+/**
+ * Full request handler behind `serve` in index.ts. Dependencies are
+ * injected so unit tests can assert response-level behavior — auth
+ * rejection, SSRF policy, error redaction — without Deno or the network.
+ */
+export async function handleGroundsourceRequest(
+  req: Request,
+  http: GroundsourceHttpDeps,
+  deps: GroundsourceIngestionDeps,
+): Promise<Response> {
+  if (req.method === "OPTIONS") return http.handleCorsOptions(req);
+  const rl = http.applyRateLimit(req, "groundsource-miner");
+  if (rl.response) return rl.response;
+  const cors = http.createCorsHeaders(req);
+  const path = normalizeRequestPath(req.url);
+
+  if (req.method !== "POST" || !["/ingest", "/"].includes(path)) {
+    return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
+
+  if (!http.isAuthorized(req)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
+
+  const { supabase, fetchImpl, callLlm, ops, budgets } = deps;
+  const startedAt = Date.now();
+  let opsRunId: string | null = null;
+  let opsRunStartedAt: string | undefined;
+
+  try {
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) {
+      const tooLarge = bodyRead.reason === "too_large";
+      return new Response(JSON.stringify({ error: tooLarge ? "Payload too large" : "Malformed JSON body" }), { status: tooLarge ? 413 : 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+    }
+    const body = asJsonObject(bodyRead.json);
+    if (!body) {
+      return new Response(JSON.stringify({ error: "Body must be a JSON object" }), { status: 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+    }
+    // Bound length — the value is echoed in responses, variant keys, and ops
+    // metadata — and reject prototype keys like "__proto__" below.
+    const sourceGroup = String(body.source_group ?? body.sourceGroup ?? "utility_public").slice(0, 64);
+    // allow_indigenous_consent is a behavior gate only: it controls whether
+    // Indigenous-keyword text is ingested this run. It is NOT consent
+    // evidence and must never be cited as proof of community consent.
+    const allowIndigenous = Boolean(body.allow_indigenous_consent ?? body.allowIndigenousConsent);
+    const scheduledRun = Boolean(body.scheduled_run ?? body.scheduledRun);
+    const maxSources = Math.min(15, Math.max(1, Number(body.max_items ?? body.maxItems ?? 5)));
+    const requestedEvents = Math.min(budgets.maxEventsPerDay, Math.max(1, Number(body.max_events ?? body.maxEvents ?? budgets.maxEventsPerDay)));
+    // Caller-supplied sample sources are fixture inputs only. Their `url`
+    // field is replaced by a stable sample:// identifier for persistence and
+    // display: it is never fetched (SSRF guard) and never echoed raw (a
+    // query string can carry credentials). Entries without inline
+    // text/html content are skipped downstream — no network is touched.
+    const sampleSources = Array.isArray(body.sample_sources)
+      ? body.sample_sources.slice(0, maxSources).map((entry: any, index: number) => ({
+        name: String(entry?.name ?? `Sample ${index + 1}`).slice(0, 500),
+        url: `sample://${index + 1}`,
+        fetchable: false,
+        latitude: Number.isFinite(Number(entry?.latitude)) ? Number(entry.latitude) : undefined,
+        longitude: Number.isFinite(Number(entry?.longitude)) ? Number(entry.longitude) : undefined,
+        title: entry?.title ? String(entry.title).slice(0, 512) : undefined,
+        text: entry?.text ? String(entry.text).slice(0, 50000) : undefined,
+        html: entry?.html ? String(entry.html).slice(0, 50000) : undefined,
+      }))
+      : null;
+    // Own-property lookup: SOURCE_ALLOWLIST["__proto__"] would resolve through
+    // the prototype chain and throw (or worse) downstream.
+    const allowlistEntries = Object.prototype.hasOwnProperty.call(SOURCE_ALLOWLIST, sourceGroup)
+      ? SOURCE_ALLOWLIST[sourceGroup]
+      : [];
+    const allowlistedSources: SourceDescriptor[] = allowlistEntries
+      .slice(0, maxSources)
+      .map((entry) => ({ ...entry, url: redactSourceUrl(entry.url), fetchable: true }));
+    const sources: SourceDescriptor[] = sampleSources?.length ? sampleSources : allowlistedSources;
+    if (sources.length === 0) {
+      return new Response(JSON.stringify({ error: "source_group is not allowlisted" }), { status: 400, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+    }
+
+    let remainingEventBudget = requestedEvents;
+    let remainingDurationBudgetMs = budgets.maxDurationMs;
+    let todayEventCount = 0;
+    if (supabase) {
+      const opsRun = await ops.startOpsRun(supabase, {
+        jobName: "groundsource-miner",
+        runType: "ingestion",
+        metadata: {
+          source_group: sourceGroup,
+          scheduled_run: scheduledRun,
+          requested_sources: sources.length,
+        },
+      });
+      opsRunId = opsRun.id;
+      opsRunStartedAt = opsRun.started_at;
+
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const [eventsTodayResult, todayRunsResult] = await Promise.all([
+        supabase.from("ml_intelligence_events").select("id", { count: "exact", head: true }).gte("created_at", todayStart.toISOString()),
+        supabase.from("ops_runs").select("duration_ms").eq("job_name", "groundsource-miner").gte("started_at", todayStart.toISOString()),
+      ]);
+      todayEventCount = Number(eventsTodayResult.count ?? 0);
+      const durationUsedMs = Array.isArray(todayRunsResult.data)
+        ? todayRunsResult.data.reduce((sum: number, row: { duration_ms?: unknown }) => sum + Number(row.duration_ms ?? 0), 0)
+        : 0;
+      remainingEventBudget = Math.min(
+        requestedEvents,
+        Math.max(0, budgets.maxEventsPerDay - todayEventCount),
+      );
+      remainingDurationBudgetMs = Math.max(0, budgets.maxDurationMs - durationUsedMs);
+    }
+
+    if (remainingEventBudget <= 0) {
+      const response = {
+        source_group: sourceGroup,
+        scheduled_run: scheduledRun,
+        source_count: sources.length,
+        llm_source_count: 0,
+        heuristic_source_count: 0,
+        documents: [] as unknown[],
+        events: [] as unknown[],
+        provenance_score: 0,
+        extraction_mode: "budget_exhausted",
+        fallback_reason: "daily_event_budget_exhausted",
+        event_count: 0,
+        warnings: ["Daily intelligence event budget has been exhausted."],
+        meta: buildMeta({
+          modelVersion: "groundsource-miner-v1",
+          validAt: new Date().toISOString(),
+          confidenceScore: 0,
+          dataSources: sources.map((source) => ({ name: source.name, url: source.url })),
+          isFallback: true,
+          methodology: "Groundsource ingestion halted because the daily event budget was exhausted.",
+          warnings: ["Daily intelligence event budget has been exhausted."],
+          claimLabel: "advisory",
+        }),
+      };
+
+      await persistGroundsourceSnapshot(deps, sourceGroup, response, response.meta.valid_at).catch(() => null);
+
+      if (supabase && opsRunId) {
+        await ops.logFallbackEvent(supabase, {
+          jobName: "groundsource-miner",
+          domain: "groundsource",
+          reason: "daily_event_budget_exhausted",
+          source: "groundsource-miner",
+          modelVersion: "groundsource-miner-v1",
+          metadata: {
+            source_group: sourceGroup,
+            scheduled_run: scheduledRun,
+            extraction_mode: "budget_exhausted",
+            source_count: sources.length,
+            llm_source_count: 0,
+            heuristic_source_count: 0,
+            event_count: 0,
+          },
+        }).catch(() => null);
+        await ops.finishOpsRun(supabase, opsRunId, "success", {
+          jobName: "groundsource-miner",
+          startedAt: opsRunStartedAt,
+          metadata: {
+            source_group: sourceGroup,
+            scheduled_run: scheduledRun,
+            today_event_count: todayEventCount,
+            remaining_event_budget: 0,
+            token_budget_used: 0,
+            duration_budget_ms: remainingDurationBudgetMs,
+          },
+        }).catch(() => null);
+        await ops.logJobExecution(supabase, {
+          jobName: "groundsource-miner",
+          jobType: "cron",
+          status: "success",
+          durationMs: Math.max(0, Date.now() - startedAt),
+          metadata: {
+            source_group: sourceGroup,
+            scheduled_run: scheduledRun,
+            extraction_mode: "budget_exhausted",
+            today_event_count: todayEventCount,
+          },
+        }).catch(() => null);
+      }
+
+      return new Response(JSON.stringify(response), { status: 200, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+    }
+
+    const documents: any[] = [];
+    const events: any[] = [];
+    const provenanceScores: number[] = [];
+    const heuristicsUsed: string[] = [];
+    const fallbackReasons: string[] = [];
+    const warnings: string[] = [];
+    let llmSourceCount = 0;
+    let heuristicSourceCount = 0;
+    let estimatedTokensUsed = 0;
+
+    for (const source of sources) {
+      const elapsedMs = Date.now() - startedAt;
+      if (elapsedMs >= remainingDurationBudgetMs) {
+        warnings.push("Groundsource duration budget reached; remaining sources were skipped.");
+        break;
+      }
+      if (events.length >= remainingEventBudget) {
+        warnings.push("Groundsource daily event budget reached; remaining sources were skipped.");
+        break;
+      }
+      if (estimatedTokensUsed >= budgets.dailyTokenBudget) {
+        warnings.push("Groundsource token budget reached; remaining sources were skipped.");
+        break;
+      }
+
+      // SSRF policy: only inline fixture content or static allowlist URLs
+      // may produce source text. Caller-supplied sample entries without
+      // inline text/html are skipped — their URLs are never fetched.
+      let pageContent: string | null = null;
+      if (source.text || source.html) {
+        pageContent = source.text ?? stripHtml(source.html ?? "");
+      } else if (source.fetchable && isFetchableAllowlistUrl(source.url)) {
+        const fetched = await fetchImpl(source.url, {
+          headers: { "User-Agent": "CEIPGroundsourceMiner/1.0 (+public-source-allowlist)" },
+          redirect: "error",
+        }).catch(() => null);
+        if (!fetched?.ok) continue;
+        pageContent = await fetched.text().catch((): null => null);
+        if (pageContent === null) continue;
+      } else {
+        continue;
+      }
+
+      const html = source.html ?? pageContent;
+      const text = stripHtml(html).slice(0, 5000);
+      estimatedTokensUsed += Math.ceil(text.length / 4);
+      if (estimatedTokensUsed >= budgets.dailyTokenBudget) {
+        warnings.push("Groundsource token budget reached while processing source text.");
+        break;
+      }
+
+      const lower = text.toLowerCase();
+      if (!allowIndigenous && (lower.includes("first nation") || lower.includes("indigenous") || lower.includes("metis") || lower.includes("inuit"))) {
+        continue;
+      }
+
+      const contentHash = await sha256(`${source.url}:${text}`);
+      const title = (source.title ?? html.match(/<title[^>]*>(.*?)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim() ?? source.name).slice(0, 512);
+      const llmExtraction = await extractStructuredEvents(source, text, scheduledRun, sourceGroup, callLlm).catch(() => null);
+      const fallbackEvent = inferEvent(text, source.url);
+      const sourceConfidence = clamp(llmExtraction?.sourceConfidence ?? 0.55, 0, 1);
+      const sourceUsedLlm = Boolean(llmExtraction?.events?.length && llmExtraction.mode === "llm");
+      const eventPayloads = sourceUsedLlm
+        ? llmExtraction.events
+        : [{
+          event_type: fallbackEvent.eventType,
+          province: fallbackEvent.province,
+          location_name: null,
+          latitude: source.latitude ?? null,
+          longitude: source.longitude ?? null,
+          affected_asset: null,
+          severity: fallbackEvent.severity,
+          event_timestamp: null,
+          confidence_score: 0.55,
+          summary: `${source.name}: ${title}`.slice(0, 500),
+        }];
+      if (sourceUsedLlm) {
+        llmSourceCount += 1;
+      } else {
+        heuristicSourceCount += 1;
+        heuristicsUsed.push(source.url);
+        if (llmExtraction?.fallbackReason) {
+          fallbackReasons.push(`${source.name}: ${llmExtraction.fallbackReason}`);
+        }
+      }
+
+      const documentPayload = {
+        source_group: sourceGroup,
+        source_url: source.url,
+        source_name: source.name,
+        content_hash: contentHash,
+        title,
+        excerpt: text.slice(0, 800),
+        consent_scope: "public",
+          metadata: {
+            robots_policy: "allowlist_only",
+            fetched_by: "groundsource-miner",
+            extraction_mode: sourceUsedLlm ? "llm" : "heuristic",
+            scheduled_run: scheduledRun,
+            source_confidence: sourceConfidence,
+            provenance_notes: llmExtraction?.provenanceNotes ?? [],
+            token_budget_used: estimatedTokensUsed,
+            duration_budget_remaining_ms: Math.max(0, remainingDurationBudgetMs - elapsedMs),
+        },
+      };
+
+      const documentResult = supabase
+        ? await supabase.from("ml_source_documents").upsert(documentPayload, { onConflict: "source_url,content_hash" }).select("id, source_url").single()
+        : { data: { id: crypto.randomUUID(), source_url: source.url }, error: null as { message: string } | null };
+      if (documentResult.error) {
+        console.error("Groundsource document upsert failed:", sanitizedErrorForLog(documentResult.error));
+        const note = `Document upsert failed for ${source.url}`;
+        if (!warnings.some((w) => w === note)) warnings.push(note);
+      }
+      const documentRecord = documentResult.data;
+      if (!documentRecord) continue;
+      documents.push(documentRecord);
+
+      for (const eventPayload of eventPayloads) {
+        if (events.length >= remainingEventBudget) break;
+        const confidence = clamp(Number(eventPayload.confidence_score ?? sourceConfidence), 0, 1);
+        provenanceScores.push(clamp(confidence * sourceWeight(sourceGroup, source.url), 0, 1));
+        const eventType = normalizeEventType(eventPayload.event_type ?? eventPayload.eventType, fallbackEvent.eventType);
+        const eventRecord = {
+          source_document_id: documentRecord.id,
+          event_type: eventType,
+          province: normalizeProvince(eventPayload.province, text, source.url) ?? fallbackEvent.province,
+          location_name: String(eventPayload.location_name ?? eventPayload.locationName ?? "").trim().slice(0, 512) || null,
+          latitude: coerceNumber(eventPayload.latitude ?? eventPayload.lat ?? source.latitude),
+          longitude: coerceNumber(eventPayload.longitude ?? eventPayload.lng ?? source.longitude),
+          affected_asset: String(eventPayload.affected_asset ?? eventPayload.affectedAsset ?? "").trim().slice(0, 512) || null,
+          severity: normalizeSeverity(eventPayload.severity, eventType),
+          event_timestamp: parseTimestamp(eventPayload.event_timestamp ?? eventPayload.timestamp ?? eventPayload.eventTimestamp),
+          confidence_score: confidence,
+          summary: String(eventPayload.summary ?? eventPayload.description ?? `${source.name}: ${title}`).slice(0, 500),
+          source_url: source.url,
+          synthetic: false,
+        };
+
+        const eventInsertResult = supabase
+          ? await supabase.from("ml_intelligence_events").insert(eventRecord).select("id, event_type, province, severity, summary, source_url, latitude, longitude, event_timestamp").single()
+          : {
+            data: {
+              id: crypto.randomUUID(),
+              event_type: eventRecord.event_type,
+              province: eventRecord.province,
+              severity: eventRecord.severity,
+              summary: eventRecord.summary,
+              source_url: eventRecord.source_url,
+              latitude: eventRecord.latitude,
+              longitude: eventRecord.longitude,
+              event_timestamp: eventRecord.event_timestamp,
+            },
+            error: null as { message: string } | null,
+          };
+        if (eventInsertResult.error) {
+          console.error("Groundsource event insert failed:", sanitizedErrorForLog(eventInsertResult.error));
+          const note = `Event insert failed for ${source.url}`;
+          if (!warnings.some((w) => w === note)) warnings.push(note);
+        }
+        if (eventInsertResult.data) events.push(eventInsertResult.data);
+      }
+    }
+
+    const budgetExhausted = warnings.some((warning) =>
+      warning.toLowerCase().includes("budget reached") || warning.toLowerCase().includes("budget exhausted")
+    );
+    const runSummary = summarizeGroundsourceRun({
+      sourceCount: sources.length,
+      eventCount: events.length,
+      llmSourceCount,
+      heuristicSourceCount,
+      fallbackReasons,
+      budgetExhausted,
+      warnings,
+      provenanceScores,
+    });
+
+    const averageProvenance = provenanceScores.length
+      ? provenanceScores.reduce((sum, value) => sum + value, 0) / provenanceScores.length
+      : 0.55;
+    const confidenceScore = clamp(averageProvenance, 0.35, 0.95);
+    const meta = buildMeta({
+      modelVersion: "groundsource-miner-v1",
+      validAt: new Date().toISOString(),
+      confidenceScore,
+      dataSources: sources.map((source) => ({ name: source.name, url: source.url })),
+      isFallback: runSummary.claim_label === "advisory",
+      methodology: "Allowlisted public-source fetch, content hash deduplication, and structured LLM extraction with heuristic fallback.",
+      warnings: [
+        "No Indigenous/community microgrid data is ingested unless explicit consent is supplied.",
+        scheduledRun ? "Scheduled ingestion mode enabled." : "Manual ingestion mode.",
+        runSummary.extraction_mode === "llm"
+          ? "LLM structured extraction used for all processed sources."
+          : "One or more sources fell back to heuristic extraction.",
+        ...warnings,
+        ...(runSummary.fallback_reason ? [runSummary.fallback_reason] : []),
+      ],
+      claimLabel: runSummary.claim_label,
+    });
+
+    const responsePayload = {
+      source_group: sourceGroup,
+      scheduled_run: scheduledRun,
+      source_count: runSummary.source_count,
+      llm_source_count: runSummary.llm_source_count,
+      heuristic_source_count: runSummary.heuristic_source_count,
+      extraction_mode: runSummary.extraction_mode,
+      fallback_reason: runSummary.fallback_reason,
+      documents,
+      events,
+      provenance_score: confidenceScore,
+      event_count: runSummary.event_count,
+      budget: {
+        requested_events: requestedEvents,
+        remaining_events: remainingEventBudget,
+        token_budget_used: estimatedTokensUsed,
+        token_budget_limit: budgets.dailyTokenBudget,
+        duration_budget_remaining_ms: remainingDurationBudgetMs,
+      },
+      warnings: meta.warnings,
+      meta,
+    };
+
+    await persistGroundsourceSnapshot(deps, sourceGroup, responsePayload, meta.valid_at).catch(() => null);
+
+    if (supabase && opsRunId) {
+      if (runSummary.claim_label === "advisory") {
+        await ops.logFallbackEvent(supabase, {
+          jobName: "groundsource-miner",
+          domain: "groundsource",
+          reason: runSummary.fallback_reason ?? "heuristic_extraction_used",
+          source: "groundsource-miner",
+          modelVersion: "groundsource-miner-v1",
+          metadata: {
+            source_group: sourceGroup,
+            scheduled_run: scheduledRun,
+            extraction_mode: runSummary.extraction_mode,
+            source_count: runSummary.source_count,
+            llm_source_count: runSummary.llm_source_count,
+            heuristic_source_count: runSummary.heuristic_source_count,
+            event_count: runSummary.event_count,
+            token_budget_used: estimatedTokensUsed,
+          },
+        }).catch(() => null);
+      }
+
+      await ops.finishOpsRun(supabase, opsRunId, "success", {
+        jobName: "groundsource-miner",
+        startedAt: opsRunStartedAt,
+        metadata: {
+          source_group: sourceGroup,
+          scheduled_run: scheduledRun,
+          documents: documents.length,
+          events: events.length,
+          source_count: runSummary.source_count,
+          llm_source_count: runSummary.llm_source_count,
+          heuristic_source_count: runSummary.heuristic_source_count,
+          extraction_mode: runSummary.extraction_mode,
+          fallback_reason: runSummary.fallback_reason ?? null,
+          heuristics_used: heuristicsUsed.length,
+          token_budget_used: estimatedTokensUsed,
+          duration_budget_ms: remainingDurationBudgetMs,
+        },
+      }).catch(() => null);
+      await ops.logJobExecution(supabase, {
+        jobName: "groundsource-miner",
+        jobType: "cron",
+        status: "success",
+        durationMs: Math.max(0, Date.now() - startedAt),
+        metadata: {
+          source_group: sourceGroup,
+          scheduled_run: scheduledRun,
+          documents: documents.length,
+          events: events.length,
+          source_count: runSummary.source_count,
+          llm_source_count: runSummary.llm_source_count,
+          heuristic_source_count: runSummary.heuristic_source_count,
+          extraction_mode: runSummary.extraction_mode,
+          fallback_reason: runSummary.fallback_reason ?? null,
+          heuristics_used: heuristicsUsed.length,
+          token_budget_used: estimatedTokensUsed,
+        },
+      }).catch(() => null);
+    }
+
+    return new Response(JSON.stringify(responsePayload), { status: 200, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  } catch (error) {
+    console.error("Groundsource unhandled failure:", sanitizedErrorForLog(error));
+    if (supabase && opsRunId) {
+      await ops.finishOpsRun(supabase, opsRunId, "failure", {
+        jobName: "groundsource-miner",
+        startedAt: opsRunStartedAt,
+        errorMessage: boundedErrorMessage(error),
+        metadata: {
+          source_group: "unknown",
+          scheduled_run: false,
+        },
+      }).catch(() => null);
+      await ops.logJobExecution(supabase, {
+        jobName: "groundsource-miner",
+        jobType: "cron",
+        status: "failed",
+        durationMs: Math.max(0, Date.now() - startedAt),
+        errorMessage: boundedErrorMessage(error),
+        metadata: { error: boundedErrorMessage(error) },
+      }).catch(() => null);
+    }
+
+    return new Response(JSON.stringify({
+      error: "Internal error",
+    }), { status: 500, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+  }
+}

@@ -21,9 +21,9 @@ import { type WhopTier } from '../../lib/whop';
 // Map legacy tier names to Whop tiers
 type LegacyTier = 'free' | 'edubiz' | 'pro';
 const legacyToWhopTier: Record<LegacyTier, WhopTier> = {
-  'free': 'free',
-  'edubiz': 'basic',
-  'pro': 'pro'
+  free: 'free',
+  edubiz: 'basic',
+  pro: 'pro',
 };
 
 interface ProtectedRouteProps {
@@ -32,11 +32,7 @@ interface ProtectedRouteProps {
   fallback?: React.ReactNode;
 }
 
-export function ProtectedRoute({
-  children,
-  requiredTier = 'free',
-  fallback,
-}: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredTier = 'free', fallback }: ProtectedRouteProps) {
   const { user, loading, edubizUser, refreshUser } = useAuth();
   const whopTier = legacyToWhopTier[requiredTier];
   const hasTier = useHasTier(whopTier);
@@ -79,11 +75,9 @@ export function ProtectedRoute({
         {fallback || (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center max-w-md">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Get Started to Continue
-              </h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Get Started to Continue</h2>
               <p className="text-slate-400 mb-6">
-                Continue with Whop or browse as a guest to access this feature
+                Sign in to an existing Whop account or browse as a guest to access this feature
               </p>
               <button
                 onClick={() => setShowAuthModal(true)}
@@ -110,11 +104,10 @@ export function ProtectedRoute({
         {fallback || (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center max-w-md">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Upgrade required
-              </h2>
+              <h2 className="text-2xl font-bold text-white mb-4">Upgrade required</h2>
               <p className="text-slate-400 mb-2">
-                This feature requires <span className="text-cyan-400 font-semibold capitalize">{requiredTier}</span> tier
+                This feature requires{' '}
+                <span className="text-cyan-400 font-semibold capitalize">{requiredTier}</span> tier
               </p>
               <p className="text-sm text-slate-500 mb-6">
                 Your current tier: <span className="capitalize">{edubizUser?.tier || 'free'}</span>

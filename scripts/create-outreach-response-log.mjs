@@ -2,34 +2,16 @@
 
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import {
+  OUTREACH_RESPONSE_LOG_COLUMNS,
+  SUPPRESSION_REGISTRY_COLUMNS,
+} from './lib/outreach-response-log-schema.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
 const failures = [];
 const values = new Map();
 let force = false;
-
-const outreachResponseLogColumns = [
-  'activity_date',
-  'channel',
-  'target_label',
-  'buyer_lane',
-  'proof_pack_id',
-  'route',
-  'rating',
-  'variant_id',
-  'caveat_used',
-  'artifact_promised',
-  'reply_status',
-  'response_summary',
-  'pain_signal',
-  'requested_input',
-  'reviewer_role',
-  'commercial_commitment_status',
-  'next_action',
-  'pilot_evidence_register_action',
-  'notes',
-];
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -105,10 +87,16 @@ mkdirSync(outputDir, { recursive: true });
 
 const logPath = path.join(outputDir, fileName);
 const readmePath = path.join(outputDir, 'README.md');
+const suppressionPath = path.join(outputDir, 'suppression-registry.csv');
 const logDisplayPath = displayPath(logPath);
 const outputDirDisplayPath = displayPath(outputDir);
 
-writeFileSync(logPath, `${outreachResponseLogColumns.join(',')}\n`, 'utf8');
+writeFileSync(logPath, `${OUTREACH_RESPONSE_LOG_COLUMNS.join(',')}\n`, 'utf8');
+// Never replace an existing suppression registry, even with --force. It is a
+// safety record shared by every outreach log in this workspace.
+if (!existsSync(suppressionPath)) {
+  writeFileSync(suppressionPath, `${SUPPRESSION_REGISTRY_COLUMNS.join(',')}\n`, { flag: 'wx' });
+}
 writeFileSync(readmePath, [
   '# CEIP Outreach Response Log Starter',
   '',
@@ -117,10 +105,12 @@ writeFileSync(readmePath, [
   '## Use',
   '',
   '1. Keep direct names, emails, phone numbers, account IDs, meter IDs, postal codes, service addresses, and raw sensitive notes outside this repo.',
-  '2. Add rows only after a real completed outreach activity or reply exists.',
-  '3. Use `target_label` handles such as `utility_planner_001` instead of direct identifiers.',
-  '4. Keep `pilot_evidence_register_action=none` until the buyer asks for information, offers data, books a meeting, or records a commercial signal.',
-  '5. Do not raise feature ratings or market confidence from this log alone.',
+  '2. Merge any suppressed-target rows into the canonical owner-managed registry `docs/growth/SUPPRESSION_REGISTRY_LIVE.csv` (or the file named by `--suppression-file` / `CEIP_SUPPRESSION_REGISTRY`). The per-workspace `suppression-registry.csv` scaffolded here is a staging aid only — the validator and appender fail closed without the canonical registry and never treat a campaign-local file as authoritative.',
+  '3. Add rows only after a real completed activity or reply exists. This tooling does not send outreach or approve a campaign.',
+  '4. Use `target_label` handles such as `utility_planner_001` instead of direct identifiers.',
+  '5. Before recording a sent CEM, provide consent basis/source/date, verified sender-identification and unsubscribe controls, and documented CASL-owner approval.',
+  '6. Keep `pilot_evidence_register_action=none` until a buyer asks for information, offers data, books a meeting, or records a commercial signal.',
+  '7. Do not raise feature ratings or market confidence from this log alone.',
   '',
   '## Commands',
   '',
@@ -131,11 +121,12 @@ writeFileSync(readmePath, [
   `pnpm run report:buyer-evidence-readiness -- --root ${outputDirDisplayPath}`,
   '```',
   '',
-  'After actionable rows exist, use the action plan to create intake packets, prepare retained redacted artifacts, update the pilot evidence register, and only then run the hard 95% retained-artifact gate.',
+  'Before any outreach, obtain the designated CASL owner\'s approval for the message, channel, consent basis, sender identification, working unsubscribe mechanism, and shared suppression registry. After actionable replies exist, use the action plan to create intake packets, prepare retained redacted artifacts, update the pilot evidence register, and only then run the hard 95% retained-artifact gate.',
   '',
 ].join('\n'), 'utf8');
 
 console.log('Outreach response log starter created.');
 console.log(`Output directory: ${outputDirDisplayPath}`);
 console.log(`Response log: ${logDisplayPath}`);
+console.log(`Suppression registry: ${displayPath(suppressionPath)}`);
 console.log(`Run: pnpm run validate:outreach-response-log -- ${logDisplayPath}`);

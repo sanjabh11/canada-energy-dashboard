@@ -304,10 +304,10 @@ Happy to continue the conversation here!
 
 ## Campaign 3: Municipal Sustainability Officers
 
-**Priority:** HIGH (sub-NWPTA threshold = no RFP required)
+**Priority:** HIGH (procurement treatment requires entity- and scope-specific review)
 **GTM Score:** 7.0/10
 **Target MRR:** $11,800 by Month 9
-**Pricing:** $5,900/mo ($70,800/yr — below $75K NWPTA sole-source threshold)
+**Pricing:** $5,900/mo ($70,800/yr — illustrative planning price; procurement eligibility unverified)
 **Live demo URLs:**
 - Municipal Landing: `https://canada-energy.netlify.app/municipal`
 - ROI Calculator: `https://canada-energy.netlify.app/roi-calculator`
@@ -338,7 +338,7 @@ Happy to continue the conversation here!
 
 **Template A — Free Audit Hook:**
 ```
-Hi {FirstName}, saw {Municipality}'s climate action work. I built a free GHG baseline audit tool for Alberta municipalities — no RFP needed (under $75K). Would love to share it. Connect?
+Hi {FirstName}, saw {Municipality}'s climate action work. I built a free GHG baseline audit tool for Alberta municipalities. Procurement treatment depends on your entity, scope, and applicable rules; would you be open to reviewing the workflow? Connect?
 ```
 
 **Template B — MCCAC Reference:**
@@ -348,7 +348,7 @@ Hi {FirstName}, fellow MCCAC workshop attendee interest here. I've been building
 
 **Template C — Procurement-Friendly:**
 ```
-Hi {FirstName}, noticed {Municipality}'s sustainability goals. I built climate tracking tools priced for sole-source procurement (<$75K NWPTA). No lengthy RFP. Would love to show you!
+Hi {FirstName}, noticed {Municipality}'s sustainability goals. I built climate-tracking tools with an illustrative planning price. The applicable procurement process should be confirmed with your procurement or legal team. Would you be open to reviewing the workflow?
 ```
 
 ### Follow-Up DM (if accepted)
@@ -361,7 +361,7 @@ I'd like to offer you a completely free Climate Baseline Audit — it takes abou
 
 The tool is specifically designed for Alberta municipalities: https://canada-energy.netlify.app/municipal
 
-One thing that makes it procurement-friendly: annual cost is $70,800 — deliberately below the NWPTA $75K sole-source threshold, so there's no RFP required for most municipalities.
+The annual price is illustrative planning information only; procurement eligibility, competition requirements, and delegated authority depend on the municipality and scope. Please confirm the applicable process with your procurement or legal team.
 
 Would a 30-minute walkthrough next week work? Happy to do it over Teams/Zoom.
 ```
@@ -370,7 +370,7 @@ Would a 30-minute walkthrough next week work? Happy to do it over Teams/Zoom.
 ```
 Appreciate the connection, {FirstName}! I know municipal budgets are tight, so I'll be direct.
 
-I built a climate reporting platform that auto-generates council-ready quarterly reports, tracks your TIER credits, and pre-fills FCM grant templates. It's priced at $70,800/yr — deliberately below the $75K NWPTA sole-source threshold so you don't need an RFP.
+I built a climate-reporting workflow for draft quarterly reports, TIER scenario notes, and FCM grant-template preparation. The illustrative $70,800/yr planning price does not determine procurement treatment; please confirm the applicable process with your procurement or legal team.
 
 Here's how it works in 3 steps: https://canada-energy.netlify.app/municipal
 
@@ -735,7 +735,7 @@ Generate next batch of 15 prospects for Campaign {X}, following updated template
 
 Use these as "roadmap/early thinking" only; never present as shipped:
 - 12CP Peak Shaving Calculator (Alberta T&D charge optimizer)
-- REA-specific landing + offers (<$75K sole-source framing)
+- REA-specific landing + offers (procurement review required; no threshold shortcut)
 - Banyon displacement playbook (billing migration research)
 - OCAP encryption/key custody (nation-held) beyond current early-access design
 
@@ -805,7 +805,7 @@ Subject: Free Climate Baseline Audit for {Municipality}
 Hi {FirstName},
 
 I built a climate reporting tool specifically for Alberta municipalities — priced at 
-$70,800/yr to stay below the $75K NWPTA sole-source threshold.
+$70,800/yr as an illustrative planning price; procurement treatment remains unverified.
 
 I'd like to offer {Municipality} a free 30-minute Climate Baseline Audit. You keep 
 the report either way — no commitment.

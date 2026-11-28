@@ -1,6 +1,7 @@
 import { getEdgeBaseUrl, getEdgeHeaders } from './config';
 
-export type ExportJobStatus = 'queued' | 'running' | 'success' | 'failed' | 'blocked_stale' | 'canceled';
+export type ExportJobStatus =
+  'queued' | 'running' | 'success' | 'failed' | 'blocked_stale' | 'canceled';
 
 export interface CreateExportJobPayload {
   template: string;
@@ -43,16 +44,85 @@ export class ExportJobError extends Error {
 
 const DEFAULT_POLL_INTERVAL_MS = 1800;
 const DEFAULT_POLL_TIMEOUT_MS = 120000;
+const EXPORT_CREDENTIAL_SESSION_KEY = 'ceip_export_api_key_session';
+export const DEFAULT_EXPORT_CREDENTIAL_TTL_MS = 60 * 60 * 1000;
+export const MAX_EXPORT_CREDENTIAL_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface SessionExportCredential {
+  value: string;
+  expiresAt: number;
+}
+
+/** Store a user-supplied export credential for this browser session only. */
+export function setExportApiKeyForSession(
+  value: string,
+  ttlMs = DEFAULT_EXPORT_CREDENTIAL_TTL_MS,
+): boolean {
+  if (typeof window === 'undefined' || !Number.isFinite(ttlMs) || ttlMs <= 0) return false;
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 8192) return false;
+  const expiresAt = Date.now() + Math.min(ttlMs, MAX_EXPORT_CREDENTIAL_TTL_MS);
+  const sessionValue: SessionExportCredential = { value: normalized, expiresAt };
+  try {
+    window.sessionStorage.setItem(EXPORT_CREDENTIAL_SESSION_KEY, JSON.stringify(sessionValue));
+    window.localStorage.removeItem('ceip_export_api_key');
+    window.localStorage.removeItem('ceip_api_key');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Clear the session credential and any legacy persistent copies. */
+export function clearExportApiKey(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(EXPORT_CREDENTIAL_SESSION_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+  try {
+    window.localStorage.removeItem('ceip_export_api_key');
+  } catch {
+    /* storage unavailable */
+  }
+  try {
+    window.localStorage.removeItem('ceip_api_key');
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 function getExportCredential(): string {
   if (typeof window === 'undefined') return '';
-  const fromStorage = localStorage.getItem('ceip_export_api_key') || localStorage.getItem('ceip_api_key') || '';
-  return fromStorage.trim();
+  // Do not read API keys from persistent localStorage. Remove old copies when
+  // the export path is next used, without echoing their values.
+  try {
+    window.localStorage.removeItem('ceip_export_api_key');
+    window.localStorage.removeItem('ceip_api_key');
+    const raw = window.sessionStorage.getItem(EXPORT_CREDENTIAL_SESSION_KEY);
+    if (!raw) return '';
+    const credential = JSON.parse(raw) as Partial<SessionExportCredential>;
+    if (
+      typeof credential.value !== 'string' ||
+      !credential.value.trim() ||
+      typeof credential.expiresAt !== 'number' ||
+      credential.expiresAt <= Date.now()
+    ) {
+      window.sessionStorage.removeItem(EXPORT_CREDENTIAL_SESSION_KEY);
+      return '';
+    }
+    return credential.value.trim();
+  } catch {
+    return '';
+  }
 }
 
 function getAuthHeaders(idempotencyKey?: string): Record<string, string> {
   const baseHeaders = getEdgeHeaders();
-  const exportApiKey = (import.meta.env.VITE_EXPORTS_API_KEY as string | undefined)?.trim() || getExportCredential();
+  // Export credentials are user-scoped and session-only with a bounded expiry.
+  // A build-time VITE_ key would be a shared credential bundled into client JS.
+  const exportApiKey = getExportCredential();
 
   if (exportApiKey) {
     baseHeaders.Authorization = `ApiKey ${exportApiKey}`;
@@ -75,16 +145,13 @@ function createIdempotencyKey(): string {
 
 async function parseJsonSafe(response: Response): Promise<Record<string, unknown>> {
   try {
-    return await response.json() as Record<string, unknown>;
+    return (await response.json()) as Record<string, unknown>;
   } catch {
     return {};
   }
 }
 
-async function request(
-  path: string,
-  init: RequestInit
-): Promise<Response> {
+async function request(path: string, init: RequestInit): Promise<Response> {
   const base = getEdgeBaseUrl();
   if (!base) {
     throw new Error('Supabase Edge base URL is not configured.');
@@ -94,7 +161,7 @@ async function request(
 
 export async function createExportJob(
   payload: CreateExportJobPayload,
-  options: { idempotencyKey?: string } = {}
+  options: { idempotencyKey?: string } = {},
 ): Promise<ExportJobResponse> {
   const idempotencyKey = options.idempotencyKey || createIdempotencyKey();
   const response = await request('create-export-job', {
@@ -110,9 +177,10 @@ export async function createExportJob(
       reason: typeof parsed.reason === 'string' ? parsed.reason : undefined,
       code: typeof parsed.code === 'string' ? parsed.code : undefined,
       confidence: typeof parsed.confidence === 'string' ? parsed.confidence : undefined,
-      snapshot: (parsed.snapshot && typeof parsed.snapshot === 'object')
-        ? parsed.snapshot as Record<string, unknown>
-        : undefined,
+      snapshot:
+        parsed.snapshot && typeof parsed.snapshot === 'object'
+          ? (parsed.snapshot as Record<string, unknown>)
+          : undefined,
     });
   }
 
@@ -121,9 +189,10 @@ export async function createExportJob(
     status: String(parsed.status || 'queued') as ExportJobStatus,
     reason: typeof parsed.reason === 'string' ? parsed.reason : undefined,
     outputSignedUrl: typeof parsed.outputSignedUrl === 'string' ? parsed.outputSignedUrl : null,
-    confidenceSnapshot: (parsed.confidenceSnapshot && typeof parsed.confidenceSnapshot === 'object')
-      ? parsed.confidenceSnapshot as Record<string, unknown>
-      : undefined,
+    confidenceSnapshot:
+      parsed.confidenceSnapshot && typeof parsed.confidenceSnapshot === 'object'
+        ? (parsed.confidenceSnapshot as Record<string, unknown>)
+        : undefined,
     disclaimerRequired: parsed.disclaimerRequired === true,
     createdAt: typeof parsed.createdAt === 'string' ? parsed.createdAt : undefined,
   };
@@ -149,9 +218,10 @@ export async function getExportJobStatus(jobId: string): Promise<ExportJobRespon
     status: String(parsed.status || 'queued') as ExportJobStatus,
     reason: typeof parsed.reason === 'string' ? parsed.reason : undefined,
     outputSignedUrl: typeof parsed.outputSignedUrl === 'string' ? parsed.outputSignedUrl : null,
-    confidenceSnapshot: (parsed.confidenceSnapshot && typeof parsed.confidenceSnapshot === 'object')
-      ? parsed.confidenceSnapshot as Record<string, unknown>
-      : undefined,
+    confidenceSnapshot:
+      parsed.confidenceSnapshot && typeof parsed.confidenceSnapshot === 'object'
+        ? (parsed.confidenceSnapshot as Record<string, unknown>)
+        : undefined,
     createdAt: typeof parsed.createdAt === 'string' ? parsed.createdAt : undefined,
   };
 }
@@ -162,7 +232,7 @@ export async function waitForExportJob(
     pollIntervalMs?: number;
     timeoutMs?: number;
     onUpdate?: (job: ExportJobResponse) => void;
-  } = {}
+  } = {},
 ): Promise<ExportJobResponse> {
   const pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const timeoutMs = options.timeoutMs ?? DEFAULT_POLL_TIMEOUT_MS;
@@ -172,7 +242,12 @@ export async function waitForExportJob(
     const status = await getExportJobStatus(jobId);
     options.onUpdate?.(status);
 
-    if (status.status === 'success' || status.status === 'failed' || status.status === 'blocked_stale' || status.status === 'canceled') {
+    if (
+      status.status === 'success' ||
+      status.status === 'failed' ||
+      status.status === 'blocked_stale' ||
+      status.status === 'canceled'
+    ) {
       return status;
     }
 

@@ -8,6 +8,9 @@ import {
   encryptConnectorSecret,
   getUtilityConnectorToken,
   getUtilityConnectorClient,
+  consumeGreenButtonAuthRequest,
+  getGreenButtonAuthRequest,
+  getGreenButtonAccountByConnectorRef,
   logUtilityConnectorRun,
   registerUtilityConnectorBridgeNonce,
   sha256Hex,
@@ -27,11 +30,12 @@ import {
   runGreenButtonRevoke,
   runGreenButtonSync,
 } from "../_shared/utilityConnectorRuntime.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
   const rl = applyRateLimit(req, "utility-connector-green-button");
   if (rl.response) return rl.response;
+  if (req.method === "OPTIONS") {
     return handleCorsOptions(req);
   }
 
@@ -41,7 +45,7 @@ serve(async (req) => {
 
   try {
     if (req.method === "GET" && action === "start") {
-      return handleStart(url, corsHeaders);
+      return await handleStart(url, corsHeaders);
     }
 
     if (req.method === "GET" && action === "callback") {
@@ -62,21 +66,72 @@ serve(async (req) => {
 
     return json({ error: "Unsupported Green Button connector action." }, 405, corsHeaders);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Green Button connector failure." }, 500, corsHeaders);
+    console.error("utility-connector-green-button failed:", error instanceof Error ? error.message.slice(0, 200) : "unknown");
+    return json({ error: "Green Button connector failure." }, 500, corsHeaders);
   }
 });
 
-function handleStart(url: URL, corsHeaders: Record<string, string>) {
-  const utilityName = url.searchParams.get("utility_name") ?? "Ontario Green Button Utility";
+/**
+ * Caller-supplied endpoint URLs (authorize_url, token_url, redirect_uri,
+ * feed_url, revoke_url, manage_connections_url) are honored only when their
+ * host appears in UTILITY_GREEN_BUTTON_ALLOWED_ENDPOINT_HOSTS
+ * (comma-separated, https only, no userinfo). Without a configured
+ * allowlist, only env-configured or bridge-derived endpoints are used — a
+ * caller can never steer client secrets, authorization codes, or stored
+ * access tokens to an arbitrary host.
+ */
+function allowedGreenButtonEndpointHosts(): Set<string> {
+  return new Set(
+    (Deno.env.get("UTILITY_GREEN_BUTTON_ALLOWED_ENDPOINT_HOSTS") ?? "")
+      .split(",")
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function isAllowedGreenButtonEndpoint(raw: unknown, allowedHosts: Set<string>): boolean {
+  if (typeof raw !== "string" || !raw.trim()) return false;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password) return false;
+    return allowedHosts.has(parsed.host.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+async function handleStart(url: URL, corsHeaders: Record<string, string>) {
+  const supabase = getUtilityConnectorClient();
+  const connectorId = url.searchParams.get("connector_id") ?? "";
+  const authRequest = await getGreenButtonAuthRequest(supabase, connectorId);
+  if (!authRequest) {
+    return json({ error: "Green Button authorization state is missing, expired, or already used." }, 401, corsHeaders);
+  }
+
+  const requestedUtilityName = url.searchParams.get("utility_name");
+  if (requestedUtilityName && requestedUtilityName !== authRequest.utility_name) {
+    return json({ error: "Green Button authorization utility does not match its owner-bound request." }, 400, corsHeaders);
+  }
+
+  const utilityName = authRequest.utility_name;
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const defaultRedirectUri = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl)
     ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "callback", utilityName)
     : Deno.env.get("UTILITY_GREEN_BUTTON_REDIRECT_URI") ?? "";
+  const allowedHosts = allowedGreenButtonEndpointHosts();
+  const requestedAuthorizeUrl = url.searchParams.get("authorize_url");
+  if (requestedAuthorizeUrl && !isAllowedGreenButtonEndpoint(requestedAuthorizeUrl, allowedHosts)) {
+    return json({ error: "authorize_url host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
+  const requestedRedirectUri = url.searchParams.get("redirect_uri");
+  if (requestedRedirectUri && !isAllowedGreenButtonEndpoint(requestedRedirectUri, allowedHosts)) {
+    return json({ error: "redirect_uri host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
   const result = buildGreenButtonAuthorizeResponse({
-    authorizeUrl: url.searchParams.get("authorize_url") ?? Deno.env.get("UTILITY_GREEN_BUTTON_AUTHORIZE_URL") ?? "",
-    clientId: url.searchParams.get("client_id") ?? Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "",
-    redirectUri: url.searchParams.get("redirect_uri") ?? defaultRedirectUri,
-    connectorId: url.searchParams.get("connector_id") ?? "",
+    authorizeUrl: requestedAuthorizeUrl ?? Deno.env.get("UTILITY_GREEN_BUTTON_AUTHORIZE_URL") ?? "",
+    clientId: Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "",
+    redirectUri: requestedRedirectUri ?? defaultRedirectUri,
+    connectorId: authRequest.connector_id,
     scope: url.searchParams.get("scope") ?? "FB=4_5_15_16",
   });
 
@@ -85,7 +140,21 @@ function handleStart(url: URL, corsHeaders: Record<string, string>) {
 
 async function handleCallback(req: Request, url: URL, corsHeaders: Record<string, string>) {
   const supabase = getUtilityConnectorClient();
-  const utilityName = url.searchParams.get("utility_name") ?? "Ontario Green Button Utility";
+  const state = url.searchParams.get("state") ?? "";
+  const authRequest = await consumeGreenButtonAuthRequest(supabase, state);
+  if (!authRequest) {
+    return json({ error: "Green Button callback is not bound to an authenticated owner." }, 401, corsHeaders);
+  }
+
+  const requestedUtilityName = url.searchParams.get("utility_name");
+  if (requestedUtilityName && requestedUtilityName !== authRequest.utility_name) {
+    return json({ error: "Green Button callback utility does not match its authenticated owner binding." }, 400, corsHeaders);
+  }
+
+  const utilityName = authRequest.utility_name;
+  const displayName = authRequest.display_name;
+  const connectorId = authRequest.connector_id;
+  const ownerUserId = authRequest.owner_user_id;
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const bridgeEnabled = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl);
   let bridgeMetadata: UtilityConnectorBridgeVerificationSuccess['metadata'] | null = null;
@@ -96,16 +165,26 @@ async function handleCallback(req: Request, url: URL, corsHeaders: Record<string
     }
     bridgeMetadata = bridgeVerification.metadata;
   }
+  const allowedHosts = allowedGreenButtonEndpointHosts();
+  const requestedTokenUrl = url.searchParams.get("token_url");
+  if (!bridgeEnabled && requestedTokenUrl && !isAllowedGreenButtonEndpoint(requestedTokenUrl, allowedHosts)) {
+    return json({ error: "token_url host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
+  const requestedRedirectUri = url.searchParams.get("redirect_uri");
+  if (!bridgeEnabled && requestedRedirectUri && !isAllowedGreenButtonEndpoint(requestedRedirectUri, allowedHosts)) {
+    return json({ error: "redirect_uri host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
   const tokenEndpoint = bridgeEnabled
     ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "token")
-    : url.searchParams.get("token_url") ?? Deno.env.get("UTILITY_GREEN_BUTTON_TOKEN_URL") ?? "";
+    : requestedTokenUrl ?? Deno.env.get("UTILITY_GREEN_BUTTON_TOKEN_URL") ?? "";
   const redirectUri = bridgeEnabled
     ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "callback", utilityName)
-    : url.searchParams.get("redirect_uri") ?? Deno.env.get("UTILITY_GREEN_BUTTON_REDIRECT_URI") ?? "";
+    : requestedRedirectUri ?? Deno.env.get("UTILITY_GREEN_BUTTON_REDIRECT_URI") ?? "";
+  const clientId = Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "";
   const tokenBody = buildTokenExchangeBody({
     code: url.searchParams.get("code") ?? "",
     redirectUri,
-    clientId: url.searchParams.get("client_id") ?? Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "",
+    clientId,
     clientSecret: Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_SECRET") ?? "",
   });
   const bridgeHeaders = bridgeEnabled
@@ -117,14 +196,15 @@ async function handleCallback(req: Request, url: URL, corsHeaders: Record<string
     : undefined;
   const result = await runGreenButtonCallback({
     code: url.searchParams.get("code") ?? "",
-    state: url.searchParams.get("state") ?? "",
-    connectorId: url.searchParams.get("connector_id") ?? (url.searchParams.get("state") ?? ""),
+    state: authRequest.state,
+    connectorId,
+    ownerUserId,
     tokenEndpoint,
-    clientId: url.searchParams.get("client_id") ?? Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_ID") ?? "",
+    clientId,
     clientSecret: Deno.env.get("UTILITY_GREEN_BUTTON_CLIENT_SECRET") ?? "",
     redirectUri,
     utilityName,
-    displayName: url.searchParams.get("display_name") ?? utilityName,
+    displayName,
     metadata: bridgeMetadata ? {
       bridge_request_id: bridgeMetadata.requestId,
       bridge_original_host: bridgeMetadata.originalHost,
@@ -149,9 +229,32 @@ async function handleCallback(req: Request, url: URL, corsHeaders: Record<string
 }
 
 async function handleSync(req: Request, corsHeaders: Record<string, string>) {
-  const body = await req.json();
+  // Green Button XML payloads can legitimately be several MB — 8 MiB cap.
+  const bodyRead = await readBoundedJson(req, 8 * 1024 * 1024);
+  if (!bodyRead.ok) {
+    return json(
+      { error: bodyRead.reason === "too_large" ? "Payload too large." : "Malformed JSON body." },
+      bodyRead.reason === "too_large" ? 413 : 400,
+      corsHeaders,
+    );
+  }
+  const body = asJsonObject(bodyRead.json) ?? {};
   const supabase = getUtilityConnectorClient();
-  const utilityName = body?.utility_name ?? "Ontario Green Button Utility";
+  const connectorRef = typeof body?.connector_account_id === "string" ? body.connector_account_id : "";
+  const account = await getGreenButtonAccountByConnectorRef(supabase, connectorRef);
+  if (!account) {
+    return json({ error: "Green Button connector account was not found." }, 404, corsHeaders);
+  }
+  if (!account.owner_user_id) {
+    return json({ error: "Green Button connector account is quarantined because it has no owner binding." }, 409, corsHeaders);
+  }
+  if (account.status === "revoked") {
+    return json({ error: "Green Button connector account is revoked." }, 409, corsHeaders);
+  }
+
+  const utilityName = String(account.utility_name ?? "Ontario Green Button Utility");
+  const displayName = String(account.display_name ?? utilityName);
+  const connectorId = String(account.account_holder_ref ?? account.id);
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const bridgeEnabled = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl);
   const bridgeFeedUrl = bridgeEnabled ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "feed") : null;
@@ -162,14 +265,17 @@ async function handleSync(req: Request, corsHeaders: Record<string, string>) {
       bodyText: "",
     })
     : undefined;
+  const requestedFeedUrl = typeof body.feed_url === "string" ? body.feed_url : null;
+  if (requestedFeedUrl && !isAllowedGreenButtonEndpoint(requestedFeedUrl, allowedGreenButtonEndpointHosts())) {
+    return json({ error: "feed_url host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
   const result = await runGreenButtonSync({
-    connectorId: body?.connector_account_id ?? "",
+    connectorId,
+    ownerUserId: String(account.owner_user_id),
     utilityName,
-    displayName: body?.display_name ?? String(utilityName),
+    displayName,
     xmlPayload: typeof body?.xml_payload === "string" ? body.xml_payload : null,
-    feedUrl: typeof body?.feed_url === "string"
-      ? body.feed_url
-      : bridgeFeedUrl,
+    feedUrl: requestedFeedUrl ?? bridgeFeedUrl,
     accessToken: typeof body?.access_token === "string" ? body.access_token : null,
     geographyId: typeof body?.geography_id === "string" ? body.geography_id : null,
     metadata: body?.metadata ?? {},
@@ -221,11 +327,29 @@ async function handleSync(req: Request, corsHeaders: Record<string, string>) {
 }
 
 async function handleRevoke(req: Request, corsHeaders: Record<string, string>) {
-  const body = await req.json();
+  const bodyRead = await readBoundedJson(req, 8 * 1024 * 1024);
+  if (!bodyRead.ok) {
+    return json(
+      { error: bodyRead.reason === "too_large" ? "Payload too large." : "Malformed JSON body." },
+      bodyRead.reason === "too_large" ? 413 : 400,
+      corsHeaders,
+    );
+  }
+  const body = asJsonObject(bodyRead.json) ?? {};
   const supabase = getUtilityConnectorClient();
-  const connectorAccountId = typeof body?.connector_account_id === "string" ? body.connector_account_id : "";
+  const connectorAccountRef = typeof body?.connector_account_id === "string" ? body.connector_account_id : "";
+  const account = await getGreenButtonAccountByConnectorRef(supabase, connectorAccountRef);
+  if (!account) {
+    return json({ error: "Green Button connector account was not found." }, 404, corsHeaders);
+  }
+  if (!account.owner_user_id) {
+    return json({ error: "Green Button connector account is quarantined because it has no owner binding." }, 409, corsHeaders);
+  }
+  const connectorAccountId = String(account.id);
   const tokenLabel = typeof body?.token_label === "string" ? body.token_label : "default";
-  const utilityName = body?.utility_name ?? "Ontario Green Button Utility";
+  const utilityName = String(account.utility_name ?? "Ontario Green Button Utility");
+  const displayName = String(account.display_name ?? utilityName);
+  const connectorId = String(account.account_holder_ref ?? account.id);
   const bridgeBaseUrl = Deno.env.get("UTILITY_GREEN_BUTTON_BRIDGE_BASE_URL") ?? "";
   const bridgeEnabled = shouldUseUtilityConnectorBridge(utilityName, bridgeBaseUrl);
   const bridgeRevokeUrl = bridgeEnabled ? buildUtilityConnectorBridgeUrl(bridgeBaseUrl, "revoke") : null;
@@ -237,15 +361,25 @@ async function handleRevoke(req: Request, corsHeaders: Record<string, string>) {
     })
     : undefined;
 
+  const endpointHosts = allowedGreenButtonEndpointHosts();
+  const requestedRevokeUrl = typeof body.revoke_url === "string" ? body.revoke_url : null;
+  if (requestedRevokeUrl && !isAllowedGreenButtonEndpoint(requestedRevokeUrl, endpointHosts)) {
+    return json({ error: "revoke_url host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
+  const requestedManageUrl = typeof body.manage_connections_url === "string" ? body.manage_connections_url : null;
+  if (requestedManageUrl && !isAllowedGreenButtonEndpoint(requestedManageUrl, endpointHosts)) {
+    return json({ error: "manage_connections_url host is not in the configured Green Button endpoint allowlist." }, 400, corsHeaders);
+  }
   const result = await runGreenButtonRevoke({
-    connectorId: connectorAccountId,
+    connectorId,
+    ownerUserId: String(account.owner_user_id),
     utilityName,
-    displayName: body?.display_name ?? String(utilityName),
+    displayName,
     revocationMode: body?.revocation_mode === "api" ? "api" : "portal_redirect",
-    revokeUrl: typeof body?.revoke_url === "string"
-      ? body.revoke_url
-      : bridgeRevokeUrl,
-    manageConnectionsUrl: typeof body?.manage_connections_url === "string" ? body.manage_connections_url : null,
+    // Only allowlisted/env/bridge endpoints reach this point, so the stored
+    // access token resolved below is never sent to a caller-chosen host.
+    revokeUrl: requestedRevokeUrl ?? bridgeRevokeUrl ?? Deno.env.get("UTILITY_GREEN_BUTTON_REVOKE_URL") ?? null,
+    manageConnectionsUrl: requestedManageUrl,
     accessToken: typeof body?.access_token === "string" ? body.access_token : null,
     actor: typeof body?.actor === "string" ? body.actor : "ceip",
     confirmRevoked: Boolean(body?.confirm_revoked),

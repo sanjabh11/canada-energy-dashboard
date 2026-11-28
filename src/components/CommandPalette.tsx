@@ -298,14 +298,9 @@ const GROUPS: PaletteGroup[] = [
     ],
   },
   {
+    // Beachhead consolidation: standalone /watchdog route de-emphasized (redirects to /pricing, audit P2)
     heading: 'Rate Watchdog & Retail',
     items: [
-      {
-        label: 'Rate Watchdog',
-        path: '/watchdog',
-        icon: DollarSign,
-        keywords: 'rate watchdog alberta retailer',
-      },
       { label: 'RRO Alerts', path: '/rro', icon: DollarSign, keywords: 'rro rate alert regulated' },
       {
         label: 'Retailer Hedging',

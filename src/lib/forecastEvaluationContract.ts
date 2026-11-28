@@ -9,7 +9,8 @@
 
 import { evaluateForecast, type ForecastEvaluationInput } from './scoringRules';
 
-export type EvaluationHorizon = '1h' | '6h' | '24h' | '168h' | '720h' | '8760h';
+export type EvaluationHorizon =
+  '1h' | '6h' | '24h' | '168h' | '720h' | '8760h' | `${number}h` | `${number}m`;
 
 export type ModelClass =
   | 'persistence'

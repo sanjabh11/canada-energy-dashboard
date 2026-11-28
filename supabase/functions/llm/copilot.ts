@@ -8,7 +8,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
-import { applyRateLimit, getClientId, logApiUsage } from "../_shared/rateLimit.ts";
+import { applyRateLimit, getClientId, logApiUsage, parseClientId } from "../_shared/rateLimit.ts";
+import { readBoundedJson, asJsonObject } from "../_shared/boundedBody.ts";
 import { orchestrateWithTools } from "./tools/orchestrator.ts";
 
 interface CopilotRequest {
@@ -49,9 +50,22 @@ async function handleCopilotRequest(
   const requestId = crypto.randomUUID();
 
   try {
-    // Parse request body
-    const body = await req.json();
-    
+    // Parse request body (bounded — unauthenticated endpoint)
+    const bodyRead = await readBoundedJson(req);
+    if (!bodyRead.ok) {
+      return new Response(
+        JSON.stringify({ error: bodyRead.reason === 'too_large' ? 'Payload too large' : 'Malformed JSON body' }),
+        { status: bodyRead.reason === 'too_large' ? 413 : 400, headers: { ...createCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+    const body = asJsonObject(bodyRead.json);
+    if (!body) {
+      return new Response(
+        JSON.stringify({ error: 'Body must be a JSON object' }),
+        { status: 400, headers: { ...createCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (!validateRequest(body)) {
       return new Response(
         JSON.stringify({ error: 'Invalid request: query must be 1-1000 characters' }),
@@ -106,7 +120,7 @@ async function handleCopilotRequest(
       endpoint: 'llm/copilot',
       method: req.method,
       statusCode: result.success ? 200 : 500,
-      ipAddress: getClientId(req),
+      ...parseClientId(getClientId(req)),
       responseTimeMs: totalExecutionTimeMs,
       extra: {
         requestId,
@@ -134,7 +148,6 @@ async function handleCopilotRequest(
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
         requestId,
       }),
       { 

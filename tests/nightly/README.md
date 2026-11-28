@@ -88,8 +88,8 @@ node tests/nightly/ceip_nightly_tests.mjs
 ```
 🚀 CEIP Nightly Validation Tests
 
-Supabase URL: https://qnymbecjgeaoxsfphrti.supabase.co
-Functions Base: https://qnymbecjgeaoxsfphrti.functions.supabase.co
+Supabase URL: https://qktgjpbifknqjpvrgkrj.supabase.co
+Functions Base: https://qktgjpbifknqjpvrgkrj.functions.supabase.co
 Test Provinces: ON, AB
 
 📍 Testing province: ON

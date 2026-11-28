@@ -1,28 +1,37 @@
 /**
  * Operations Health Panel
- * 
+ *
  * Displays SLO metrics and operational health indicators:
  * - Ingestion uptime
  * - Forecast job success rate
  * - Job latency
  * - Data freshness
  * - Last purge run
- * 
+ *
  * Fetches from /ops-health endpoint and auto-refreshes every 30 seconds.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Activity, CheckCircle, AlertTriangle, XCircle, Clock, Zap, Database, TrendingUp } from 'lucide-react';
+import {
+  Activity,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  Zap,
+  Database,
+  TrendingUp,
+} from 'lucide-react';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 interface OpsHealthMetrics {
-  ingestion_uptime_percent: number;
-  forecast_job_success_rate: number;
-  last_purge_run: string;
-  avg_job_latency_ms: number;
-  data_freshness_minutes: number;
-  error_rate_percent: number;
+  ingestion_uptime_percent: number | null;
+  forecast_job_success_rate: number | null;
+  last_purge_run: string | null;
+  avg_job_latency_ms: number | null;
+  data_freshness_minutes: number | null;
+  error_rate_percent: number | null;
   last_24h_jobs: {
     total: number;
     successful: number;
@@ -45,6 +54,19 @@ interface OpsHealthMetrics {
   timestamp: string;
 }
 
+function formatPercent(value: number | null, digits = 1): string {
+  return value === null ? 'Unavailable' : `${value.toFixed(digits)}%`;
+}
+
+function formatLatency(value: number | null): string {
+  return value === null ? 'Unavailable' : `${value}ms`;
+}
+
+function formatFreshness(minutes: number | null): string {
+  if (minutes === null) return 'Unavailable';
+  return minutes < 60 ? `${minutes}min` : `${Math.floor(minutes / 60)}h ${minutes % 60}min`;
+}
+
 interface OpsHealthPanelProps {
   variant?: 'compact' | 'full' | 'inline';
   autoRefresh?: boolean;
@@ -54,7 +76,7 @@ interface OpsHealthPanelProps {
 export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   variant = 'compact',
   autoRefresh = true,
-  refreshInterval = 30000 // 30 seconds
+  refreshInterval = 30000, // 30 seconds
 }) => {
   const [metrics, setMetrics] = useState<OpsHealthMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,14 +96,18 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
     // Avoid noisy CORS errors in local development when Supabase Edge is disabled
     if (!base || !isEdgeFetchEnabled()) {
       if (import.meta.env.DEV) {
-        console.warn('OpsHealthPanel: Supabase Edge disabled or not configured; skipping ops-health fetch.');
+        console.warn(
+          'OpsHealthPanel: Supabase Edge disabled or not configured; skipping ops-health fetch.',
+        );
         setEdgeDisabled(true);
         setLoading(false);
         setMetrics(null);
         setError(null);
         return;
       }
-      console.warn('OpsHealthPanel: Supabase Edge not configured while not in DEV; showing unavailable state.');
+      console.warn(
+        'OpsHealthPanel: Supabase Edge not configured while not in DEV; showing unavailable state.',
+      );
       setEdgeDisabled(false);
       setLoading(false);
       setMetrics(null);
@@ -102,7 +128,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         throw new Error('Ops health endpoint returned a non-JSON response');
       }
 
-      const metricsPayload = await response.json() as OpsHealthMetrics;
+      const metricsPayload = (await response.json()) as OpsHealthMetrics;
 
       setMetrics(metricsPayload);
       setLastUpdate(metricsPayload.timestamp ? new Date(metricsPayload.timestamp) : new Date());
@@ -132,7 +158,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         return;
       }
     }
-    
+
     fetchOpsHealth();
 
     if (autoRefresh) {
@@ -158,22 +184,26 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   };
 
   const getStatusIcon = (status: 'meeting' | 'degraded') => {
-    return status === 'meeting' 
-      ? <CheckCircle className="text-green-600" size={16} />
-      : <AlertTriangle className="text-yellow-600" size={16} />;
+    return status === 'meeting' ? (
+      <CheckCircle className="text-green-600" size={16} />
+    ) : (
+      <AlertTriangle className="text-yellow-600" size={16} />
+    );
   };
 
   const getOverallStatus = (): 'healthy' | 'degraded' | 'critical' => {
     if (!metrics) return 'critical';
-    
+
     const statuses = Object.values(metrics.slo_status);
-    const degradedCount = statuses.filter(s => s === 'degraded').length;
-    
+    const degradedCount = statuses.filter((s) => s === 'degraded').length;
+
     // Also check if core metrics are meeting targets
-    const coreMetricsMeeting = 
-      metrics.ingestion_uptime_percent >= 99.0 && 
+    const coreMetricsMeeting =
+      metrics.ingestion_uptime_percent !== null &&
+      metrics.forecast_job_success_rate !== null &&
+      metrics.ingestion_uptime_percent >= 99.0 &&
       metrics.forecast_job_success_rate >= 98.0;
-    
+
     if (degradedCount === 0) return 'healthy';
     // If core metrics are good but freshness is degraded, show degraded not critical
     if (coreMetricsMeeting && degradedCount <= 2) return 'degraded';
@@ -212,7 +242,8 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
           <div className="flex items-center gap-2">
             <AlertTriangle className="text-amber-600" size={20} />
             <span className="text-sm text-amber-900">
-              Ops health is unavailable in local development. The page will show source freshness and monitor metadata instead.
+              Ops health is unavailable in local development. The page will show source freshness
+              and monitor metadata instead.
             </span>
           </div>
         </div>
@@ -229,7 +260,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   }
 
   const overallStatus = getOverallStatus();
-  const freshnessTimestamp = metrics.last_heartbeat_at || metrics.timestamp;
+  const freshnessTimestamp = metrics.last_heartbeat_at;
 
   // Inline variant - single line status
   if (variant === 'inline') {
@@ -239,10 +270,15 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         {overallStatus === 'degraded' && <AlertTriangle className="text-yellow-600" size={14} />}
         {overallStatus === 'critical' && <XCircle className="text-red-600" size={14} />}
         <span className="font-medium text-primary">
-          Ops: {overallStatus === 'healthy' ? 'Healthy' : overallStatus === 'degraded' ? 'Degraded' : 'Critical'}
+          Ops:{' '}
+          {overallStatus === 'healthy'
+            ? 'Healthy'
+            : overallStatus === 'degraded'
+              ? 'Degraded'
+              : 'Critical'}
         </span>
         <span className="text-xs text-tertiary">
-          {metrics.ingestion_uptime_percent.toFixed(1)}% uptime
+          {formatPercent(metrics.ingestion_uptime_percent)} uptime
         </span>
         <DataFreshnessBadge timestamp={freshnessTimestamp} staleThresholdMinutes={15} compact />
       </div>
@@ -278,12 +314,13 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
             <div className="flex items-center gap-sm">
               {metrics.monitoring_status && (
                 <span className="badge badge-success text-xs">
-                  Monitoring: {metrics.monitoring_status === 'Offline' ? 'Standby' : String(metrics.monitoring_status)}
+                  Monitoring:{' '}
+                  {metrics.monitoring_status === 'Offline'
+                    ? 'Standby'
+                    : String(metrics.monitoring_status)}
                 </span>
               )}
-              <span className={overallBadgeClass}>
-                {overallStatus.toUpperCase()}
-              </span>
+              <span className={overallBadgeClass}>{overallStatus.toUpperCase()}</span>
             </div>
           </div>
         </div>
@@ -305,7 +342,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
                 <span>Ingestion</span>
               </div>
               <div className="metric-value text-lg">
-                {metrics.ingestion_uptime_percent.toFixed(1)}%
+                {formatPercent(metrics.ingestion_uptime_percent)}
               </div>
             </div>
 
@@ -315,7 +352,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
                 <span>Forecasts</span>
               </div>
               <div className="metric-value text-lg">
-                {metrics.forecast_job_success_rate.toFixed(1)}%
+                {formatPercent(metrics.forecast_job_success_rate)}
               </div>
             </div>
 
@@ -325,7 +362,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
                 <span>Latency</span>
               </div>
               <div className="metric-value text-lg">
-                {metrics.avg_job_latency_ms}ms
+                {formatLatency(metrics.avg_job_latency_ms)}
               </div>
             </div>
 
@@ -335,9 +372,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
                 <span>Freshness</span>
               </div>
               <div className="metric-value text-lg">
-                {metrics.data_freshness_minutes < 60
-                  ? `${metrics.data_freshness_minutes}min`
-                  : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
+                {formatFreshness(metrics.data_freshness_minutes)}
               </div>
             </div>
           </div>
@@ -358,30 +393,47 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
       <div className="border-b border-[var(--border-subtle)] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${
-              overallStatus === 'healthy' ? 'bg-green-100' :
-              overallStatus === 'degraded' ? 'bg-yellow-100' :
-              'bg-red-100'
-            }`}>
-              <Activity className={
-                overallStatus === 'healthy' ? 'text-green-600' :
-                overallStatus === 'degraded' ? 'text-yellow-600' :
-                'text-red-600'
-              } size={24} />
+            <div
+              className={`p-2 rounded-lg ${
+                overallStatus === 'healthy'
+                  ? 'bg-green-100'
+                  : overallStatus === 'degraded'
+                    ? 'bg-yellow-100'
+                    : 'bg-red-100'
+              }`}
+            >
+              <Activity
+                className={
+                  overallStatus === 'healthy'
+                    ? 'text-green-600'
+                    : overallStatus === 'degraded'
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                }
+                size={24}
+              />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-primary">Operations Health</h2>
               <p className="text-sm text-secondary">SLO Metrics & System Status</p>
               <div className="mt-2">
-                <DataFreshnessBadge timestamp={freshnessTimestamp} staleThresholdMinutes={15} compact />
+                <DataFreshnessBadge
+                  timestamp={freshnessTimestamp}
+                  staleThresholdMinutes={15}
+                  compact
+                />
               </div>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            overallStatus === 'healthy' ? 'bg-green-100 text-green-800' :
-            overallStatus === 'degraded' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              overallStatus === 'healthy'
+                ? 'bg-green-100 text-green-800'
+                : overallStatus === 'degraded'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+            }`}
+          >
             {overallStatus.toUpperCase()}
           </span>
         </div>
@@ -390,47 +442,49 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
       <div className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Ingestion Uptime */}
-          <div className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.ingestion)}`}>
+          <div
+            className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.ingestion)}`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <Database className={getStatusColor(metrics.slo_status.ingestion)} size={20} />
               <span className="font-medium text-primary">Ingestion Uptime</span>
             </div>
             <div className="text-3xl font-bold text-primary mb-1">
-              {metrics.ingestion_uptime_percent.toFixed(2)}%
+              {formatPercent(metrics.ingestion_uptime_percent, 2)}
             </div>
             <div className="text-xs text-secondary">
-              Target: ≥99.5% • Data freshness: {metrics.data_freshness_minutes < 60
-                ? `${metrics.data_freshness_minutes}min`
-                : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
+              Target: ≥99.5% • Data freshness: {formatFreshness(metrics.data_freshness_minutes)}
             </div>
           </div>
 
           {/* Forecast Success Rate */}
-          <div className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.forecast)}`}>
+          <div
+            className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.forecast)}`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className={getStatusColor(metrics.slo_status.forecast)} size={20} />
               <span className="font-medium text-primary">Forecast Success</span>
             </div>
             <div className="text-3xl font-bold text-primary mb-1">
-              {metrics.forecast_job_success_rate.toFixed(1)}%
+              {formatPercent(metrics.forecast_job_success_rate)}
             </div>
             <div className="text-xs text-secondary">
-              Target: ≥98% • Error rate: {metrics.error_rate_percent.toFixed(1)}%
+              Target: ≥98% • Error rate: {formatPercent(metrics.error_rate_percent)}
             </div>
           </div>
 
           {/* Job Latency */}
-          <div className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.latency)}`}>
+          <div
+            className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.latency)}`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <Zap className={getStatusColor(metrics.slo_status.latency)} size={20} />
               <span className="font-medium text-primary">Avg Job Latency</span>
             </div>
             <div className="text-3xl font-bold text-primary mb-1">
-              {metrics.avg_job_latency_ms}ms
+              {formatLatency(metrics.avg_job_latency_ms)}
             </div>
-            <div className="text-xs text-secondary">
-              Target: ≤500ms
-            </div>
+            <div className="text-xs text-secondary">Target: ≤500ms</div>
           </div>
 
           {/* Last 24h Jobs */}
@@ -442,9 +496,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
             <div className="text-3xl font-bold text-primary mb-1">
               {metrics.last_24h_jobs.successful}/{metrics.last_24h_jobs.total}
             </div>
-            <div className="text-xs text-secondary">
-              Failed: {metrics.last_24h_jobs.failed}
-            </div>
+            <div className="text-xs text-secondary">Failed: {metrics.last_24h_jobs.failed}</div>
           </div>
         </div>
 
@@ -453,7 +505,9 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
           <div className="flex items-center justify-between text-sm">
             <span className="text-secondary">Last Data Purge:</span>
             <span className="font-medium text-primary">
-              {new Date(metrics.last_purge_run).toLocaleString()}
+              {metrics.last_purge_run
+                ? new Date(metrics.last_purge_run).toLocaleString()
+                : 'Unavailable'}
             </span>
           </div>
           {lastUpdate && (

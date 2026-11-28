@@ -9,7 +9,7 @@
  * Based on ReAct pattern with structured state management.
  */
 
-import { ToolCall, ToolResult, executeTool } from '../tools/registry.ts';
+import { ToolCall, ToolResult, executeTool, boundedToolError } from '../tools/registry.ts';
 
 // ============================================================================
 // TYPES
@@ -286,7 +286,7 @@ export class ExecutorNode {
         result: {
           success: false,
           data: null,
-          error: String(error),
+          error: boundedToolError(error),
           metadata: { executionTimeMs: Date.now() - startTime, source: 'executor' },
         },
       };
@@ -506,10 +506,11 @@ export class AgentOrchestrator {
       };
 
     } catch (error) {
+      console.error('Agent workflow failed:', error);
       return {
         success: false,
-        summary: `Workflow failed: ${error}`,
-        details: { error: String(error) },
+        summary: 'Workflow failed to complete.',
+        details: { error: 'workflow_execution_failed' },
         executionLog: [],
         executionTimeMs: Date.now() - startTime,
       };

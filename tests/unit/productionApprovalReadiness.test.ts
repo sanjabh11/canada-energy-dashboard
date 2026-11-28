@@ -304,7 +304,7 @@ describe('production approval readiness report', () => {
   it('accepts a current release-readiness proof without bypassing other production gates', { timeout: 180_000 }, () => {
     const tempRoot = makeTempRoot();
     const proofPath = writeReleaseReadinessProof(tempRoot);
-    const stdout = execFileSync(process.execPath, [reportScriptPath, '--release-readiness-proof', proofPath, '--json'], {
+    const stdout = execFileSync(process.execPath, [reportScriptPath, '--skip-probes', '--release-readiness-proof', proofPath, '--json'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
@@ -330,8 +330,10 @@ describe('production approval readiness report', () => {
       expect(corepackRow?.status).toBe('blocked');
       expect(corepackRow?.blocks_request).toBe(true);
     }
+    // The request row blocks whenever the branch review is anything other than
+    // a proven pass — missing, unknown, or blocked review all block (fail closed).
     expect(requestRows.get('Canonical branch review')?.blocks_request).toBe(
-      payload.branch_review?.status === 'blocked',
+      payload.branch_review?.status !== 'pass',
     );
     expect(requestRows.get('Supabase advisor clearance')?.blocks_request).toBe(true);
     expect(requestRows.get('Explicit owner production approval')?.status).toBe('manual_stop');

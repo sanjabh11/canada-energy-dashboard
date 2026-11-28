@@ -1,0 +1,706 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 5343
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F2 18 Tf
+20.6999999999999993 TL
+0 g
+51.0236220472441033 785.1970866141732586 Td
+(CEIP Forecast + Benchmark Appendix) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 762.5199212598424765 Td
+(Scenario-to-export planning pack that keeps benchmark evidence, warnings, and connector truth visible for) Tj
+T* (buyer review. The current source remains browser-local and bounded to planning review.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 711.4962992125983874 Td
+(Artifact metadata) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 694.4884251968503577 Td
+(• Generated: 2026-11-27T10:38:41.103Z) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 677.480551181102328 Td
+(• Jurisdiction: Region-neutral synthetic demo) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 660.4726771653542983 Td
+(• Audience: Utility planner, consultant, or board reviewer) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 643.4648031496062686 Td
+(• Source summary: Deterministic synthetic workflow proof only; not Ontario or Alberta utility evidence.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 626.4569291338582389 Td
+(• Source manifest: utility-source-fallback_starter-664892f9) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 609.4490551181102092 Td
+(• Freshness state: 2025-01-21T23:00:00.000Z) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 592.4411811023621794 Td
+(• Verification status: needs buyer data) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 575.4333070866141497 Td
+(• Claim label: advisory) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 558.42543307086612 Td
+(• Commercial proof state: standard) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 541.4175590551180903 Td
+(• Fallback/sample disclosure: fallback or sample-backed) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 524.4096850393700606 Td
+(• Do not claim: Production utility bridge approval; Native 15-minute telemetry unless present in the uploaded) Tj
+T* (source; Control-room or dispatch-grade forecast accuracy; Enterprise AI/GPU superiority) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 490.3939370078739444 Td
+(• Bounded claims: This planning pack supports board and regulatory planning review only. It does not imply) Tj
+T* (production onboarding or unsupported connector status.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 450.7088976377952463 Td
+(Assumptions) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 433.7010236220471597 Td
+(• Planning packs are statistical scenario outputs, not operator-grade control-room forecasts.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 416.69314960629913 Td
+(• Live-connected claims remain blocked unless a persisted non-fallback connector path exists.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 399.6852755905511003 Td
+(• The synthetic demo does not produce jurisdiction-specific filing exports.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 371.3388188976377364 Td
+(Current planning run) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 354.3309448818897067 Td
+(• Source label: CEIP synthetic region-neutral starter fixture) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 337.323070866141677 Td
+(• Source kind: fallback_starter) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 320.3151968503935905 Td
+(• Source manifest: utility-source-fallback_starter-664892f9) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 303.3073228346455608 Td
+(• Content fingerprint \(FNV-1a; non-cryptographic; sampled for large datasets\): fnv1a-15441849) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 286.2994488188975311 Td
+(• Source retrieved at: not recorded) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 269.2915748031495013 Td
+(• Upload format evidence: unverified_upload \(Unverified upload; no recognized format or bundled-fixture) Tj
+T* (fingerprint\)) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 235.2758267716534419 Td
+(• Fallback surfaces: yes) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 218.2679527559054122 Td
+(• Historical range: 2025-01-01T00:00:00.000Z to 2025-01-21T23:00:00.000Z) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 201.2600787401573825 Td
+(• Time axis: regular_hourly; Regular hourly UTC/offset cadence; measured outputs use chronological) Tj
+T* (row-aligned windows.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 167.2443307086613231 Td
+(• Benchmark MAE/MAPE/RMSE: 3.53 MW / 3.72% / 4.49 MW) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 150.2364566929132934 Td
+(• Rolling evidence splits: 3) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 133.2285826771652637 Td
+(• Empirical interval coverage: 77.8% empirical coverage from 72 untouched chronological test samples across 3) Tj
+T* (measured folds; 192 unique calibration timestamps \(456 fold uses\); Each fold fits once on earlier history,) Tj
+T* (calibrates on a later chronological tail, and scores the unchanged predictor on subsequent untouched test) Tj
+T* (windows. Calibration sample count is unique timestamps; calibration windows overlap across folds, so fold uses) Tj
+T* (are also reported. Test windows are disjoint. Temporal dependence weakens exchangeability assumptions, so) Tj
+T* (observed coverage is descriptive rather than a formal guarantee.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 4617
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 785.1970866141732586 Td
+(• Hierarchy reconciliation error: 0.000 MW) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 768.1892125984252289 Td
+(• Benchmark skill vs persistence: 77.9%) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 751.1813385826771992 Td
+(• Benchmark skill vs seasonal-naive: 0.6%) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 734.1734645669291695 Td
+(• Benchmark failure notes: 0) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 717.1655905511811397 Td
+(• Weather case: median) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 700.15771653543311 Td
+(• Region context: synthetic demo only; no Ontario or Alberta measurements are represented.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 671.8112598425196893 Td
+(Highlighted scenarios) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 654.8033858267716596 Td
+(• 1 year: peak 123.89 MW, annual energy 53.02 GWh) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 637.7955118110235162 Td
+(• 5 year: peak 134.19 MW, annual energy 67.55 GWh) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 620.7876377952754865 Td
+(• 10 year: peak 147.68 MW, annual energy 85.97 GWh) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 592.4411811023621794 Td
+(Warnings and trust boundaries) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 575.4333070866141497 Td
+(• The selected feeder level covers every observed geography/customer-class interval, but the input carries no) Tj
+T* (authoritative entity inventory — a wholly absent feeder or substation would not be detected, so forecast totals) Tj
+T* (reflect observed entities only and are not a verified complete hierarchy.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 524.4096850393700606 Td
+(• Starter data is illustrative and should be replaced with utility history for production use.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 507.4018110236219741 Td
+(• 48 potential load-transfer jump\(s\) were detected with limited weather/customer explanation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 490.3939370078739444 Td
+(• 2016 row\(s\) used gross-load reconstitution to restore behind-the-meter suppressed baseline demand.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 462.0474803149605805 Td
+(Export path) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 445.0396062992125508 Td
+(• Synthetic demo exports only; no Ontario or Alberta filing schedule is produced by this browser-local workflow.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 428.0317322834645211 Td
+(• Use the generic forecast CSV and benchmark appendix only after reviewer validation.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 399.6852755905511003 Td
+(Input unit provenance) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 382.6774015748030706 Td
+(• Source unit: demand_mw) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 365.6695275590550409 Td
+(• Inferred interval \(minutes\): 60) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 348.6616535433070112 Td
+(• Conversion method: none) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 320.3151968503935905 Td
+(Reviewer Acceptance checklist) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 303.3073228346455608 Td
+(• Confirm source ownership, consent/basis, and redistribution rights before external sharing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 286.2994488188975311 Td
+(• Confirm the source unit, inferred interval, and conversion method before interpreting demand values.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 269.2915748031495013 Td
+(• Review privacy, formula, linkage, source, and freshness checks above.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 252.2837007874014716 Td
+(• Confirm forecast assumptions and benchmark windows with a utility reviewer.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 235.2758267716534419 Td
+(• Treat sample/fallback results as workflow proof, not buyer or regulator evidence.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 218.2679527559054122 Td
+(• Record reviewer name, date, decision, and objections outside this browser-only demo.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0 g
+51.0236220472441033 189.9214960629919915 Td
+(Next step) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+51.0236220472441033 172.9136220472439618 Td
+(Run one buyer-specific scenario, validate the assumptions with the utility team, and export the planning pack) Tj
+T* (plus jurisdiction schedule for pilot review.) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R ]
+/Count 2
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 7 0 R
+/F2 8 0 R
+/F3 9 0 R
+/F4 10 0 R
+/F5 11 0 R
+/F6 12 0 R
+/F7 13 0 R
+/F8 14 0 R
+/F9 15 0 R
+/F10 16 0 R
+/F11 17 0 R
+/F12 18 0 R
+/F13 19 0 R
+/F14 20 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+21 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20261127160841+05'30')
+>>
+endobj
+22 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000010353 00000 n 
+0000012178 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000005547 00000 n 
+0000005684 00000 n 
+0000010416 00000 n 
+0000010541 00000 n 
+0000010671 00000 n 
+0000010804 00000 n 
+0000010942 00000 n 
+0000011066 00000 n 
+0000011195 00000 n 
+0000011327 00000 n 
+0000011463 00000 n 
+0000011591 00000 n 
+0000011718 00000 n 
+0000011847 00000 n 
+0000011980 00000 n 
+0000012082 00000 n 
+0000012428 00000 n 
+0000012514 00000 n 
+trailer
+<<
+/Size 23
+/Root 22 0 R
+/Info 21 0 R
+/ID [ <75A2095383B15F8B7E19A25B7C89BB06> <75A2095383B15F8B7E19A25B7C89BB06> ]
+>>
+startxref
+12618
+%%EOF

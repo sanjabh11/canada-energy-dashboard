@@ -1,3 +1,4 @@
+import { isCronAuthorized } from "../_shared/cronAuth.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { assertExportAllowedServerSide, type ServerDataSource } from "../_shared/dataConfidenceServer.ts";
@@ -5,7 +6,6 @@ import { logExportEvent } from "../_shared/exportTelemetry.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
 const EXPORT_BUCKET = Deno.env.get("EXPORT_STORAGE_BUCKET") || "exports";
 const BATCH_SIZE = Number(Deno.env.get("EXPORT_PROCESS_BATCH_SIZE") || "5");
 const EXPORT_SIGNED_URL_TTL_SECONDS = Number(Deno.env.get("EXPORT_SIGNED_URL_TTL_SECONDS") || "86400");
@@ -25,13 +25,21 @@ type ExportJobRow = {
 };
 
 function isAuthorized(req: Request): boolean {
-  const authHeader = req.headers.get("authorization");
-  const xCron = req.headers.get("x-supabase-cron");
-  if (xCron === "true") return true;
-  if (!authHeader) return false;
-  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) return true;
-  if (CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`) return true;
-  return false;
+  return isCronAuthorized(req);
+}
+
+/**
+ * status_reason is returned to the export-job owner by export-job-status —
+ * bound it and strip URL/credential material, never persist raw error text.
+ */
+function boundedExportStatusReason(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  return raw
+    .replace(/\s+/g, " ")
+    .replace(/https?:\/\/\S+/gi, "[url]")
+    .replace(/[A-Za-z0-9_-]{24,}/g, "[redacted]")
+    .trim()
+    .slice(0, 160) || "export_processing_failed";
 }
 
 function parseSources(snapshot: Record<string, unknown>): ServerDataSource[] | undefined {
@@ -273,7 +281,9 @@ serve(async (req) => {
 
       processed.success += 1;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      // status_reason is surfaced to the export-job owner via
+      // export-job-status — carry a bounded reason, never raw error text.
+      const message = boundedExportStatusReason(error);
       const exhausted = (job.attempt_count ?? 0) >= (job.max_attempts ?? 3);
 
       if (exhausted) {

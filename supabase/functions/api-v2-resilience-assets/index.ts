@@ -76,10 +76,8 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("Failed to load resilience assets", err);
-    const message = err instanceof Error ? err.message : JSON.stringify(err);
     return new Response(JSON.stringify({
       error: "Failed to load resilience assets",
-      details: message,
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }

@@ -110,7 +110,7 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error('Climate Policy API error:', err);
     return new Response(JSON.stringify({ 
-      error: String(err),
+      error: 'Internal error',
       message: 'Failed to fetch climate policy data'
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

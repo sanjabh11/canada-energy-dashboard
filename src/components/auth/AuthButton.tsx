@@ -24,8 +24,8 @@ export function AuthButton() {
   // - Hidden on /whop/* and /whop-mini/* (embedded Whop experiences)
   // - Visible on all other routes (standalone app)
   const location = useLocation();
-  const isWhopRoute = location.pathname.startsWith('/whop/') || 
-                      location.pathname.startsWith('/whop-mini/');
+  const isWhopRoute =
+    location.pathname.startsWith('/whop/') || location.pathname.startsWith('/whop-mini/');
   const { user, tier, edubizUser, isWhopUser, isGuest, signOut, refreshUser } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -81,7 +81,8 @@ export function AuthButton() {
 
   const tierColor = tierColors[tier] || tierColors.free;
   const displayTier = tier; // WhopTier is already correctly named
-  const displayName = user.name || edubizUser?.full_name || user.email?.split('@')[0] || (isGuest ? 'Guest' : 'User');
+  const displayName =
+    user.name || edubizUser?.full_name || user.email?.split('@')[0] || (isGuest ? 'Guest' : 'User');
 
   return (
     <div className="relative">
@@ -92,9 +93,7 @@ export function AuthButton() {
       >
         <div className="flex items-center gap-2">
           <User className="w-5 h-5 text-slate-400" />
-          <span className="text-white font-medium hidden sm:inline">
-            {displayName}
-          </span>
+          <span className="text-white font-medium hidden sm:inline">{displayName}</span>
         </div>
         <span className={`px-2 py-1 text-xs font-semibold rounded border ${tierColor} capitalize`}>
           {displayTier}
@@ -106,23 +105,18 @@ export function AuthButton() {
       {showUserMenu && (
         <>
           {/* Backdrop to close menu when clicking outside */}
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowUserMenu(false)}
-          />
+          <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
 
           {/* Menu */}
           <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-20">
             {/* User info */}
             <div className="p-4 border-b border-slate-700">
-              <p className="text-white font-medium truncate">
-                {displayName}
-              </p>
-              {user.email && (
-                <p className="text-sm text-slate-400 truncate">{user.email}</p>
-              )}
+              <p className="text-white font-medium truncate">{displayName}</p>
+              {user.email && <p className="text-sm text-slate-400 truncate">{user.email}</p>}
               <div className="mt-2 flex items-center gap-2">
-                <span className={`px-2 py-1 text-xs font-semibold rounded border ${tierColor} capitalize`}>
+                <span
+                  className={`px-2 py-1 text-xs font-semibold rounded border ${tierColor} capitalize`}
+                >
                   {displayTier} tier
                 </span>
                 {isGuest && (
@@ -133,14 +127,11 @@ export function AuthButton() {
                     }}
                     className="text-xs text-cyan-400 hover:text-cyan-300"
                   >
-                    Continue with Whop
+                    Sign in with Whop (existing members)
                   </button>
                 )}
                 {tier === 'free' && !isGuest && (
-                  <a
-                    href="/pricing"
-                    className="text-xs text-cyan-400 hover:text-cyan-300"
-                  >
+                  <a href="/pricing" className="text-xs text-cyan-400 hover:text-cyan-300">
                     Upgrade
                   </a>
                 )}

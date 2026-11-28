@@ -1,7 +1,7 @@
 // ⚠️ COPY THIS ENTIRE FILE TO YOUR LOCAL MACHINE ⚠️
 // Location: /Users/sanjayb/minimax/canada-energy-dashboard/supabase/functions/stream-aeso-grid-data/index.ts
 //
-// Then run: npx supabase functions deploy stream-aeso-grid-data --project-ref qnymbecjgeaoxsfphrti
+// Then run: npx supabase functions deploy stream-aeso-grid-data --project-ref qktgjpbifknqjpvrgkrj
 
 /**
  * AESO Alberta Grid Data Live Streaming Edge Function

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 export interface EnergyFacility {
@@ -144,7 +144,7 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
-    map.on('error', (e) => {
+    map.on('error', (e: maplibregl.ErrorEvent) => {
       setMapError(e.error?.message ?? 'Map error occurred');
       setIsLoading(false);
     });
@@ -216,7 +216,7 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
         },
       });
 
-      map.on('click', 'facilities-circle', (e) => {
+      map.on('click', 'facilities-circle', (e: maplibregl.MapMouseEvent) => {
         const features = map.queryRenderedFeatures(e.point, {
           layers: ['facilities-circle'],
         });
@@ -244,14 +244,14 @@ export const EnergyMap: React.FC<EnergyMapProps> = ({
         map.getCanvas().style.cursor = '';
       });
 
-      map.on('click', 'clusters', (e) => {
+      map.on('click', 'clusters', (e: maplibregl.MapMouseEvent) => {
         const features = map.queryRenderedFeatures(e.point, {
           layers: ['clusters'],
         });
         if (!features.length) return;
         const clusterId = (features[0].properties as { cluster_id: number }).cluster_id;
         const source = map.getSource('facilities') as maplibregl.GeoJSONSource;
-        source.getClusterExpansionZoom(clusterId).then((zoom) => {
+        source.getClusterExpansionZoom(clusterId).then((zoom: number) => {
           map.easeTo({
             center: (features[0].geometry as { coordinates: [number, number] }).coordinates,
             zoom,

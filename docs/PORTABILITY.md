@@ -9,8 +9,10 @@
 ### Current: Whop
 | Integration Point | File | Purpose |
 | :--- | :--- | :--- |
-| Checkout Links | `src/lib/billingAdapter.ts` | Redirect to whop.com checkout |
-| Tier Mapping | `src/lib/whop.ts` → `WHOP_ACCESS_MATRIX` | 4 tiers: free/basic/pro/team |
+| Account Portal | `src/lib/billingAdapter.ts` | Redirect to whop.com membership settings (existing customers only; no checkout) |
+| Tier Mapping | `src/lib/whop.ts` → `WHOP_ACCESS_MATRIX` | 4 tiers: free/basic/pro/team — entitlement requires server-side `sessionVerified` |
+| Access Verification | `supabase/functions/whop-verify-access/index.ts` | Server-side Whop token → tier check (deploy-gated) |
+| Session Minting | `netlify/functions/auth-session.ts` | Verifies Whop token server-side before httpOnly cookie |
 | Webhook Handler | `supabase/functions/whop-webhook/index.ts` | Membership & payment events |
 
 ### Parallel: Stripe (Ready for Migration)
@@ -32,7 +34,7 @@
 ### Current: Whop OAuth + Guest Mode
 | Integration Point | File | Purpose |
 | :--- | :--- | :--- |
-| Whop OAuth | `src/lib/whop.ts` → `getWhopLoginUrl()` | Login redirect |
+| Whop session | `src/lib/whop.ts` → cookie + server verify (`checkWhopAccess`) | Existing-customer session (OAuth redirect removed — acquisition de-prioritized) |
 | Token Verification | `src/lib/whop.ts` → `verifyWhopToken()` | JWT validation |
 | Guest Mode | `src/lib/whop.ts` → `loginAsGuest()` | Non-Whop fallback |
 

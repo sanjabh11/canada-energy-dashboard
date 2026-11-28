@@ -641,7 +641,7 @@
       "label": "Supabase connector advisors",
       "status": "needs_remediation",
       "proofBucket": "external account",
-      "command": "Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti",
+      "command": "Supabase MCP security/performance advisors for qktgjpbifknqjpvrgkrj",
       "evidenceBoundary": "CLI lint does not substitute for connector-backed advisors; current advisor evidence remains account-authorization dependent.",
       "nextAction": "Fix Supabase connector or project authorization, then rerun security and performance advisors.",
       "sourceManifestPath": "supabase_advisor",

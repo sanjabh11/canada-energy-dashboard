@@ -151,4 +151,143 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(preview.getByRole('button', { name: 'Copy readiness report command' })).toBeVisible();
     await expect(preview.getByRole('button', { name: 'Copy validator command' })).toBeVisible();
   });
+
+  // ─── /tier-compliance industrial form tests ───
+
+  test('tier-compliance industrial form shows deadline banner with full wording', async ({ page }) => {
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/June 30 of the following year/)).toBeVisible();
+  });
+
+  test('tier-compliance industrial form rejects invalid email and shows error', async ({ page }) => {
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('form').first();
+    await form.getByPlaceholder('Work email').fill('not-an-email');
+    await form.getByPlaceholder('Your name').fill('Test User');
+    await form.getByPlaceholder('Company / facility').fill('Test Co');
+    await form.getByRole('button', { name: 'Request Demo' }).click();
+    await expect(page.getByText('Enter a valid work email.')).toBeVisible();
+  });
+
+  test('tier-compliance industrial form rejects empty name', async ({ page }) => {
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('form').first();
+    await form.getByPlaceholder('Work email').fill('test@company.ca');
+    await form.getByPlaceholder('Company / facility').fill('Test Co');
+    await form.getByRole('button', { name: 'Request Demo' }).click();
+    await expect(page.getByText('Enter your name.')).toBeVisible();
+  });
+
+  test('tier-compliance industrial form shows error on API failure and keeps form visible', async ({ page }) => {
+    await page.route('**/api/leads/intake', (route) => {
+      route.fulfill({ status: 500, json: { error: 'server_error' } });
+    });
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('form').first();
+    await form.getByPlaceholder('Work email').fill('test@company.ca');
+    await form.getByPlaceholder('Your name').fill('Test User');
+    await form.getByPlaceholder('Company / facility').fill('Test Co');
+    await form.getByRole('button', { name: 'Request Demo' }).click();
+    await expect(page.getByText('We could not save your request.')).toBeVisible();
+    await expect(form).toBeVisible();
+  });
+
+  test('tier-compliance industrial form succeeds with valid data', async ({ page }) => {
+    let requestBody: Record<string, unknown> | null = null;
+    await page.route('**/api/leads/intake', (route) => {
+      requestBody = route.request().postDataJSON();
+      route.fulfill({ status: 200, json: { ok: true } });
+    });
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('form').first();
+    await form.getByPlaceholder('Work email').fill('buyer@company.ca');
+    await form.getByPlaceholder('Your name').fill('Jane Smith');
+    await form.getByPlaceholder('Company / facility').fill('Acme Energy');
+    await form.getByRole('button', { name: 'Request Demo' }).click();
+    await expect(page.getByText(/we'll be in touch/i)).toBeVisible();
+    expect(requestBody).toBeTruthy();
+    expect((requestBody as Record<string, unknown>).action).toBe('intake');
+    const submission = (requestBody as Record<string, unknown>).submission as Record<string, unknown>;
+    expect(submission.contact_name).toBe('Jane Smith');
+    expect(submission.email).toBe('buyer@company.ca');
+    expect(submission.source_route).toBe('/tier-compliance');
+    expect(submission.segment).toBe('Industrial');
+    expect(submission.campaign_id).toBe('tier-compliance-landing');
+  });
+
+  // ─── /tier-compliance consultant form tests ───
+
+  test('tier-compliance consultant form rejects invalid email', async ({ page }) => {
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('form').nth(1);
+    await form.getByPlaceholder('Consulting firm name').fill('Energy Consulting Inc');
+    await form.getByPlaceholder('Work email').fill('@');
+    await form.getByRole('button', { name: 'Get Consultant Access' }).click();
+    await expect(page.getByText('Enter a valid work email.')).toBeVisible();
+  });
+
+  test('tier-compliance consultant form succeeds with valid data', async ({ page }) => {
+    let requestBody: Record<string, unknown> | null = null;
+    await page.route('**/api/leads/intake', (route) => {
+      requestBody = route.request().postDataJSON();
+      route.fulfill({ status: 200, json: { ok: true } });
+    });
+    await page.goto('/tier-compliance', { waitUntil: 'domcontentloaded' });
+    const form = page.locator('form').nth(1);
+    await form.getByPlaceholder('Consulting firm name').fill('Energy Consulting Inc');
+    await form.getByPlaceholder('Work email').fill('consultant@firm.ca');
+    await form.getByPlaceholder('Number of TIER clients').fill('12');
+    await form.getByPlaceholder('Current tool (e.g. Excel)').fill('Excel');
+    await form.getByRole('button', { name: 'Get Consultant Access' }).click();
+    await expect(page.getByText(/we'll be in touch regarding your consultant/i)).toBeVisible();
+    expect(requestBody).toBeTruthy();
+    const submission = (requestBody as Record<string, unknown>).submission as Record<string, unknown>;
+    expect(submission.segment).toBe('Consultant');
+    expect(submission.campaign_id).toBe('tier-consultant-cta-2026w21');
+    const metadata = submission.metadata as Record<string, unknown>;
+    expect(metadata.client_count).toBe('12');
+    expect(metadata.current_tool).toBe('Excel');
+  });
+
+  // ─── /roi-calculator form tests ───
+
+  test('roi-calculator shows deadline banner with full wording', async ({ page }) => {
+    await page.goto('/roi-calculator', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/June 30 of the following year/)).toBeVisible();
+  });
+
+  test('roi-calculator rejects invalid email', async ({ page }) => {
+    await page.goto('/roi-calculator', { waitUntil: 'domcontentloaded' });
+    await page.getByPlaceholder('your@company.ca').fill('bad-email');
+    await page.getByRole('button', { name: 'Request follow-up' }).click();
+    await expect(page.getByText('Enter a valid work email so our team can follow up.')).toBeVisible();
+  });
+
+  test('roi-calculator shows error on API failure', async ({ page }) => {
+    await page.route('**/api/leads/intake', (route) => {
+      route.fulfill({ status: 500, json: { error: 'server_error' } });
+    });
+    await page.goto('/roi-calculator', { waitUntil: 'domcontentloaded' });
+    await page.getByPlaceholder('your@company.ca').fill('buyer@company.ca');
+    await page.getByRole('button', { name: 'Request follow-up' }).click();
+    await expect(page.getByText('We could not save your request.')).toBeVisible();
+  });
+
+  test('roi-calculator succeeds with valid email and no SLA promise', async ({ page }) => {
+    let requestBody: Record<string, unknown> | null = null;
+    await page.route('**/api/leads/intake', (route) => {
+      requestBody = route.request().postDataJSON();
+      route.fulfill({ status: 200, json: { ok: true } });
+    });
+    await page.goto('/roi-calculator', { waitUntil: 'domcontentloaded' });
+    await page.getByPlaceholder('your@company.ca').fill('buyer@company.ca');
+    await page.getByRole('button', { name: 'Request follow-up' }).click();
+    await expect(page.getByText(/Request saved/)).toBeVisible();
+    await expect(page.getByText(/24 hours/)).not.toBeVisible();
+    expect(requestBody).toBeTruthy();
+    const submission = (requestBody as Record<string, unknown>).submission as Record<string, unknown>;
+    expect(submission.source_route).toBe('/roi-calculator');
+    expect(submission.segment).toBe('industrial');
+    expect(submission.campaign_id).toBe('roi_calculator_2026q1');
+  });
 });

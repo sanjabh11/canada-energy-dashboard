@@ -1,0 +1,6 @@
+# TEMPLATE / EXAMPLE ONLY — NON-AUTHORITATIVE.
+# The canonical live suppression registry is docs/growth/SUPPRESSION_REGISTRY_LIVE.csv.
+# All outreach scripts resolve that file by default (override with --suppression-file
+# or the CEIP_SUPPRESSION_REGISTRY env var) and fail closed when it is absent or
+# unreadable. Do not record opt-outs in this file; rows below are examples only.
+email,domain,reason,source,suppressed_at,suppressed_by

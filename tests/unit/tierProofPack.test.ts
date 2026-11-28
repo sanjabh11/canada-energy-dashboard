@@ -61,7 +61,7 @@ describe('tierProofPack', () => {
     expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('June 30');
     expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('50% of eligible capital');
     expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('December 31, 2026');
-    expect(formatPricingWithProvenance()).toContain('Fund: $95/t frozen');
+    expect(formatPricingWithProvenance()).toContain('Fund: CAD 95/t frozen');
     expect(isPricingStale(DEFAULT_TIER_PRICING, new Date('2026-06-02T12:00:00.000Z'))).toBe(false);
   });
 

@@ -2,7 +2,7 @@
 
 ## Campaign Thesis
 
-CEIP should be sold as Canadian utility and TIER proof packs, not as a broad dashboard collection. The lead promise is a buyer-ready artifact: forecast planning memo, benchmark appendix, filing pack, Ontario GA/ICI peak-risk decision-support note, local BYO-CSV privacy proof, CFO compliance memo, credit banking audit pack, capex recommendation, security questionnaire, or invoice comparison report.
+CEIP is being tested as Canadian utility and TIER proof packs, not as a broad dashboard collection. These are desk-research hypotheses and must not be presented as buyer-validated or approved offers. The proposed artifact is a buyer-reviewable draft: forecast planning memo, benchmark appendix, filing pack, Ontario GA/ICI peak-risk decision-support note, local BYO-CSV privacy proof, CFO compliance memo, credit banking audit pack, capex recommendation, security questionnaire, or invoice comparison report.
 
 Lead with utility planning, benchmark/provenance, OEB/AUC filing, Ontario GA/ICI, BYO-CSV privacy proof, TIER CFO, TIER credit banking, asset capex, utility security, and shadow billing. Use large-load and API/data-pack work as reserve/support when the workflow clearly matches. Keep Indigenous/AICEI reporting as a reserve/support lane until partner-backed review exists.
 
@@ -10,14 +10,14 @@ Lead with utility planning, benchmark/provenance, OEB/AUC filing, Ontario GA/ICI
 
 | Priority | Buyer lane | Best route | Primary proof pack | Why it is marketable now |
 |---:|---|---|---|---|
-| 1 | Utility consultants serving LDCs, REAs, municipalities, and industrial loads | `/utility-demand-forecast` | Utility demand forecast planning pack | Consultants can evaluate a sample workflow quickly and turn the output into client-facing evidence. |
-| 2 | LDCs and REAs with load growth, DER, DSP, or large-load planning pressure | `/utility-demand-forecast` | Planning memo with benchmark/provenance attachment | Clear utility pain and strong fit with CEIP's Canadian planning wedge. |
+| 1 | Utility consultants serving LDCs, REAs, municipalities, and industrial loads | `/utility-demand-forecast` | Utility demand forecast planning pack | Consultants may evaluate a sample workflow quickly; willingness to pay is unvalidated. |
+| 2 | LDCs and REAs with load growth, DER, DSP, or large-load planning pressure | `/utility-demand-forecast` | Planning memo with benchmark/provenance attachment | Desk research suggests a fit with CEIP's Canadian planning wedge; buyer acceptance is unvalidated. |
 | 3 | Regulatory consultants and utility filing teams | `/regulatory-filing` | OEB/AUC filing evidence pack | Structured reviewer artifacts are easier to sell than another analytics page. |
 | 4 | Forecast reviewers and planning leads | `/forecast-benchmarking` | Benchmark and provenance appendix | Trust layer strengthens every forecast conversation. |
 | 5 | Ontario Class A industrials and peak-response advisors | `/ga-ici-5cp` | GA/ICI 5CP decision-support pack | Ontario-specific peak-risk evidence is narrow, high-stakes, and defensible when kept bounded. |
 | 6 | Utility privacy, security, and procurement reviewers | `/byo-csv-proof` | BYO-CSV privacy proof pack | Local redacted proof reduces the data-sharing blocker before asking for sensitive files. |
 | 7 | Alberta emitters, CFOs, and compliance leads with credit inventory | `/credit-banking` | TIER credit banking audit pack | Ledger allocation, expiry risk, and liability coverage are concrete diligence artifacts. |
-| 8 | Municipal utilities and asset managers | `/asset-health` | Asset health executive capex pack | Replace/defer recommendations are board-ready when data is available. |
+| 8 | Municipal utilities and asset managers | `/asset-health` | Draft asset-health scenario pack | Replace/defer outputs are draft scenarios requiring buyer validation and review. |
 | 9 | Utility security, privacy, and procurement reviewers | `/utility-security` | Security procurement questionnaire | Useful attachment for any data-sharing conversation. |
 | 10 | Municipal and public-sector energy managers | `/shadow-billing` | Invoice comparison proof pack | Billing deltas and audit notes are easy to review in a pilot. |
 | Reserve | Utilities and data-centre advisors | `/ai-datacentres` | Large-load readiness overlay | Keep as assumptions-only planning support, not technical approval. |
@@ -35,7 +35,7 @@ These are current sellability-confidence ratings, not target ratings. They must 
 | 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 |
 | 4 | Ontario GA/ICI 5CP decision-support pack | Ontario Class A industrials, energy managers | `/ga-ici-5cp` | 4.2/5 |
 | 5 | Privacy-preserving BYO-CSV proof generator | Utility privacy, security, procurement reviewers | `/byo-csv-proof` | 4.1/5 |
-| 6 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 |
+| 6 | TIER scenario memo (desk-research hypothesis) | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 |
 | 7 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 |
 | 8 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 |
 | 9 | Utility security procurement pack | Utility security/procurement reviewers | `/utility-security` | 4.0/5 |
@@ -86,9 +86,53 @@ The log records proof-pack route, caveat, artifact promise, reply status, comple
 - **Security proof pack:** "Can a utility reviewer see data handling, retention, owner responsibilities, incident contacts, and evidence boundaries before a pilot?"
 - **Shadow billing proof pack:** "Can an energy manager compare invoice deltas and audit notes from an anonymized bill set?"
 
+## CASL Compliance Footer (append to all sends)
+
+Canada's Anti-Spam Legislation (CASL) applies to every commercial electronic message (CEM) built from the copy blocks below — email, LinkedIn InMail/DM, and any other electronic outreach. Every copy block is marked with an "Append CASL footer" line. Paste the block below verbatim at the end of each send and fill the placeholders before sending.
+
+```text
+—
+{Sender full name} | {Organization name}
+{Physical mailing address: street, city, province, postal code}
+{Sender email} | {Sender phone or website}
+
+You are receiving this message because {consent basis — e.g. "you gave
+express consent", "we have an existing business relationship from your
+inquiry dated {date}", or "your business contact address is
+conspicuously published and this message is relevant to your role"
+(CASL s.10(9) implied consent)}.
+
+Consent note: {how and when consent was obtained, or the documented
+implied-consent basis — keep proof on file}.
+
+Reply STOP or UNSUBSCRIBE to opt out — honoured within 10 business days.
+—
+```
+
+CASL sending rules for this campaign:
+
+- Do not send a CEM where no consent basis exists (express consent, existing business/non-business relationship within the statutory window, conspicuously-published-address implied consent, or a CASL exemption). When in doubt, use a non-CEM channel first.
+- Sender identification (name, organization, physical mailing address) must be accurate in every send — the placeholders above are mandatory, not optional.
+- The unsubscribe mechanism must be functional and honoured promptly, and in all cases within 10 business days of the request.
+- Record the consent basis and any opt-out in the outreach response log; an opted-out contact must not receive further CEMs.
+- Every opt-out must also be appended to the canonical suppression registry [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) (`email,domain,reason,source,suppressed_at,suppressed_by`), which is the single workspace-wide suppression source for all campaigns. Check every recipient against it before each send; where systems disagree, the stricter state wins (suppress).
+
+### Consent-Basis Checklist (required for every send)
+
+No copy block below may be sent unless all of these are recorded and the CASL owner approves:
+
+- [ ] `consent_basis` (express consent / existing relationship / conspicuously-published-address implied consent / exemption — `none` means do not send)
+- [ ] `consent_source` (where the basis came from; proof kept in the external outreach system)
+- [ ] `consent_date` (ISO `YYYY-MM-DD`; implied-consent windows checked)
+- [ ] Sender identity filled — name, organization, physical mailing address
+- [ ] Unsubscribe mechanism verified functional
+- [ ] Recipient checked against [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) and the response log shows no `unsubscribe_status` other than `none`
+
 ## Copy Blocks For Lead-Now Proof Packs
 
 ### Utility Forecast Planning Pack
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 Subject: Utility forecast proof pack for {Organization}
 
@@ -102,6 +146,8 @@ Would a 20-minute walkthrough of `/utility-demand-forecast` be useful?
 
 ### Regulatory Filing Pack
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 Subject: OEB/AUC evidence pack for forecast and planning review
 
 Hi {FirstName},
@@ -114,6 +160,8 @@ Would you be open to a 20-minute walkthrough?
 
 ### Benchmark And Provenance Pack
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 Subject: Forecast benchmark appendix for client confidence
 
 Hi {FirstName},
@@ -123,6 +171,8 @@ CEIP's benchmark layer makes MAE, MAPE, RMSE, persistence, seasonal-naive, sourc
 Would a quick walkthrough of `/forecast-benchmarking` help your team assess whether this belongs in a client pilot?
 
 ### Asset Health Capex Pack
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 Subject: CSV-first asset replace/defer summary
 
@@ -136,6 +186,8 @@ Would a short review of `/asset-health` be useful?
 
 ### TIER CFO Memo Pack
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 Subject: Source-dated TIER scenario memo
 
 Hi {FirstName},
@@ -147,6 +199,8 @@ It is a scenario tool, not trading advice or a real-time price feed.
 Would a review of `/roi-calculator` against one facility case be useful?
 
 ### TIER Credit Banking Pack
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 Subject: TIER credit allocation and expiry-risk audit
 
@@ -160,6 +214,8 @@ Would a short review of `/credit-banking` alongside `/roi-calculator` help scope
 
 ### Utility Security Procurement Pack
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 Subject: Security questionnaire for a forecast pilot
 
 Hi {FirstName},
@@ -169,6 +225,8 @@ CEIP can attach a utility security review pack before any load-history pilot: co
 Would `/utility-security` help your team decide whether a forecast pilot is worth scoping?
 
 ### Shadow Billing Invoice Pack
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 Subject: Invoice comparison proof pack
 
@@ -184,6 +242,8 @@ Would a quick walkthrough of `/shadow-billing` be useful?
 
 ### UtilityAPI Sandbox
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 Use `/utilityapi-demo` only as a sandbox proof of parsing and data-flow concepts. Do not describe it as utility-approved onboarding, consent management, or production bridge evidence.
 
 Suggested wording:
@@ -191,6 +251,8 @@ Suggested wording:
 "CEIP has a UtilityAPI-style sandbox route that can support a connector discussion, but I would treat it as a demo surface until approval, OAuth, revocation, audit logs, and deployment evidence are supplied."
 
 ### Broad Dashboard Context
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 Use broad CEIP dashboard pages as context only after a proof pack has been selected. Do not lead with "many dashboards." Lead with the artifact the buyer can review.
 
@@ -200,6 +262,8 @@ Suggested wording:
 
 ### Large-Load / Data-Centre Overlay
 
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
+
 Use `/ai-datacentres` only when the prospect has an explicit large-load planning question.
 
 Suggested wording:
@@ -207,6 +271,8 @@ Suggested wording:
 "The large-load route is a readiness overlay for assumptions, demand pressure, and constraint narrative. It is not a power-flow tool or engineering approval path."
 
 ### Indigenous / AICEI Reporting Reserve
+
+> **Append CASL footer + checklist:** paste the [CASL Compliance Footer](#casl-compliance-footer-append-to-all-sends) block after this copy and complete the [Consent-Basis Checklist](#consent-basis-checklist-required-for-every-send) — including the [SUPPRESSION_REGISTRY_LIVE.csv](./SUPPRESSION_REGISTRY_LIVE.csv) check — before sending.
 
 Use `/funder-reporting` and `/aicei` only when the prospect already has a reporting workflow and governance review path. Do not use this as a lead wedge until partner-backed data or review exists.
 

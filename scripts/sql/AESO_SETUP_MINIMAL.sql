@@ -110,7 +110,7 @@ END $$;
 SELECT cron.schedule(
   'aeso-stream-every-5-min',
   '*/5 * * * *',
-  $$ SELECT net.http_post(url := 'https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/stream-aeso-grid-data', headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || current_setting('app.supabase_service_role_key'))); $$
+  $$ SELECT net.http_post(url := 'https://qktgjpbifknqjpvrgkrj.supabase.co/functions/v1/stream-aeso-grid-data', headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || current_setting('app.supabase_service_role_key'))); $$
 );
 
 -- ============================================================================

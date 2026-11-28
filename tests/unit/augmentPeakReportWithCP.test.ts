@@ -46,7 +46,9 @@ describe('augmentPeakReportWithCP', () => {
     const result = augmentPeakReportWithCP(report, cal, 0.1);
 
     expect(result.conformalCalibration.method).toContain('skipped');
-    expect(result.conformalCalibration.coverageRate).toBe(0);
+    expect(result.conformalCalibration.targetCoverageRate).toBe(0.9);
+    expect(result.conformalCalibration.empiricalHeldOutCoverageRate).toBeNull();
+    expect(result.conformalCalibration.coverageStatus).toBe('not_measured');
     expect(result.conformalCalibration.conformalQuantile).toBe(0);
   });
 
@@ -124,13 +126,14 @@ describe('augmentPeakReportWithCP', () => {
     expect(firstWindow.p90DemandMw).toBeDefined();
   });
 
-  it('computes coverageRate from full calibration set', () => {
+  it('reports the nominal target without claiming calibration-set fit as held-out coverage', () => {
     const report = makeReport();
     const cal = makeCalibrationData(50);
 
     const result = augmentPeakReportWithCP(report, cal, 0.1);
 
-    expect(result.conformalCalibration.coverageRate).toBeGreaterThanOrEqual(0);
-    expect(result.conformalCalibration.coverageRate).toBeLessThanOrEqual(1);
+    expect(result.conformalCalibration.targetCoverageRate).toBe(0.9);
+    expect(result.conformalCalibration.empiricalHeldOutCoverageRate).toBeNull();
+    expect(result.conformalCalibration.coverageStatus).toBe('not_measured');
   });
 });

@@ -246,7 +246,7 @@ Deno.serve(async (req: Request) => {
       
       const metadata = {
         streamKey: STREAM_KEY,
-        error: message,
+        error: 'upstream_fetch_failed',
         usingSampleData: true,
         returned: paginated.rows.length,
         ...provenance,
@@ -262,16 +262,16 @@ Deno.serve(async (req: Request) => {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 200
       });
-    } catch (sampleError) {
+    } catch {
       // Complete failure
-      const metadata = { streamKey: STREAM_KEY, error: message, sampleError: String(sampleError) };
+      const metadata = { streamKey: STREAM_KEY, error: String(message).slice(0, 300), sampleError: 'sample_fallback_failed' };
       await updateStreamHealth('degraded', metadata, {
         last_error: new Date().toISOString(),
         error_count: errorCount
       });
       await logInvocation('error', metadata, startedAt);
 
-      return new Response(JSON.stringify({ error: message }), {
+      return new Response(JSON.stringify({ error: 'Internal error' }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 500
       });

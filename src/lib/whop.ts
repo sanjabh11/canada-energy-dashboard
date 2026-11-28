@@ -2,12 +2,20 @@
  * Whop SDK Integration for Canada Energy Academy
  *
  * Implements access control, tier management, and user authentication
- * for the Whop Marketplace monetization strategy.
+ * for existing Whop memberships and entitlement compatibility.
  *
  * KEY CHANGES FOR WHOP COMPLIANCE:
  * - Uses Whop JWT authentication (no custom login)
- * - Uses browser-safe Whop API calls plus server/edge verification paths
+ * - Makes NO browser-side Whop API calls; verification is server/edge-only
  * - Supports standalone mode for non-Whop deployments
+ *
+ * TWO VERIFICATION SURFACES (intentional, by hosting target):
+ * - Web dashboard (this file + /api/auth/* Netlify functions): session token
+ *   → server verifyWhopSessionToken (documented OAuth userinfo primary,
+ *   legacy last-resort) → entitlement DB → tiers free|basic|pro|team.
+ * - Whop-embedded mini-app (src/components/whop-mini/): iframe token →
+ *   whop-verify-access Supabase edge fn → tiers free|starter|pro|enterprise,
+ *   mapped onto free|basic|pro at the client boundary.
  *
  * Access Tiers:
  * - Free: Public dashboards only
@@ -271,17 +279,34 @@ export const FEATURE_TIER_MAP: Record<string, WhopTier[]> = {
 };
 
 /**
- * Verify Whop JWT token
- * In production, this validates the x-whop-user-token header
+ * Client-side Whop token gate — SHAPE CHECK ONLY, never trust.
+ *
+ * The browser must NOT call the Whop API with a user token:
+ * - the legacy Whop "me" endpoint this app once called from the client is
+ *   NOT confirmed in official Whop docs as a verification target, and
+ * - any client-side membership→tier mapping reintroduces the
+ *   unrelated-product defect removed server-side (a membership in ANY
+ *   product must never mint a paid tier in the browser).
+ *
+ * Trust boundary: identity and tier come EXCLUSIVELY from
+ * `whopClient.loginFromToken()` → `POST /api/auth/login` → server-side
+ * `verifyWhopSessionToken()`, which verifies the token against Whop before
+ * minting the HttpOnly session cookie. This function only decides whether
+ * a credential is well-formed enough to hand to that server path.
+ *
+ * - empty/blank token → invalid
+ * - standalone mode   → invalid (no Whop integration at all)
+ * - simulated mode    → dev-only mock decode (display metadata, no tier)
+ * - live mode         → `{ valid: true }` for any non-empty credential;
+ *                       NO client-side Whop API call is made.
  */
 export async function verifyWhopToken(token: string): Promise<{
   valid: boolean;
   userId?: string;
   email?: string;
-  tier?: WhopTier;
   error?: string;
 }> {
-  if (!token) {
+  if (!token || !token.trim()) {
     return { valid: false, error: 'No token provided' };
   }
 
@@ -290,123 +315,33 @@ export async function verifyWhopToken(token: string): Promise<{
   }
 
   if (!isWhopLiveMode()) {
-    // Simulated mode - decode mock JWT
+    // Simulated mode — dev-only mock decode for local development. The
+    // decoded fields are display metadata, NOT entitlements: no tier is
+    // ever returned because a client-decoded payload cannot prove one.
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return {
         valid: true,
         userId: payload.sub || payload.user_id,
         email: payload.email,
-        tier: payload.tier || 'free',
       };
     } catch {
       return { valid: false, error: 'Invalid token format' };
     }
   }
 
-  // Live mode - verify with Whop API
-  try {
-    const response = await fetch('https://api.whop.com/v5/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      return { valid: false, error: `Whop API error: ${response.status}` };
-    }
-
-    const data = await response.json();
-
-    // Determine tier from Whop membership data
-    let tier: WhopTier = 'free';
-    if (data.memberships && data.memberships.length > 0) {
-      const activeMembership = data.memberships.find((m: any) => m.status === 'active');
-      if (activeMembership) {
-        // Map Whop product to our tiers
-        tier = mapWhopProductToTier(activeMembership.product_id);
-      }
-    }
-
-    return {
-      valid: true,
-      userId: data.id,
-      email: data.email,
-      tier,
-    };
-  } catch (error) {
-    return { valid: false, error: `Token verification failed: ${error}` };
-  }
+  // Live mode — delegate trust entirely. No client-side Whop API call:
+  // a non-empty credential is well-formed enough for the server login
+  // path, which performs the real verification and entitlement lookup.
+  return { valid: true };
 }
 
-/**
- * Map Whop product ID to our tier system
- * Configure these in your Whop dashboard
- */
-function mapWhopProductToTier(productId: string): WhopTier {
-  const tierMap: Record<string, WhopTier> = {
-    // These should match your Whop product IDs
-    prod_basic: 'basic',
-    prod_pro: 'pro',
-    prod_team: 'team',
-    // Add your actual Whop product IDs here
-  };
-  return tierMap[productId] || 'free';
-}
-
-/**
- * Get Whop OAuth URL for login
- */
-export function getWhopLoginUrl(redirectUri?: string): string {
-  const clientId = WHOP_CLIENT_ID;
-  const redirect = redirectUri || window.location.origin + '/auth/whop/callback';
-
-  if (!clientId) {
-    console.warn('[Whop] No client ID configured, returning placeholder URL');
-    return '#';
-  }
-
-  return `https://whop.com/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=code`;
-}
-
-/**
- * Handle Whop OAuth callback
- */
-export async function handleWhopCallback(code: string): Promise<{
-  success: boolean;
-  user?: WhopUser;
-  error?: string;
-}> {
-  if (!code) {
-    return { success: false, error: 'No authorization code provided' };
-  }
-
-  if (isStandaloneMode()) {
-    return { success: false, error: 'Whop integration not enabled in standalone mode' };
-  }
-
-  try {
-    // Exchange code for token via your backend
-    // In production, this should go through your Supabase Edge Function
-    const response = await fetch('/api/auth/whop/callback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
-    });
-
-    if (!response.ok) {
-      return { success: false, error: 'Failed to exchange authorization code' };
-    }
-
-    const data = await response.json();
-    const user = await whopClient.loginFromToken(data.access_token);
-
-    return { success: true, user };
-  } catch (error) {
-    return { success: false, error: `OAuth callback failed: ${error}` };
-  }
-}
+// NOTE: the Whop OAuth redirect/code-exchange flow was removed. Neither the
+// client-side auth callback route nor the server-side code-exchange endpoint
+// exists in this deployment, so the path was dead and presented a spoofable
+// surface. Existing members authenticate through the Whop iframe token flow
+// (whop_token URL param -> verifyWhopToken -> loginFromToken) and manage
+// billing via https://whop.com/hub.
 
 /**
  * Check if user has access to a specific experience
@@ -430,24 +365,34 @@ export async function checkWhopAccess(
     };
   }
 
-  // Verify entitlements via server-side Edge Function to prevent client-side bypass
+  // The browser never supplies the identity used for entitlement lookup. The
+  // server derives it from the verified HttpOnly Whop session and checks the
+  // local entitlement record. `userId` is only a consistency check.
   try {
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whop-verify-access`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ userId, experienceId }),
-      },
-    );
+    void experienceId;
+    const response = await fetch('/api/auth/session', { credentials: 'include' });
 
     if (response.ok) {
-      const data = await response.json();
+      const data = (await response.json()) as {
+        authenticated?: boolean;
+        user?: { id?: string };
+        hasAccess?: boolean;
+        tier?: WhopTier;
+      };
+      const serverTier =
+        data.tier && Object.prototype.hasOwnProperty.call(WHOP_ACCESS_MATRIX, data.tier)
+          ? data.tier
+          : 'free';
+      const entitled =
+        data.authenticated === true &&
+        data.user?.id === userId &&
+        data.hasAccess === true &&
+        serverTier !== 'free';
+      const tier = entitled ? serverTier : 'free';
       return {
-        hasAccess: data.hasAccess ?? false,
-        tier: data.tier || 'free',
-        features: data.features || WHOP_ACCESS_MATRIX.free.features,
+        hasAccess: entitled,
+        tier,
+        features: WHOP_ACCESS_MATRIX[tier].features,
       };
     }
   } catch {
@@ -455,10 +400,9 @@ export async function checkWhopAccess(
   }
 
   // Fallback: use cached user data with hasAccess=false to fail closed
-  const user = whopClient.getCurrentUser();
   return {
     hasAccess: false,
-    tier: user?.tier || 'free',
+    tier: 'free',
     features: WHOP_ACCESS_MATRIX.free.features,
   };
 }
@@ -469,18 +413,90 @@ export async function checkWhopAccess(
 class WhopClient {
   private currentUser: WhopUser | null = null;
   private initialized: boolean = false;
+  /**
+   * True only when the current identity was established this session through a
+   * verified path: Whop token verification, a server-confirmed entitlement
+   * check, or an explicit guest/simulated login action. A profile restored
+   * from localStorage starts unverified and must never grant entitlements on
+   * its own — a forged `whop_user` blob plus a minted cookie is not proof of
+   * identity (the session endpoint reports only that *a* cookie exists).
+   */
+  private sessionVerified: boolean = false;
 
-  private restoreStoredUser(): void {
+  /**
+   * Read the cached profile from localStorage without trusting it.
+   * Returns null when nothing valid is stored.
+   */
+  private readStoredUser(): WhopUser | null {
     const storedUser = localStorage.getItem('whop_user');
     if (!storedUser) {
-      return;
+      return null;
     }
 
     try {
-      this.currentUser = JSON.parse(storedUser);
+      const parsed = JSON.parse(storedUser) as WhopUser;
+      if (!parsed || typeof parsed.id !== 'string') {
+        localStorage.removeItem('whop_user');
+        return null;
+      }
+      return parsed;
     } catch {
       localStorage.removeItem('whop_user');
+      return null;
     }
+  }
+
+  /**
+   * Standalone-mode restore only. Standalone deployments have no server to
+   * verify against, so a stored profile can only ever be a local guest/demo
+   * identity — scrub any claimed Whop-authenticated flag.
+   */
+  private restoreStoredUser(): void {
+    const stored = this.readStoredUser();
+    if (!stored) {
+      return;
+    }
+
+    this.currentUser = { ...stored, isWhopUser: false };
+    this.sessionVerified = true;
+  }
+
+  private userFromServerSession(data: unknown): WhopUser | null {
+    if (!data || typeof data !== 'object') return null;
+    const record = data as Record<string, unknown>;
+    const identity =
+      record.user && typeof record.user === 'object'
+        ? (record.user as Record<string, unknown>)
+        : null;
+    const id = typeof identity?.id === 'string' ? identity.id.trim() : '';
+    if (record.authenticated !== true || !id) return null;
+
+    const claimedTier =
+      typeof record.tier === 'string' &&
+      Object.prototype.hasOwnProperty.call(WHOP_ACCESS_MATRIX, record.tier)
+        ? (record.tier as WhopTier)
+        : 'free';
+    const tier = record.hasAccess === true ? claimedTier : 'free';
+    const email = typeof identity?.email === 'string' ? identity.email : '';
+    const name = typeof identity?.name === 'string' ? identity.name : undefined;
+    const expiryDate =
+      typeof record.subscriptionEndDate === 'string' &&
+      Number.isFinite(Date.parse(record.subscriptionEndDate))
+        ? record.subscriptionEndDate
+        : undefined;
+
+    return {
+      id,
+      email,
+      ...(name ? { name } : {}),
+      tier,
+      subscriptionStatus: tier === 'free' ? 'none' : 'active',
+      ...(expiryDate ? { subscriptionEndDate: expiryDate } : {}),
+      features: WHOP_ACCESS_MATRIX[tier].features,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      isWhopUser: true,
+    };
   }
 
   /**
@@ -501,25 +517,36 @@ class WhopClient {
       return;
     }
 
-    // Check for existing session from httpOnly cookie
+    // Check for an existing server-held session (httpOnly cookie).
     try {
       const res = await fetch('/api/auth/session', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
-        if (data.authenticated) {
-          // We have a valid cookie session — restore user from localStorage cache
-          const storedUser = localStorage.getItem('whop_user');
-          if (storedUser) {
-            this.currentUser = JSON.parse(storedUser);
-          }
+        const serverUser = this.userFromServerSession(data);
+        if (serverUser) {
+          // The server returned identity after validating the HttpOnly token;
+          // tier/features also came from its entitlement check. Ignore the
+          // browser cache as an identity or permission source.
+          this.currentUser = serverUser;
+          this.sessionVerified = true;
+          localStorage.setItem('whop_user', JSON.stringify(serverUser));
         } else {
-          // No cookie session — clear stale localStorage
+          // No server-confirmed identity — clear the stale browser profile.
           localStorage.removeItem('whop_user');
+          this.currentUser = null;
+          this.sessionVerified = false;
         }
+      } else {
+        // Session endpoint error — fail closed; localStorage is not a
+        // trusted identity source.
+        this.currentUser = null;
+        this.sessionVerified = false;
       }
     } catch {
-      // Fallback: try localStorage (dev mode without Netlify Functions)
-      this.restoreStoredUser();
+      // Network failure — fail closed. Never restore entitlements from
+      // localStorage alone when no server session can be confirmed.
+      this.currentUser = null;
+      this.sessionVerified = false;
     }
 
     // Check for Whop token in URL params (iframe mode)
@@ -537,30 +564,49 @@ class WhopClient {
     const whopToken = urlParams.get('whop_token');
 
     if (whopToken) {
-      const verified = await verifyWhopToken(whopToken);
-      if (verified.valid && verified.userId) {
+      try {
         await this.loginFromToken(whopToken);
         // Clean up URL
         urlParams.delete('whop_token');
         const newUrl =
           window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
         window.history.replaceState({}, '', newUrl);
+      } catch {
+        this.currentUser = null;
+        this.sessionVerified = false;
       }
     }
   }
 
   /**
-   * Get current user
+   * Get current user.
+   * NOTE: a restored-but-unverified profile is returned for display only;
+   * use getCurrentTier()/isSessionVerified() for entitlement decisions.
    */
   getCurrentUser(): WhopUser | null {
     return this.currentUser;
   }
 
   /**
-   * Get current tier
+   * Whether the current identity was verified this session via a
+   * server-confirmed path (token verification, entitlement check) or an
+   * explicit guest/simulated login. Restored localStorage profiles are
+   * unverified until confirmSessionServerSide succeeds.
+   */
+  isSessionVerified(): boolean {
+    return this.sessionVerified;
+  }
+
+  /**
+   * Get current tier.
+   * Fails closed to 'free' for unverified restored sessions so that
+   * forged localStorage/cookie state cannot grant paid entitlements.
    */
   getCurrentTier(): WhopTier {
-    return this.currentUser?.tier || 'free';
+    if (!this.currentUser || !this.sessionVerified) {
+      return 'free';
+    }
+    return this.currentUser.tier;
   }
 
   /**
@@ -600,41 +646,37 @@ class WhopClient {
    * Login from Whop JWT token
    */
   async loginFromToken(token: string): Promise<WhopUser> {
-    const verified = await verifyWhopToken(token);
-
-    if (!verified.valid) {
-      throw new Error(verified.error || 'Invalid token');
+    const login = await fetch('/api/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (!login.ok) {
+      this.currentUser = null;
+      this.sessionVerified = false;
+      localStorage.removeItem('whop_user');
+      throw new Error('Server could not verify this Whop session.');
     }
 
-    const user: WhopUser = {
-      id: verified.userId!,
-      email: verified.email || '',
-      tier: verified.tier || 'free',
-      subscriptionStatus: 'active',
-      features: WHOP_ACCESS_MATRIX[verified.tier || 'free'].features,
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-      isWhopUser: true,
-    };
+    const session = await fetch('/api/auth/session', { credentials: 'include' });
+    if (!session.ok) {
+      this.currentUser = null;
+      this.sessionVerified = false;
+      localStorage.removeItem('whop_user');
+      throw new Error('Server could not restore this Whop session.');
+    }
+    const user = this.userFromServerSession(await session.json());
+    if (!user) {
+      this.currentUser = null;
+      this.sessionVerified = false;
+      localStorage.removeItem('whop_user');
+      throw new Error('Server did not return a verified Whop identity.');
+    }
 
     this.currentUser = user;
+    this.sessionVerified = true;
     localStorage.setItem('whop_user', JSON.stringify(user));
-
-    // Store token in httpOnly cookie via Netlify Function (not in localStorage)
-    try {
-      await fetch('/api/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, user }),
-      });
-    } catch {
-      // Fallback for local dev without Netlify Functions — store in memory only
-      console.warn(
-        '[Whop] Could not store token in httpOnly cookie (Netlify Function unavailable)',
-      );
-    }
-
     return user;
   }
 
@@ -655,6 +697,7 @@ class WhopClient {
     };
 
     this.currentUser = user;
+    this.sessionVerified = true;
     localStorage.setItem('whop_user', JSON.stringify(user));
 
     return user;
@@ -681,6 +724,7 @@ class WhopClient {
     };
 
     this.currentUser = user;
+    this.sessionVerified = true;
     localStorage.setItem('whop_user', JSON.stringify(user));
 
     return user;
@@ -691,6 +735,7 @@ class WhopClient {
    */
   async logout(): Promise<void> {
     this.currentUser = null;
+    this.sessionVerified = false;
     localStorage.removeItem('whop_user');
 
     // Clear httpOnly cookie via Netlify Function
@@ -702,17 +747,11 @@ class WhopClient {
   }
 
   /**
-   * Get upgrade URL for a specific tier
+   * Existing members may manage their membership; this helper never starts
+   * new Whop acquisition or checkout.
    */
-  getUpgradeUrl(tier: WhopTier): string {
-    // TODO: Replace with your actual Whop product URLs
-    const productMap: Record<WhopTier, string> = {
-      free: '#',
-      basic: 'https://whop.com/ignite-be15/?d2c=true&plan=basic',
-      pro: 'https://whop.com/ignite-be15/?d2c=true&plan=pro',
-      team: 'https://whop.com/ignite-be15/?d2c=true&plan=team',
-    };
-    return productMap[tier];
+  getUpgradeUrl(_tier: WhopTier): string {
+    return '/whop/discover';
   }
 
   /**
@@ -755,7 +794,8 @@ export function useWhopAccess() {
     matrix,
     config,
     isAuthenticated: !!user,
-    isWhopUser: user?.isWhopUser ?? false,
+    sessionVerified: whopClient.isSessionVerified(),
+    isWhopUser: (user?.isWhopUser ?? false) && whopClient.isSessionVerified(),
     isStandalone: isStandaloneMode(),
     isPro: tier === 'pro' || tier === 'team',
     isTeam: tier === 'team',
@@ -766,7 +806,7 @@ export function useWhopAccess() {
     simulateLogin: whopClient.simulateLogin.bind(whopClient),
     logout: whopClient.logout.bind(whopClient),
     getUpgradeUrl: whopClient.getUpgradeUrl.bind(whopClient),
-    getWhopLoginUrl,
+    isSessionVerified: whopClient.isSessionVerified.bind(whopClient),
   };
 }
 

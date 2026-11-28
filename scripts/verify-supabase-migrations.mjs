@@ -29,7 +29,7 @@ for (const file of files) {
   }
 
   const normalized = content.toLowerCase();
-  const hasSqlStatement = ['create ', 'alter ', 'insert ', 'update ', 'delete ', 'drop ', 'comment ', 'grant ']
+  const hasSqlStatement = ['create ', 'alter ', 'insert ', 'update ', 'delete ', 'drop ', 'comment ', 'grant ', 'revoke ', 'do ']
     .some((token) => normalized.includes(token));
 
   if (!hasSqlStatement) {

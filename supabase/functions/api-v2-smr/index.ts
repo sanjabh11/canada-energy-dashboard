@@ -66,8 +66,7 @@ serve(async (req) => {
     if (projectsError) {
       console.error('SMR projects query failed', projectsError);
       return new Response(JSON.stringify({
-        error: 'Failed to fetch SMR projects',
-        details: projectsError.message
+        error: 'Failed to fetch SMR projects'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -105,8 +104,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Unhandled SMR API error', error);
     return new Response(JSON.stringify({
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : String(error)
+      error: 'Internal server error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -164,11 +164,11 @@ ENTRY POINTS FOR REVIEW:
 
 ```toml
 [build.environment]
-  VITE_SUPABASE_URL = "https://qnymbecjgeaoxsfphrti.supabase.co"
+  VITE_SUPABASE_URL = "https://qktgjpbifknqjpvrgkrj.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJ..."
   VITE_USE_STREAMING_DATASETS = "true"
   VITE_ENABLE_EDGE_FETCH = "true"
-  VITE_SUPABASE_EDGE_BASE = "https://qnymbecjgeaoxsfphrti.functions.supabase.co"
+  VITE_SUPABASE_EDGE_BASE = "https://qktgjpbifknqjpvrgkrj.functions.supabase.co"
 ```
 
 ### Auth UI Hiding (AuthButton.tsx)

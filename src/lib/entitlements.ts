@@ -1,3 +1,5 @@
+import { CEIP_PRICING } from './pricingCatalog';
+
 export type CanonicalTier = 'free' | 'basic' | 'pro' | 'team';
 
 export const TIER_ORDER: Record<CanonicalTier, number> = {
@@ -44,7 +46,7 @@ export function normalizeTier(tier: string | null | undefined): CanonicalTier {
 
 export function hasTierAccess(
   userTier: CanonicalTier | string | null | undefined,
-  requiredTier: CanonicalTier
+  requiredTier: CanonicalTier,
 ): boolean {
   const normalizedUserTier = normalizeTier(userTier);
   return TIER_ORDER[normalizedUserTier] >= TIER_ORDER[requiredTier];
@@ -66,17 +68,19 @@ export function getTierDisplayName(tier: CanonicalTier): string {
 export function getTierPrice(tier: CanonicalTier): number {
   switch (tier) {
     case 'basic':
-      return 29;
+      return CEIP_PRICING.whop.whop_basic;
     case 'pro':
-      return 99;
+      return CEIP_PRICING.whop.whop_pro;
     case 'team':
-      return 299;
+      return CEIP_PRICING.whop.whop_team;
     default:
       return 0;
   }
 }
 
-export function parseProductTierMap(rawMap: string | undefined | null): Record<string, CanonicalTier> {
+export function parseProductTierMap(
+  rawMap: string | undefined | null,
+): Record<string, CanonicalTier> {
   if (!rawMap) {
     return { ...DEFAULT_PRODUCT_TIER_MAP };
   }
@@ -95,14 +99,15 @@ export function parseProductTierMap(rawMap: string | undefined | null): Record<s
 
 export function resolveTierFromProduct(
   productId: string | null | undefined,
-  productTierMap: Record<string, CanonicalTier> = DEFAULT_PRODUCT_TIER_MAP
+  productTierMap: Record<string, CanonicalTier> = DEFAULT_PRODUCT_TIER_MAP,
 ): CanonicalTier {
   if (!productId) return 'free';
   return productTierMap[productId] || 'free';
 }
 
 export function maxTier(tiers: Array<CanonicalTier | string | null | undefined>): CanonicalTier {
-  return tiers
-    .map((tier) => normalizeTier(tier))
-    .sort((a, b) => TIER_ORDER[b] - TIER_ORDER[a])[0] || 'free';
+  return (
+    tiers.map((tier) => normalizeTier(tier)).sort((a, b) => TIER_ORDER[b] - TIER_ORDER[a])[0] ||
+    'free'
+  );
 }

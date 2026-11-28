@@ -1,5 +1,7 @@
 # CEIP x Whop Hybrid GTM Execution (90 Days)
 
+> **Superseded historical planning artifact.** Do not execute the Whop wedge, listing, trial, or acquisition steps below. Current channel policy is direct buyer discovery with Whop limited to existing-customer access and billing support; see `GTM_CHANNEL_ROLE_MATRIX.md` and `../COMMERCIAL_STATUS.md`.
+
 ## Constraints
 - Capacity: 8-12 hrs/week
 - Budget: < $500/month
